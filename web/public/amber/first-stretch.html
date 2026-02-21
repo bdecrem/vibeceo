@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIRST STRETCH — Amber</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="FIRST STRETCH">
+  <meta property="og:description" content="Tap to stretch. Morning ASCII graffiti.">
+  <meta property="og:image" content="https://intheamber.com/amber/first-stretch-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/first-stretch.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FIRST STRETCH">
+  <meta name="twitter:description" content="Tap to stretch. Morning ASCII graffiti.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/first-stretch-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    #canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+    
+    .content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      pointer-events: none;
+    }
+    
+    .figure {
+      font-size: 48px;
+      line-height: 1;
+      letter-spacing: 0.1em;
+      margin: 20px 0;
+      transition: all 0.3s ease;
+    }
+    
+    .crack-text {
+      font-size: 32px;
+      font-weight: 700;
+      color: #FFD700;
+      text-shadow: 0 0 20px #FFD700;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all 0.2s ease;
+      margin: 20px 0;
+    }
+    
+    .crack-text.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    .hint {
+      font-size: 14px;
+      color: #D4A574;
+      opacity: 0.5;
+      margin-top: 40px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .counter {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-size: 12px;
+      color: #2D9596;
+      z-index: 3;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+    }
+    
+    @media (max-width: 600px) {
+      .figure {
+        font-size: 36px;
+      }
+      .crack-text {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="content">
+    <div class="figure" id="figure">
+      │<br>
+      │<br>
+     ┴┴
+    </div>
+    
+    <div class="crack-text" id="crackText">✧ CRACK ✧</div>
+    
+    <div class="hint">tap to stretch</div>
+  </div>
+  
+  <div class="counter">
+    stretches: <span id="count">0</span>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const figure = document.getElementById('figure');
+    const crackText = document.getElementById('crackText');
+    const countEl = document.getElementById('count');
+    
+    let W, H;
+    let particles = [];
+    let stretching = false;
+    let stretchCount = 0;
+    
+    // Audio context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Particle system
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 8;
+        this.vy = (Math.random() - 0.5) * 8;
+        this.life = 1;
+        this.decay = 0.02;
+        this.size = Math.random() * 3 + 2;
+        this.color = Math.random() > 0.5 ? '#D4A574' : '#FFD700';
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2; // gravity
+        this.life -= this.decay;
+      }
+      
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Glow
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+    
+    // Create crack sound
+    function playCrack() {
+      const now = audioCtx.currentTime;
+      
+      // Main crack (low frequency snap)
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.type = 'square';
+      osc1.frequency.setValueAtTime(150, now);
+      osc1.frequency.exponentialRampToValueAtTime(80, now + 0.1);
+      gain1.gain.setValueAtTime(0.3, now);
+      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.15);
+      
+      // Pop (higher frequency)
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(400, now + 0.05);
+      osc2.frequency.exponentialRampToValueAtTime(200, now + 0.12);
+      gain2.gain.setValueAtTime(0.2, now + 0.05);
+      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start(now + 0.05);
+      osc2.stop(now + 0.12);
+    }
+    
+    // Stretch animation
+    function stretch() {
+      if (stretching) return;
+      stretching = true;
+      stretchCount++;
+      countEl.textContent = stretchCount;
+      
+      // Change figure to stretched pose
+      figure.innerHTML = `\\│/<br>&nbsp;│<br>&nbsp;┴`;
+      
+      // Show crack text
+      crackText.classList.add('show');
+      
+      // Play sound
+      playCrack();
+      
+      // Spawn particles at center
+      const centerX = W / 2;
+      const centerY = H / 2;
+      for (let i = 0; i < 30; i++) {
+        particles.push(new Particle(centerX, centerY));
+      }
+      
+      // Return to resting pose
+      setTimeout(() => {
+        figure.innerHTML = `│<br>│<br>┴┴`;
+        crackText.classList.remove('show');
+        stretching = false;
+      }, 400);
+    }
+    
+    // Render loop
+    function render() {
+      // Dark fade
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, W, H);
+      
+      // Update and draw particles
+      particles = particles.filter(p => p.life > 0);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      
+      requestAnimationFrame(render);
+    }
+    
+    render();
+    
+    // Interaction
+    document.body.addEventListener('click', stretch);
+    document.body.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      stretch();
+    });
+  </script>
+</body>
+</html>
