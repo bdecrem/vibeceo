@@ -104,6 +104,7 @@
     let screenShake, hitFreeze, missDarken;
     let bestScore;
     let spawnTimer;
+    let comboBreakFlash; // { timer, scale } for red flash + shrink
 
     function init() {
       gems = []; particles = []; floatingTexts = [];
@@ -114,6 +115,7 @@
       hitFreeze = 0;
       missDarken = 0;
       spawnTimer = 0;
+      comboBreakFlash = { timer: 0, scale: 1, text: '', mult: 1 };
       bestScore = parseInt(localStorage.getItem('shine_best') || '0');
     }
 
@@ -248,8 +250,9 @@
           comboMultiplier = getComboMultiplier(combo);
           if (combo > maxCombo) maxCombo = combo;
 
-          // particles
-          spawnParticles(gem.x, gem.y, gem.type.color, 20);
+          // particles (reduce in last 10s for readability)
+          const pCount = timeLeft < 10 ? 10 : 20;
+          spawnParticles(gem.x, gem.y, gem.type.color, pCount);
 
           // floating text
           const comboText = mult > 1 ? ` x${mult}` : '';
@@ -284,7 +287,7 @@
     });
 
     // --- UPDATE ---
-    let realTimeAccum = 0; // for timer (not affected by hitFreeze)
+    // timer is now continuous (timeLeft -= dt)
 
     function update(dt) {
       if (phase === 'start') { gameTime += dt; return; }
@@ -295,13 +298,9 @@
 
       gameTime += dt;
 
-      // timer (real-time second ticks)
-      realTimeAccum += dt;
-      while (realTimeAccum >= 1) {
-        realTimeAccum -= 1;
-        timeLeft--;
-        if (timeLeft <= 0) { timeLeft = 0; endGame(); return; }
-      }
+      // timer (continuous for sub-second display)
+      timeLeft -= dt;
+      if (timeLeft <= 0) { timeLeft = 0; endGame(); return; }
 
       // combo timer
       if (comboTimer > 0) {
@@ -310,6 +309,7 @@
           // combo break
           if (combo >= 3) {
             playComboBreak();
+            comboBreakFlash = { timer: 0.12, scale: 1, text: combo + ' COMBO  x' + comboMultiplier, mult: comboMultiplier };
           }
           combo = 0;
           comboMultiplier = 1;
@@ -355,6 +355,10 @@
       // screen shake / darken decay
       if (screenShake.timer > 0) screenShake.timer -= dt;
       if (missDarken > 0) missDarken -= dt;
+      if (comboBreakFlash.timer > 0) {
+        comboBreakFlash.timer -= dt;
+        comboBreakFlash.scale = Math.max(0, comboBreakFlash.timer / 0.12);
+      }
     }
 
     function endGame() {
@@ -449,16 +453,17 @@
       const timerColor = timeLeft <= 10 ? T.danger : T.teal;
       ctx.fillStyle = timerColor;
       ctx.font = 'bold 22px monospace';
-      // pulse timer when danger
+      // pulse timer when danger, show 1 decimal under 10s
+      const timerStr = timeLeft < 10 ? timeLeft.toFixed(1) : Math.ceil(timeLeft) + '';
       if (timeLeft <= 10) {
         const pulse = 1 + Math.sin(gameTime * 6) * 0.05;
         ctx.save();
         ctx.translate(W - 16, 78);
         ctx.scale(pulse, pulse);
-        ctx.fillText(Math.ceil(timeLeft) + '', 0, 0);
+        ctx.fillText(timerStr, 0, 0);
         ctx.restore();
       } else {
-        ctx.fillText(Math.ceil(timeLeft) + '', W - 16, 78);
+        ctx.fillText(timerStr, W - 16, 78);
       }
 
       // combo display
@@ -468,6 +473,18 @@
         ctx.font = 'bold 16px monospace';
         ctx.globalAlpha = 0.8;
         ctx.fillText(combo + ' COMBO  x' + comboMultiplier, W / 2, 32);
+        ctx.globalAlpha = 1;
+      } else if (comboBreakFlash.timer > 0) {
+        // red flash + shrink-to-zero on combo break
+        ctx.textAlign = 'center';
+        ctx.fillStyle = T.danger;
+        ctx.font = 'bold 16px monospace';
+        ctx.globalAlpha = comboBreakFlash.scale;
+        ctx.save();
+        ctx.translate(W / 2, 32);
+        ctx.scale(comboBreakFlash.scale, comboBreakFlash.scale);
+        ctx.fillText(comboBreakFlash.text, 0, 0);
+        ctx.restore();
         ctx.globalAlpha = 1;
       }
 
