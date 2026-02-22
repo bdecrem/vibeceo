@@ -841,6 +841,8 @@ tweak({ path: 'jbs.s1.level', value: 0 })            → Sets JB-S slot 1 to uni
 
 **Send/return routing tools (shared buses):**
 
+**Agent guidance:** Prefer `add_send` + `route` for reverb and delay. Sends share one effect across multiple instruments and mix cleanly. Use `add_effect` inserts only when you need a unique effect on a single voice (e.g., filter on just the hats).
+
 | Tool | Description |
 |------|-------------|
 | `add_send` | Create a send bus with effect (reverb, delay, eq, filter) |
