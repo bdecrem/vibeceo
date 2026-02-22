@@ -152,6 +152,32 @@
       if (droneOsc) { try { droneOsc.stop(); } catch(e){} droneOsc = null; }
     }
 
+    // --- DEATH RUMBLE (proximity to black layers) ---
+    let rumbleNode, rumbleGain, rumbleFilter;
+    function startRumble() {
+      if (!audioCtx || rumbleNode) return;
+      const bufSize = audioCtx.sampleRate * 2;
+      const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+      rumbleNode = audioCtx.createBufferSource();
+      rumbleNode.buffer = buf; rumbleNode.loop = true;
+      rumbleFilter = audioCtx.createBiquadFilter();
+      rumbleFilter.type = 'lowpass'; rumbleFilter.frequency.value = 80; rumbleFilter.Q.value = 5;
+      rumbleGain = audioCtx.createGain(); rumbleGain.gain.value = 0;
+      rumbleNode.connect(rumbleFilter); rumbleFilter.connect(rumbleGain); rumbleGain.connect(audioCtx.destination);
+      rumbleNode.start();
+    }
+    function updateRumble(proximity) {
+      // proximity: 0 = far, 1 = right on top of it
+      if (rumbleGain) rumbleGain.gain.value = Math.min(0.25, proximity * 0.25);
+      if (rumbleFilter) rumbleFilter.frequency.value = 60 + proximity * 80;
+    }
+    function stopRumble() {
+      if (rumbleNode) { try { rumbleNode.stop(); } catch(e){} rumbleNode = null; }
+      rumbleGain = null; rumbleFilter = null;
+    }
+
     // --- LAYER GENERATION ---
     const LAYER_HEIGHT = 12;
     const LAYER_SPACING = 80;
@@ -373,6 +399,7 @@
       tutorialTimer = 0;
       initAudio();
       startDrone();
+      startRumble();
       TUTORIAL_STEPS[0].setup();
     }
 
@@ -464,6 +491,7 @@
       init();
       initAudio();
       startDrone();
+      startRumble();
       gamePhase = 'playing';
       mercury.y = 150;
       mercury.vy = 0;
@@ -560,6 +588,7 @@
             spawnShatter(mercury.x, mercury.y);
             playShatter();
             stopDrone();
+            stopRumble();
             screenShake = { timer: 0.2, intensity: 5 };
             return;
           }
@@ -611,6 +640,17 @@
       if (droneGain) {
         droneGain.gain.value = 0.04 + Math.min(depth * 0.002, 0.1);
       }
+
+      // Update death rumble based on proximity to nearest black layer
+      let closestBlackDist = Infinity;
+      for (const l of layers) {
+        if (!l.isBlack || l.passed) continue;
+        const dist = getLayerWorldY(l) - mercury.y;
+        if (dist > 0 && dist < closestBlackDist) closestBlackDist = dist;
+      }
+      const rumbleRange = LAYER_SPACING * 3;
+      const rumbleProx = closestBlackDist < rumbleRange ? 1 - closestBlackDist / rumbleRange : 0;
+      updateRumble(rumbleProx);
     }
 
     // --- TUTORIAL UPDATE ---

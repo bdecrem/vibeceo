@@ -225,6 +225,9 @@ export default function SiftGame() {
     audioCtx: null as AudioContext | null,
     droneOsc: null as OscillatorNode | null,
     droneGain: null as GainNode | null,
+    rumbleNode: null as AudioBufferSourceNode | null,
+    rumbleGain: null as GainNode | null,
+    rumbleFilter: null as BiquadFilterNode | null,
   });
 
   // --- AUDIO ---
@@ -335,6 +338,34 @@ export default function SiftGame() {
       try { game.droneOsc.stop(); } catch(e){} 
       game.droneOsc = null; 
     }
+  }, []);
+
+  const startRumble = useCallback(() => {
+    const game = g.current;
+    if (!game.audioCtx || game.rumbleNode) return;
+    const bufSize = game.audioCtx.sampleRate * 2;
+    const buf = game.audioCtx.createBuffer(1, bufSize, game.audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+    game.rumbleNode = game.audioCtx.createBufferSource();
+    game.rumbleNode.buffer = buf; game.rumbleNode.loop = true;
+    game.rumbleFilter = game.audioCtx.createBiquadFilter();
+    game.rumbleFilter.type = 'lowpass'; game.rumbleFilter.frequency.value = 80; game.rumbleFilter.Q.value = 5;
+    game.rumbleGain = game.audioCtx.createGain(); game.rumbleGain.gain.value = 0;
+    game.rumbleNode.connect(game.rumbleFilter); game.rumbleFilter.connect(game.rumbleGain); game.rumbleGain.connect(game.audioCtx.destination);
+    game.rumbleNode.start();
+  }, []);
+
+  const stopRumble = useCallback(() => {
+    const game = g.current;
+    if (game.rumbleNode) { try { game.rumbleNode.stop(); } catch(e){} game.rumbleNode = null; }
+    game.rumbleGain = null; game.rumbleFilter = null;
+  }, []);
+
+  const updateRumble = useCallback((proximity: number) => {
+    const game = g.current;
+    if (game.rumbleGain) game.rumbleGain.gain.value = Math.min(0.25, proximity * 0.25);
+    if (game.rumbleFilter) game.rumbleFilter.frequency.value = 60 + proximity * 80;
   }, []);
 
   // --- HELPER FUNCTIONS ---
@@ -502,6 +533,7 @@ export default function SiftGame() {
     initGame();
     initAudio();
     startDrone();
+    startRumble();
     const game = g.current;
     game.gamePhase = 'playing';
     game.mercury.y = 150;
@@ -510,7 +542,7 @@ export default function SiftGame() {
     setGameState('playing');
     setShowShareModal(false);
     setProgression(null);
-  }, [initGame, initAudio, startDrone]);
+  }, [initGame, initAudio, startDrone, startRumble]);
 
   const startTutorial = useCallback(() => {
     initGame();
@@ -740,6 +772,7 @@ export default function SiftGame() {
             spawnShatter(game.mercury.x, game.mercury.y);
             playShatter();
             stopDrone();
+            stopRumble();
             game.screenShake = { timer: 0.2, intensity: 5 };
             return;
           }
@@ -791,6 +824,17 @@ export default function SiftGame() {
       if (game.droneGain) {
         game.droneGain.gain.value = 0.04 + Math.min(game.depth * 0.002, 0.1);
       }
+
+      // Update death rumble
+      let closestBlackDist = Infinity;
+      for (const l of game.layers) {
+        if (!l.isBlack || l.passed) continue;
+        const dist = getLayerWorldY(l) - game.mercury.y;
+        if (dist > 0 && dist < closestBlackDist) closestBlackDist = dist;
+      }
+      const rumbleRange = LAYER_SPACING * 3;
+      const rumbleProx = closestBlackDist < rumbleRange ? 1 - closestBlackDist / rumbleRange : 0;
+      updateRumble(rumbleProx);
     }
 
     function updateTutorial(dt: number) {
@@ -1213,8 +1257,9 @@ export default function SiftGame() {
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseup', handleMouseUp);
       stopDrone();
+      stopRumble();
     };
-  }, [getActiveLayer, getComboMultiplier, getGravity, getLayerWorldY, initAudio, initGame, playCombo, playLevelUp, playMagnetHum, playPing, playShatter, skipTutorial, spawnParticles, spawnShatter, startDrone, startGame, stopDrone]);
+  }, [getActiveLayer, getComboMultiplier, getGravity, getLayerWorldY, initAudio, initGame, playCombo, playLevelUp, playMagnetHum, playPing, playShatter, skipTutorial, spawnParticles, spawnShatter, startDrone, startGame, startRumble, stopDrone, stopRumble, updateRumble]);
 
   return (
     <>
