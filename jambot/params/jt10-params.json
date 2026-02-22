@@ -19,7 +19,7 @@
     "subLevel": { "unit": "0-100", "min": 0, "max": 100, "default": 30, "hint": "sub oscillator level" },
     "subMode": { "unit": "choice", "options": [0, 1, 2], "default": 0, "hint": "sub mode: 0=off, 1=-1oct, 2=-2oct" },
 
-    "cutoff": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "filter cutoff" },
+    "cutoff": { "unit": "Hz", "min": 20, "max": 16000, "default": 566, "hint": "filter cutoff frequency" },
     "resonance": { "unit": "0-100", "min": 0, "max": 100, "default": 30, "hint": "filter resonance" },
     "envMod": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "filter envelope depth" },
     "keyTrack": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "keyboard tracking amount" },

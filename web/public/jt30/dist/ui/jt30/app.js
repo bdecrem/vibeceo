@@ -7,8 +7,18 @@
 
 import { JT30Engine } from '../../machines/jt30/engine.js';
 import { JT30Sequencer } from '../../machines/jt30/sequencer.js';
+import { normalizedToHz } from '../../../../jb202/dist/dsp/filters/index.js';
 
 const STEPS = 16;
+
+// Format knob display value — Hz for cutoff, 0-100 for everything else
+function formatKnobValue(param, normalized) {
+    if (param === 'cutoff') {
+        const hz = normalizedToHz(normalized);
+        return hz >= 1000 ? `${(hz / 1000).toFixed(1)}k` : Math.round(hz).toString();
+    }
+    return Math.round(normalized * 100).toString();
+}
 
 // Keyboard to note mapping (QWERTY row = chromatic C2-B2)
 const KEY_TO_NOTE = {
@@ -205,7 +215,7 @@ function initKnobs() {
         // Also update the value display
         const valueEl = document.getElementById(`${param}-value`);
         if (valueEl) {
-            valueEl.textContent = Math.round(value * 100).toString();
+            valueEl.textContent = formatKnobValue(param, value);
         }
 
         knob.addEventListener('mousedown', (e) => {
@@ -254,7 +264,7 @@ function handleKnobMove(clientY) {
 
     const valueEl = document.getElementById(`${activeKnob.paramId}-value`);
     if (valueEl) {
-        valueEl.textContent = Math.round(newValue * 100).toString();
+        valueEl.textContent = formatKnobValue(activeKnob.paramId, newValue);
     }
 }
 
@@ -283,7 +293,7 @@ function resetKnob(knobEl, paramId) {
 
     const valueEl = document.getElementById(`${paramId}-value`);
     if (valueEl) {
-        valueEl.textContent = Math.round(defaultValue * 100).toString();
+        valueEl.textContent = formatKnobValue(paramId, defaultValue);
     }
 }
 
@@ -299,7 +309,7 @@ function updateKnobsFromPreset(parameters) {
 
         const valueEl = document.getElementById(`${paramId}-value`);
         if (valueEl) {
-            valueEl.textContent = Math.round(value * 100).toString();
+            valueEl.textContent = formatKnobValue(paramId, value);
         }
     });
 }

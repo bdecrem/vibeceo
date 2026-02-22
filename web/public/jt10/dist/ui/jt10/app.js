@@ -7,9 +7,19 @@
 
 import { JT10Engine } from '../../machines/jt10/engine.js';
 import { JT10Sequencer } from '../../machines/jt10/sequencer.js';
+import { normalizedToHz } from '../../../../jb202/dist/dsp/filters/index.js';
 
 const STEPS = 16;
 const OCTAVE_START = 3; // C3
+
+// Format knob display value — Hz for cutoff, 0-100 for everything else
+function formatKnobValue(param, normalized) {
+    if (param === 'cutoff') {
+        const hz = normalizedToHz(normalized);
+        return hz >= 1000 ? `${(hz / 1000).toFixed(1)}k` : Math.round(hz).toString();
+    }
+    return Math.round(normalized * 100).toString();
+}
 
 // Keyboard mapping
 const KEY_MAP = {
@@ -47,6 +57,11 @@ function initKnobs() {
         const rotation = valueToRotation(defaultValue);
         knob.style.transform = `rotate(${rotation}deg)`;
 
+        const valueEl = document.getElementById(`${param}-value`);
+        if (valueEl) {
+            valueEl.textContent = formatKnobValue(param, defaultValue);
+        }
+
         knob.addEventListener('mousedown', (e) => {
             e.preventDefault();
             startKnobDrag(e.clientY, knob, param);
@@ -63,6 +78,8 @@ function initKnobs() {
             const defaultVal = parseFloat(knob.dataset.value) || 0.5;
             engine.setParameter(param, defaultVal);
             knob.style.transform = `rotate(${valueToRotation(defaultVal)}deg)`;
+            const valEl = document.getElementById(`${param}-value`);
+            if (valEl) valEl.textContent = formatKnobValue(param, defaultVal);
         });
     });
 }
@@ -90,6 +107,11 @@ function handleKnobMove(clientY) {
 
     engine.setParameter(activeKnob.paramId, newValue);
     activeKnob.element.style.transform = `rotate(${valueToRotation(newValue)}deg)`;
+
+    const valueEl = document.getElementById(`${activeKnob.paramId}-value`);
+    if (valueEl) {
+        valueEl.textContent = formatKnobValue(activeKnob.paramId, newValue);
+    }
 }
 
 function handleKnobEnd() {
@@ -130,7 +152,6 @@ function initSliders() {
 }
 
 function updateSliderPosition(slider, value) {
-    const handle = slider.querySelector('::before') || slider;
     slider.style.setProperty('--value', `${value * 100}%`);
 }
 
@@ -492,6 +513,9 @@ function loadPreset(id, preset) {
             if (knob) {
                 knob.style.transform = `rotate(${valueToRotation(value)}deg)`;
             }
+
+            const valEl = document.getElementById(`${param}-value`);
+            if (valEl) valEl.textContent = formatKnobValue(param, value);
         });
     }
 
