@@ -283,12 +283,20 @@ Effects are addressed via `fx.{target}.{effectId}`:
 
 ```
 voice (jb01.ch) → [voice effect chain] ─┐
-voice (jb01.kick) ──────────────────────┼→ [instrument effect chain] → mix
-voice (jb01.snare) ─────────────────────┘                               ↓
-                                                                  [master chain]
-                                                                        ↓
-                                                                      output
+voice (jb01.kick) ──────────────────────┼→ [instrument effect chain] → track
+voice (jb01.snare) ─────────────────────┘                               │
+                                                                        ├──→ mix
+                                                                        │      ↓
+                                                               send ────┘  [master chain]
+                                                             level 0-1        ↓
+                                                                ↓           output
+                                                          [send bus]
+                                                        (reverb/delay)
+                                                                ↓
+                                                          wet → mix
 ```
+
+Send buses are shared effect returns. Multiple tracks route to the same bus at different levels. The bus processes 100% wet, then mixes back into the master output.
 
 ### Effect processor registry
 
@@ -651,12 +659,20 @@ show_effects()
 
 ```
 voice (jb01.ch) → [voice effect chain] ─┐
-voice (jb01.kick) ──────────────────────┼→ [instrument effect chain] → mix
-voice (jb01.snare) ─────────────────────┘                               ↓
-                                                                  [master chain]
-                                                                        ↓
-                                                                      output
+voice (jb01.kick) ──────────────────────┼→ [instrument effect chain] → track
+voice (jb01.snare) ─────────────────────┘                               │
+                                                                        ├──→ mix
+                                                                        │      ↓
+                                                               send ────┘  [master chain]
+                                                             level 0-1        ↓
+                                                                ↓           output
+                                                          [send bus]
+                                                        (reverb/delay)
+                                                                ↓
+                                                          wet → mix
 ```
+
+Send buses are shared effect returns. Multiple tracks route to the same bus at different levels. The bus processes 100% wet, then mixes back into the master output.
 
 ### Delay Presets
 

@@ -45,8 +45,9 @@ export function processReverb(inputBuffer, params, sampleRate) {
 
   // Scale factor for sample rate (tunings are designed for 44100)
   const srScale = sampleRate / 44100;
-  // Size scales comb/allpass buffer lengths (0.5–1.0 range)
-  const sizeScale = 0.5 + (size / 100) * 0.5;
+  // Size scales comb/allpass buffer lengths (0.5x–3.0x)
+  // At size=0: ~12-18ms (tight room). At size=100: ~75-110ms (cathedral).
+  const sizeScale = 0.5 + (size / 100) * 2.5;
 
   // Feedback coefficient: maps decay (0.1–10s) to feedback (0.84–1.0)
   const feedback = 0.84 + (Math.min(decay, 10) / 10) * 0.16;
@@ -134,9 +135,9 @@ export function processReverb(inputBuffer, params, sampleRate) {
       combSumR += readR;
     }
 
-    // Normalize comb sum
-    combSumL *= 0.125;
-    combSumR *= 0.125;
+    // Scale comb sum (Jezar uses scalewet≈3, not 1/8 peak normalization)
+    combSumL /= 3;
+    combSumR /= 3;
 
     // Process 4 allpass filters in series
     let allpassOutL = combSumL;
