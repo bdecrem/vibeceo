@@ -373,6 +373,61 @@ export async function renderSession(session, bars, filename) {
     }
   }
 
+  // === PROCESS SEND BUSES ===
+  if (session.routing && session.routing.sends.size > 0) {
+    for (const [sendId, send] of session.routing.sends) {
+      // Create empty send buffer
+      const sendL = new Float32Array(outputBuffer.length);
+      const sendR = new Float32Array(outputBuffer.length);
+
+      // Accumulate contributions from all tracks routed to this send
+      for (const [trackId, track] of session.routing.tracks) {
+        const sendLevel = track.sends[sendId];
+        if (sendLevel === undefined || sendLevel === 0) continue;
+
+        // Find matching instrument buffers for this track
+        for (const { id, buffer, startBar, level } of instrumentBuffers) {
+          if (id !== track.nodeId) continue;
+
+          const startSample = Math.floor(startBar * samplesPerBar);
+          const mixLen = Math.min(outputBuffer.length - startSample, buffer.length);
+          const bufL = buffer.getChannelData(0);
+          const bufR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : bufL;
+
+          for (let i = 0; i < mixLen; i++) {
+            sendL[startSample + i] += bufL[i] * level * sendLevel;
+            sendR[startSample + i] += bufR[i] * level * sendLevel;
+          }
+        }
+      }
+
+      // Process the send buffer through the send's effect
+      const sendBuffer = {
+        numberOfChannels: 2,
+        length: outputBuffer.length,
+        sampleRate,
+        getChannelData: (ch) => ch === 0 ? sendL : sendR,
+      };
+
+      const processor = EFFECT_PROCESSORS[send.effectType];
+      if (!processor) continue;
+
+      // For sends, override mix to 100% wet (the send level controls dry/wet balance)
+      const sendParams = { ...send.effectNode.getParams(), mix: 100 };
+      const processed = processor(sendBuffer, sendParams, sampleRate, session.bpm, renderContext);
+
+      // Mix processed send back into master output
+      for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {
+        const mainData = outputBuffer.getChannelData(ch);
+        const wetData = processed.getChannelData(ch % processed.numberOfChannels);
+        const wetLen = Math.min(outputBuffer.length, processed.length);
+        for (let i = 0; i < wetLen; i++) {
+          mainData[i] += wetData[i] * send.level;
+        }
+      }
+    }
+  }
+
   // === APPLY MASTER EFFECT CHAIN ===
   const masterChain = session.mixer?.effectChains?.master;
   let finalBuffer = outputBuffer;

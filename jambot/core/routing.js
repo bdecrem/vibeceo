@@ -8,6 +8,7 @@
 import { DelayNode } from '../effects/delay-node.js';
 import { EQNode } from '../effects/eq-node.js';
 import { FilterNode } from '../effects/filter-node.js';
+import { ReverbNode } from '../effects/reverb-node.js';
 import { SidechainNode } from '../effects/sidechain-node.js';
 
 /**
@@ -42,6 +43,18 @@ export function createSend(id, effectType, params = {}) {
   switch (effectType) {
     case 'delay':
       effectNode = new DelayNode(id, params);
+      break;
+    case 'reverb':
+      effectNode = new ReverbNode(id, params);
+      break;
+    case 'eq':
+      effectNode = new EQNode(id, params);
+      break;
+    case 'filter':
+      effectNode = new FilterNode(id, params);
+      break;
+    case 'sidechain':
+      effectNode = new SidechainNode(id, params);
       break;
     default:
       effectNode = new DelayNode(id, params);  // Default to delay

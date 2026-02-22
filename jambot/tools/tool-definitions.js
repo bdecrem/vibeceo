@@ -1206,5 +1206,155 @@ export const TOOLS = [
       properties: {},
       required: []
     }
+  },
+  // === SEND/RETURN ROUTING ===
+  {
+    name: "add_send",
+    description: "Create a send bus with an effect (reverb, delay, etc). Multiple instruments can route to a shared send at different levels — standard DAW send/return workflow.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Send bus ID (e.g., 'verb', 'delay1')" },
+        effect: { type: "string", enum: ["reverb", "delay", "eq", "filter"], description: "Effect type for this send bus" },
+        // Reverb params
+        decay: { type: "number", description: "Reverb tail length in seconds (0.1-10)" },
+        damping: { type: "number", description: "High-frequency rolloff 0-100" },
+        predelay: { type: "number", description: "Gap before reverb onset in ms (0-100)" },
+        mix: { type: "number", description: "Wet/dry mix 0-100 (default 100 for sends — fully wet)" },
+        width: { type: "number", description: "Stereo spread 0-100" },
+        size: { type: "number", description: "Room size 0-100" },
+        // Delay params
+        mode: { type: "string", enum: ["analog", "pingpong"], description: "Delay mode" },
+        time: { type: "number", description: "Delay time in ms (1-2000)" },
+        sync: { type: "string", enum: ["off", "8th", "dotted8th", "triplet8th", "16th", "quarter"], description: "Tempo sync" },
+        feedback: { type: "number", description: "Feedback amount 0-100" }
+      },
+      required: ["id", "effect"]
+    }
+  },
+  {
+    name: "remove_send",
+    description: "Remove a send bus and all routes to it.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Send bus ID to remove" }
+      },
+      required: ["id"]
+    }
+  },
+  {
+    name: "list_sends",
+    description: "List all send buses and their effects.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "route",
+    description: "Route a track to a send bus at a specific level. The track's audio is mixed into the send at the given level.",
+    input_schema: {
+      type: "object",
+      properties: {
+        track: { type: "string", description: "Track ID to route from (e.g., 'jb01', 'jb202')" },
+        send: { type: "string", description: "Send bus ID to route to (e.g., 'verb')" },
+        level: { type: "number", description: "Send level 0-1 (default 0.3). How much signal goes to the send." }
+      },
+      required: ["track", "send"]
+    }
+  },
+  {
+    name: "unroute",
+    description: "Remove a route from a track to a send bus.",
+    input_schema: {
+      type: "object",
+      properties: {
+        track: { type: "string", description: "Track ID" },
+        send: { type: "string", description: "Send bus ID" }
+      },
+      required: ["track", "send"]
+    }
+  },
+  {
+    name: "show_routing",
+    description: "Show the full routing configuration — tracks, sends, and all route connections.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  // === TRACK MANAGEMENT ===
+  {
+    name: "add_track",
+    description: "Add a new track to the routing system. Tracks are auto-created for instruments, but use this for extra tracks or FX returns.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Track ID" },
+        nodeId: { type: "string", description: "Instrument node ID this track maps to (defaults to id)" },
+        volume: { type: "number", description: "Track volume in dB (default 0)" },
+        mute: { type: "boolean", description: "Start muted" }
+      },
+      required: ["id"]
+    }
+  },
+  {
+    name: "remove_track",
+    description: "Remove a track from the routing system.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Track ID to remove" }
+      },
+      required: ["id"]
+    }
+  },
+  {
+    name: "list_tracks",
+    description: "List all tracks in the routing system.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "set_track_volume",
+    description: "Set a track's volume in dB.",
+    input_schema: {
+      type: "object",
+      properties: {
+        track: { type: "string", description: "Track ID" },
+        volume: { type: "number", description: "Volume in dB" }
+      },
+      required: ["track"]
+    }
+  },
+  {
+    name: "mute_track",
+    description: "Mute or unmute a track. Toggles if mute param not provided.",
+    input_schema: {
+      type: "object",
+      properties: {
+        track: { type: "string", description: "Track ID" },
+        mute: { type: "boolean", description: "true=mute, false=unmute. Omit to toggle." }
+      },
+      required: ["track"]
+    }
+  },
+  {
+    name: "solo_track",
+    description: "Solo a track (mutes all others). Use solo:false to unsolo.",
+    input_schema: {
+      type: "object",
+      properties: {
+        track: { type: "string", description: "Track ID" },
+        solo: { type: "boolean", description: "true=solo, false=unsolo" }
+      },
+      required: ["track"]
+    }
   }
 ];

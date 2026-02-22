@@ -2,8 +2,8 @@
  * Kit Loader — Node.js implementation for JB-S sampler
  *
  * Discovers and loads sample kits from:
- *   1. Bundled: ./samples/*/kit.json
- *   2. User:    ~/Documents/Jambot/kits/*/kit.json
+ *   1. Bundled: ./samples/{name}/kit.json
+ *   2. User:    ~/Documents/Jambot/kits/{name}/kit.json
  *
  * Returns raw Uint8Array WAV bytes per slot (the engine's renderPattern
  * calls decodeAudioData on these buffers).

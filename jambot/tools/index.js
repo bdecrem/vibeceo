@@ -52,6 +52,7 @@ export async function initializeTools() {
   await import('./jp9000-tools.js');
   await import('./jt-tools.js');
   await import('./automation-tools.js');
+  await import('./routing-tools.js');
 
   initialized = true;
 }

@@ -839,6 +839,53 @@ tweak({ path: 'jbs.s1.level', value: 0 })            → Sets JB-S slot 1 to uni
 | `show_effects` | Display all effect chains |
 | `tweak_effect` | Modify params on existing effect |
 
+**Send/return routing tools (shared buses):**
+
+| Tool | Description |
+|------|-------------|
+| `add_send` | Create a send bus with effect (reverb, delay, eq, filter) |
+| `remove_send` | Remove a send bus and all routes to it |
+| `list_sends` | List all send buses |
+| `route` | Route a track to a send at a level (0-1) |
+| `unroute` | Remove a route from track to send |
+| `show_routing` | Show full routing config (tracks, sends, routes) |
+
+**Track management tools:**
+
+| Tool | Description |
+|------|-------------|
+| `add_track` | Add a track (auto-created for instruments) |
+| `remove_track` | Remove a track |
+| `list_tracks` | List all tracks |
+| `set_track_volume` | Set track volume in dB |
+| `mute_track` | Mute/unmute a track |
+| `solo_track` | Solo a track (mutes others) |
+
+### Send/Return Routing (Shared Effect Buses)
+
+Send/return is the standard DAW workflow for sharing effects across multiple instruments. Instead of adding reverb to each instrument individually, create one shared reverb bus and route instruments to it at different levels.
+
+**Example: Shared reverb bus**
+```
+add_send({ id: 'verb', effect: 'reverb', decay: 3, size: 60 })
+route({ track: 'jb01', send: 'verb', level: 0.3 })     # Drums get 30% reverb
+route({ track: 'jb202', send: 'verb', level: 0.2 })     # Bass gets 20% reverb
+route({ track: 'jt10', send: 'verb', level: 0.5 })      # Lead gets 50% reverb
+```
+
+**Example: Shared delay bus**
+```
+add_send({ id: 'dly', effect: 'delay', mode: 'pingpong', time: 375, feedback: 50 })
+route({ track: 'jb01', send: 'dly', level: 0.15 })
+route({ track: 'jt30', send: 'dly', level: 0.25 })
+```
+
+**How it works:**
+1. Send buses are 100% wet — the route level controls how much dry signal goes to the bus
+2. Tracks are auto-initialized from active instruments when routing is first used
+3. The processed wet signal is mixed back into the master output
+4. Use `show_routing` to see the full signal flow
+
 ## Mixer (DAW-like Routing)
 
 Jambot includes a virtual mixer for professional mixing:
