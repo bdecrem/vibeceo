@@ -242,6 +242,14 @@ body {
     border: 1px solid #333;
 }
 
+.knob-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.5rem;
+    color: var(--text-label);
+    min-width: 20px;
+    text-align: center;
+}
+
 .knob.small {
     width: 32px;
     height: 32px;
@@ -272,8 +280,21 @@ body {
     height: 12px;
     background: var(--accent);
     border-radius: 3px;
-    bottom: 50%;
+    bottom: calc(var(--value, 50%) - 6px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.slider::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: var(--value, 50%);
+    background: var(--accent);
+    opacity: 0.3;
+    border-radius: 2px;
 }
 
 /* Range Buttons */
