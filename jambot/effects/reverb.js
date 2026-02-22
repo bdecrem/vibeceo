@@ -143,20 +143,22 @@ export function processReverb(inputBuffer, params, sampleRate) {
     let allpassOutR = combSumR;
 
     for (let a = 0; a < 4; a++) {
-      // Left allpass
+      // Left allpass (Jezar/Schroeder: output = -in + delayed, buffer = in + delayed * g)
       const abufL = allpassBufsL[a];
       const aidxL = allpassIdxL[a];
       const bufferedL = abufL[aidxL];
-      allpassOutL = bufferedL - allpassOutL;
-      abufL[aidxL] = allpassOutL * 0.5 + bufferedL * 0.5;
+      const inL = allpassOutL;
+      allpassOutL = bufferedL - inL;
+      abufL[aidxL] = inL + bufferedL * 0.5;
       allpassIdxL[a] = (aidxL + 1) % abufL.length;
 
       // Right allpass
       const abufR = allpassBufsR[a];
       const aidxR = allpassIdxR[a];
       const bufferedR = abufR[aidxR];
-      allpassOutR = bufferedR - allpassOutR;
-      abufR[aidxR] = allpassOutR * 0.5 + bufferedR * 0.5;
+      const inR = allpassOutR;
+      allpassOutR = bufferedR - inR;
+      abufR[aidxR] = inR + bufferedR * 0.5;
       allpassIdxR[a] = (aidxR + 1) % abufR.length;
     }
 
