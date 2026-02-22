@@ -65,8 +65,13 @@ export class JT10Node extends InstrumentNode {
         param: paramName,
       });
 
-      if (paramDef.default !== undefined) {
-        this._params[path] = toEngine(paramDef.default, paramDef);
+      if (paramDef.default === null) {
+        this._params[path] = null;  // null = engine uses fallback (e.g., filter ADSR follows amp)
+      } else if (paramDef.default !== undefined) {
+        // Choice params pass through (no min/max for toEngine)
+        this._params[path] = paramDef.unit === 'choice'
+          ? paramDef.default
+          : toEngine(paramDef.default, paramDef);
       }
     }
   }
@@ -206,9 +211,14 @@ export class JT10Node extends InstrumentNode {
       const paramName = path.replace('lead.', '');
       const paramDef = leadDef?.[paramName];
       if (paramDef) {
-        const defaultEngine = toEngine(paramDef.default, paramDef);
-        if (typeof value === 'string' ? value !== paramDef.default : Math.abs(value - defaultEngine) > 0.001) {
-          sparseParams[path] = value;
+        if (paramDef.default === null) {
+          // Null-default params: store if value is not null
+          if (value !== null) sparseParams[path] = value;
+        } else {
+          const defaultEngine = toEngine(paramDef.default, paramDef);
+          if (typeof value === 'string' ? value !== paramDef.default : Math.abs(value - defaultEngine) > 0.001) {
+            sparseParams[path] = value;
+          }
         }
       }
     }

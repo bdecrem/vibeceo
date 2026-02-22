@@ -339,7 +339,7 @@ export const TOOLS = [
       properties: {
         pattern: {
           type: "array",
-          description: "Array of 16 steps. Each step: {note: 'C3', gate: true, accent: false, slide: false}. Lead range: C2-C5",
+          description: "Array of steps. Each step: {note: 'C3', gate: true, accent: false, slide: false}. Lead range: C2-C5",
           items: {
             type: "object",
             properties: {
@@ -349,37 +349,42 @@ export const TOOLS = [
               slide: { type: "boolean", description: "Glide/portamento to this note" }
             }
           }
-        }
+        },
+        bars: { type: "number", description: "Pattern length in bars (default 1). Use for multi-bar patterns." }
       },
       required: ["pattern"]
     }
   },
   {
     name: "tweak_jt10",
-    description: "Adjust JT10 lead synth parameters. Use mute:true to silence.",
+    description: "Adjust JT10 lead synth parameters. UNITS: level in dB (-60 to +6, 0=unity), all others 0-100. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {
-        mute: { type: "boolean", description: "Mute lead (sets level to 0)" },
-        level: { type: "number", description: "Output level 0-100" },
-        waveform: { type: "string", enum: ["sawtooth", "pulse"], description: "Oscillator waveform" },
-        pulseWidth: { type: "number", description: "Pulse width 0-100 (pulse waveform only)" },
+        mute: { type: "boolean", description: "Mute lead (sets level to -60dB)" },
+        level: { type: "number", description: "Output level in dB (-60 to +6, 0=unity gain)" },
+        sawLevel: { type: "number", description: "Sawtooth oscillator level 0-100" },
+        pulseLevel: { type: "number", description: "Pulse oscillator level 0-100" },
+        pulseWidth: { type: "number", description: "Pulse width 0-100 (50=square)" },
         subLevel: { type: "number", description: "Sub-oscillator level 0-100" },
-        subOctave: { type: "number", description: "Sub-oscillator octave (-1 or -2)" },
-        filterCutoff: { type: "number", description: "Filter cutoff in Hz (20-16000)" },
+        subMode: { type: "number", description: "Sub mode: 0=off, 1=-1oct, 2=-2oct" },
+        filterCutoff: { type: "number", description: "Filter cutoff 0-100" },
         filterResonance: { type: "number", description: "Filter resonance 0-100" },
         filterEnvAmount: { type: "number", description: "Filter envelope depth 0-100" },
-        filterAttack: { type: "number", description: "Filter envelope attack 0-100" },
-        filterDecay: { type: "number", description: "Filter envelope decay 0-100" },
-        filterSustain: { type: "number", description: "Filter envelope sustain 0-100" },
-        filterRelease: { type: "number", description: "Filter envelope release 0-100" },
+        keyTrack: { type: "number", description: "Keyboard tracking 0-100" },
         ampAttack: { type: "number", description: "Amp envelope attack 0-100" },
         ampDecay: { type: "number", description: "Amp envelope decay 0-100" },
         ampSustain: { type: "number", description: "Amp envelope sustain 0-100" },
         ampRelease: { type: "number", description: "Amp envelope release 0-100" },
+        filterAttack: { type: "number", description: "Filter envelope attack 0-100 (null = follow amp)" },
+        filterDecay: { type: "number", description: "Filter envelope decay 0-100 (null = follow amp)" },
+        filterSustain: { type: "number", description: "Filter envelope sustain 0-100 (null = follow amp)" },
+        filterRelease: { type: "number", description: "Filter envelope release 0-100 (null = follow amp)" },
         lfoRate: { type: "number", description: "LFO rate 0-100" },
-        lfoAmount: { type: "number", description: "LFO modulation amount 0-100" },
-        lfoDestination: { type: "string", enum: ["pitch", "filter", "pulseWidth"], description: "LFO destination" }
+        lfoToPitch: { type: "number", description: "LFO to pitch depth 0-100" },
+        lfoToFilter: { type: "number", description: "LFO to filter depth 0-100" },
+        lfoToPW: { type: "number", description: "LFO to pulse width depth 0-100" },
+        glideTime: { type: "number", description: "Portamento/glide time 0-100" }
       },
       required: []
     }

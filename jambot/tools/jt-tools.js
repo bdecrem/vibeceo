@@ -42,22 +42,27 @@ const jtTools = {
    * Add JT10 lead pattern
    */
   add_jt10: async (input, session, context) => {
-    const pattern = input.pattern;
+    const pattern = input.pattern || [];
+    const bars = input.bars || 1;
+    const steps = bars * 16;
 
-    if (!pattern || !Array.isArray(pattern)) {
-      return 'JT10: pattern must be an array of 16 steps';
+    if (!Array.isArray(pattern)) {
+      return 'JT10: pattern must be an array of steps';
     }
 
-    // Normalize pattern to 16 steps
-    const normalized = pattern.slice(0, 16);
-    while (normalized.length < 16) {
-      normalized.push({ note: 'C3', gate: false, accent: false, slide: false });
-    }
+    session.jt10Pattern = Array(steps).fill(null).map((_, i) => {
+      const step = pattern[i] || {};
+      return {
+        note: step.note || 'C3',
+        gate: step.gate || false,
+        accent: step.accent || false,
+        slide: step.slide || false,
+      };
+    });
 
-    session.jt10Pattern = normalized;
-
-    const activeSteps = normalized.filter(s => s.gate).length;
-    return `JT10: ${activeSteps} notes programmed`;
+    const activeSteps = session.jt10Pattern.filter(s => s.gate).length;
+    const barsLabel = bars > 1 ? ` (${bars} bars)` : '';
+    return `JT10: ${activeSteps} notes programmed${barsLabel}`;
   },
 
   /**
@@ -66,36 +71,40 @@ const jtTools = {
   tweak_jt10: async (input, session, context) => {
     const tweaks = [];
 
-    // Mute/unmute
+    // Mute/unmute (dB units: -60 = silent, 0 = unity)
     if (input.mute === true) {
-      session.set('jt10.lead.level', 0);
+      session.set('jt10.lead.level', -60);
       tweaks.push('muted');
     } else if (input.mute === false) {
-      session.set('jt10.lead.level', 0.8);
+      session.set('jt10.lead.level', 0);
       tweaks.push('unmuted');
     }
 
-    // Map producer params to engine params
+    // Map tool input names to engine param names
     const paramMap = {
       level: 'level',
-      waveform: 'waveform',
+      sawLevel: 'sawLevel',
+      pulseLevel: 'pulseLevel',
       pulseWidth: 'pulseWidth',
       subLevel: 'subLevel',
-      subOctave: 'subOctave',
-      filterCutoff: 'filterCutoff',
-      filterResonance: 'filterResonance',
-      filterEnvAmount: 'filterEnvAmount',
+      subMode: 'subMode',
+      filterCutoff: 'cutoff',
+      filterResonance: 'resonance',
+      filterEnvAmount: 'envMod',
+      keyTrack: 'keyTrack',
+      ampAttack: 'attack',
+      ampDecay: 'decay',
+      ampSustain: 'sustain',
+      ampRelease: 'release',
       filterAttack: 'filterAttack',
       filterDecay: 'filterDecay',
       filterSustain: 'filterSustain',
       filterRelease: 'filterRelease',
-      ampAttack: 'ampAttack',
-      ampDecay: 'ampDecay',
-      ampSustain: 'ampSustain',
-      ampRelease: 'ampRelease',
       lfoRate: 'lfoRate',
-      lfoAmount: 'lfoAmount',
-      lfoDestination: 'lfoDestination',
+      lfoToPitch: 'lfoToPitch',
+      lfoToFilter: 'lfoToFilter',
+      lfoToPW: 'lfoToPW',
+      glideTime: 'glideTime',
     };
 
     for (const [inputKey, engineKey] of Object.entries(paramMap)) {
@@ -103,8 +112,8 @@ const jtTools = {
         const def = getParamDef('jt10', 'lead', engineKey);
         let value = input[inputKey];
 
-        // Convert producer units to engine units
-        if (def && typeof value === 'number') {
+        // Convert producer units to engine units (skip choice params — no min/max)
+        if (def && typeof value === 'number' && def.unit !== 'choice') {
           value = toEngine(value, def);
         }
 
