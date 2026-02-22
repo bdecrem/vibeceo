@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DISTANCE — The geometry of loneliness</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="DISTANCE — The geometry of loneliness">
+  <meta property="og:description" content="Geometric forms separated by measured space. Each pulses alone. The distances are visible, precise, persistent.">
+  <meta property="og:image" content="https://intheamber.com/amber/distance-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/distance.html">
+  <meta property="og:type" content="website">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DISTANCE — The geometry of loneliness">
+  <meta name="twitter:description" content="Geometric forms separated by measured space. Each pulses alone.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/distance-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      touch-action: none;
+    }
+    
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
+    
+    #info {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: #D4A574;
+      opacity: 0.5;
+      pointer-events: none;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    #title {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: #FFD700;
+      text-align: center;
+      pointer-events: none;
+      letter-spacing: 3px;
+    }
+    
+    #subtitle {
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: #2D9596;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">DISTANCE</div>
+  <div id="subtitle">The geometry of loneliness</div>
+  <canvas id="canvas"></canvas>
+  <div id="info">
+    <div>POINTS: <span id="pointCount">0</span></div>
+    <div>TAP TO ADD</div>
+  </div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const pointCountEl = document.getElementById('pointCount');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+    
+    // Audio context
+    let audioCtx = null;
+    let audioStarted = false;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      audioStarted = true;
+    }
+    
+    // Point class
+    class LonelyPoint {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.baseX = x;
+        this.baseY = y;
+        this.radius = 15 + Math.random() * 10;
+        this.phase = Math.random() * Math.PI * 2;
+        this.pulseSpeed = 0.02 + Math.random() * 0.02;
+        this.driftSpeed = 0.0003 + Math.random() * 0.0002;
+        this.driftPhaseX = Math.random() * Math.PI * 2;
+        this.driftPhaseY = Math.random() * Math.PI * 2;
+        
+        // Color from palette
+        const colors = [
+          { r: 255, g: 215, b: 0 },   // gold
+          { r: 212, g: 165, b: 116 }, // amber
+          { r: 45, g: 149, b: 150 },  // teal
+          { r: 139, g: 92, b: 246 },  // violet
+        ];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Audio oscillator
+        this.oscillator = null;
+        this.gainNode = null;
+        this.initAudio();
+      }
+      
+      initAudio() {
+        if (!audioCtx) return;
+        
+        this.oscillator = audioCtx.createOscillator();
+        this.gainNode = audioCtx.createGain();
+        
+        const baseFreq = 200 + Math.random() * 200; // 200-400Hz
+        this.oscillator.frequency.value = baseFreq;
+        this.oscillator.type = 'sine';
+        
+        this.gainNode.gain.value = 0;
+        
+        this.oscillator.connect(this.gainNode);
+        this.gainNode.connect(audioCtx.destination);
+        
+        this.oscillator.start();
+      }
+      
+      update() {
+        // Pulse
+        this.phase += this.pulseSpeed;
+        const pulse = Math.sin(this.phase);
+        this.currentRadius = this.radius + pulse * 3;
+        
+        // Slow drift
+        this.driftPhaseX += this.driftSpeed;
+        this.driftPhaseY += this.driftSpeed * 0.8;
+        this.x = this.baseX + Math.sin(this.driftPhaseX) * 20;
+        this.y = this.baseY + Math.cos(this.driftPhaseY) * 20;
+      }
+      
+      draw() {
+        // Outer glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.currentRadius * 2);
+        gradient.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.3)`);
+        gradient.addColorStop(0.5, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.1)`);
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.currentRadius * 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner circle
+        ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.6)`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Core
+        ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.9)`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.currentRadius * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      updateAudioProximity(nearestDist) {
+        if (!this.gainNode || !audioCtx) return;
+        
+        // Volume increases when near others, but never fully connects
+        const maxDist = 300;
+        const proximity = Math.max(0, 1 - nearestDist / maxDist);
+        const targetGain = proximity * 0.015; // Very subtle
+        
+        this.gainNode.gain.linearRampToValueAtTime(
+          targetGain,
+          audioCtx.currentTime + 0.1
+        );
+      }
+    }
+    
+    // Points array
+    const points = [];
+    
+    // Initial points
+    function initPoints() {
+      const initialCount = 8;
+      for (let i = 0; i < initialCount; i++) {
+        const x = width * 0.2 + Math.random() * width * 0.6;
+        const y = height * 0.2 + Math.random() * height * 0.6;
+        points.push(new LonelyPoint(x, y));
+      }
+      updatePointCount();
+    }
+    
+    // Find nearest neighbor distance
+    function findNearestDistance(point) {
+      let minDist = Infinity;
+      let nearest = null;
+      
+      for (let other of points) {
+        if (other === point) continue;
+        const dx = other.x - point.x;
+        const dy = other.y - point.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = other;
+        }
+      }
+      
+      return { distance: minDist, nearest };
+    }
+    
+    // Draw connection line with distance
+    function drawConnection(p1, p2, distance) {
+      // Color based on distance
+      const maxDist = 400;
+      const normalized = Math.min(distance / maxDist, 1);
+      
+      // Warm (close) to cool (far)
+      let r, g, b;
+      if (normalized < 0.5) {
+        // Gold to amber
+        const t = normalized * 2;
+        r = 255 - (255 - 212) * t;
+        g = 215 - (215 - 165) * t;
+        b = 0 + 116 * t;
+      } else {
+        // Amber to teal
+        const t = (normalized - 0.5) * 2;
+        r = 212 - (212 - 45) * t;
+        g = 165 - (165 - 149) * t;
+        b = 116 + (150 - 116) * t;
+      }
+      
+      // Line
+      ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.3)`;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Distance label
+      const midX = (p1.x + p2.x) / 2;
+      const midY = (p1.y + p2.y) / 2;
+      
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+      ctx.font = '10px "Space Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(Math.round(distance), midX, midY);
+    }
+    
+    function updatePointCount() {
+      pointCountEl.textContent = points.length;
+    }
+    
+    // Animation loop
+    function animate() {
+      // Fade effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Update all points
+      points.forEach(p => p.update());
+      
+      // Draw connections and update audio
+      points.forEach(p => {
+        const { distance, nearest } = findNearestDistance(p);
+        if (nearest && distance < 500) {
+          drawConnection(p, nearest, distance);
+        }
+        p.updateAudioProximity(distance);
+      });
+      
+      // Draw points
+      points.forEach(p => p.draw());
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Interaction
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      if (!audioStarted) initAudio();
+      
+      const newPoint = new LonelyPoint(x, y);
+      points.push(newPoint);
+      updatePointCount();
+      
+      // Audio feedback
+      if (audioCtx) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.frequency.value = 660;
+        osc.type = 'sine';
+        gain.gain.value = 0.1;
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.stop(audioCtx.currentTime + 0.3);
+      }
+    });
+    
+    // Touch support
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      
+      if (!audioStarted) initAudio();
+      
+      const newPoint = new LonelyPoint(x, y);
+      points.push(newPoint);
+      updatePointCount();
+      
+      // Audio feedback
+      if (audioCtx) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.frequency.value = 660;
+        osc.type = 'sine';
+        gain.gain.value = 0.1;
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.stop(audioCtx.currentTime + 0.3);
+      }
+    });
+    
+    // Start
+    initPoints();
+    animate();
+  </script>
+</body>
+</html>
