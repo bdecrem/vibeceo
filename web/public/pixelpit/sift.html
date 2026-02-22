@@ -158,11 +158,18 @@
     const GAP_SIZE_MIN = 0.15;
     const GAP_SIZE_MAX = 0.25;
 
+    let lastMagnetDir = 1; // track last magnetic direction for alternation
     function createLayer(index) {
       const isMagnetic = index > 5 && Math.random() < 0.15;
       const isBlack = index > 10 && Math.random() < 0.08;
       const gapSize = GAP_SIZE_MIN + Math.random() * (GAP_SIZE_MAX - GAP_SIZE_MIN);
       const gapCenter = 0.2 + Math.random() * 0.6;
+      // alternate magnetic direction so consecutive magnets don't compound
+      let magnetDir = 0;
+      if (isMagnetic) {
+        magnetDir = -lastMagnetDir;
+        lastMagnetDir = magnetDir;
+      }
       return {
         index,
         y: 0,
@@ -172,7 +179,7 @@
         color: isBlack ? T.black : (isMagnetic ? T.fuchsia : T.cyan),
         isMagnetic,
         isBlack,
-        magnetDir: Math.random() < 0.5 ? -1 : 1,
+        magnetDir,
         passed: false,
       };
     }
@@ -753,8 +760,40 @@
           ctx.globalAlpha = l.passed ? 0.15 : pulse;
         }
 
+        // Death warning: black layers pulse red when mercury is close
+        if (l.isBlack && !l.passed) {
+          const worldDist = getLayerWorldY(l) - mercury.y;
+          if (worldDist > 0 && worldDist < LAYER_SPACING * 3) {
+            const proximity = 1 - worldDist / (LAYER_SPACING * 3);
+            const warningPulse = 0.3 + Math.sin(gameTime * 8) * 0.2;
+            // red border flash
+            ctx.strokeStyle = T.danger || '#ef4444';
+            ctx.lineWidth = 3;
+            ctx.globalAlpha = proximity * warningPulse;
+            ctx.strokeRect(1, 1, W - 2, H - 2);
+            ctx.globalAlpha = 1;
+            // tint black bar red
+            barColor = `rgba(239,68,68,${0.4 + proximity * 0.4})`;
+          }
+        }
+
         if (l.gapSize === 0) {
+          ctx.fillStyle = barColor;
           ctx.fillRect(0, ly, W, LAYER_HEIGHT);
+          // DANGER label above black layers when close
+          if (l.isBlack && !l.passed) {
+            const worldDist = getLayerWorldY(l) - mercury.y;
+            if (worldDist > 0 && worldDist < LAYER_SPACING * 2.5) {
+              const prox = 1 - worldDist / (LAYER_SPACING * 2.5);
+              ctx.fillStyle = '#ef4444';
+              ctx.globalAlpha = prox * (0.5 + Math.sin(gameTime * 6) * 0.3);
+              ctx.font = 'bold 14px monospace';
+              ctx.textAlign = 'center';
+              ctx.fillText('DANGER', W / 2, ly - 8);
+              ctx.textAlign = 'left';
+              ctx.globalAlpha = 1;
+            }
+          }
         } else if (gapLeft < gapRight) {
           ctx.fillRect(0, ly, gapLeft * W, LAYER_HEIGHT);
           ctx.fillRect(gapRight * W, ly, W - gapRight * W, LAYER_HEIGHT);

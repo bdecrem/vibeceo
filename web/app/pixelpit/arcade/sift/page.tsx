@@ -116,11 +116,17 @@ interface TutorialStep {
   check: () => boolean;
 }
 
+let lastMagnetDir = 1;
 function createLayer(index: number): Layer {
   const isMagnetic = index > 5 && Math.random() < 0.15;
   const isBlack = index > 10 && Math.random() < 0.08;
   const gapSize = GAP_SIZE_MIN + Math.random() * (GAP_SIZE_MAX - GAP_SIZE_MIN);
   const gapCenter = 0.2 + Math.random() * 0.6;
+  let magnetDir = 0;
+  if (isMagnetic) {
+    magnetDir = -lastMagnetDir;
+    lastMagnetDir = magnetDir;
+  }
   return {
     index,
     y: 0,
@@ -130,7 +136,7 @@ function createLayer(index: number): Layer {
     color: isBlack ? THEME.black : (isMagnetic ? THEME.fuchsia : THEME.cyan),
     isMagnetic,
     isBlack,
-    magnetDir: Math.random() < 0.5 ? -1 : 1,
+    magnetDir,
     passed: false,
   };
 }
@@ -948,8 +954,37 @@ export default function SiftGame() {
           ctx!.globalAlpha = l.passed ? 0.15 : pulse;
         }
 
+        // Death warning for black layers
+        if (l.isBlack && !l.passed) {
+          const worldDist = getLayerWorldY(l) - game.mercury.y;
+          if (worldDist > 0 && worldDist < LAYER_SPACING * 3) {
+            const proximity = 1 - worldDist / (LAYER_SPACING * 3);
+            const warningPulse = 0.3 + Math.sin(game.gameTime * 8) * 0.2;
+            ctx!.strokeStyle = '#ef4444';
+            ctx!.lineWidth = 3;
+            ctx!.globalAlpha = proximity * warningPulse;
+            ctx!.strokeRect(1, 1, canvas!.width - 2, canvas!.height - 2);
+            ctx!.globalAlpha = 1;
+            barColor = `rgba(239,68,68,${0.4 + proximity * 0.4})`;
+          }
+        }
+
         if (l.gapSize === 0) {
+          ctx!.fillStyle = barColor;
           ctx!.fillRect(0, ly, canvas!.width, LAYER_HEIGHT);
+          if (l.isBlack && !l.passed) {
+            const worldDist = getLayerWorldY(l) - game.mercury.y;
+            if (worldDist > 0 && worldDist < LAYER_SPACING * 2.5) {
+              const prox = 1 - worldDist / (LAYER_SPACING * 2.5);
+              ctx!.fillStyle = '#ef4444';
+              ctx!.globalAlpha = prox * (0.5 + Math.sin(game.gameTime * 6) * 0.3);
+              ctx!.font = 'bold 14px monospace';
+              ctx!.textAlign = 'center';
+              ctx!.fillText('DANGER', canvas!.width / 2, ly - 8);
+              ctx!.textAlign = 'left';
+              ctx!.globalAlpha = 1;
+            }
+          }
         } else if (gapLeft < gapRight) {
           ctx!.fillRect(0, ly, gapLeft * canvas!.width, LAYER_HEIGHT);
           ctx!.fillRect(gapRight * canvas!.width, ly, canvas!.width - gapRight * canvas!.width, LAYER_HEIGHT);
