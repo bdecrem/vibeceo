@@ -412,17 +412,35 @@ export async function renderSession(session, bars, filename) {
       const processor = EFFECT_PROCESSORS[send.effectType];
       if (!processor) continue;
 
-      // For sends, override mix to 100% wet (the send level controls dry/wet balance)
+      // Force 100% wet — sends should only return the effect signal.
+      // The dry signal is already in the master from the instrument mix.
       const sendParams = { ...send.effectNode.getParams(), mix: 100 };
       const processed = processor(sendBuffer, sendParams, sampleRate, session.bpm, renderContext);
 
-      // Mix processed send back into master output
+      // Measure input and output energy to normalize the wet return.
+      // Effects like reverb accumulate energy from dense/repeated sources
+      // (e.g., 8th-note hats feeding 8 parallel comb filters). Without
+      // normalization the wet signal can be 6-10dB louder than input.
+      let inputEnergy = 0;
+      let outputEnergy = 0;
+      const procL = processed.getChannelData(0);
+      const procR = processed.numberOfChannels > 1 ? processed.getChannelData(1) : procL;
+      for (let i = 0; i < outputBuffer.length; i++) {
+        inputEnergy += sendL[i] * sendL[i] + sendR[i] * sendR[i];
+        outputEnergy += procL[i] * procL[i] + procR[i] * procR[i];
+      }
+      // Scale wet output so its energy matches input energy (unity gain through effect)
+      const gainComp = (outputEnergy > 0 && inputEnergy > 0)
+        ? Math.sqrt(inputEnergy / outputEnergy)
+        : 1;
+
+      // Mix wet-only return back into master output
       for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {
         const mainData = outputBuffer.getChannelData(ch);
         const wetData = processed.getChannelData(ch % processed.numberOfChannels);
         const wetLen = Math.min(outputBuffer.length, processed.length);
         for (let i = 0; i < wetLen; i++) {
-          mainData[i] += wetData[i] * send.level;
+          mainData[i] += wetData[i] * gainComp * send.level;
         }
       }
     }
