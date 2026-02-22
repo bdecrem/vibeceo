@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BREATH — Gentle pulses, ambient warmth</title>
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="BREATH — Gentle pulses, ambient warmth">
+  <meta property="og:description" content="Circles expand and contract like breathing. Each breath is a note.">
+  <meta property="og:image" content="https://intheamber.com/amber/breath-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/breath.html">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #controls {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 10;
+    }
+    #title {
+      font-size: 28px;
+      margin-bottom: 8px;
+      color: #FFD700;
+      letter-spacing: 2px;
+    }
+    #subtitle {
+      font-size: 14px;
+      color: #2D9596;
+      margin-bottom: 25px;
+    }
+    button {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 15px 35px;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+    #stats {
+      position: absolute;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #2D9596;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <div id="title">BREATH</div>
+    <div id="subtitle">Tap anywhere to breathe</div>
+    <button id="startBtn">START BREATHING</button>
+  </div>
+  
+  <canvas id="canvas"></canvas>
+  
+  <div id="stats">
+    <div>Breaths: <span id="breathCount">0</span> | Notes: <span id="noteCount">0</span></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('startBtn');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    let audioCtx;
+    let isPlaying = false;
+    let breaths = [];
+    let breathCount = 0;
+    let noteCount = 0;
+    
+    // D minor pentatonic across 2 octaves
+    const scale = [293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33];
+    const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#FF69B4', '#FF8C00'];
+    
+    class Breath {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.phase = Math.random() * Math.PI * 2; // Random starting phase
+        this.speed = 0.008 + Math.random() * 0.012; // Different breathing rates
+        this.maxRadius = 40 + Math.random() * 60;
+        this.minRadius = 10;
+        this.currentRadius = this.minRadius;
+        this.frequency = scale[breaths.length % scale.length];
+        this.colorIndex = breaths.length % colors.length;
+        this.lastPhase = this.phase;
+        this.oscillator = null;
+        this.gainNode = null;
+      }
+      
+      update() {
+        this.lastPhase = this.phase;
+        this.phase += this.speed;
+        
+        // Sine wave breathing (0 to 1)
+        const breathCycle = (Math.sin(this.phase) + 1) / 2;
+        this.currentRadius = this.minRadius + (this.maxRadius - this.minRadius) * breathCycle;
+        
+        // Trigger note at peak expansion (when crossing PI/2 from below)
+        const normalizedPhase = this.phase % (Math.PI * 2);
+        const normalizedLast = this.lastPhase % (Math.PI * 2);
+        
+        if (normalizedLast < Math.PI / 2 && normalizedPhase >= Math.PI / 2) {
+          this.triggerBreath();
+        }
+        
+        // Update gain based on breath cycle (sound swells with expansion)
+        if (this.gainNode && isPlaying) {
+          this.gainNode.gain.value = breathCycle * 0.08;
+        }
+      }
+      
+      triggerBreath() {
+        breathCount++;
+        document.getElementById('breathCount').textContent = breathCount;
+        
+        if (isPlaying && audioCtx) {
+          // Create a gentle tone that plays during the breath cycle
+          if (!this.oscillator) {
+            this.oscillator = audioCtx.createOscillator();
+            this.gainNode = audioCtx.createGain();
+            
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+            filter.Q.value = 1;
+            
+            this.oscillator.connect(filter);
+            filter.connect(this.gainNode);
+            this.gainNode.connect(audioCtx.destination);
+            
+            this.oscillator.frequency.value = this.frequency;
+            this.oscillator.type = 'sine';
+            this.gainNode.gain.value = 0;
+            
+            this.oscillator.start();
+          }
+          
+          noteCount++;
+          document.getElementById('noteCount').textContent = noteCount;
+        }
+      }
+      
+      draw() {
+        const breathCycle = (Math.sin(this.phase) + 1) / 2;
+        const color = colors[this.colorIndex];
+        const alpha = 0.3 + breathCycle * 0.4;
+        
+        // Outer glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.currentRadius);
+        gradient.addColorStop(0, `${color}40`);
+        gradient.addColorStop(0.7, `${color}20`);
+        gradient.addColorStop(1, `${color}00`);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Main circle
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        
+        // Inner glow at center
+        ctx.fillStyle = color;
+        ctx.shadowBlur = 15 * breathCycle;
+        ctx.shadowColor = color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Connection lines between nearby breaths
+        breaths.forEach(other => {
+          if (other !== this) {
+            const dx = other.x - this.x;
+            const dy = other.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 200) {
+              const lineAlpha = (1 - dist / 200) * 0.1 * breathCycle * ((Math.sin(other.phase) + 1) / 2);
+              ctx.strokeStyle = `${color}${Math.floor(lineAlpha * 255).toString(16).padStart(2, '0')}`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(this.x, this.y);
+              ctx.lineTo(other.x, other.y);
+              ctx.stroke();
+            }
+          }
+        });
+      }
+    }
+    
+    function addBreath(x, y) {
+      breaths.push(new Breath(x, y));
+    }
+    
+    function animate() {
+      // Subtle fade for trails
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      breaths.forEach(b => {
+        b.update();
+b.draw();
+      });
+      
+      requestAnimationFrame(animate);
+    }
+    
+    startBtn.addEventListener('click', () => {
+      if (!audioCtx) {
+        audioCtx = new AudioContext();
+      }
+      
+      if (!isPlaying) {
+        audioCtx.resume();
+        isPlaying = true;
+        startBtn.textContent = 'BREATHING...';
+        startBtn.style.background = '#2D9596';
+        
+        // Add initial breaths if none exist
+        if (breaths.length === 0) {
+          const centerX = canvas.width / 2;
+          const centerY = canvas.height / 2;
+          const positions = [
+            { x: centerX, y: centerY },
+            { x: centerX - 200, y: centerY - 100 },
+            { x: centerX + 200, y: centerY - 100 },
+            { x: centerX - 150, y: centerY + 150 },
+            { x: centerX + 150, y: centerY + 150 }
+          ];
+          
+          positions.forEach(pos => addBreath(pos.x, pos.y));
+        }
+      }
+    });
+    
+    canvas.addEventListener('click', (e) => {
+      addBreath(e.clientX, e.clientY);
+    });
+    
+    // Start animation loop immediately (visual always active)
+    animate();
+    
+    // Handle resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
