@@ -272,7 +272,10 @@ class SynthVoice {
     }
 
     const modCutoff = clamp(baseCutoff + envMod + lfoMod, 20, 16000);
-    this.filter.setCutoff(modCutoff);
+    // Scale resonance down when envelope is active — prevents screech during sweeps
+    const envResCap = 1.0 - params.envMod * 0.35;
+    const cappedResonance = clamp(params.resonance * 100 * envResCap, 0, 100);
+    this.filter.setParameters(modCutoff, cappedResonance);
 
     // Filter
     sample = this.filter.processSample(sample);

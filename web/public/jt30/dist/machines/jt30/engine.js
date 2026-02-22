@@ -227,7 +227,9 @@ class SynthVoice {
     // 303-style: accent boosts resonance multiplicatively
     const baseResonance = params.resonance * 100;
     const accentMult = 1.0 + (this.accentResonanceBoost / 100);
-    const modResonance = clamp(baseResonance * accentMult, 0, 100);  // Full range with new filter
+    // Scale resonance down when envelope is active — prevents screech during sweeps
+    const envResCap = 1.0 - params.envMod * 0.2;
+    const modResonance = clamp(baseResonance * accentMult * envResCap, 0, 100);
 
     // Update filter with modulated cutoff and resonance
     this.filter.setParameters(modCutoff, modResonance);
