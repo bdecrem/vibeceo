@@ -112,9 +112,12 @@ jambot/
 ├── effects/
 │   ├── delay-node.js      # Delay effect node (EffectNode)
 │   ├── delay.js           # Delay DSP processor
+│   ├── reverb-node.js     # Reverb effect node (EffectNode)
+│   ├── reverb.js          # Reverb DSP processor (Freeverb-style algorithmic)
 │   ├── eq-node.js         # EQ effect node (EffectNode)
 │   ├── eq.js              # EQ DSP processor (4-band parametric biquad)
-│   ├── filter-node.js     # Filter effect node (EffectNode, no DSP yet)
+│   ├── filter-node.js     # Filter effect node (EffectNode)
+│   ├── filter.js          # Filter DSP processor (LP/HP/BP biquad)
 │   └── sidechain-node.js  # Sidechain effect node (EffectNode, no DSP yet)
 ├── jambot.js              # Main entry point
 └── ui.tsx                 # Terminal UI
@@ -294,7 +297,8 @@ voice (jb01.snare) ────────────────────�
 const EFFECT_PROCESSORS = {
   delay: (buffer, params, sampleRate, bpm) => processDelay(buffer, params, sampleRate, bpm),
   eq: (buffer, params, sampleRate) => processEq(buffer, params, sampleRate),
-  // Adding new effects: register here
+  filter: (buffer, params, sampleRate) => processFilter(buffer, params, sampleRate),
+  reverb: (buffer, params, sampleRate) => processReverb(buffer, params, sampleRate),
 };
 ```
 
@@ -608,7 +612,9 @@ Add effects to any target (instrument, voice, or master) in any order. Effects a
 | Effect | Parameters |
 |--------|------------|
 | `delay` | mode (analog/pingpong), time (ms), sync, feedback (0-100), mix (0-100), lowcut (Hz), highcut (Hz), saturation (0-100), spread (0-100) |
+| `reverb` | decay (0.1-10s), damping (0-100), predelay (0-100ms), mix (0-100), width (0-100), lowcut (Hz), highcut (Hz), size (0-100) |
 | `eq` | highpass (Hz, 20-2000), lowGain (dB, -12 to +12), midFreq (Hz, 100-10000), midGain (dB, -12 to +12), midQ (0.1-10), highGain (dB, -12 to +12) |
+| `filter` | mode (lowpass/highpass/bandpass), cutoff (Hz, 20-20000), resonance (0-100) |
 
 ### Examples
 
@@ -621,6 +627,9 @@ add_effect({ target: 'jb01', effect: 'delay', mode: 'analog', time: 250 })
 
 # Add analog delay to bass
 add_effect({ target: 'jb200', effect: 'delay', mode: 'analog', time: 500, saturation: 30 })
+
+# Add hall reverb to snare
+add_effect({ target: 'jb01.snare', effect: 'reverb', decay: 3, mix: 35, size: 70 })
 
 # Tweak existing delay
 tweak_effect({ target: 'jb01.ch', effect: 'delay', feedback: 70, time: 250 })
@@ -658,3 +667,16 @@ voice (jb01.snare) ────────────────────�
 | `stereoWidth` | Subtle stereo widener |
 
 Use preset params directly: `add_effect({ target: 'jb01', effect: 'delay', mode: 'analog', time: 375, feedback: 45, saturation: 40 })`
+
+### Reverb Presets
+
+| Preset | Description |
+|--------|-------------|
+| `plate` | Classic plate reverb (decay 1.5s, size 40) |
+| `room` | Small room (decay 0.8s, size 30) |
+| `hall` | Concert hall (decay 3s, size 70) |
+| `chamber` | Studio chamber (decay 1.2s, size 35) |
+| `cathedral` | Large cathedral (decay 5s, size 90) |
+| `ambient` | Long ambient wash (decay 8s, size 80) |
+
+Use preset params directly: `add_effect({ target: 'jb01.snare', effect: 'reverb', decay: 3, mix: 35, size: 70, damping: 50 })`

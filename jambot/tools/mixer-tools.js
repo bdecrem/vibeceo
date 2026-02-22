@@ -10,6 +10,7 @@ import { DelayNode } from '../effects/delay-node.js';
 import { EQNode } from '../effects/eq-node.js';
 import { FilterNode } from '../effects/filter-node.js';
 import { SidechainNode } from '../effects/sidechain-node.js';
+import { ReverbNode } from '../effects/reverb-node.js';
 
 // Map effect type string to node class
 const EFFECT_NODE_CLASSES = {
@@ -17,6 +18,7 @@ const EFFECT_NODE_CLASSES = {
   eq: EQNode,
   filter: FilterNode,
   sidechain: SidechainNode,
+  reverb: ReverbNode,
 };
 
 // Helper to ensure mixer state exists

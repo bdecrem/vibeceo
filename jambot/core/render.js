@@ -23,6 +23,7 @@ globalThis.AudioContext = AudioContext;
 import { audioBufferToWav } from './wav.js';
 import { processDelay } from '../effects/delay.js';
 import { processEq } from '../effects/eq.js';
+import { processFilter } from '../effects/filter.js';
 import { processReverb } from '../effects/reverb.js';
 
 /**
@@ -35,6 +36,9 @@ const EFFECT_PROCESSORS = {
   },
   eq: (buffer, params, sampleRate) => {
     return processEq(buffer, params, sampleRate);
+  },
+  filter: (buffer, params, sampleRate) => {
+    return processFilter(buffer, params, sampleRate);
   },
   reverb: (buffer, params, sampleRate) => {
     return processReverb(buffer, params, sampleRate);

@@ -11,6 +11,7 @@ import { DelayNode } from '../effects/delay-node.js';
 import { EQNode } from '../effects/eq-node.js';
 import { FilterNode } from '../effects/filter-node.js';
 import { SidechainNode } from '../effects/sidechain-node.js';
+import { ReverbNode } from '../effects/reverb-node.js';
 
 let passed = 0;
 let failed = 0;
@@ -92,6 +93,7 @@ const EFFECT_NODES = [
   { name: 'EQNode', NodeClass: EQNode },
   { name: 'FilterNode', NodeClass: FilterNode },
   { name: 'SidechainNode', NodeClass: SidechainNode },
+  { name: 'ReverbNode', NodeClass: ReverbNode },
 ];
 
 const EFFECT_REQUIRED_METHODS = ['getParam', 'setParam', 'getParameterDescriptors', 'getParams'];

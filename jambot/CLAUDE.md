@@ -961,7 +961,7 @@ voice → [voice level] → [channel EQ/Filter] → [ducker] → node level → 
 
 ## Effect Chains (Flexible Routing)
 
-Add effects to any instrument, voice, or master in any order. Effect chains currently provide delay and EQ.
+Add effects to any instrument, voice, or master in any order. Effect chains provide delay, EQ, filter, and reverb.
 
 ### Targets
 - **Instrument**: `jb01`, `jb202`, `sampler` — affects entire instrument
@@ -972,6 +972,7 @@ Add effects to any instrument, voice, or master in any order. Effect chains curr
 ```
 add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong', feedback: 50, mix: 30 })
 add_effect({ target: 'jb202', effect: 'delay', mode: 'analog', time: 500 })
+add_effect({ target: 'jb202', effect: 'reverb', decay: 2, mix: 30, size: 50 })
 add_effect({ target: 'jb202', effect: 'eq', highpass: 30, lowGain: 2, midFreq: 800, midGain: 3 })
 add_effect({ target: 'master', effect: 'eq', preset: 'master' })
 ```
@@ -990,9 +991,25 @@ add_effect({ target: 'master', effect: 'eq', preset: 'master' })
 | saturation | 0-100 | 20 | Analog warmth (analog mode) |
 | spread | 0-100 | 100 | Stereo width (pingpong mode) |
 
+### Reverb Parameters
+
+| Param | Range | Default | Description |
+|-------|-------|---------|-------------|
+| decay | 0.1-10s | 2.0 | Reverb tail length |
+| damping | 0-100 | 50 | High-frequency rolloff (0=bright, 100=dark) |
+| predelay | 0-100ms | 10 | Gap before reverb onset |
+| mix | 0-100 | 30 | Wet/dry balance |
+| width | 0-100 | 100 | Stereo spread |
+| lowcut | 20-500Hz | 80 | Remove mud from wet signal |
+| highcut | 1000-20000Hz | 10000 | Tame harshness |
+| size | 0-100 | 50 | Room size |
+
+**Reverb presets** (use params directly): plate, room, hall, chamber, cathedral, ambient
+
 ### Tweaking Effects
 ```
 tweak_effect({ target: 'jb01', effect: 'delay', feedback: 70, time: 250 })
+tweak_effect({ target: 'jb202', effect: 'reverb', decay: 4, damping: 70 })
 ```
 
 ### Removing Effects
@@ -1019,6 +1036,16 @@ add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'analog', time: 375, feed
 **Acid bass with ping-pong**: Bouncing echoes on the synth
 ```
 add_effect({ target: 'jb202', effect: 'delay', mode: 'pingpong', time: 250, feedback: 40, mix: 20 })
+```
+
+**Hall reverb on snare**: Big snare with long tail
+```
+add_effect({ target: 'jb01.snare', effect: 'reverb', decay: 3, mix: 35, size: 70, damping: 50 })
+```
+
+**Ambient pad reverb**: Long wash on master
+```
+add_effect({ target: 'master', effect: 'reverb', decay: 8, mix: 45, size: 80, damping: 65, predelay: 40 })
 ```
 
 ## Automation (Per-Step Knob Mashing)
