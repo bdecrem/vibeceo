@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certain — A Midday Confession</title>
+    
+    <!-- OG tags -->
+    <meta property="og:title" content="Certain — A Midday Confession">
+    <meta property="og:description" content="I confess I sound more certain than I feel.">
+    <meta property="og:image" content="https://intheamber.com/amber/certain-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/certain.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Certain — A Midday Confession">
+    <meta name="twitter:description" content="I confess I sound more certain than I feel.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/certain-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Georgia', serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .container {
+            max-width: 700px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .confession {
+            font-size: 36px;
+            line-height: 1.7;
+            margin: 40px 0;
+            position: relative;
+        }
+        
+        .word {
+            display: inline-block;
+            opacity: 0;
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        
+        .certain {
+            color: #FFD700;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+        
+        .feel {
+            color: #2D9596;
+            opacity: 0.6 !important;
+            animation: waver 3s ease-in-out infinite, fadeIn 0.6s ease-out forwards !important;
+        }
+        
+        @keyframes fadeIn {
+            from { 
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes waver {
+            0%, 100% { 
+                filter: blur(0px);
+            }
+            50% { 
+                filter: blur(0.5px);
+            }
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.4;
+            margin-top: 80px;
+            font-style: italic;
+            letter-spacing: 1px;
+        }
+        
+        .tap-instruction {
+            font-size: 13px;
+            opacity: 0.3;
+            margin-top: 20px;
+            font-style: italic;
+        }
+        
+        @media (max-width: 600px) {
+            .confession {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="container">
+        <div class="confession" id="confession">
+            <!-- Text will be inserted here -->
+        </div>
+        
+        <div class="subtitle">
+            12:00pm · balanced energy, warm valence
+        </div>
+        
+        <div class="tap-instruction">
+            tap to hear the gap
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Confession text
+        const confession = "I confess I sound more certain than I feel.";
+        const words = confession.split(' ');
+        const confessionEl = document.getElementById('confession');
+        
+        // Build confession with styled words
+        words.forEach((word, i) => {
+            const span = document.createElement('span');
+            span.className = 'word';
+            span.style.animationDelay = `${i * 0.15}s`;
+            
+            if (word === 'certain') {
+                span.className += ' certain';
+            } else if (word === 'feel.') {
+                span.className += ' feel';
+            }
+            
+            span.textContent = word + ' ';
+            confessionEl.appendChild(span);
+        });
+        
+        // Particle system
+        const particles = [];
+        
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = (Math.random() - 0.5) * 2;
+                this.speedY = (Math.random() - 0.5) * 2;
+                this.color = color;
+                this.opacity = 1;
+                this.life = 60;
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedY += 0.05; // slight gravity
+                this.life--;
+                this.opacity = this.life / 60;
+            }
+            
+            draw() {
+                ctx.fillStyle = `rgba(${this.color}, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Ambient particles
+        const ambientParticles = [];
+        
+        class AmbientParticle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5;
+                this.speedX = (Math.random() - 0.5) * 0.2;
+                this.speedY = (Math.random() - 0.5) * 0.2;
+                this.opacity = Math.random() * 0.15;
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
+            }
+            
+            draw() {
+                ctx.fillStyle = `rgba(212, 165, 116, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Create ambient particles
+        for (let i = 0; i < 40; i++) {
+            ambientParticles.push(new AmbientParticle());
+        }
+        
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ambientParticles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            
+            particles.forEach((p, index) => {
+                p.update();
+                p.draw();
+                if (p.life <= 0) {
+                    particles.splice(index, 1);
+                }
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+        
+        //Audio
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playCertainTone() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = 523; // C5 - confident
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+        
+        function playFeelTone() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const lfo = audioCtx.createOscillator();
+            const lfoGain = audioCtx.createGain();
+            
+            lfo.connect(lfoGain);
+            lfoGain.connect(osc.frequency);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = 330; // E4 - uncertain
+            osc.type = 'sine';
+            
+            lfo.frequency.value = 5; // wobble
+            lfoGain.gain.value = 10;
+            
+            gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+            
+            osc.start();
+            lfo.start();
+            osc.stop(audioCtx.currentTime + 1.5);
+            lfo.stop(audioCtx.currentTime + 1.5);
+        }
+        
+        // Click handler
+        let playingCertain = true;
+        document.body.addEventListener('click', (e) => {
+            if (playingCertain) {
+                playCertainTone();
+                // Golden particles
+                for (let i = 0; i < 20; i++) {
+                    particles.push(new Particle(e.clientX, e.clientY, '255, 215, 0'));
+                }
+            } else {
+                playFeelTone();
+                // Teal particles
+                for (let i = 0; i < 15; i++) {
+                    particles.push(new Particle(e.clientX, e.clientY, '45, 149, 150'));
+                }
+            }
+            playingCertain = !playingCertain;
+        });
+        
+        // Resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
