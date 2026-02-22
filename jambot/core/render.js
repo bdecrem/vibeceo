@@ -25,6 +25,7 @@ import { processDelay } from '../effects/delay.js';
 import { processEq } from '../effects/eq.js';
 import { processFilter } from '../effects/filter.js';
 import { processReverb } from '../effects/reverb.js';
+import { processSidechain } from '../effects/sidechain.js';
 
 /**
  * Effect processor registry — maps effect type to processing function.
@@ -43,6 +44,9 @@ const EFFECT_PROCESSORS = {
   reverb: (buffer, params, sampleRate) => {
     return processReverb(buffer, params, sampleRate);
   },
+  sidechain: (buffer, params, sampleRate, bpm, context) => {
+    return processSidechain(buffer, params, sampleRate, bpm, context);
+  },
 };
 
 /**
@@ -51,9 +55,10 @@ const EFFECT_PROCESSORS = {
  * @param {Object} effect - Effect config { id, type, params }
  * @param {number} sampleRate - Audio sample rate
  * @param {number} bpm - Tempo in BPM
+ * @param {Object} [context] - Render context (session, stepDuration) for effects that need it
  * @returns {Object} Processed buffer
  */
-async function applyEffect(buffer, effect, sampleRate, bpm) {
+async function applyEffect(buffer, effect, sampleRate, bpm, context) {
   const { type } = effect;
   // Read live params from effect node when available (keeps ParamSystem in sync),
   // fall back to static params object for backwards compatibility
@@ -65,7 +70,7 @@ async function applyEffect(buffer, effect, sampleRate, bpm) {
     return buffer;
   }
 
-  return processor(buffer, params, sampleRate, bpm);
+  return processor(buffer, params, sampleRate, bpm, context);
 }
 
 /**
@@ -74,13 +79,14 @@ async function applyEffect(buffer, effect, sampleRate, bpm) {
  * @param {Array} chain - Array of effect configs
  * @param {number} sampleRate - Sample rate
  * @param {number} bpm - Tempo
+ * @param {Object} [context] - Render context for effects that need it
  * @returns {Object} Processed buffer
  */
-async function processEffectChain(buffer, chain, sampleRate, bpm) {
+async function processEffectChain(buffer, chain, sampleRate, bpm, context) {
   let result = buffer;
 
   for (const effect of chain) {
-    result = await applyEffect(result, effect, sampleRate, bpm);
+    result = await applyEffect(result, effect, sampleRate, bpm, context);
   }
 
   return result;
@@ -152,9 +158,10 @@ function mixVoiceBuffers(voiceBuffers, length, sampleRate) {
  * @param {string} instrumentId - Instrument ID
  * @param {number} sampleRate - Sample rate
  * @param {number} bpm - BPM for tempo-synced effects
+ * @param {Object} [context] - Render context for effects that need it
  * @returns {Promise<Object|null>} Rendered buffer or null
  */
-async function renderInstrumentWithEffects(node, renderOptions, effectChains, instrumentId, sampleRate, bpm) {
+async function renderInstrumentWithEffects(node, renderOptions, effectChains, instrumentId, sampleRate, bpm, context) {
   const voiceChains = getVoiceEffectChains(effectChains, instrumentId);
   const hasVoiceEffects = Object.keys(voiceChains).length > 0;
   const instrumentChain = effectChains?.[instrumentId] || [];
@@ -164,7 +171,7 @@ async function renderInstrumentWithEffects(node, renderOptions, effectChains, in
     let buffer = await node.renderPattern(renderOptions);
 
     if (buffer && instrumentChain.length > 0) {
-      buffer = await processEffectChain(buffer, instrumentChain, sampleRate, bpm);
+      buffer = await processEffectChain(buffer, instrumentChain, sampleRate, bpm, context);
     }
 
     return buffer;
@@ -192,7 +199,7 @@ async function renderInstrumentWithEffects(node, renderOptions, effectChains, in
 
     const chain = voiceChains[voice];
     if (chain && chain.length > 0) {
-      processedVoices[voice] = await processEffectChain(buffer, chain, sampleRate, bpm);
+      processedVoices[voice] = await processEffectChain(buffer, chain, sampleRate, bpm, context);
     } else {
       processedVoices[voice] = buffer;
     }
@@ -203,7 +210,7 @@ async function renderInstrumentWithEffects(node, renderOptions, effectChains, in
 
   // Apply instrument-level effect chain after mixing
   if (instrumentChain.length > 0) {
-    mixedBuffer = await processEffectChain(mixedBuffer, instrumentChain, sampleRate, bpm);
+    mixedBuffer = await processEffectChain(mixedBuffer, instrumentChain, sampleRate, bpm, context);
   }
 
   return mixedBuffer;
@@ -260,6 +267,9 @@ export async function renderSession(session, bars, filename) {
   const instrumentBuffers = []; // { id, buffer, startBar, level }
   const canonicalIds = ['jb01', 'jb200', 'jb202', 'jp9000', 'sampler', 'jt10', 'jt30', 'jt90'];
 
+  // Build render context for effects that need session data (e.g., sidechain)
+  const renderContext = { session, stepDuration };
+
   for (const id of canonicalIds) {
     const node = session._nodes[id];
     if (!node) continue;
@@ -290,7 +300,8 @@ export async function renderSession(session, bars, filename) {
             session.mixer?.effectChains,
             id,
             sampleRate,
-            session.bpm
+            session.bpm,
+            renderContext
           );
 
           if (buffer) {
@@ -330,7 +341,8 @@ export async function renderSession(session, bars, filename) {
           session.mixer?.effectChains,
           id,
           sampleRate,
-          session.bpm
+          session.bpm,
+          renderContext
         );
 
         if (buffer) {
@@ -374,7 +386,7 @@ export async function renderSession(session, bars, filename) {
       getChannelData: (ch) => outputBuffer.getChannelData(ch),
     };
 
-    const processedMaster = await processEffectChain(wrappedBuffer, masterChain, sampleRate, session.bpm);
+    const processedMaster = await processEffectChain(wrappedBuffer, masterChain, sampleRate, session.bpm, renderContext);
 
     // Copy processed data back to outputBuffer
     for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {

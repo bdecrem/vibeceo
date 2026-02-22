@@ -122,25 +122,40 @@ const mixerTools = {
 
   /**
    * Add sidechain ducking (bass ducks on kick, etc.)
-   * Note: ducker DSP is not yet implemented — this stores the config for future processing.
+   * Creates a proper SidechainNode and registers in ParamSystem.
    */
   add_sidechain: async (input, session, context) => {
-    const { target, trigger, amount } = input;
+    const { target, trigger, amount, attack, release, hold } = input;
 
     ensureMixerState(session);
     if (!session.mixer.effectChains) session.mixer.effectChains = {};
     if (!session.mixer.effectChains[target]) session.mixer.effectChains[target] = [];
 
-    session.mixer.effectChains[target].push({
-      id: `ducker${session.mixer.effectChains[target].filter(e => e.type === 'ducker').length + 1}`,
-      type: 'ducker',
-      params: {
-        trigger,
-        amount: amount ?? 0.5
-      }
+    const chain = session.mixer.effectChains[target];
+    const effectCount = chain.filter(e => e.type === 'sidechain').length;
+    const effectId = `sidechain${effectCount + 1}`;
+
+    const node = new SidechainNode(effectId);
+    if (trigger) node.setParam('trigger', trigger);
+    if (amount !== undefined) node.setParam('amount', amount);
+    if (attack !== undefined) node.setParam('attack', attack);
+    if (release !== undefined) node.setParam('release', release);
+    if (hold !== undefined) node.setParam('hold', hold);
+
+    node.validateInterface();
+
+    const paramPath = `fx.${target}.${effectId}`;
+    session.params.register(paramPath, node);
+
+    chain.push({
+      id: effectId,
+      type: 'sidechain',
+      params: node.getParams(),
+      _node: node,
     });
 
-    return `Added sidechain: ${target} ducks when ${trigger} plays (${((amount ?? 0.5) * 100).toFixed(0)}% reduction)`;
+    const duckAmount = node.getParams().amount ?? 0.5;
+    return `Added sidechain: ${target} ducks when ${trigger || 'kick'} plays (${(duckAmount * 100).toFixed(0)}% reduction, addressable as ${paramPath})`;
   },
 
   /**

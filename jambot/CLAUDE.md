@@ -961,7 +961,7 @@ voice → [voice level] → [channel EQ/Filter] → [ducker] → node level → 
 
 ## Effect Chains (Flexible Routing)
 
-Add effects to any instrument, voice, or master in any order. Effect chains provide delay, EQ, filter, and reverb.
+Add effects to any instrument, voice, or master in any order. Effect chains provide delay, EQ, filter, reverb, and sidechain.
 
 ### Targets
 - **Instrument**: `jb01`, `jb202`, `sampler` — affects entire instrument

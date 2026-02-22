@@ -118,7 +118,8 @@ jambot/
 │   ├── eq.js              # EQ DSP processor (4-band parametric biquad)
 │   ├── filter-node.js     # Filter effect node (EffectNode)
 │   ├── filter.js          # Filter DSP processor (LP/HP/BP biquad)
-│   └── sidechain-node.js  # Sidechain effect node (EffectNode, no DSP yet)
+│   ├── sidechain-node.js  # Sidechain effect node (EffectNode)
+│   └── sidechain.js       # Sidechain DSP processor (pattern-based ducking)
 ├── jambot.js              # Main entry point
 └── ui.tsx                 # Terminal UI
 ```
@@ -299,6 +300,7 @@ const EFFECT_PROCESSORS = {
   eq: (buffer, params, sampleRate) => processEq(buffer, params, sampleRate),
   filter: (buffer, params, sampleRate) => processFilter(buffer, params, sampleRate),
   reverb: (buffer, params, sampleRate) => processReverb(buffer, params, sampleRate),
+  sidechain: (buffer, params, sampleRate, bpm, context) => processSidechain(buffer, params, sampleRate, bpm, context),
 };
 ```
 
@@ -615,6 +617,7 @@ Add effects to any target (instrument, voice, or master) in any order. Effects a
 | `reverb` | decay (0.1-10s), damping (0-100), predelay (0-100ms), mix (0-100), width (0-100), lowcut (Hz), highcut (Hz), size (0-100) |
 | `eq` | highpass (Hz, 20-2000), lowGain (dB, -12 to +12), midFreq (Hz, 100-10000), midGain (dB, -12 to +12), midQ (0.1-10), highGain (dB, -12 to +12) |
 | `filter` | mode (lowpass/highpass/bandpass), cutoff (Hz, 20-20000), resonance (0-100) |
+| `sidechain` | trigger (kick/snare/clap/ch/oh), amount (0-1), attack (ms, 0.1-50), release (ms, 10-500), hold (ms, 0-100) |
 
 ### Examples
 
