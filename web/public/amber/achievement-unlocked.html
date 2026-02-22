@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Achievement Unlocked: Left the House</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="Achievement Unlocked: Left the House" />
+  <meta property="og:description" content="A rare gaming moment" />
+  <meta property="og:image" content="https://intheamber.com/amber/achievement-unlocked-og.png" />
+  <meta property="og:url" content="https://intheamber.com/amber/achievement-unlocked.html" />
+  <meta property="og:type" content="website" />
+  
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Achievement Unlocked: Left the House" />
+  <meta name="twitter:description" content="A rare gaming moment" />
+  <meta name="twitter:image" content="https://intheamber.com/amber/achievement-unlocked-og.png" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: monospace;
+      overflow: hidden;
+    }
+    
+    #game {
+      position: relative;
+      width: 320px;
+      height: 240px;
+      background: #1a1a2e;
+      border: 4px solid #D4A574;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    
+    canvas {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    
+    #achievement {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      background: rgba(0, 0, 0, 0.9);
+      border: 3px solid #FFD700;
+      padding: 12px 16px;
+      min-width: 280px;
+      box-shadow: 0 4px 20px rgba(255, 215, 0, 0.5);
+      animation: achievementPop 3s ease-out forwards;
+    }
+    
+    @keyframes achievementPop {
+      0% { transform: translateX(-50%) scale(0); }
+      10% { transform: translateX(-50%) scale(1.1); }
+      15% { transform: translateX(-50%) scale(1); }
+      85% { transform: translateX(-50%) scale(1); opacity: 1; }
+      100% { transform: translateX(-50%) scale(0.8); opacity: 0; }
+    }
+    
+    .achievement-title {
+      color: #FFD700;
+      font-size: 11px;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+    
+    .achievement-text {
+      color: #D4A574;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    
+    .achievement-points {
+      color: #2D9596;
+      font-size: 10px;
+      margin-top: 6px;
+      text-align: right;
+    }
+    
+    #ui {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 8px;
+      border-top: 2px solid #D4A574;
+    }
+    
+    .stat-bar {
+      margin-bottom: 6px;
+      font-size: 10px;
+    }
+    
+    .stat-label {
+      color: #D4A574;
+      margin-bottom: 2px;
+    }
+    
+    .bar-container {
+      background: #0D0D0D;
+      height: 12px;
+      border: 1px solid #D4A574;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .bar-fill {
+      height: 100%;
+      transition: width 0.5s ease;
+    }
+    
+    .bar-fill.motivation {
+      background: linear-gradient(90deg, #2D9596, #1a7a7b);
+    }
+    
+    .bar-fill.anxiety {
+      background: linear-gradient(90deg, #ff4757, #d63447);
+    }
+    
+    .bar-fill.energy {
+      background: linear-gradient(90deg, #FFD700, #D4A574);
+    }
+    
+    #subtitle {
+      position: absolute;
+      bottom: -30px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: #2D9596;
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+    
+    @media (max-width: 400px) {
+      #game {
+        width: 280px;
+        height: 210px;
+      }
+      #achievement {
+        min-width: 240px;
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="game">
+  <canvas id="canvas" width="160" height="120"></canvas>
+  
+  <div id="achievement">
+    <div class="achievement-title">🏆 ACHIEVEMENT UNLOCKED</div>
+    <div class="achievement-text">Left the House</div>
+    <div class="achievement-points">+10G | Rare Achievement (2.3%)</div>
+  </div>
+  
+  <div id="ui">
+    <div class="stat-bar">
+      <div class="stat-label">MOTIVATION</div>
+      <div class="bar-container">
+        <div class="bar-fill motivation" style="width: 15%"></div>
+      </div>
+    </div>
+    <div class="stat-bar">
+      <div class="stat-label">SOCIAL ANXIETY</div>
+      <div class="bar-container">
+        <div class="bar-fill anxiety" style="width: 85%"></div>
+      </div>
+    </div>
+    <div class="stat-bar" style="margin-bottom: 0;">
+      <div class="stat-label">ENERGY</div>
+      <div class="bar-container">
+        <div class="bar-fill energy" style="width: 30%"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="subtitle">It took everything you had</div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Color palette (limited 8-bit style)
+const colors = {
+  sky: '#4a90a4',
+  grass: '#4a7c59',
+  house: '#5c4033',
+  door: '#3d2817',
+  roof: '#8b4513',
+  window: '#87ceeb',
+  skin: '#f4a460',
+  shirt: '#2D9596',
+  pants: '#4a4a4a',
+  shoes: '#1a1a1a',
+  path: '#6b6b6b',
+  ambient: '#D4A574'
+};
+
+// Draw sky
+ctx.fillStyle = colors.sky;
+ctx.fillRect(0, 0, 160, 60);
+
+// Draw grass
+ctx.fillStyle = colors.grass;
+ctx.fillRect(0, 60, 160, 60);
+
+// Draw path leading from door
+ctx.fillStyle = colors.path;
+ctx.fillRect(65, 60, 30, 40);
+
+// Draw house (simple rectangular building)
+ctx.fillStyle = colors.house;
+ctx.fillRect(45, 35, 50, 30);
+
+// Draw roof (triangle)
+ctx.fillStyle = colors.roof;
+ctx.beginPath();
+ctx.moveTo(40, 35);
+ctx.lineTo(70, 20);
+ctx.lineTo(100, 35);
+ctx.closePath();
+ctx.fill();
+
+// Draw door
+ctx.fillStyle = colors.door;
+ctx.fillRect(65, 45, 15, 20);
+
+// Door handle
+ctx.fillStyle = colors.ambient;
+ctx.fillRect(77, 54, 2, 2);
+
+// Draw windows
+ctx.fillStyle = colors.window;
+ctx.fillRect(50, 40, 8, 8);
+ctx.fillRect(87, 40, 8, 8);
+
+// Window frames
+ctx.strokeStyle = colors.house;
+ctx.lineWidth = 1;
+ctx.beginPath();
+ctx.moveTo(54, 40);
+ctx.lineTo(54, 48);
+ctx.stroke();
+ctx.beginPath();
+ctx.moveTo(50, 44);
+ctx.lineTo(58, 44);
+ctx.stroke();
+ctx.beginPath();
+ctx.moveTo(91, 40);
+ctx.lineTo(91, 48);
+ctx.stroke();
+ctx.beginPath();
+ctx.moveTo(87, 44);
+ctx.lineTo(95, 44);
+ctx.stroke();
+
+// Draw character (standing outside, facing forward)
+// Character is 8x16 pixels, positioned on the path
+
+// Head
+ctx.fillStyle = colors.skin;
+ctx.fillRect(75, 75, 6, 6);
+
+// Hair
+ctx.fillStyle = '#4a4a4a';
+ctx.fillRect(75, 75, 6, 2);
+
+// Eyes (tiny dots)
+ctx.fillStyle = '#000';
+ctx.fillRect(76, 77, 1, 1);
+ctx.fillRect(79, 77, 1, 1);
+
+// Mouth (tiny line)
+ctx.fillRect(77, 79, 2, 1);
+
+// Body (shirt)
+ctx.fillStyle = colors.shirt;
+ctx.fillRect(74, 81, 8, 6);
+
+// Arms
+ctx.fillRect(72, 82, 2, 4);
+ctx.fillRect(82, 82, 2, 4);
+
+// Legs (pants)
+ctx.fillStyle = colors.pants;
+ctx.fillRect(75, 87, 3, 7);
+ctx.fillRect(78, 87, 3, 7);
+
+// Shoes
+ctx.fillStyle = colors.shoes;
+ctx.fillRect(75, 94, 3, 2);
+ctx.fillRect(78, 94, 3, 2);
+
+// Add some ambient particles (floating achievement sparkles)
+function drawSparkle(x, y, size) {
+  ctx.fillStyle = colors.ambient;
+  ctx.fillRect(x, y, size, size);
+}
+
+// Sparkles around character
+drawSparkle(70, 70, 1);
+drawSparkle(85, 72, 1);
+drawSparkle(68, 85, 1);
+drawSparkle(88, 83, 1);
+
+// Sun in corner
+ctx.fillStyle = '#FFD700';
+ctx.fillRect(145, 5, 8, 8);
+ctx.fillRect(143, 7, 2, 1);
+ctx.fillRect(154, 7, 2, 1);
+ctx.fillRect(148, 3, 1, 2);
+ctx.fillRect(148, 14, 1, 2);
+
+// Add a bird (tiny pixel)
+ctx.fillStyle = '#000';
+ctx.fillRect(110, 25, 3, 1);
+ctx.fillRect(109, 26, 1, 1);
+ctx.fillRect(113, 26, 1, 1);
+
+// Achievement sound effect
+setTimeout(() => {
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  
+  oscillator.frequency.value = 523.25; // C5
+  oscillator.type = 'square';
+  
+  gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+  
+  oscillator.start(audioCtx.currentTime);
+  oscillator.stop(audioCtx.currentTime + 0.3);
+  
+  // Second note
+  setTimeout(() => {
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.frequency.value = 659.25; // E5
+    osc2.type = 'square';
+    gain2.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+    osc2.start(audioCtx.currentTime);
+    osc2.stop(audioCtx.currentTime + 0.4);
+  }, 150);
+}, 500);
+
+</script>
+
+</body>
+</html>
