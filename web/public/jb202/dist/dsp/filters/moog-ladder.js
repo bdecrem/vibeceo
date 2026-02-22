@@ -119,11 +119,11 @@ export class MoogLadderFilter {
     // Gentler curve (x^0.5) with lower max (1.3) to stay below self-oscillation
     const resNorm = this._resonance / 100;
     const resCurved = Math.pow(resNorm, 0.5);  // Square root - very gentle
-    this.r = resCurved * 1.8;  // Max 1.8
+    this.r = resCurved * 3.5;  // Max 3.5 — near self-oscillation for acid squelch
 
-    // 303-style resonance compensation: bass loss increases with resonance
-    // This prevents the "thin then painful" character
-    this._gainCompensation = 1.0 / (1.0 + resCurved * 0.5);
+    // Gain compensation: mild below 50% resonance, none above
+    // Lets the resonance peak come through at high settings
+    this._gainCompensation = resCurved < 0.5 ? 1.0 / (1.0 + resCurved * 0.3) : 1.0;
   }
 
   /**
@@ -150,10 +150,6 @@ export class MoogLadderFilter {
     this.y2 = this.y1 * this.p + this.oldy1 * this.p - this.k * this.y2;
     this.y3 = this.y2 * this.p + this.oldy2 * this.p - this.k * this.y3;
     this.y4 = this.y3 * this.p + this.oldy3 * this.p - this.k * this.y4;
-
-    // Soft-clip after each stage pair for analog warmth
-    this.y2 = this._softClip(this.y2);
-    this.y4 = this._softClip(this.y4);
 
     // Store current values for next sample (trapezoidal integration)
     this.oldx = x;

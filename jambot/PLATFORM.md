@@ -345,7 +345,7 @@ Each instrument node that supports automation:
 3. For multi-voice instruments (JB01, JT90): maps user voice names to engine names
 4. Passes engine-unit automation to the engine's render loop
 
-**Supported instruments:** JB01 (`jb01-node.js`), JB202 (`jb202-node.js`), JT90 (`jt90-node.js`)
+**Supported instruments:** JB01 (`jb01-node.js`), JB202 (`jb202-node.js`), JT30 (`jt30-node.js`), JT90 (`jt90-node.js`)
 
 ### Song mode integration
 

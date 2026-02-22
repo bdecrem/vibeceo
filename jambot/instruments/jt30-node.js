@@ -259,6 +259,14 @@ export class JT30Node extends InstrumentNode {
   /**
    * Render the pattern to an audio buffer using custom DSP
    */
+  /**
+   * Get automation data for rendering (from ParamSystem via session)
+   * Returns automation in producer units with node-relative paths
+   */
+  _getAutomationForRender() {
+    return this._renderAutomation || null;
+  }
+
   async renderPattern(options) {
     const {
       bars,
@@ -266,6 +274,7 @@ export class JT30Node extends InstrumentNode {
       sampleRate = 44100,
       pattern = this._pattern,
       params = null,
+      automation = null,
     } = options;
 
     // Skip if no active notes
@@ -289,11 +298,28 @@ export class JT30Node extends InstrumentNode {
     // Set pattern on engine
     engine.setPattern(pattern);
 
+    // Convert automation from producer units to engine units
+    const rawAutomation = automation || this._getAutomationForRender();
+    let engineAutomation = undefined;
+    if (rawAutomation && Object.keys(rawAutomation).length > 0) {
+      engineAutomation = {};
+      for (const [path, values] of Object.entries(rawAutomation)) {
+        const paramName = path.startsWith('bass.') ? path.slice(5) : path;
+        const paramDef = JT30_PARAMS.bass?.[paramName];
+        if (paramDef && Array.isArray(values)) {
+          engineAutomation[paramName] = values.map(v =>
+            v !== null && v !== undefined ? toEngine(v, paramDef) : null
+          );
+        }
+      }
+    }
+
     // Render
     const buffer = await engine.renderPattern({
       bars,
       stepDuration,
       sampleRate,
+      automation: engineAutomation,
     });
 
     return buffer;

@@ -69,20 +69,21 @@ class SynthVoice {
     this.params = params;
 
     // Filter envelope: fast attack, variable decay, no sustain (like 303)
-    const decayTime = params.decay * 100;  // 0-100 scale for ADSR
+    // Longer raw time with exponential ADSR gives "fast drop, long tail" feel
+    const decayTime = params.decay * 100 * 1.3;
     this.filterEnv.setParameters(
       0,           // Attack: instant
-      decayTime,   // Decay: variable
+      decayTime,   // Decay: variable (extended for 303 tail)
       0,           // Sustain: 0 (full decay)
       5            // Release: short
     );
 
-    // Amp envelope: short attack, short decay, high sustain, short release
+    // Amp envelope: short attack, short decay, high sustain, clicky release
     this.ampEnv.setParameters(
       0,           // Attack: instant
       10,          // Decay: short
       80,          // Sustain: 80%
-      10           // Release: short
+      3            // Release: ~5ms — 303's clicky gate
     );
 
     // Filter
@@ -113,9 +114,13 @@ class SynthVoice {
    */
   triggerNote(freq, accent, slide = false) {
     if (slide && this.gateOpen) {
-      // Slide: glide to new frequency
+      // Slide: glide to new frequency with soft filter bump
       this.targetFreq = freq;
       this.slideProgress = 0;
+      // Soft envelope re-trigger — filter movement on slides
+      this.filterEnv.trigger(accent ? 0.7 : 0.4);
+      this.accentActive = accent;
+      if (accent) this.accentResonanceBoost = 35;
     } else {
       // New note: reset oscillator and envelopes
       this.currentFreq = freq;
@@ -124,6 +129,15 @@ class SynthVoice {
 
       this.osc.reset();
       this.filter.reset();
+
+      // 303: accent holds filter open longer
+      if (accent) {
+        const extendedDecay = this.params.decay * 100 * 1.3 * 1.5;
+        this.filterEnv.setParameters(0, extendedDecay, 0, 5);
+      } else {
+        const normalDecay = this.params.decay * 100 * 1.3;
+        this.filterEnv.setParameters(0, normalDecay, 0, 5);
+      }
 
       // Trigger envelopes with accent
       const ampVel = accent ? 1.0 : 0.7;
@@ -134,8 +148,7 @@ class SynthVoice {
 
       this.accentActive = accent;
       // 303-style: accent boosts resonance for that squelch!
-      // This decays quickly but gives the characteristic "wow"
-      this.accentResonanceBoost = accent ? 35 : 0;  // +35% resonance on accent (more with gentler curve)
+      this.accentResonanceBoost = accent ? 35 : 0;
     }
 
     this.gateOpen = true;
@@ -194,7 +207,9 @@ class SynthVoice {
 
     // Envelopes
     const ampValue = this.ampEnv.processSample();
-    const filterEnvValue = this.filterEnv.processSample();
+    const rawFilterEnv = this.filterEnv.processSample();
+    // Shape the envelope: faster initial drop, longer tail (303 character)
+    const filterEnvValue = rawFilterEnv * rawFilterEnv;
 
     // Decay the accent resonance boost over time (fast decay for snappy squelch)
     if (this.accentResonanceBoost > 0) {
@@ -205,15 +220,14 @@ class SynthVoice {
     // Filter modulation - 303 has aggressive envelope modulation
     const baseCutoff = normalizedToHz(params.cutoff);
     const envAmount = params.envMod;
-    // Accent boosts envelope effect AND cutoff
-    const accentCutoffBoost = this.accentActive ? 1.4 : 1.0;
+    // Accent boosts envelope effect AND cutoff (2x for harder acid)
+    const accentCutoffBoost = this.accentActive ? 2.0 : 1.0;
     const modCutoff = clamp(baseCutoff + envAmount * filterEnvValue * 10000 * accentCutoffBoost, 20, 18000);
 
-    // 303-style: accent boosts resonance multiplicatively (not additive)
-    // This prevents accidental overshoot past 100 and scales naturally
+    // 303-style: accent boosts resonance multiplicatively
     const baseResonance = params.resonance * 100;
-    const accentMult = 1.0 + (this.accentResonanceBoost / 100);  // +35 becomes 1.35x
-    const modResonance = clamp(baseResonance * accentMult, 0, 85);  // Cap at 85 to stay musical
+    const accentMult = 1.0 + (this.accentResonanceBoost / 100);
+    const modResonance = clamp(baseResonance * accentMult, 0, 100);  // Full range with new filter
 
     // Update filter with modulated cutoff and resonance
     this.filter.setParameters(modCutoff, modResonance);
@@ -224,7 +238,12 @@ class SynthVoice {
     // VCA
     sample *= ampValue;
 
-    // Drive (subtle 303 saturation)
+    // Drive — accent drives harder for grit
+    if (this.accentActive) {
+      this.drive.setAmount(40);
+    } else {
+      this.drive.setAmount(20);
+    }
     sample = this.drive.processSample(sample);
 
     // Output level
@@ -426,11 +445,12 @@ export class JT30Engine {
       stepDuration = null,
       sampleRate = this.sampleRate,
       pattern = null,
-      params = null
+      params = null,
+      automation = null
     } = options;
 
     const renderPattern = pattern ?? this.sequencer.getPattern();
-    const renderParams = params ? { ...this.params, ...params } : this.params;
+    const renderParams = params ? { ...this.params, ...params } : { ...this.params };
 
     const steps = renderPattern.length;
     const stepsPerBar = 16;
@@ -450,6 +470,21 @@ export class JT30Engine {
       const stepData = renderPattern[patternStep];
       const nextPatternStep = (patternStep + 1) % steps;
       const nextStepData = renderPattern[nextPatternStep];
+
+      // Apply per-step automation (values already in engine units)
+      if (automation) {
+        let paramsChanged = false;
+        for (const [paramId, values] of Object.entries(automation)) {
+          const val = values[patternStep % values.length];
+          if (val !== null && val !== undefined) {
+            renderParams[paramId] = val;
+            paramsChanged = true;
+          }
+        }
+        if (paramsChanged) {
+          voice.updateParams(renderParams);
+        }
+      }
 
       // Use the SAME method as real-time
       voice.processStepEvent(stepData, nextStepData);
@@ -472,8 +507,8 @@ export class JT30Engine {
       sampleRate,
       length: totalSamples,
       duration: totalSteps * stepDur,
-      numberOfChannels: 1,
-      getChannelData: (channel) => channel === 0 ? output : null,
+      numberOfChannels: 2,
+      getChannelData: (channel) => output,  // Mono duplicated to both channels
       _data: output
     };
   }
@@ -483,7 +518,7 @@ export class JT30Engine {
   // === WAV Export ===
 
   async audioBufferToBlob(buffer) {
-    const numChannels = 1;
+    const numChannels = buffer.numberOfChannels || 2;
     const sampleRate = buffer.sampleRate;
     const data = buffer._data ?? buffer.getChannelData(0);
     const length = data.length;
