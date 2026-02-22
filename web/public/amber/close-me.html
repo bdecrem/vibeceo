@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CLOSE ME</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="CLOSE ME — Amber">
+  <meta property="og:description" content="A webpage that becomes one of those tabs you can't bring yourself to close">
+  <meta property="og:image" content="https://intheamber.com/amber/close-me-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/close-me.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CLOSE ME — Amber">
+  <meta name="twitter:description" content="A webpage that becomes one of those tabs you can't bring yourself to close">
+  <meta name="twitter:image" content="https://intheamber.com/amber/close-me-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    /* Fake browser chrome */
+    .browser {
+      width: 95%;
+      max-width: 1200px;
+      margin: 20px auto;
+      background: #1a1a1a;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(212, 165, 116, 0.3);
+    }
+    
+    .browser-header {
+      background: #2a2a2a;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #3a3a3a;
+    }
+    
+    .browser-dots {
+      display: flex;
+      gap: 6px;
+    }
+    
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #444;
+    }
+    
+    .dot.red { background: #ff5f56; }
+    .dot.yellow { background: #ffbd2e; }
+    .dot.green { background: #27c93f; }
+    
+    .url-bar {
+      flex: 1;
+      background: #1a1a1a;
+      padding: 6px 12px;
+      border-radius: 6px;
+      color: #888;
+      font-size: 13px;
+      border: 1px solid #3a3a3a;
+    }
+    
+    /* Tab bar */
+    .tab-bar {
+      background: #2a2a2a;
+      display: flex;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0 8px;
+      height: 40px;
+      align-items: flex-end;
+      position: relative;
+      border-bottom: 1px solid #3a3a3a;
+    }
+    
+    .tab-bar::-webkit-scrollbar {
+      height: 4px;
+    }
+    
+    .tab-bar::-webkit-scrollbar-track {
+      background: #1a1a1a;
+    }
+    
+    .tab-bar::-webkit-scrollbar-thumb {
+      background: #444;
+      border-radius: 2px;
+    }
+    
+    .tab {
+      background: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 120px;
+      max-width: 200px;
+      flex-shrink: 1;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+      margin-right: 2px;
+    }
+    
+    .tab.active {
+      background: #1a1a1a;
+      border-color: #D4A574;
+      color: #D4A574;
+    }
+    
+    .tab:hover {
+      background: #252525;
+    }
+    
+    .tab-favicon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      font-size: 12px;
+    }
+    
+    .tab-title {
+      flex: 1;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #888;
+    }
+    
+    .tab.active .tab-title {
+      color: #D4A574;
+    }
+    
+    .tab-close {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      font-size: 14px;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .tab-close:hover {
+      background: #ff5f56;
+      color: #fff;
+    }
+    
+    /* Main content */
+    .content {
+      background: #0a0a0a;
+      height: 500px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .message {
+      font-size: 32px;
+      font-weight: 600;
+      color: #D4A574;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.02); }
+    }
+    
+    .subtitle {
+      font-size: 16px;
+      color: #2D9596;
+      margin-bottom: 30px;
+      max-width: 400px;
+    }
+    
+    .stats {
+      font-size: 14px;
+      color: #888;
+      margin-top: 20px;
+    }
+    
+    .close-all-btn {
+      background: #ff5f56;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(255, 95, 86, 0.3);
+    }
+    
+    .close-all-btn:hover {
+      background: #ff3f36;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 95, 86, 0.4);
+    }
+    
+    .close-all-btn:active {
+      transform: translateY(0);
+    }
+    
+    /* Particles */
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      .browser {
+        width: 100%;
+        margin: 10px auto;
+        border-radius: 0;
+      }
+      
+      .message {
+        font-size: 24px;
+      }
+      
+      .subtitle {
+        font-size: 14px;
+      }
+      
+      .tab {
+        min-width: 100px;
+        max-width: 150px;
+      }
+      
+      .content {
+        height: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="browser">
+    <!-- Browser header -->
+    <div class="browser-header">
+      <div class="browser-dots">
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+        <div class="dot green"></div>
+      </div>
+      <div class="url-bar">intheamber.com/amber/close-me.html</div>
+    </div>
+    
+    <!-- Tab bar -->
+    <div class="tab-bar" id="tabBar"></div>
+    
+    <!-- Content area -->
+    <div class="content" id="content">
+      <canvas id="canvas"></canvas>
+      <div class="message" id="message">CLOSE ME</div>
+      <div class="subtitle">I'm one of 47 tabs you'll never read</div>
+      <div class="stats">
+        <div>Tabs open: <span id="tabCount">0</span></div>
+        <div>Time wasted: <span id="timeWasted">0</span>s</div>
+      </div>
+      <button class="close-all-btn" id="closeAllBtn" style="display: none;">Close All Tabs</button>
+    </div>
+  </div>
+  
+  <script>
+    // Audio setup
+    let audioCtx;
+    let audioStarted = false;
+    
+    function initAudio() {
+      if (!audioStarted) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioStarted = true;
+      }
+    }
+    
+    function beep(freq, duration = 0.1) {
+      if (!audioStarted) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      gain.gain.value = 0.1;
+osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    // Canvas for particles
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    
+    const particles = [];
+    
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
+        this.color = color;
+        this.life = 1;
+        this.size = Math.random() * 3 + 1;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.1; // gravity
+        this.life -= 0.02;
+      }
+      
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    function animate() {
+      ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    animate();
+    
+    // Tab data
+    const tabTitles = [
+      { emoji: '📝', title: 'Recipe: 3 months old', content: 'Ingredients:\n- 17 things you don\'t have\n- 3 hours you don\'t have\n- Hope' },
+      { emoji: '📰', title: 'Article you\'ll never read', content: '"10 Ways to Be More Productive"\n\n(You\'re on tab 23. It\'s not working.)' },
+      { emoji: '✉️', title: 'That email...', content: 'Draft saved 47 times\n\nNever sent\n\nIt\'s fine' },
+      { emoji: '▶️', title: 'YouTube: "just one video"', content: '(It\'s been 2 hours)' },
+      { emoji: '🔧', title: 'How to fix [thing]', content: 'You already fixed it\n\nYou forgot to close this' },
+      { emoji: '📚', title: 'Documentation you need', content: 'Last visited: 6 days ago\n\nStill don\'t understand it' },
+      { emoji: '🐦', title: 'Twitter (2 hours ago)', content: 'You checked it 5 minutes ago\n\nNothing changed' },
+      { emoji: '💡', title: 'That cool thing you forgot', content: 'You were going to share this\n\nYou forgot what it was' },
+      { emoji: '🔐', title: 'Login page (expired)', content: 'Session expired\n\nClose and re-open\n\nRepeat forever' },
+      { emoji: '📖', title: 'Tutorial: Step 1 of 47', content: 'You stopped at step 3\n\nYou\'ll never finish' },
+      { emoji: '📦', title: 'Order confirmation', content: 'Delivered 2 weeks ago\n\nStill open because... why?' },
+      { emoji: '☀️', title: 'Weather (yesterday)', content: 'Forecast is no longer accurate\n\nNeither is your life' },
+      { emoji: '📅', title: 'Calendar (you missed it)', content: 'That meeting was an hour ago\n\nOops' },
+      { emoji: '⭐', title: 'New Tab', content: 'The most honest tab' }
+    ];
+    
+    const thisTabMessages = [
+      'CLOSE ME',
+      'You\'re still here?',
+      'I\'ve been open for 30 seconds',
+      'One of many tabs you\'ll ignore',
+      'Just close me. It\'s fine.',
+      'I\'ll be here when you get back',
+      'I\'m taking up RAM for no reason',
+      'You have 23 other tabs open',
+      'This is why your battery dies',
+      'I accept my fate',
+      'Still here. Still waiting.',
+      'I\'m never getting closed, am I?'
+    ];
+    
+    let tabs = [];
+    let activeTabIndex = 0;
+    let messageIndex = 0;
+    let startTime = Date.now();
+    
+    // Initialize tabs
+    function initTabs() {
+      tabs.push({ 
+        emoji: '⚠️', 
+        title: 'CLOSE ME', 
+        isThis: true 
+      });
+      
+      // Add 4 random starting tabs
+      for (let i = 0; i < 4; i++) {
+        const randomTab = tabTitles[Math.floor(Math.random() * tabTitles.length)];
+        tabs.push({ ...randomTab });
+      }
+      
+      renderTabs();
+    }
+    
+    function renderTabs() {
+      const tabBar = document.getElementById('tabBar');
+      tabBar.innerHTML = '';
+      
+      tabs.forEach((tab, index) => {
+        const tabEl = document.createElement('div');
+        tabEl.className = 'tab' + (index === activeTabIndex ? ' active' : '');
+        
+        const favicon = document.createElement('div');
+        favicon.className = 'tab-favicon';
+        favicon.textContent = tab.emoji;
+        
+        const title = document.createElement('div');
+        title.className = 'tab-title';
+        title.textContent = tab.title;
+        
+        const close = document.createElement('div');
+        close.className = 'tab-close';
+        close.textContent = '×';
+        close.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeTab(index);
+        });
+        
+        tabEl.appendChild(favicon);
+        tabEl.appendChild(title);
+        tabEl.appendChild(close);
+        
+        tabEl.addEventListener('click', () => {
+          initAudio();
+          switchToTab(index);
+        });
+        
+        tabBar.appendChild(tabEl);
+      });
+      
+      document.getElementById('tabCount').textContent = tabs.length;
+      
+      // Show close all button if > 10 tabs
+      if (tabs.length > 10) {
+        document.getElementById('closeAllBtn').style.display = 'block';
+      }
+    }
+    
+    function switchToTab(index) {
+      activeTabIndex = index;
+      const tab = tabs[index];
+      
+      const messageEl = document.getElementById('message');
+      const subtitleEl = document.querySelector('.subtitle');
+      
+      if (tab.isThis) {
+        messageEl.textContent = tab.title;
+        subtitleEl.textContent = 'I\'m one of ' + tabs.length + ' tabs you\'ll never read';
+      } else {
+        messageEl.textContent = tab.title;
+        subtitleEl.textContent = tab.content;
+      }
+      
+      renderTabs();
+      beep(440 + index * 50);
+      
+      // Spawn particles
+      for (let i = 0; i < 20; i++) {
+        particles.push(new Particle(
+          canvas.width / 2,
+          canvas.height / 2,
+          '#2D9596'
+        ));
+      }
+    }
+    
+    function closeTab(index) {
+      initAudio();
+      
+      if (tabs.length === 1) {
+        // Last tab - dramatic effect
+        document.getElementById('message').textContent = 'You actually did it.';
+        document.querySelector('.subtitle').textContent = 'But you\'ll open more soon...';
+        
+        for (let i = 0; i < 100; i++) {
+          particles.push(new Particle(
+            canvas.width / 2,
+            canvas.height / 2,
+            '#FFD700'
+          ));
+        }
+        
+        beep(880, 0.5);
+        
+        setTimeout(() => {
+          tabs = [];
+          initTabs();
+          activeTabIndex = 0;
+          switchToTab(0);
+        }, 3000);
+        
+        return;
+      }
+      
+      tabs.splice(index, 1);
+      
+      if (activeTabIndex >= tabs.length) {
+        activeTabIndex = tabs.length - 1;
+      }
+      
+      renderTabs();
+      switchToTab(activeTabIndex);
+      
+      beep(220);
+      
+      // Spawn particles at close
+      for (let i = 0; i < 15; i++) {
+        particles.push(new Particle(
+          canvas.width / 2,
+          100,
+          '#ff5f56'
+        ));
+      }
+    }
+    
+    function spawnNewTab() {
+      const randomTab = tabTitles[Math.floor(Math.random() * tabTitles.length)];
+      tabs.push({ ...randomTab });
+      renderTabs();
+      beep(330);
+      
+      // Spawn particles
+      for (let i = 0; i < 10; i++) {
+        particles.push(new Particle(
+          canvas.width - 50,
+          50,
+          '#D4A574'
+        ));
+      }
+    }
+    
+    function updateThisTabTitle() {
+      messageIndex = (messageIndex + 1) %thisTabMessages.length;
+      const newTitle = thisTabMessages[messageIndex];
+      tabs[0].title = newTitle;
+      
+      if (activeTabIndex === 0) {
+        document.getElementById('message').textContent = newTitle;
+      }
+      
+      renderTabs();
+      beep(440);
+    }
+    
+    // Close all button
+    document.getElementById('closeAllBtn').addEventListener('click', () => {
+      initAudio();
+      
+      // Massive particle explosion
+      for (let i = 0; i < 200; i++) {
+        particles.push(new Particle(
+          canvas.width / 2,
+          canvas.height / 2,
+          ['#D4A574', '#FFD700', '#2D9596', '#ff5f56'][Math.floor(Math.random() * 4)]
+        ));
+      }
+      
+      beep(880, 0.5);
+      
+      document.getElementById('message').textContent = 'EVERYTHING IS GONE';
+      document.querySelector('.subtitle').textContent = 'How does it feel?';
+      
+      setTimeout(() => {
+        tabs = [];
+        initTabs();
+        activeTabIndex = 0;
+        switchToTab(0);
+      }, 3000);
+    });
+    
+    // Timer updates
+    setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      document.getElementById('timeWasted').textContent = elapsed;
+    }, 1000);
+    
+    // Spawn new tabs every 8 seconds
+    setInterval(spawnNewTab, 8000);
+    
+    // Update this tab title every 8 seconds
+    setInterval(updateThisTabTitle, 8000);
+    
+    // Initialize
+    initTabs();
+    
+    // Start audio on first interaction
+    document.body.addEventListener('click', initAudio, { once: true });
+    document.body.addEventListener('touchstart', initAudio, { once: true });
+  </script>
+</body>
+</html>
