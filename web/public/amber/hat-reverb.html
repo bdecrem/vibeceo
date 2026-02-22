@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CH + Reverb</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0a0a0a; color:#e0e0e0; font-family:monospace; display:flex; align-items:center; justify-content:center; height:100vh; }
+  button { font-size:2rem; padding:1.5rem 3rem; background:#1a1a1a; color:#f59e0b; border:2px solid #f59e0b; border-radius:12px; cursor:pointer; font-family:monospace; }
+  button:active { background:#f59e0b; color:#0a0a0a; }
+  .info { position:fixed; bottom:20px; color:#555; font-size:0.8rem; text-align:center; width:100%; }
+</style>
+</head><body>
+<button id="btn">TAP FOR HAT</button>
+<div class="info">JT90 closed hat → convolution reverb</div>
+<script type="module">
+import { JT90Engine } from '/jt90/dist/machines/jt90/engine.js';
+
+let ctx, engine, reverb, ready = false;
+
+// Generate a reverb impulse response — big dark hall
+function createImpulse(ctx, duration = 4, decay = 3) {
+  const len = ctx.sampleRate * duration;
+  const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+  }
+  return buf;
+}
+
+async function init() {
+  ctx = new AudioContext();
+  await ctx.resume();
+
+  engine = new JT90Engine({ sampleRate: ctx.sampleRate });
+  engine.context = ctx;
+  await engine.loadSamples('/jt90/samples');
+
+  // Set up ScriptProcessor for manual triggering
+  const bufferSize = 1024;
+  const scriptNode = ctx.createScriptProcessor(bufferSize, 0, 2);
+  scriptNode.onaudioprocess = (e) => {
+    const outL = e.outputBuffer.getChannelData(0);
+    const outR = e.outputBuffer.getChannelData(1);
+    for (let i = 0; i < bufferSize; i++) {
+      let s = 0;
+      const voices = engine._voices;
+      if (voices && voices.ch) {
+        s = voices.ch.processSample();
+      }
+      outL[i] = s;
+      outR[i] = s;
+    }
+  };
+
+  // Dry path (quiet)
+  const dryGain = ctx.createGain();
+  dryGain.gain.value = 0.15;
+
+  // Wet path (loud reverb)
+  reverb = ctx.createConvolver();
+  reverb.buffer = createImpulse(ctx, 5, 2.5);
+  const wetGain = ctx.createGain();
+  wetGain.gain.value = 1.2;
+
+  scriptNode.connect(dryGain);
+  scriptNode.connect(reverb);
+  reverb.connect(wetGain);
+  dryGain.connect(ctx.destination);
+  wetGain.connect(ctx.destination);
+
+  // Short decay for the hat itself — let the reverb do the tail
+  engine.setVoiceParameter('ch', 'decay', 0.3);
+  engine.setVoiceParameter('ch', 'tone', 0.7);
+
+  ready = true;
+  btn.textContent = 'TAP FOR HAT';
+}
+
+const btn = document.getElementById('btn');
+
+btn.addEventListener('pointerdown', async () => {
+  if (!ready) {
+    btn.textContent = 'loading...';
+    await init();
+  }
+  if (ready && engine._voices?.ch) {
+    engine._voices.ch.trigger(0.9);
+  }
+});
+</script>
+</body></html>
