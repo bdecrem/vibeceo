@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JEPA Flappy — AI Plays Flappy Bird</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  h1 {
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: 4px;
+    letter-spacing: 2px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 16px;
+  }
+  .game-area {
+    position: relative;
+    margin-bottom: 16px;
+  }
+  canvas {
+    border: 2px solid #333;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  #brain-canvas {
+    border-color: #2a2a2a;
+  }
+  .stats {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  .stat { display: flex; flex-direction: column; align-items: center; }
+  .stat-val { font-size: 28px; font-weight: bold; color: #fff; }
+  .stat-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+  .stat-val.score { color: #2ecc71; }
+  .stat-val.best { color: #f1c40f; }
+  .controls {
+    display: flex; gap: 12px; margin-bottom: 16px;
+  }
+  button {
+    background: #1a1a1a;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    padding: 10px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  button:hover { background: #2a2a2a; border-color: #555; }
+  button.active { border-color: #2ecc71; color: #2ecc71; }
+  .speed-controls {
+    display: flex; gap: 8px; align-items: center; margin-bottom: 16px;
+  }
+  .speed-controls span { font-size: 12px; color: #666; }
+  .speed-btn {
+    padding: 4px 12px; font-size: 12px;
+  }
+  .speed-btn.active { border-color: #2ecc71; color: #2ecc71; }
+  .info {
+    max-width: 480px;
+    font-size: 12px;
+    color: #555;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .info strong { color: #888; }
+  .label-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 4px;
+    width: 100%;
+    max-width: 480px;
+  }
+  .label-row span {
+    font-size: 11px;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .label-row span:first-child { flex: 1; }
+  .canvas-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .thinking {
+    font-size: 11px;
+    color: #444;
+    margin-bottom: 16px;
+    height: 14px;
+  }
+  .loading {
+    font-size: 16px;
+    color: #666;
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+
+<h1>JEPA FLAPPY</h1>
+<div class="subtitle">a neural network plays flappy bird by imagining the future</div>
+
+<div class="stats">
+  <div class="stat"><span class="stat-val score" id="score">0</span><span class="stat-label">Score</span></div>
+  <div class="stat"><span class="stat-val best" id="best">0</span><span class="stat-label">Best</span></div>
+  <div class="stat"><span class="stat-val" id="games">0</span><span class="stat-label">Games</span></div>
+  <div class="stat"><span class="stat-val" id="avg">-</span><span class="stat-label">Avg</span></div>
+</div>
+
+<div class="controls">
+  <button id="btn-start" class="active">Watch AI Play</button>
+  <button id="btn-you">You Play</button>
+</div>
+
+<div class="speed-controls">
+  <span>Speed:</span>
+  <button class="speed-btn" data-speed="0.2">0.2x</button>
+  <button class="speed-btn" data-speed="0.5">0.5x</button>
+  <button class="speed-btn active" data-speed="1">1x</button>
+  <button class="speed-btn" data-speed="3">3x</button>
+  <button class="speed-btn" data-speed="8">8x</button>
+  <button class="speed-btn" data-speed="30">Max</button>
+</div>
+
+<div class="label-row">
+  <span>Game (scaled up from 24x16)</span>
+  <span>What the AI sees</span>
+</div>
+<div class="canvas-row">
+  <canvas id="game-canvas" width="480" height="320"></canvas>
+  <canvas id="brain-canvas" width="120" height="80"></canvas>
+</div>
+
+<div class="thinking" id="thinking"></div>
+
+<div class="info">
+  <strong>How it works:</strong> A ~100k parameter neural network was trained on
+  ~600k frames of random + heuristic play. Each frame, it imagines two futures —
+  "what if I tap?" and "what if I don't?" — then picks whichever looks better.
+  All inference runs locally in your browser. No server needed.
+</div>
+
+<div class="loading" id="loading">Loading model weights...</div>
+
+<script>
+// ── Config (must match Python training exactly) ──────────────────────────
+const FRAME_H = 16, FRAME_W = 24;
+const PIXEL_DIM = FRAME_H * FRAME_W;
+const GAP_HALF = 4;
+const GRAVITY = 0.35;
+const TAP_VY = -1.6;
+const MAX_VY = 2.5;
+const BIRD_X = 4;
+const SCALE = 20; // display scale
+
+// ── Matrix Math (no libraries) ───────────────────────────────────────────
+function matmul(a, bT, rows, inner, cols) {
+  // a: [rows x inner], bT: [cols x inner] (transposed for cache), out: [rows x cols]
+  const out = new Float32Array(rows * cols);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let sum = 0;
+      const rOff = r * inner, cOff = c * inner;
+      for (let k = 0; k < inner; k++) sum += a[rOff + k] * bT[cOff + k];
+      out[r * cols + c] = sum;
+    }
+  }
+  return out;
+}
+
+function addBias(x, bias) {
+  for (let i = 0; i < x.length; i++) x[i] += bias[i % bias.length];
+  return x;
+}
+
+function relu(x) {
+  for (let i = 0; i < x.length; i++) if (x[i] < 0) x[i] = 0;
+  return x;
+}
+
+function sigmoid(x) {
+  for (let i = 0; i < x.length; i++) x[i] = 1 / (1 + Math.exp(-x[i]));
+  return x;
+}
+
+function linear(input, weight, bias, inDim, outDim) {
+  // weight is [outDim x inDim], stored row-major = already transposed for matmul
+  let out = matmul(input, weight, 1, inDim, outDim);
+  return addBias(out, bias);
+}
+
+// ── Model ────────────────────────────────────────────────────────────────
+let MODEL = null;
+
+async function loadModel() {
+  const resp = await fetch('model_weights.json');
+  const w = await resp.json();
+
+  // Convert to Float32Arrays
+  const f = (arr) => new Float32Array(arr.flat());
+  MODEL = {
+    frame: [
+      { w: f(w['frame_net.0.weight']), b: f(w['frame_net.0.bias']), in: PIXEL_DIM + 1, out: 128 },
+      { w: f(w['frame_net.2.weight']), b: f(w['frame_net.2.bias']), in: 128, out: 64 },
+      { w: f(w['frame_net.4.weight']), b: f(w['frame_net.4.bias']), in: 64, out: PIXEL_DIM },
+    ],
+    val: [
+      { w: f(w['val_net.0.weight']), b: f(w['val_net.0.bias']), in: PIXEL_DIM, out: 64 },
+      { w: f(w['val_net.2.weight']), b: f(w['val_net.2.bias']), in: 64, out: 1 },
+    ]
+  };
+}
+
+function predictFrame(frameFlat, action) {
+  // Concat frame + action
+  let input = new Float32Array(PIXEL_DIM + 1);
+  input.set(frameFlat);
+  input[PIXEL_DIM] = action;
+
+  let x = linear(input, MODEL.frame[0].w, MODEL.frame[0].b, PIXEL_DIM + 1, 128);
+  relu(x);
+  x = linear(x, MODEL.frame[1].w, MODEL.frame[1].b, 128, 64);
+  relu(x);
+  x = linear(x, MODEL.frame[2].w, MODEL.frame[2].b, 64, PIXEL_DIM);
+  sigmoid(x);
+  return x;
+}
+
+function predictValue(frameFlat) {
+  let x = linear(frameFlat, MODEL.val[0].w, MODEL.val[0].b, PIXEL_DIM, 64);
+  relu(x);
+  x = linear(x, MODEL.val[1].w, MODEL.val[1].b, 64, 1);
+  sigmoid(x);
+  return x[0];
+}
+
+function aiDecide(frameFlat) {
+  const pred0 = predictFrame(frameFlat, 0);
+  const pred1 = predictFrame(frameFlat, 1);
+  const val0 = predictValue(pred0);
+  const val1 = predictValue(pred1);
+  return { action: val1 > val0 ? 1 : 0, val0, val1 };
+}
+
+// ── Game Engine (must match Python exactly) ──────────────────────────────
+class FlappyGame {
+  constructor() { this.reset(); }
+
+  reset() {
+    this.birdY = 8.0;
+    this.birdVY = 0.0;
+    this.pipes = [];
+    this.score = 0;
+    this.alive = true;
+    this.steps = 0;
+    this._spawn(FRAME_W + 4);
+  }
+
+  _spawn(x) {
+    const gc = 5 + Math.floor(Math.random() * (FRAME_H - 10));
+    this.pipes.push({ x: x, gap: gc });
+  }
+
+  step(tap) {
+    if (!this.alive) return;
+
+    if (tap) this.birdVY = TAP_VY;
+    this.birdVY = Math.min(Math.max(this.birdVY + GRAVITY, -MAX_VY), MAX_VY);
+    this.birdY += this.birdVY;
+
+    for (const p of this.pipes) p.x -= 1.0;
+    this.pipes = this.pipes.filter(p => p.x > -3);
+    if (this.pipes.length === 0 || this.pipes[this.pipes.length - 1].x < FRAME_W - 10) {
+      this._spawn(FRAME_W + 2);
+    }
+
+    if (this.birdY < 0 || this.birdY >= FRAME_H) this.alive = false;
+    for (const p of this.pipes) {
+      const pl = Math.floor(p.x);
+      if (BIRD_X >= pl && BIRD_X <= pl + 2) {
+        if (this.birdY < p.gap - GAP_HALF || this.birdY > p.gap + GAP_HALF) {
+          this.alive = false;
+        }
+      }
+    }
+    for (const p of this.pipes) {
+      if (Math.floor(p.x) === 3) this.score++;
+    }
+    this.steps++;
+  }
+
+  render() {
+    const frame = new Float32Array(PIXEL_DIM);
+    for (const p of this.pipes) {
+      const col = Math.round(p.x);
+      for (let w = 0; w < 2; w++) {
+        const c = col + w;
+        if (c >= 0 && c < FRAME_W) {
+          for (let r = 0; r < FRAME_H; r++) {
+            if (r < p.gap - GAP_HALF || r > p.gap + GAP_HALF) {
+              frame[r * FRAME_W + c] = 0.5;
+            }
+          }
+        }
+      }
+    }
+    const by = Math.round(Math.min(Math.max(this.birdY, 0), FRAME_H - 1));
+    frame[by * FRAME_W + BIRD_X] = 1.0;
+    return frame;
+  }
+}
+
+// ── Rendering ────────────────────────────────────────────────────────────
+const gameCanvas = document.getElementById('game-canvas');
+const gameCtx = gameCanvas.getContext('2d');
+const brainCanvas = document.getElementById('brain-canvas');
+const brainCtx = brainCanvas.getContext('2d');
+
+function drawFrame(frame, ctx, w, h, scale) {
+  const imgData = ctx.createImageData(w, h);
+  for (let i = 0; i < w * h; i++) {
+    const v = frame[i];
+    const idx = i * 4;
+    if (v > 0.8) {
+      // Bird: bright green
+      imgData.data[idx] = 80;
+      imgData.data[idx+1] = 220;
+      imgData.data[idx+2] = 80;
+    } else if (v > 0.3) {
+      // Pipe: muted teal
+      imgData.data[idx] = 40;
+      imgData.data[idx+1] = 90;
+      imgData.data[idx+2] = 80;
+    } else {
+      // Background: dark
+      imgData.data[idx] = 12;
+      imgData.data[idx+1] = 14;
+      imgData.data[idx+2] = 18;
+    }
+    imgData.data[idx+3] = 255;
+  }
+  // Draw to offscreen, then scale up
+  const off = new OffscreenCanvas(w, h);
+  const offCtx = off.getContext('2d');
+  offCtx.putImageData(imgData, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(off, 0, 0, w, h, 0, 0, ctx.canvas.width, ctx.canvas.height);
+}
+
+// ── Game Loop ────────────────────────────────────────────────────────────
+const game = new FlappyGame();
+let aiMode = true;
+let speed = 1;
+let speedAccum = 0;
+let running = false;
+let bestScore = 0;
+let totalGames = 0;
+let totalScore = 0;
+let humanTap = false;
+let lastDecision = null;
+
+function updateStats() {
+  document.getElementById('score').textContent = game.score;
+  document.getElementById('best').textContent = bestScore;
+  document.getElementById('games').textContent = totalGames;
+  document.getElementById('avg').textContent = totalGames > 0 ? (totalScore / totalGames).toFixed(1) : '-';
+}
+
+function updateThinking(decision) {
+  if (!decision || !aiMode) {
+    document.getElementById('thinking').textContent = '';
+    return;
+  }
+  const { val0, val1, action } = decision;
+  const arrow = action === 1 ? 'TAP' : 'wait';
+  document.getElementById('thinking').textContent =
+    `no-tap: ${val0.toFixed(3)} | tap: ${val1.toFixed(3)} → ${arrow}`;
+}
+
+function gameStep() {
+  if (!game.alive) {
+    if (game.score > bestScore) bestScore = game.score;
+    totalGames++;
+    totalScore += game.score;
+    updateStats();
+    game.reset();
+    // Brief pause between games
+    return;
+  }
+
+  const frame = game.render();
+
+  if (aiMode) {
+    const decision = aiDecide(frame);
+    lastDecision = decision;
+    game.step(decision.action === 1);
+  } else {
+    game.step(humanTap);
+    humanTap = false;
+    lastDecision = null;
+  }
+
+  // Draw
+  const displayFrame = game.render();
+  drawFrame(displayFrame, gameCtx, FRAME_W, FRAME_H, SCALE);
+  drawFrame(displayFrame, brainCtx, FRAME_W, FRAME_H, 5);
+  updateStats();
+  if (game.steps % 3 === 0) updateThinking(lastDecision);
+}
+
+function loop() {
+  if (!running) return;
+  speedAccum += speed;
+  while (speedAccum >= 1) {
+    gameStep();
+    speedAccum -= 1;
+  }
+  requestAnimationFrame(loop);
+}
+
+function start() {
+  if (running) return;
+  running = true;
+  loop();
+}
+
+// ── Controls ─────────────────────────────────────────────────────────────
+document.getElementById('btn-start').addEventListener('click', () => {
+  aiMode = true;
+  document.getElementById('btn-start').classList.add('active');
+  document.getElementById('btn-you').classList.remove('active');
+  game.reset();
+  start();
+});
+
+document.getElementById('btn-you').addEventListener('click', (e) => {
+  e.stopPropagation();
+  aiMode = false;
+  document.getElementById('btn-you').classList.add('active');
+  document.getElementById('btn-start').classList.remove('active');
+  document.getElementById('thinking').textContent = 'Space / Tap to flap';
+  game.reset();
+  running = false;
+  // Draw the initial frame so player sees the game waiting
+  const f = game.render();
+  drawFrame(f, gameCtx, FRAME_W, FRAME_H, SCALE);
+  drawFrame(f, brainCtx, FRAME_W, FRAME_H, 5);
+  updateStats();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    e.preventDefault();
+    humanTap = true;
+    if (!running) start();
+  }
+});
+
+gameCanvas.addEventListener('click', () => {
+  if (!aiMode) {
+    humanTap = true;
+    if (!running) start();
+  }
+});
+
+gameCanvas.addEventListener('touchstart', (e) => {
+  if (!aiMode) {
+    e.preventDefault();
+    humanTap = true;
+    if (!running) start();
+  }
+});
+
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    speed = parseFloat(btn.dataset.speed);
+  });
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────
+loadModel().then(() => {
+  document.getElementById('loading').style.display = 'none';
+  start();
+}).catch(err => {
+  document.getElementById('loading').textContent = 'Failed to load model: ' + err.message;
+});
+</script>
+</body>
+</html>

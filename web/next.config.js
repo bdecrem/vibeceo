@@ -44,6 +44,8 @@ const nextConfig = {
         { source: '/jb200', destination: '/jb200/ui/jb200/index.html' },
         // Amber's Junk Drawer puzzle game
         { source: '/amber/junk-drawer', destination: '/amber/junk-drawer/index.html' },
+        // JEPA Flappy Bird AI demo
+        { source: '/pixelpit/jepa-flappy', destination: '/pixelpit/jepa-flappy/index.html' },
       ],
     }
   },

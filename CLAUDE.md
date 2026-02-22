@@ -52,6 +52,11 @@ vibeceo/
 - Put `.html` files in `web/public/<folder>/`
 - URL: `kochi.to/<folder>/filename.html`
 - Import paths must be **absolute** from root: `/jb01/dist/...` NOT `../../public/jb01/...`
+- **If you want a clean URL without `.html`** (e.g. `/pixelpit/jepa-flappy` instead of `/pixelpit/jepa-flappy/index.html`), you **MUST** add a `beforeFiles` rewrite in `web/next.config.js`:
+  ```javascript
+  { source: '/your/clean-path', destination: '/your/clean-path/index.html' },
+  ```
+  Next.js does NOT auto-serve `index.html` from `public/` subdirectories. Without this rewrite → **404**.
 
 **Option B: Next.js React Pages** (full app features, SSR, API routes)
 - Create `web/app/<folder>/page.tsx`
