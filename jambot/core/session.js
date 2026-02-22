@@ -7,7 +7,7 @@
  * INSTRUMENTS:
  *   - jb01 (drum machine) — aliases: 'drums'
  *   - jb202 (bass synth) — aliases: 'bass', 'lead', 'synth'
- *   - sampler (sample player)
+ *   - jbs (sample player, formerly 'sampler')
  *   - jp9000 (modular synth) — managed separately via tools
  *
  * These are the canonical instruments. The aliases are just pointers.
@@ -15,7 +15,7 @@
 
 import { ParamSystem } from './params.js';
 import { Clock } from './clock.js';
-import { SamplerNode } from '../instruments/sampler-node.js';
+import { JBSNode } from '../instruments/jbs-node.js';
 import { JB202Node } from '../instruments/jb202-node.js';
 import { JB01Node } from '../instruments/jb01-node.js';
 import { JT10Node } from '../instruments/jt10-node.js';
@@ -101,7 +101,7 @@ export function createSession(config = {}) {
   // Create the canonical instruments
   const jb01Node = new JB01Node();
   const jb202Node = new JB202Node();
-  const samplerNode = new SamplerNode();
+  const jbsNode = new JBSNode();
   const jt10Node = new JT10Node();
   const jt30Node = new JT30Node();
   const jt90Node = new JT90Node();
@@ -110,7 +110,7 @@ export function createSession(config = {}) {
   // Set initial levels from config (nodes own all state)
   jb01Node.setLevel(config.jb01Level ?? 0);
   jb202Node.setLevel(config.jb202Level ?? 0);
-  samplerNode.setLevel(config.samplerLevel ?? 0);
+  jbsNode.setLevel(config.jbsLevel ?? config.samplerLevel ?? 0);
   jt10Node.setLevel(config.jt10Level ?? 0);
   jt30Node.setLevel(config.jt30Level ?? 0);
   jt90Node.setLevel(config.jt90Level ?? 0);
@@ -119,7 +119,8 @@ export function createSession(config = {}) {
   // Register instruments with their canonical names
   params.register('jb01', jb01Node);
   params.register('jb202', jb202Node);
-  params.register('sampler', samplerNode);
+  params.register('jbs', jbsNode);
+  params.register('sampler', jbsNode);  // legacy alias
   params.register('jt10', jt10Node);
   params.register('jt30', jt30Node);
   params.register('jt90', jt90Node);
@@ -153,7 +154,8 @@ export function createSession(config = {}) {
     _nodes: {
       jb01: jb01Node,
       jb202: jb202Node,
-      sampler: samplerNode,
+      jbs: jbsNode,
+      sampler: jbsNode,  // legacy alias
       jt10: jt10Node,
       jt30: jt30Node,
       jt90: jt90Node,
@@ -257,11 +259,17 @@ export function createSession(config = {}) {
     get jb202Pattern() { return jb202Node.getPattern(); },
     set jb202Pattern(v) { jb202Node.setPattern(v); },
 
-    get samplerKit() { return samplerNode.getKit(); },
-    set samplerKit(v) { samplerNode.setKit(v); },
+    get jbsKit() { return jbsNode.getKit(); },
+    set jbsKit(v) { jbsNode.setKit(v); },
 
-    get samplerPattern() { return samplerNode.getPattern(); },
-    set samplerPattern(v) { samplerNode.setPattern(v); },
+    get jbsPattern() { return jbsNode.getPattern(); },
+    set jbsPattern(v) { jbsNode.setPattern(v); },
+
+    // Legacy aliases (deprecated — use jbs* instead)
+    get samplerKit() { return jbsNode.getKit(); },
+    set samplerKit(v) { jbsNode.setKit(v); },
+    get samplerPattern() { return jbsNode.getPattern(); },
+    set samplerPattern(v) { jbsNode.setPattern(v); },
 
     // JT10 (lead synth)
     get jt10Pattern() { return jt10Node.getPattern(); },
@@ -373,31 +381,35 @@ export function createSession(config = {}) {
     get jb202Params() { return this.bassParams; },
     set jb202Params(v) { this.bassParams = v; },
 
-    get samplerParams() {
+    get jbsParams() {
       return new Proxy({}, {
         get: (_, slot) => {
           const result = {};
           const slotParams = ['level', 'tune', 'attack', 'decay', 'filter', 'pan'];
           for (const param of slotParams) {
-            result[param] = samplerNode.getParam(`${slot}.${param}`);
+            result[param] = jbsNode.getParam(`${slot}.${param}`);
           }
           return result;
         },
         set: (_, slot, params) => {
           for (const [param, value] of Object.entries(params)) {
-            samplerNode.setParam(`${slot}.${param}`, value);
+            jbsNode.setParam(`${slot}.${param}`, value);
           }
           return true;
         },
       });
     },
-    set samplerParams(v) {
+    set jbsParams(v) {
       for (const [slot, params] of Object.entries(v)) {
         for (const [param, value] of Object.entries(params)) {
-          samplerNode.setParam(`${slot}.${param}`, value);
+          jbsNode.setParam(`${slot}.${param}`, value);
         }
       }
     },
+
+    // Legacy alias (deprecated — use jbsParams instead)
+    get samplerParams() { return this.jbsParams; },
+    set samplerParams(v) { this.jbsParams = v; },
 
     // JT10 params (lead synth - single voice 'lead')
     get jt10Params() {
@@ -490,7 +502,7 @@ export function createSession(config = {}) {
       jb01: {},
       jb202: {},
       jp9000: {},
-      sampler: {},
+      jbs: {},
       jt10: {},
       jt30: {},
       jt90: {},
@@ -499,7 +511,7 @@ export function createSession(config = {}) {
       jb01: 'A',
       jb202: 'A',
       jp9000: 'A',
-      sampler: 'A',
+      jbs: 'A',
       jt10: 'A',
       jt30: 'A',
       jt90: 'A',
@@ -513,7 +525,7 @@ export function createSession(config = {}) {
      * @returns {Array<{id: string, node: InstrumentNode}>}
      */
     getCanonicalInstruments() {
-      return ['jb01', 'jb202', 'sampler', 'jt10', 'jt30', 'jt90']
+      return ['jb01', 'jb202', 'jbs', 'jt10', 'jt30', 'jt90']
         .map(id => ({ id, node: this._nodes[id] }))
         .filter(({ node }) => node);
     },
@@ -540,7 +552,7 @@ export function serializeSession(session) {
     bars: session.bars,
     jb01Level: session._nodes.jb01.getLevel(),
     jb202Level: session._nodes.jb202.getLevel(),
-    samplerLevel: session._nodes.sampler.getLevel(),
+    jbsLevel: session._nodes.jbs.getLevel(),
     jt10Level: session._nodes.jt10.getLevel(),
     jt30Level: session._nodes.jt30.getLevel(),
     jt90Level: session._nodes.jt90.getLevel(),
@@ -567,7 +579,7 @@ export function deserializeSession(data) {
     bars: data.bars,
     jb01Level: data.jb01Level ?? data.drumLevel,
     jb202Level: data.jb202Level ?? data.bassLevel,
-    samplerLevel: data.samplerLevel,
+    jbsLevel: data.jbsLevel ?? data.samplerLevel,
     jt10Level: data.jt10Level,
     jt30Level: data.jt30Level,
     jt90Level: data.jt90Level,
@@ -609,7 +621,7 @@ export function restoreSessionInPlace(existingSession, data) {
   existingSession.bars = data.bars || 2;
   existingSession._nodes.jb01.setLevel(data.jb01Level ?? data.drumLevel ?? 0);
   existingSession._nodes.jb202.setLevel(data.jb202Level ?? data.bassLevel ?? 0);
-  existingSession._nodes.sampler.setLevel(data.samplerLevel ?? 0);
+  existingSession._nodes.jbs.setLevel(data.jbsLevel ?? data.samplerLevel ?? 0);
   existingSession._nodes.jt10.setLevel(data.jt10Level ?? 0);
   existingSession._nodes.jt30.setLevel(data.jt30Level ?? 0);
   existingSession._nodes.jt90.setLevel(data.jt90Level ?? 0);

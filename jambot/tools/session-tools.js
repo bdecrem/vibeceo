@@ -133,24 +133,24 @@ function showJB200(session) {
 }
 
 /**
- * Show Sampler state
+ * Show JB-S state
  */
-function showSampler(session) {
-  const kit = session.samplerKit;
+function showJBS(session) {
+  const kit = session.jbsKit;
 
   if (!kit) {
-    return 'SAMPLER\n\nNo kit loaded. Use load_kit to load one.';
+    return 'JB-S\n\nNo kit loaded. Use load_jbs_kit to load one.';
   }
 
-  const lines = ['SAMPLER', ''];
+  const lines = ['JB-S', ''];
   lines.push(`Kit: ${kit.name} (${kit.id})`);
   lines.push('');
   lines.push('SLOTS:');
 
   for (const slot of kit.slots) {
-    const pattern = session.samplerPattern[slot.id] || [];
+    const pattern = session.jbsPattern[slot.id] || [];
     const hits = pattern.filter(s => s?.velocity > 0).length;
-    const params = session.samplerParams[slot.id] || {};
+    const params = session.jbsParams[slot.id] || {};
 
     let info = `  ${slot.id}: ${slot.name}`;
     if (hits > 0) info += ` — ${hits} hits`;
@@ -286,9 +286,9 @@ const sessionTools = {
       level: 0.25  // -6dB for proper gain staging
     };
 
-    // Reset Sampler - keep kit loaded, just clear pattern
-    session.samplerPattern = {};
-    session.samplerParams = {};
+    // Reset JB-S - keep kit loaded, just clear pattern
+    session.jbsPattern = {};
+    session.jbsParams = {};
 
     // Reset JB200 (bass monosynth)
     // Uses the node-based proxy system - values are in engine units (0-1)
@@ -331,7 +331,7 @@ const sessionTools = {
 
   /**
    * Show current state of any instrument
-   * Generic tool that works with all synths: jb200, bass, lead, drums, sampler
+   * Generic tool that works with all synths: jb200, bass, lead, drums, jbs
    */
   show: async (input, session, context) => {
     const { instrument } = input;
@@ -341,7 +341,8 @@ const sessionTools = {
       jb200: showJB200,
       jb202: showJB200,  // alias
       jb01: showJB01,
-      sampler: showSampler,
+      jbs: showJBS,
+      sampler: showJBS,  // legacy alias
       // TODO: Add show functions for jt10, jt30, jt90
     };
 

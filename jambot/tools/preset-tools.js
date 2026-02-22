@@ -11,7 +11,7 @@ import { join } from 'path';
 import { existsSync, readdirSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 
 // Valid instruments
-const INSTRUMENTS = ['drums', 'bass', 'lead', 'sampler'];
+const INSTRUMENTS = ['drums', 'bass', 'lead', 'jbs', 'sampler'];
 
 // Base path for user presets
 const PRESETS_PATH = join(homedir(), 'Documents', 'Jambot', 'presets');
@@ -77,10 +77,11 @@ function extractParams(instrument, session) {
         params: JSON.parse(JSON.stringify(session.leadParams || {})),
         arp: JSON.parse(JSON.stringify(session.leadArp || {})),
       };
+    case 'jbs':
     case 'sampler':
       return {
-        kit: session.samplerKit?.id || null,
-        params: JSON.parse(JSON.stringify(session.samplerParams || {})),
+        kit: session.jbsKit?.id || null,
+        params: JSON.parse(JSON.stringify(session.jbsParams || {})),
       };
     default:
       return {};
@@ -117,11 +118,12 @@ function applyParams(instrument, preset, session) {
       }
       if (preset.arp) session.leadArp = { ...preset.arp };
       break;
+    case 'jbs':
     case 'sampler':
       // Note: kit must be loaded separately (contains audio buffers)
       if (preset.params) {
         for (const [slot, params] of Object.entries(preset.params)) {
-          session.samplerParams[slot] = { ...params };
+          session.jbsParams[slot] = { ...params };
         }
       }
       break;
@@ -207,8 +209,8 @@ const presetTools = {
       if (instrument === 'drums' && preset.kit) {
         summary += ` (kit: ${preset.kit})`;
       }
-      if (instrument === 'sampler' && preset.kit) {
-        summary += `\nNote: Sampler kit "${preset.kit}" must be loaded separately with load_kit.`;
+      if ((instrument === 'jbs' || instrument === 'sampler') && preset.kit) {
+        summary += `\nNote: JB-S kit "${preset.kit}" must be loaded separately with load_jbs_kit.`;
       }
       return summary;
     } catch (e) {

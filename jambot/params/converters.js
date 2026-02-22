@@ -32,6 +32,7 @@ export const JT30_PARAMS = loadParams('jt30-params.json');
 export const JT10_PARAMS = loadParams('jt10-params.json');
 export const JT90_PARAMS = loadParams('jt90-params.json');
 export const SAMPLER_PARAMS = loadParams('sampler-params.json');
+export const JBS_PARAMS = loadParams('jbs-params.json');
 
 const SYNTH_PARAMS = {
   jb200: JB200_PARAMS,
@@ -40,7 +41,8 @@ const SYNTH_PARAMS = {
   jt30: JT30_PARAMS,
   jt10: JT10_PARAMS,
   jt90: JT90_PARAMS,
-  sampler: SAMPLER_PARAMS,
+  jbs: JBS_PARAMS,
+  sampler: SAMPLER_PARAMS, // legacy alias
 };
 
 /**
@@ -50,8 +52,9 @@ export function getParamDef(synth, voice, param) {
   const synthParams = SYNTH_PARAMS[synth.toLowerCase()];
   if (!synthParams) return null;
 
-  // Sampler uses generic "slot" definition for all slots (s1-s10)
-  const voiceKey = synth.toLowerCase() === 'sampler' ? 'slot' : voice;
+  // JB-S/Sampler uses generic "slot" definition for all slots (s1-s10)
+  const synthLower = synth.toLowerCase();
+  const voiceKey = (synthLower === 'jbs' || synthLower === 'sampler') ? 'slot' : voice;
   const voiceParams = synthParams[voiceKey];
   if (!voiceParams) return null;
 
@@ -263,7 +266,8 @@ export function describeParams(synth, voice) {
   const synthParams = SYNTH_PARAMS[synth.toLowerCase()];
   if (!synthParams) return '';
 
-  const voiceKey = synth.toLowerCase() === 'sampler' ? 'slot' : voice;
+  const synthLow = synth.toLowerCase();
+  const voiceKey = (synthLow === 'jbs' || synthLow === 'sampler') ? 'slot' : voice;
   const voiceParams = synthParams[voiceKey];
   if (!voiceParams) return '';
 

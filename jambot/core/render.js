@@ -265,7 +265,7 @@ export async function renderSession(session, bars, filename) {
 
   // === RENDER ALL INSTRUMENTS ===
   const instrumentBuffers = []; // { id, buffer, startBar, level }
-  const canonicalIds = ['jb01', 'jb200', 'jb202', 'jp9000', 'sampler', 'jt10', 'jt30', 'jt90'];
+  const canonicalIds = ['jb01', 'jb200', 'jb202', 'jp9000', 'jbs', 'jt10', 'jt30', 'jt90'];
 
   // Build render context for effects that need session data (e.g., sidechain)
   const renderContext = { session, stepDuration };

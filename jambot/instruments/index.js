@@ -24,4 +24,5 @@ export { JP9000Node, JP9000_PRESETS } from './jp9000-node.js';
 export { TR909Node } from './tr909-node.js';
 export { TB303Node } from './tb303-node.js';
 export { SH101Node } from './sh101-node.js';
-export { SamplerNode } from './sampler-node.js';
+export { JBSNode } from './jbs-node.js';
+export { JBSNode as SamplerNode } from './jbs-node.js';  // Legacy alias

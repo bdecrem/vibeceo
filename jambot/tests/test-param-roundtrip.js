@@ -20,7 +20,7 @@ const ALL_PARAMS = {
   jt10: require('../params/jt10-params.json'),
   jt30: require('../params/jt30-params.json'),
   jt90: require('../params/jt90-params.json'),
-  sampler: require('../params/sampler-params.json'),
+  jbs: require('../params/jbs-params.json'),
 };
 
 let passed = 0;

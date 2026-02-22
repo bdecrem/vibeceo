@@ -1,0 +1,10 @@
+{
+  "kits": [
+    { "id": "amber", "name": "Amber Kit", "path": "/jbs/kits/amber" },
+    { "id": "808", "name": "808 Kit", "path": "/jbs/kits/808" },
+    { "id": "909kicks", "name": "909 Kicks", "path": "/jbs/kits/909kicks" },
+    { "id": "acoustic", "name": "Acoustic Kit", "path": "/jbs/kits/acoustic" },
+    { "id": "lofi", "name": "Lo-Fi Kit", "path": "/jbs/kits/lofi" },
+    { "id": "bartdekit", "name": "Bart DeKit", "path": "/jbs/kits/bartdekit" }
+  ]
+}

@@ -86,6 +86,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // JB-S sampler at /jbs
+    if (pathname.startsWith('/jbs')) {
+      log(`[Middleware] JB-S route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // Mave's space at /mave
     if (pathname.startsWith('/mave')) {
       log(`[Middleware] mave route bypassed: ${pathname}`)
@@ -340,6 +346,12 @@ export function middleware(request: NextRequest) {
     // 90s synth library at /90s
     if (pathname.startsWith('/90s')) {
       log(`[Middleware] intheamber.com 90s route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // JB-S sampler at /jbs
+    if (pathname.startsWith('/jbs')) {
+      log(`[Middleware] intheamber.com JB-S route bypassed: ${pathname}`)
       return NextResponse.next()
     }
 

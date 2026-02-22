@@ -30,7 +30,7 @@ function test(name, fn) {
 // Create a session -- this triggers registration and validation
 const session = createSession({ bpm: 120 });
 
-const CANONICAL_IDS = ['jb01', 'jb202', 'sampler', 'jt10', 'jt30', 'jt90', 'jp9000'];
+const CANONICAL_IDS = ['jb01', 'jb202', 'jbs', 'jt10', 'jt30', 'jt90', 'jp9000'];
 const REQUIRED_METHODS = [
   'getParam', 'setParam', 'getPattern', 'setPattern',
   'renderPattern', 'getDescriptor', 'getPatternLength', 'getOutputGain',

@@ -213,7 +213,7 @@ const mixerTools = {
     const drums = session.get('drums.level') ?? 0;
     const bass = session.get('bass.level') ?? 0;
     const lead = session.get('lead.level') ?? 0;
-    const sampler = session.get('sampler.level') ?? 0;
+    const jbs = session.get('jbs.level') ?? 0;
 
     const formatLevel = (dB) => {
       if (dB === 0) return '0dB';
@@ -221,7 +221,7 @@ const mixerTools = {
     };
 
     lines.push('OUTPUT LEVELS:');
-    lines.push(`  drums: ${formatLevel(drums)}  bass: ${formatLevel(bass)}  lead: ${formatLevel(lead)}  sampler: ${formatLevel(sampler)}`);
+    lines.push(`  drums: ${formatLevel(drums)}  bass: ${formatLevel(bass)}  lead: ${formatLevel(lead)}  jbs: ${formatLevel(jbs)}`);
     lines.push('');
 
     // Check if mixer has any other config

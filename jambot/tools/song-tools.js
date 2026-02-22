@@ -138,14 +138,15 @@ const songTools = {
       return `Saved lead pattern "${patternName}"`;
     }
 
-    if (instrument === 'sampler') {
-      session.patterns.sampler[patternName] = {
-        pattern: JSON.parse(JSON.stringify(session.samplerPattern)),
-        params: JSON.parse(JSON.stringify(session.samplerParams)),
-        channelInserts: getInsertsForInstrument(session, 'sampler'),
+    if (instrument === 'jbs' || instrument === 'sampler') {
+      if (!session.patterns.jbs) session.patterns.jbs = {};
+      session.patterns.jbs[patternName] = {
+        pattern: JSON.parse(JSON.stringify(session.jbsPattern)),
+        params: JSON.parse(JSON.stringify(session.jbsParams)),
+        channelInserts: getInsertsForInstrument(session, 'jbs'),
       };
-      session.currentPattern.sampler = patternName;
-      return `Saved sampler pattern "${patternName}"`;
+      session.currentPattern.jbs = patternName;
+      return `Saved jbs pattern "${patternName}"`;
     }
 
     if (instrument === 'jb01') {
@@ -249,15 +250,15 @@ const songTools = {
       return `Loaded lead pattern "${patternName}"`;
     }
 
-    if (instrument === 'sampler') {
-      const saved = session.patterns.sampler[patternName];
-      if (!saved) return `No sampler pattern "${patternName}" found`;
-      session.samplerPattern = JSON.parse(JSON.stringify(saved.pattern));
-      session.samplerParams = JSON.parse(JSON.stringify(saved.params));
-      clearInsertsForInstrument(session, 'sampler');
+    if (instrument === 'jbs' || instrument === 'sampler') {
+      const saved = session.patterns.jbs?.[patternName];
+      if (!saved) return `No jbs pattern "${patternName}" found`;
+      session.jbsPattern = JSON.parse(JSON.stringify(saved.pattern));
+      session.jbsParams = JSON.parse(JSON.stringify(saved.params));
+      clearInsertsForInstrument(session, 'jbs');
       restoreInserts(session, saved.channelInserts);
-      session.currentPattern.sampler = patternName;
-      return `Loaded sampler pattern "${patternName}"`;
+      session.currentPattern.jbs = patternName;
+      return `Loaded jbs pattern "${patternName}"`;
     }
 
     if (instrument === 'jb01') {
@@ -339,7 +340,7 @@ const songTools = {
   list_patterns: async (input, session, context) => {
     const lines = [];
     // Active instruments first
-    for (const instrument of ['jb01', 'jb200', 'jb202', 'jt90', 'sampler']) {
+    for (const instrument of ['jb01', 'jb200', 'jb202', 'jt90', 'jbs']) {
       const patterns = session.patterns?.[instrument] || {};
       const names = Object.keys(patterns);
       const current = session.currentPattern?.[instrument];
@@ -374,7 +375,7 @@ const songTools = {
         jb200: s.jb200 || null,
         jb202: s.jb202 || null,
         jt90: s.jt90 || null,
-        sampler: s.sampler || null,
+        jbs: s.jbs || s.sampler || null,
         // Dormant instruments (legacy support)
         drums: s.drums || null,
         bass: s.bass || null,
@@ -403,7 +404,7 @@ const songTools = {
 
     // Show patterns (active instruments first)
     lines.push('PATTERNS:');
-    for (const instrument of ['jb01', 'jb200', 'jb202', 'jt90', 'sampler']) {
+    for (const instrument of ['jb01', 'jb200', 'jb202', 'jt90', 'jbs']) {
       const patterns = session.patterns?.[instrument] || {};
       const names = Object.keys(patterns);
       if (names.length > 0) {
@@ -428,7 +429,7 @@ const songTools = {
         if (section.patterns.jb200) parts.push(`jb200:${section.patterns.jb200}`);
         if (section.patterns.jb202) parts.push(`jb202:${section.patterns.jb202}`);
         if (section.patterns.jt90) parts.push(`jt90:${section.patterns.jt90}`);
-        if (section.patterns.sampler) parts.push(`sampler:${section.patterns.sampler}`);
+        if (section.patterns.jbs) parts.push(`jbs:${section.patterns.jbs}`);
         if (section.patterns.drums) parts.push(`drums:${section.patterns.drums}`);
         if (section.patterns.bass) parts.push(`bass:${section.patterns.bass}`);
         if (section.patterns.lead) parts.push(`lead:${section.patterns.lead}`);

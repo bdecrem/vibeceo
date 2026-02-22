@@ -42,13 +42,13 @@ Jambot is a modular synth platform where **instruments are plugins**. The system
 
 ## Current Instruments
 
-We have **6 canonical instruments**:
+We have **7 canonical instruments**:
 
 | Instrument | File | Description |
 |------------|------|-------------|
 | `jb01` | `instruments/jb01-node.js` | Drum machine (8 voices) |
 | `jb202` | `instruments/jb202-node.js` | Bass monosynth (custom DSP) |
-| `sampler` | `instruments/sampler-node.js` | Sample playback (10 slots) |
+| `jbs` | `instruments/jbs-node.js` | Sample playback (10 slots) |
 | `jt10` | `instruments/jt10-node.js` | Lead synth (101-style) |
 | `jt30` | `instruments/jt30-node.js` | Acid bass (303-style) |
 | `jt90` | `instruments/jt90-node.js` | Drum machine (909-style, 11 voices) |
@@ -78,7 +78,7 @@ jambot/
 ├── instruments/
 │   ├── jb01-node.js      # JB01 drum machine (8 voices)
 │   ├── jb202-node.js     # JB202 bass monosynth (custom DSP)
-│   ├── sampler-node.js   # Sampler (10 slots)
+│   ├── jbs-node.js       # JB-S sampler (10 slots)
 │   ├── jt10-node.js      # JT10 lead synth (101-style)
 │   ├── jt30-node.js      # JT30 acid bass (303-style)
 │   ├── jt90-node.js      # JT90 drum machine (909-style, 11 voices)
@@ -89,7 +89,7 @@ jambot/
 │   ├── jt10-params.json   # JT10 lead param definitions
 │   ├── jt30-params.json   # JT30 acid bass param definitions
 │   ├── jt90-params.json   # JT90 drum param definitions
-│   ├── sampler-params.json # Sampler param definitions
+│   ├── jbs-params.json    # JB-S sampler param definitions
 │   └── converters.js      # Producer units <-> engine units
 ├── tools/
 │   ├── index.js              # Tool registry + handler dispatch
@@ -102,7 +102,7 @@ jambot/
 │   ├── automation-tools.js   # automate, clear_automation, show_automation
 │   ├── song-tools.js         # Patterns, arrangement
 │   ├── session-tools.js      # render, show, create_session
-│   ├── sampler-tools.js      # R9DS sampler tools
+│   ├── jbs-tools.js          # JB-S sampler tools
 │   ├── mixer-tools.js        # Mixer, sends, inserts
 │   └── render-tools.js       # Render + analysis tools
 ├── presets/
@@ -385,11 +385,11 @@ add_bass({ pattern: [...], bars: 4 })    // 64-step pattern (4 bars)
 add_lead({ pattern: [...] })
 ```
 
-### sampler
+### jbs (JB-S Sampler)
 10-slot sample player with kits.
 
 ```
-add_samples({ s1: [{step: 0, vel: 1}], s3: [{step: 4, vel: 0.8}] })
+add_jbs({ s1: [0, 4, 8, 12], s3: [4, 12] })
 ```
 
 ## Primary Tools
@@ -404,7 +404,7 @@ tweak({ path: 'drums.kick.level', value: -6 })      // dB
 tweak({ path: 'bass.cutoff', value: 2000 })         // Hz
 tweak({ path: 'bass.resonance', value: 80 })        // 0-100
 tweak({ path: 'lead.attack', value: 30 })           // 0-100
-tweak({ path: 'sampler.s1.tune', value: +5 })       // semitones
+tweak({ path: 'jbs.s1.tune', value: +5 })            // semitones
 ```
 
 ### get_param
@@ -456,7 +456,7 @@ Path format: `drums.{voice}.{param}` (e.g., `drums.kick.decay`, `drums.snare.lev
 
 Path format: `bass.{param}` or `lead.{param}` (e.g., `bass.filterCutoff`, `lead.attack`)
 
-### sampler (per slot)
+### jbs (per slot)
 
 | Param | Unit | Range | Description |
 |-------|------|-------|-------------|
@@ -467,7 +467,7 @@ Path format: `bass.{param}` or `lead.{param}` (e.g., `bass.filterCutoff`, `lead.
 | filter | Hz | 200-20000 | Lowpass cutoff |
 | pan | -100 to +100 | L to R | Stereo position |
 
-Path format: `sampler.{slot}.{param}` (e.g., `sampler.s1.level`, `sampler.s3.tune`)
+Path format: `jbs.{slot}.{param}` (e.g., `jbs.s1.level`, `jbs.s3.tune`)
 
 ## Song Mode
 
@@ -540,7 +540,7 @@ tweak({ path: 'drums.kick.level', value: -60 })  // -60dB = silent
 All instruments are registered and ready:
 - `jb01` / `drums` — JB01 drum machine (8 voices)
 - `jb202` / `bass` / `lead` — JB202 bass monosynth (custom DSP)
-- `sampler` — Sample player (10 slots)
+- `jbs` — JB-S sampler (10 slots)
 - `jt10` — Lead synth (101-style)
 - `jt30` — Acid bass (303-style)
 - `jt90` — Drum machine (909-style, 11 voices)
@@ -605,7 +605,7 @@ Add effects to any target (instrument, voice, or master) in any order. Effects a
 
 ### Targets
 
-- **Instruments**: `jb01`, `jb202`, `sampler`, `jt10`, `jt30`, `jt90`, `jp9000`
+- **Instruments**: `jb01`, `jb202`, `jbs`, `jt10`, `jt30`, `jt90`, `jp9000`
 - **Voices**: `jb01.ch`, `jb01.kick`, `jb01.snare`, etc. — per-voice effects (JB01 supported, others can add `renderVoices()`)
 - **Master**: `master`
 

@@ -44,6 +44,7 @@ const paramFiles = [
   'jt30-params.json',
   'jt90-params.json',
   'sampler-params.json',
+  'jbs-params.json',
   'converters.js',
 ];
 for (const file of paramFiles) {

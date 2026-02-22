@@ -47,7 +47,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "sampler", "jt10", "jt30", "jt90"], description: "Which instrument's pattern to save" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "jbs", "jt10", "jt30", "jt90"], description: "Which instrument's pattern to save" },
         name: { type: "string", description: "Pattern name (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -59,7 +59,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "sampler", "jt10", "jt30", "jt90"], description: "Which instrument's pattern to load" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "jbs", "jt10", "jt30", "jt90"], description: "Which instrument's pattern to load" },
         name: { type: "string", description: "Pattern name to load (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -71,7 +71,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "sampler", "jt10", "jt30", "jt90"], description: "Which instrument" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "jbs", "jt10", "jt30", "jt90"], description: "Which instrument" },
         from: { type: "string", description: "Source pattern name (A, B, etc)" },
         to: { type: "string", description: "Destination pattern name" }
       },
@@ -95,14 +95,14 @@ export const TOOLS = [
       properties: {
         sections: {
           type: "array",
-          description: "Array of sections. Each section: {bars: 4, jb01: 'A', jb202: 'A', sampler: 'A', jt10: 'A', jt30: 'A', jt90: 'A'}",
+          description: "Array of sections. Each section: {bars: 4, jb01: 'A', jb202: 'A', jbs: 'A', jt10: 'A', jt30: 'A', jt90: 'A'}",
           items: {
             type: "object",
             properties: {
               bars: { type: "number", description: "Number of bars for this section" },
               jb01: { type: "string", description: "JB01 drum pattern name (or omit to silence)" },
               jb202: { type: "string", description: "JB202 bass pattern name (or omit to silence)" },
-              sampler: { type: "string", description: "Sampler pattern name (or omit to silence)" },
+              jbs: { type: "string", description: "JB-S sampler pattern name (or omit to silence)" },
               jt10: { type: "string", description: "JT10 lead pattern name (or omit to silence)" },
               jt30: { type: "string", description: "JT30 acid bass pattern name (or omit to silence)" },
               jt90: { type: "string", description: "JT90 drum pattern name (or omit to silence)" }
@@ -505,10 +505,10 @@ export const TOOLS = [
       required: ["name"]
     }
   },
-  // Sampler tools
+  // JB-S Sampler tools
   {
-    name: "list_kits",
-    description: "List all available sample kits (bundled + user kits from ~/Documents/Jambot/kits/)",
+    name: "list_jbs_kits",
+    description: "List all available JB-S sample kits (bundled + user kits from ~/Documents/Jambot/kits/)",
     input_schema: {
       type: "object",
       properties: {},
@@ -516,8 +516,8 @@ export const TOOLS = [
     }
   },
   {
-    name: "load_kit",
-    description: "Load a sample kit for the Sampler. Use list_kits first to see available kits.",
+    name: "load_jbs_kit",
+    description: "Load a sample kit for the JB-S sampler. Use list_jbs_kits first to see available kits.",
     input_schema: {
       type: "object",
       properties: {
@@ -527,11 +527,12 @@ export const TOOLS = [
     }
   },
   {
-    name: "add_samples",
-    description: "Add sample patterns to the Sampler. Must load_kit first. Slots are s1-s10. For simple patterns use step arrays [0,4,8,12]. For velocity control use [{step:0,vel:1},{step:4,vel:0.5}].",
+    name: "add_jbs",
+    description: "Add sample patterns to the JB-S sampler. Must load_jbs_kit first. Slots are s1-s10. For simple patterns use step arrays [0,4,8,12]. For velocity control use [{step:0,vel:1},{step:4,vel:0.5}]. Use bars param for multi-bar patterns.",
     input_schema: {
       type: "object",
       properties: {
+        bars: { type: "number", description: "Pattern length in bars (default 1). Use for multi-bar patterns." },
         s1: { type: "array", description: "Steps for slot 1 (usually kick)" },
         s2: { type: "array", description: "Steps for slot 2 (usually snare)" },
         s3: { type: "array", description: "Steps for slot 3 (usually clap)" },
@@ -547,8 +548,8 @@ export const TOOLS = [
     }
   },
   {
-    name: "tweak_samples",
-    description: "Tweak Sampler parameters. UNITS: level in dB, tune in semitones, attack/decay 0-100, filter in Hz, pan L/R -100 to +100. Use mute:true to silence.",
+    name: "tweak_jbs",
+    description: "Tweak JB-S sampler parameters. UNITS: level in dB, tune in semitones, attack/decay 0-100, filter in Hz, pan L/R -100 to +100. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {
@@ -565,7 +566,16 @@ export const TOOLS = [
     }
   },
   {
-    name: "create_kit",
+    name: "show_jbs",
+    description: "Show current JB-S sampler state (loaded kit, slots, pattern).",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "create_jbs_kit",
     description: "Create a new sample kit from audio files in a folder. Scans the folder for WAV/AIFF/MP3 files and creates a kit in ~/Documents/Jambot/kits/. Returns the list of found files so you can ask the user what to name each slot.",
     input_schema: {
       type: "object",
@@ -596,7 +606,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["jb01", "jb202", "sampler", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to add effect to" },
+        channel: { type: "string", enum: ["jb01", "jb202", "jbs", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to add effect to" },
         effect: { type: "string", enum: ["eq", "filter", "ducker"], description: "Type of effect" },
         preset: { type: "string", description: "Effect preset (eq: 'acidBass'/'crispHats'/'warmPad'; filter: 'dubDelay'/'telephone'/'lofi')" },
         params: {
@@ -613,7 +623,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["jb01", "jb202", "sampler", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to remove effect from" },
+        channel: { type: "string", enum: ["jb01", "jb202", "jbs", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to remove effect from" },
         effect: { type: "string", enum: ["eq", "filter", "ducker", "all"], description: "Type of effect to remove, or 'all' to clear all inserts" }
       },
       required: ["channel"]
@@ -625,7 +635,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        target: { type: "string", description: "What to duck (e.g., 'jb202', 'sampler')" },
+        target: { type: "string", description: "What to duck (e.g., 'jb202', 'jbs')" },
         trigger: { type: "string", description: "What triggers the duck (e.g., 'kick')" },
         amount: { type: "number", description: "How much to duck (0-1, default 0.5)" }
       },
@@ -874,11 +884,11 @@ export const TOOLS = [
   // === PRESET TOOLS (Generic) ===
   {
     name: "save_preset",
-    description: "Save current instrument settings as a user preset. Works for any instrument (jb01, jb202, sampler). Presets are stored in ~/Documents/Jambot/presets/.",
+    description: "Save current instrument settings as a user preset. Works for any instrument (jb01, jb202, jbs). Presets are stored in ~/Documents/Jambot/presets/.",
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "sampler"], description: "Which instrument to save preset for" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "jbs"], description: "Which instrument to save preset for" },
         id: { type: "string", description: "Preset ID (lowercase, hyphenated, e.g., 'my-deep-kick')" },
         name: { type: "string", description: "Display name (e.g., 'My Deep Kick')" },
         description: { type: "string", description: "Optional description of the preset's sound" }
@@ -892,7 +902,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "sampler"], description: "Which instrument to load preset for" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "jbs"], description: "Which instrument to load preset for" },
         id: { type: "string", description: "Preset ID to load" }
       },
       required: ["instrument", "id"]
@@ -904,7 +914,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "sampler"], description: "Filter by instrument (optional, shows all if omitted)" }
+        instrument: { type: "string", enum: ["jb01", "jb202", "jbs"], description: "Filter by instrument (optional, shows all if omitted)" }
       },
       required: []
     }
@@ -912,11 +922,11 @@ export const TOOLS = [
   // === GENERIC PARAMETER TOOLS (Unified System) ===
   {
     name: "get_param",
-    description: "Get any parameter value via unified path. Works for ALL instruments and parameters. Examples: 'jb01.kick.decay' → 37, 'jb202.filterCutoff' → 2000, 'sampler.s1.level' → 0",
+    description: "Get any parameter value via unified path. Works for ALL instruments and parameters. Examples: 'jb01.kick.decay' → 37, 'jb202.filterCutoff' → 2000, 'jbs.s1.level' → 0",
     input_schema: {
       type: "object",
       properties: {
-        path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb202.filterCutoff', 'sampler.s1.level')" }
+        path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb202.filterCutoff', 'jbs.s1.level')" }
       },
       required: ["path"]
     }
@@ -927,7 +937,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb202.filterCutoff', 'sampler.s1.level')" },
+        path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb202.filterCutoff', 'jbs.s1.level')" },
         value: { type: "number", description: "Absolute value to set" },
         delta: { type: "number", description: "Relative adjustment (positive to increase, negative to decrease). Use this for 'increase by X' or 'reduce by X' requests." }
       },
@@ -951,7 +961,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        node: { type: "string", description: "Node to list params for (jb01, jb202, sampler). Omit to list all available nodes." }
+        node: { type: "string", description: "Node to list params for (jb01, jb202, jbs). Omit to list all available nodes." }
       },
       required: []
     }
@@ -962,7 +972,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        node: { type: "string", description: "Node to get state for (jb01, jb202, sampler)" },
+        node: { type: "string", description: "Node to get state for (jb01, jb202, jbs)" },
         voice: { type: "string", description: "Optional: filter to specific voice (e.g., 'kick', 'snare')" }
       },
       required: ["node"]
