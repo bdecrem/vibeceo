@@ -1050,7 +1050,7 @@ add_effect({ target: 'master', effect: 'reverb', decay: 8, mix: 45, size: 80, da
 
 ## Automation (Per-Step Knob Mashing)
 
-Automation sets per-step values for any parameter — 16 values that cycle with each bar. Like turning a knob differently on every step. Works on any instrument that supports it (JB01, JB202, JT30, JT90).
+Automation sets per-step values for any parameter — 16 values that cycle with each bar. Like turning a knob differently on every step. Works on any instrument that supports it (JB01, JB202, JT30, JT90, JP9000).
 
 ### Tools
 
@@ -1136,6 +1136,7 @@ Arrangement mode uses each section's saved automation.
 | **JB202** | `jb202.{param}` | `jb202.filterCutoff`, `jb202.drive` |
 | **JT30** | `jt30.{param}` | `jt30.cutoff`, `jt30.resonance` |
 | **JT90** | `jt90.{voice}.{param}` | `jt90.kick.decay`, `jt90.snare.tone` |
+| **JP9000** | `jp9000.{module}.{param}` | `jp9000.filter1.cutoff`, `jp9000.string1.decay` |
 
 Values are in **producer units** (0-100, Hz, dB) — same units as `tweak`. The system converts to engine units at render time.
 

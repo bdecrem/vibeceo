@@ -294,6 +294,7 @@ export class JP9000Node extends InstrumentNode {
       bars,
       stepDuration,
       sampleRate = 44100,
+      automation = null,
     } = options;
 
     const pattern = this._pattern;
@@ -321,6 +322,21 @@ export class JP9000Node extends InstrumentNode {
       const patternStep = step % pattern.length;
       const stepData = pattern[patternStep];
       const stepStart = step * samplesPerStep;
+
+      // Apply per-step automation (direct units — no conversion needed)
+      if (automation) {
+        for (const [path, values] of Object.entries(automation)) {
+          const val = values[patternStep % values.length];
+          if (val !== null && val !== undefined) {
+            const dotIdx = path.indexOf('.');
+            if (dotIdx > 0) {
+              const moduleId = path.substring(0, dotIdx);
+              const param = path.substring(dotIdx + 1);
+              this.rack.setParam(moduleId, param, val);
+            }
+          }
+        }
+      }
 
       // Handle triggers
       if (stepData && stepData.gate) {
@@ -372,6 +388,14 @@ export class JP9000Node extends InstrumentNode {
       sampleRate,
       getChannelData: (channel) => channel === 0 ? outputL : outputR,
     };
+  }
+
+  /**
+   * Get automation data for render (fallback for some code paths)
+   * @returns {Object|null}
+   */
+  _getAutomationForRender() {
+    return this._renderAutomation || null;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
