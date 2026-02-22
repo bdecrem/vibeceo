@@ -744,7 +744,7 @@ export default function SiftGame() {
             return;
           }
           game.mercury.y = ly - game.mercury.r;
-          game.mercury.vy = -game.mercury.vy * 0.4;
+          game.mercury.vy = -game.mercury.vy * 0.55;
           if (Math.abs(game.mercury.vy) < 20) game.mercury.vy = 0;
           game.combo = 0;
           game.mercury.glowIntensity = Math.max(0, game.mercury.glowIntensity - 5);
@@ -862,7 +862,7 @@ export default function SiftGame() {
             }
           } else {
             game.mercury.y = ly - game.mercury.r;
-            game.mercury.vy = -game.mercury.vy * 0.4;
+            game.mercury.vy = -game.mercury.vy * 0.55;
             if (Math.abs(game.mercury.vy) < 20) game.mercury.vy = 0;
             game.combo = 0;
             game.mercury.glowIntensity = 0;
@@ -972,19 +972,7 @@ export default function SiftGame() {
         if (l.gapSize === 0) {
           ctx!.fillStyle = barColor;
           ctx!.fillRect(0, ly, canvas!.width, LAYER_HEIGHT);
-          if (l.isBlack && !l.passed) {
-            const worldDist = getLayerWorldY(l) - game.mercury.y;
-            if (worldDist > 0 && worldDist < LAYER_SPACING * 2.5) {
-              const prox = 1 - worldDist / (LAYER_SPACING * 2.5);
-              ctx!.fillStyle = '#ef4444';
-              ctx!.globalAlpha = prox * (0.5 + Math.sin(game.gameTime * 6) * 0.3);
-              ctx!.font = 'bold 14px monospace';
-              ctx!.textAlign = 'center';
-              ctx!.fillText('DANGER', canvas!.width / 2, ly - 8);
-              ctx!.textAlign = 'left';
-              ctx!.globalAlpha = 1;
-            }
-          }
+          // red visual telegraph only — no text (Loop feedback)
         } else if (gapLeft < gapRight) {
           ctx!.fillRect(0, ly, gapLeft * canvas!.width, LAYER_HEIGHT);
           ctx!.fillRect(gapRight * canvas!.width, ly, canvas!.width - gapRight * canvas!.width, LAYER_HEIGHT);

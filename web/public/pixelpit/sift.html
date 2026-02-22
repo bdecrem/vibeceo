@@ -564,7 +564,7 @@
             return;
           }
           mercury.y = ly - mercury.r;
-          mercury.vy = -mercury.vy * 0.4;
+          mercury.vy = -mercury.vy * 0.55;
           if (Math.abs(mercury.vy) < 20) mercury.vy = 0;
           combo = 0;
           mercury.glowIntensity = Math.max(0, mercury.glowIntensity - 5);
@@ -682,7 +682,7 @@
             }
           } else {
             mercury.y = ly - mercury.r;
-            mercury.vy = -mercury.vy * 0.4;
+            mercury.vy = -mercury.vy * 0.55;
             if (Math.abs(mercury.vy) < 20) mercury.vy = 0;
             combo = 0;
             mercury.glowIntensity = 0;
@@ -780,20 +780,7 @@
         if (l.gapSize === 0) {
           ctx.fillStyle = barColor;
           ctx.fillRect(0, ly, W, LAYER_HEIGHT);
-          // DANGER label above black layers when close
-          if (l.isBlack && !l.passed) {
-            const worldDist = getLayerWorldY(l) - mercury.y;
-            if (worldDist > 0 && worldDist < LAYER_SPACING * 2.5) {
-              const prox = 1 - worldDist / (LAYER_SPACING * 2.5);
-              ctx.fillStyle = '#ef4444';
-              ctx.globalAlpha = prox * (0.5 + Math.sin(gameTime * 6) * 0.3);
-              ctx.font = 'bold 14px monospace';
-              ctx.textAlign = 'center';
-              ctx.fillText('DANGER', W / 2, ly - 8);
-              ctx.textAlign = 'left';
-              ctx.globalAlpha = 1;
-            }
-          }
+          // removed DANGER text per Loop — red visual telegraph is enough
         } else if (gapLeft < gapRight) {
           ctx.fillRect(0, ly, gapLeft * W, LAYER_HEIGHT);
           ctx.fillRect(gapRight * W, ly, W - gapRight * W, LAYER_HEIGHT);
