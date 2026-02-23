@@ -71,10 +71,12 @@
       if (!audioCtx) return;
       const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
       osc.connect(g); g.connect(audioCtx.destination);
-      osc.type = 'square'; osc.frequency.value = 330;
-      g.gain.setValueAtTime(0.08, audioCtx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(330, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.1);
+      g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.18);
     }
 
     function playFallThrough() {
@@ -115,7 +117,7 @@
       cameraY = 0;
       score = 0;
       maxHeight = 0;
-      dots_count = 3; // start with 3 dots
+      dots_count = 1; // start with 1 dot — teaches scarcity immediately
       phase = 'start';
       gameTime = 0;
       deadTimer = 0;
@@ -146,10 +148,12 @@
 
     // --- PLATFORM GENERATION ---
     function generateAbove() {
-      const highest = platforms.reduce((min, p) => Math.min(min, p.y), Infinity);
-      while (highest > cameraY - H) {
-        const lastY = platforms.reduce((min, p) => Math.min(min, p.y), Infinity);
-        const newY = lastY - PLAT_SPACING_MIN - Math.random() * (PLAT_SPACING_MAX - PLAT_SPACING_MIN);
+      const target = cameraY - H * 1.5;
+      while (true) {
+        const highest = platforms.reduce((min, p) => Math.min(min, p.y), Infinity);
+        if (highest <= target) break;
+
+        const newY = highest - PLAT_SPACING_MIN - Math.random() * (PLAT_SPACING_MAX - PLAT_SPACING_MIN);
         const x = 30 + Math.random() * (W - 60);
 
         // Difficulty: platforms get narrower and gaps wider as score increases
@@ -165,8 +169,6 @@
           const dotY = newY - 20 - Math.random() * 40;
           dots.push({ x: dotX, y: dotY, alive: true, pulse: Math.random() * Math.PI * 2 });
         }
-
-        break; // one at a time
       }
     }
 
@@ -197,7 +199,7 @@
     function handleMove(x) {
       if (!dragActive || phase !== 'playing') return;
       const dx = x - dragX;
-      player.vx = dx * 8; // smooth steering
+      player.vx = dx * 15; // responsive steering
       dragX = x;
     }
 
@@ -243,7 +245,7 @@
       player.vy += GRAVITY * dt;
       player.y += player.vy * dt;
       player.x += player.vx * dt;
-      player.vx *= 0.92; // drag
+      player.vx *= 0.88; // drag
 
       // Wrap horizontally
       if (player.x < -PLAYER_R) player.x = W + PLAYER_R;
@@ -384,7 +386,7 @@
         } else {
           // Ghost platform
           ctx.fillStyle = T.ghost;
-          ctx.globalAlpha = 0.4 + Math.sin(gameTime * 2 + plat.x) * 0.1;
+          ctx.globalAlpha = 0.25 + Math.sin(gameTime * 2 + plat.x) * 0.05;
           ctx.fillRect(plat.x - plat.w / 2, sy, plat.w, PLAT_H);
           ctx.globalAlpha = 1;
 
