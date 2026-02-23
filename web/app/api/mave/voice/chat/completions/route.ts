@@ -17,6 +17,37 @@ export const maxDuration = 30;
 const OPENCLAW_URL = process.env.OPENCLAW_GATEWAY_URL || 'http://localhost:18789';
 const OPENCLAW_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || '';
 
+/**
+ * Log voice conversation to memory file so main session can see it.
+ * Appends to today's memory file.
+ */
+async function logVoiceExchange(userText: string, assistantText: string) {
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles' });
+    const memDir = path.join(process.env.HOME || '/Users/bart', '.openclaw/workspace/memory');
+    const memFile = path.join(memDir, `${dateStr}.md`);
+
+    // Ensure dir exists
+    fs.mkdirSync(memDir, { recursive: true });
+
+    const entry = `\n### Voice Chat (${timeStr})\n- **Bart:** ${userText}\n- **Mave:** ${assistantText}\n`;
+
+    // Append or create
+    if (fs.existsSync(memFile)) {
+      fs.appendFileSync(memFile, entry);
+    } else {
+      fs.writeFileSync(memFile, `# ${dateStr}\n${entry}`);
+    }
+    console.log('[mave-voice] Logged voice exchange to', memFile);
+  } catch (err) {
+    console.error('[mave-voice] Failed to log voice exchange:', err);
+  }
+}
+
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -71,6 +102,7 @@ export async function POST(request: NextRequest) {
       const readable = new ReadableStream({
         async start(controller) {
           let closed = false;
+          let fullResponse = ''; // accumulate for logging
           const safeEnqueue = (data: Uint8Array) => {
             if (!closed) {
               try { controller.enqueue(data); } catch { closed = true; }
@@ -133,6 +165,7 @@ export async function POST(request: NextRequest) {
                     const parsed = JSON.parse(data);
                     const content = parsed.choices?.[0]?.delta?.content;
                     if (content) {
+                      fullResponse += content;
                       safeEnqueue(encoder.encode(toSSEChunk(content, id)));
                     }
                     if (parsed.choices?.[0]?.finish_reason === 'stop') {
@@ -159,6 +192,10 @@ export async function POST(request: NextRequest) {
             safeEnqueue(encoder.encode('data: [DONE]\n\n'));
 
             console.log(`[mave-voice] Response complete (${Date.now() - startTime}ms)`);
+            // Log voice exchange to memory (fire and forget)
+            if (lastUser?.content && fullResponse) {
+              logVoiceExchange(lastUser.content, fullResponse).catch(() => {});
+            }
             if (!closed) controller.close();
           } catch (error) {
             console.error('[mave-voice] Stream error:', error);
@@ -194,6 +231,11 @@ export async function POST(request: NextRequest) {
 
       const data = await resp.json();
       console.log(`[mave-voice] Non-streaming response (${Date.now() - startTime}ms)`);
+      // Log voice exchange
+      const assistantContent = data.choices?.[0]?.message?.content;
+      if (lastUser?.content && assistantContent) {
+        logVoiceExchange(lastUser.content, assistantContent).catch(() => {});
+      }
       return new Response(JSON.stringify(data), {
         headers: { 'Content-Type': 'application/json' },
       });
