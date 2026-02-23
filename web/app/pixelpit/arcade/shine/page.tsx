@@ -117,7 +117,7 @@ export default function ShineGame() {
     gems: [] as Gem[], particles: [] as Particle[], floatingTexts: [] as FloatingText[],
     score: 0, collected: 0, timeLeft: 30, gameTime: 0,
     combo: 0, comboTimer: 0, comboMultiplier: 1, maxCombo: 0,
-    phase: 'start' as 'start' | 'playing' | 'over' | 'tutorial',
+    phase: 'start' as 'start' | 'countdown' | 'playing' | 'over' | 'tutorial',
     screenShake: { timer: 0, intensity: 0 },
     hitFreeze: 0, missDarken: 0,
     comboBreakFlash: { timer: 0, scale: 1, text: '', mult: 1 },
@@ -140,6 +140,10 @@ export default function ShineGame() {
     // beat clock
     beatStartTime: 0,
     lastScheduledBeat: -1,
+    // countdown
+    countdownTimer: 0, // seconds remaining in countdown
+    countdownBeat: 0, // which beat of countdown we're on (for tick sound)
+    countdownLastTick: -1, // last tick index played
     running: false, W: 0, H: 0,
   });
 
@@ -398,14 +402,18 @@ export default function ShineGame() {
   const startGame = useCallback(() => {
     initGame(); initAudio();
     const game = g.current;
-    game.phase = 'playing'; game.running = true;
+    // Setup audio
     const ctx = game.audioCtx!;
     game.masterGain = ctx.createGain();
     game.masterGain.gain.value = 0.7;
     game.masterGain.connect(ctx.destination);
-    game.beatStartTime = ctx.currentTime;
+    // Start countdown: 3 beats at BPM, then go
+    game.phase = 'countdown'; game.running = true;
+    game.countdownTimer = BEAT_SEC * 4; // 4 beats: tick on 1,2,3 then "GO" on 4
+    game.countdownLastTick = -1;
+    game.beatStartTime = ctx.currentTime + BEAT_SEC * 4; // actual game starts after countdown
     game.lastScheduledBeat = -1;
-    startSong();
+    startSong(); // music starts during countdown so player hears the beat
     setGameState('playing'); setShowShareModal(false); setProgression(null);
   }, [initGame, initAudio, startSong]);
 
@@ -687,10 +695,48 @@ export default function ShineGame() {
       if (game.timerFlash > 0) game.timerFlash -= dt;
     }
 
+    function updateCountdown(dt: number) {
+      const game = g.current;
+      game.countdownTimer -= dt;
+
+      // Play tick sounds on each beat
+      const beatsElapsed = Math.floor((BEAT_SEC * 4 - game.countdownTimer) / BEAT_SEC);
+      if (beatsElapsed > game.countdownLastTick && beatsElapsed < 4) {
+        game.countdownLastTick = beatsElapsed;
+        // Tick sound: high pitched click, higher on "GO"
+        const ctx = game.audioCtx; if (ctx) {
+          const dest = game.masterGain || ctx.destination;
+          const osc = ctx.createOscillator(); const gn = ctx.createGain();
+          osc.connect(gn); gn.connect(dest);
+          osc.type = 'sine';
+          osc.frequency.value = beatsElapsed === 3 ? 1200 : 800;
+          gn.gain.setValueAtTime(0.25, ctx.currentTime);
+          gn.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+          osc.start(); osc.stop(ctx.currentTime + 0.12);
+        }
+      }
+
+      // Beat pulse during countdown
+      if (game.audioCtx) {
+        const elapsed = game.audioCtx.currentTime - (game.beatStartTime - BEAT_SEC * 4);
+        const beatFrac = (elapsed / BEAT_SEC) - Math.floor(elapsed / BEAT_SEC);
+        game.beatPulse = Math.max(0, 1 - beatFrac * 4);
+        // Update chords during countdown too
+        const currentBeat = Math.floor(elapsed / BEAT_SEC);
+        updateChord(currentBeat);
+      }
+
+      if (game.countdownTimer <= 0) {
+        game.phase = 'playing';
+        game.gameTime = 0;
+      }
+    }
+
     function update(dt: number) {
       const game = g.current;
       if (game.phase === 'start' || game.phase === 'over') return;
       if (game.phase === 'tutorial') { updateTutorial(dt); return; }
+      if (game.phase === 'countdown') { updateCountdown(dt); return; }
       if (game.hitFreeze > 0) { game.hitFreeze -= dt; return; }
       game.gameTime += dt;
 
@@ -961,9 +1007,65 @@ export default function ShineGame() {
       ctx!.textAlign = 'left';
     }
 
+    function drawCountdown() {
+      const game = g.current;
+      const W = game.W, H = game.H;
+
+      // Background with beat pulse
+      const pulseAlpha = game.beatPulse * 0.06;
+      ctx!.fillStyle = `rgba(0, 0, 0, ${0.3 - pulseAlpha})`;
+      ctx!.fillRect(0, 0, W, H);
+      if (pulseAlpha > 0.001) {
+        ctx!.fillStyle = `rgba(255, 215, 0, ${pulseAlpha})`;
+        ctx!.fillRect(0, 0, W, H);
+      }
+
+      // Beat pulse ring
+      if (game.beatPulse > 0.01) {
+        const ringRadius = 50 + (1 - game.beatPulse) * 100;
+        ctx!.strokeStyle = `rgba(255, 215, 0, ${game.beatPulse * 0.25})`;
+        ctx!.lineWidth = 2;
+        ctx!.beginPath(); ctx!.arc(W / 2, H / 2, ringRadius, 0, Math.PI * 2); ctx!.stroke();
+      }
+
+      // Countdown number
+      const beatsElapsed = Math.floor((BEAT_SEC * 4 - game.countdownTimer) / BEAT_SEC);
+      const beatFrac = ((BEAT_SEC * 4 - game.countdownTimer) / BEAT_SEC) - beatsElapsed;
+      const num = 3 - beatsElapsed; // 3, 2, 1, then GO
+
+      // Scale animation: big on beat hit, shrink
+      const scale = 1 + Math.max(0, 1 - beatFrac * 3) * 0.4;
+      const alpha = Math.max(0.3, 1 - beatFrac * 0.7);
+
+      ctx!.textAlign = 'center'; ctx!.textBaseline = 'middle';
+      ctx!.save();
+      ctx!.translate(W / 2, H / 2);
+      ctx!.scale(scale, scale);
+      ctx!.fillStyle = T.gold;
+      ctx!.globalAlpha = alpha;
+      ctx!.font = 'bold 120px monospace';
+      ctx!.shadowBlur = 30; ctx!.shadowColor = 'rgba(255,215,0,0.6)';
+      if (num > 0) {
+        ctx!.fillText(num + '', 0, 0);
+      } else {
+        ctx!.fillText('GO', 0, 0);
+      }
+      ctx!.shadowBlur = 0; ctx!.globalAlpha = 1;
+      ctx!.restore();
+      ctx!.textBaseline = 'alphabetic';
+
+      // "SHINE" title at top
+      const hy = game.safeTop;
+      ctx!.textAlign = 'center';
+      ctx!.fillStyle = T.gold; ctx!.font = 'bold 24px monospace';
+      ctx!.shadowBlur = 10; ctx!.shadowColor = 'rgba(255,215,0,0.4)';
+      ctx!.fillText('SHINE', W / 2, 32 + hy); ctx!.shadowBlur = 0;
+    }
+
     function draw() {
       const game = g.current;
       if (game.phase === 'start' || game.phase === 'over') return;
+      if (game.phase === 'countdown') { drawCountdown(); return; }
       if (game.phase === 'tutorial') { drawTutorial(); return; }
       const W = game.W, H = game.H;
 
