@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>BAT DASH — Powered by JEPA Engine</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050510;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    font-family: ui-monospace, 'Courier New', monospace;
+  }
+  canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; }
+
+  /* ── Overlays ── */
+  .overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10; pointer-events: none;
+  }
+  .overlay.active { pointer-events: auto; }
+  .overlay.hidden { display: none; }
+
+  .card {
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(124, 58, 237, 0.3);
+    border-radius: 16px;
+    padding: 40px 36px;
+    text-align: center;
+    max-width: 360px;
+    width: 90%;
+  }
+  .card h1 {
+    font-size: 48px; font-weight: 900; letter-spacing: 4px;
+    color: #fef08a; margin-bottom: 6px;
+    text-shadow: 0 0 20px rgba(254, 240, 138, 0.3);
+  }
+  .card .sub {
+    font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.5;
+  }
+  .card .jepa-badge {
+    display: inline-block;
+    background: #1a2a1a; color: #2ecc71;
+    font-size: 10px; padding: 3px 10px;
+    border: 1px solid rgba(46, 204, 113, 0.2);
+    letter-spacing: 1px; margin-bottom: 24px;
+  }
+  .btn {
+    display: inline-block;
+    background: #7c3aed; color: #fff;
+    font-family: inherit; font-size: 16px; font-weight: 700;
+    padding: 14px 40px; border: none; border-radius: 12px;
+    cursor: pointer; letter-spacing: 1px;
+    animation: btnGlow 3s ease-in-out infinite;
+    transition: all 0.15s ease-out;
+  }
+  .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+  .btn:active { transform: translateY(1px); }
+  @keyframes btnGlow {
+    0%, 100% { box-shadow: 0 8px 30px rgba(168, 85, 247, 0.3); }
+    50% { box-shadow: 0 8px 40px rgba(168, 85, 247, 0.5); }
+  }
+
+  /* Score HUD */
+  #score-hud {
+    position: fixed; top: 20px; left: 0; width: 100%;
+    text-align: center; z-index: 5;
+    font-size: 48px; font-weight: 900; color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+    display: none;
+  }
+
+  /* Game over card extras */
+  .go-msg { font-size: 15px; color: #94a3b8; margin-bottom: 16px; font-style: italic; }
+  .go-score { font-size: 64px; font-weight: 900; color: #fef08a; margin-bottom: 8px; }
+  .go-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 24px; }
+
+  /* Loading */
+  #loading {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    background: #050510; z-index: 100;
+    color: #64748b; font-family: ui-monospace, monospace; font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">Loading neural net weights...</div>
+<canvas id="canvas"></canvas>
+<div id="score-hud">0</div>
+
+<!-- Start screen -->
+<div id="start-overlay" class="overlay active hidden">
+  <div class="card">
+    <h1>BAT DASH</h1>
+    <div class="sub">powered by JEPA — no physics code</div>
+    <div class="jepa-badge">NEURAL NET ENGINE</div>
+    <br>
+    <button class="btn" id="btn-play">PLAY</button>
+  </div>
+</div>
+
+<!-- Game over screen -->
+<div id="gameover-overlay" class="overlay hidden">
+  <div class="card">
+    <div class="go-msg" id="go-msg"></div>
+    <div class="go-score" id="go-score">0</div>
+    <div class="go-label">score</div>
+    <button class="btn" id="btn-again">PLAY AGAIN</button>
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// BAT DASH × JEPA ENGINE — full visual treatment, zero physics code
+// ═══════════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// ── Theme ───────────────────────────────────────────────────────────
+const T = {
+  sky: '#0a0a1a', skyDark: '#050510',
+  bat: '#1a1a2e', batWing: '#16213e', batEye: '#fff', batPupil: '#000',
+  cape: '#7c3aed', skin: '#fcd5ce', undies: '#ff3366',
+  belt: '#ffd700', beltGlow: '#ffed4a',
+  building: '#1e293b', buildingDark: '#0f172a', buildingEdge: '#334155',
+  window: '#fef3c7', windowOff: '#1e293b',
+  ground: '#0f172a', groundDark: '#070d18', groundLine: '#334155',
+  moon: '#fef9c3', moonGlow: '#fef08a',
+  sweat: '#67e8f9', heroGlow: '#a855f7',
+};
+
+const GAME_OVER_MSGS = [
+  'oof. he tried.', 'the underpants survive', 'not all heroes soar',
+  'gravity wins again', 'a hero rests', 'back to the couch',
+  'he gave it his all', 'the cape is fine', 'night: 1, hero: 0',
+  'well. that happened.', "he'll be back", 'at least he had the outfit',
+];
+
+// ── Engine constants ────────────────────────────────────────────────
+const GAP_SIZE = 0.28;
+const PIPE_W_FRAC = 0.08;   // building width as fraction of canvas
+const BIRD_X_FRAC = 0.15;
+
+// ── Game state ──────────────────────────────────────────────────────
+let state = null;          // current JEPA state
+let phase = 'loading';     // loading | start | warmup | playing | dead | gameover
+let humanTap = false;
+let bestScore = 0;
+let currentScore = 0;
+
+// Visual-only state (not in engine)
+let particles = [];
+let screenFlash = 0;
+let flashIsGreen = false;
+let countdown = '';
+let lastCountdown = '';
+let warmupStart = 0;
+let birdScaleX = 1, birdScaleY = 1;
+let pipeBuildings = {};    // pipe index → stable building number
+let buildingCounter = 0;
+let deadTimer = 0;
+
+// Canvas dimensions (updated on resize)
+let W = 0, H = 0, groundY = 0;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  groundY = H - 50;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ═══════════════════════════════════════════════════════════════════
+// AUDIO SYSTEM — Dark synthwave
+// ═══════════════════════════════════════════════════════════════════
+let audioCtx = null;
+let masterGain = null;
+let musicInterval = null;
+let musicBeat = 0;
+
+const NOTES = {
+  A2: 110, C3: 130.81, D3: 146.83, E3: 164.81, F3: 174.61, G3: 196,
+  A3: 220, C4: 261.63, D4: 293.66, E4: 329.63,
+  A1: 55, D2: 73.42,
+};
+const ARP = [NOTES.A3, NOTES.C4, NOTES.E4, NOTES.D4, NOTES.C4, NOTES.A3, NOTES.E3, NOTES.G3];
+const BASS_PAT = [NOTES.A1, 0, NOTES.A1, 0, NOTES.D2, 0, NOTES.A1, NOTES.A1];
+const BPM = 118;
+const BEAT_MS = 60000 / BPM / 2;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.35;
+  masterGain.connect(audioCtx.destination);
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playMusicNote() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  const step = musicBeat % 8;
+
+  // Pulsing saw arp
+  const arpNote = ARP[step];
+  if (arpNote) {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    const f = audioCtx.createBiquadFilter();
+    o.type = 'sawtooth'; o.frequency.value = arpNote;
+    f.type = 'lowpass'; f.frequency.value = 1800 + Math.sin(musicBeat * 0.2) * 600; f.Q.value = 2;
+    g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    o.connect(f); f.connect(g); g.connect(masterGain);
+    o.start(t); o.stop(t + 0.12);
+  }
+
+  // Sub bass
+  const bassNote = BASS_PAT[step];
+  if (bassNote) {
+    const b1 = audioCtx.createOscillator();
+    const b2 = audioCtx.createOscillator();
+    const bg = audioCtx.createGain();
+    b1.type = 'sine'; b2.type = 'sawtooth';
+    b1.frequency.value = bassNote; b2.frequency.value = bassNote * 2;
+    bg.gain.setValueAtTime(0.25, t); bg.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    const bf = audioCtx.createBiquadFilter(); bf.type = 'lowpass'; bf.frequency.value = 200;
+    b1.connect(bg); b2.connect(bf); bf.connect(bg); bg.connect(masterGain);
+    b1.start(t); b2.start(t); b1.stop(t + 0.15); b2.stop(t + 0.15);
+  }
+
+  // Kick on 1 & 5
+  if (step === 0 || step === 4) {
+    const k = audioCtx.createOscillator(); const kg = audioCtx.createGain();
+    k.type = 'sine'; k.frequency.setValueAtTime(150, t); k.frequency.exponentialRampToValueAtTime(30, t + 0.1);
+    kg.gain.setValueAtTime(0.5, t); kg.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    k.connect(kg); kg.connect(masterGain); k.start(t); k.stop(t + 0.15);
+    const c = audioCtx.createOscillator(); const cg = audioCtx.createGain();
+    c.type = 'square'; c.frequency.value = 1000;
+    cg.gain.setValueAtTime(0.1, t); cg.gain.exponentialRampToValueAtTime(0.001, t + 0.01);
+    c.connect(cg); cg.connect(masterGain); c.start(t); c.stop(t + 0.02);
+  }
+
+  // Hihat every 8th
+  const hatLen = audioCtx.sampleRate * 0.03;
+  const hatBuf = audioCtx.createBuffer(1, hatLen, audioCtx.sampleRate);
+  const hatD = hatBuf.getChannelData(0);
+  for (let i = 0; i < hatLen; i++) hatD[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / hatLen, 4);
+  const hat = audioCtx.createBufferSource(); hat.buffer = hatBuf;
+  const hg = audioCtx.createGain(); const hf = audioCtx.createBiquadFilter();
+  hf.type = 'highpass'; hf.frequency.value = 7000;
+  hg.gain.value = step % 2 === 0 ? 0.08 : 0.04;
+  hat.connect(hf); hf.connect(hg); hg.connect(masterGain); hat.start(t);
+
+  // Snare on 3 & 7
+  if (step === 2 || step === 6) {
+    const sLen = audioCtx.sampleRate * 0.12;
+    const sBuf = audioCtx.createBuffer(1, sLen, audioCtx.sampleRate);
+    const sD = sBuf.getChannelData(0);
+    for (let i = 0; i < sLen; i++) sD[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / sLen, 2);
+    const s = audioCtx.createBufferSource(); s.buffer = sBuf;
+    const sg = audioCtx.createGain(); const sf = audioCtx.createBiquadFilter();
+    sf.type = 'bandpass'; sf.frequency.value = 3000; sg.gain.value = 0.18;
+    s.connect(sf); sf.connect(sg); sg.connect(masterGain); s.start(t);
+    const sb = audioCtx.createOscillator(); const sbg = audioCtx.createGain();
+    sb.type = 'triangle'; sb.frequency.setValueAtTime(200, t); sb.frequency.exponentialRampToValueAtTime(100, t + 0.05);
+    sbg.gain.setValueAtTime(0.15, t); sbg.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    sb.connect(sbg); sbg.connect(masterGain); sb.start(t); sb.stop(t + 0.1);
+  }
+
+  // Stab every 16 steps
+  if (musicBeat % 16 === 0) {
+    [NOTES.A3, NOTES.C4, NOTES.E4].forEach(freq => {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      const f = audioCtx.createBiquadFilter();
+      o.type = 'sawtooth'; o.frequency.value = freq;
+      f.type = 'lowpass'; f.frequency.setValueAtTime(3000, t); f.frequency.exponentialRampToValueAtTime(500, t + 0.3);
+      g.gain.setValueAtTime(0.08, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      o.connect(f); f.connect(g); g.connect(masterGain); o.start(t); o.stop(t + 0.35);
+    });
+  }
+  musicBeat++;
+}
+
+function startMusic() {
+  if (!audioCtx || musicInterval) return;
+  musicBeat = 0;
+  playMusicNote();
+  musicInterval = setInterval(playMusicNote, BEAT_MS);
+}
+
+function stopMusic() {
+  if (musicInterval) { clearInterval(musicInterval); musicInterval = null; }
+}
+
+function playFlap() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  const w = audioCtx.createOscillator(); const wg = audioCtx.createGain();
+  const wf = audioCtx.createBiquadFilter();
+  w.type = 'sawtooth'; w.frequency.setValueAtTime(200, t); w.frequency.exponentialRampToValueAtTime(80, t + 0.08);
+  wf.type = 'lowpass'; wf.frequency.setValueAtTime(2000, t); wf.frequency.exponentialRampToValueAtTime(200, t + 0.08);
+  wg.gain.setValueAtTime(0.15, t); wg.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  w.connect(wf); wf.connect(wg); wg.connect(masterGain); w.start(t); w.stop(t + 0.1);
+  const gr = audioCtx.createOscillator(); const gg = audioCtx.createGain();
+  gr.type = 'sine'; gr.frequency.setValueAtTime(90, t); gr.frequency.exponentialRampToValueAtTime(60, t + 0.08);
+  gg.gain.setValueAtTime(0.08, t); gg.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  gr.connect(gg); gg.connect(masterGain); gr.start(t); gr.stop(t + 0.1);
+}
+
+function playScore() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  const h = audioCtx.createOscillator(); const hg = audioCtx.createGain();
+  const hf = audioCtx.createBiquadFilter();
+  h.type = 'square'; h.frequency.value = 440;
+  hf.type = 'lowpass'; hf.frequency.setValueAtTime(4000, t); hf.frequency.exponentialRampToValueAtTime(800, t + 0.08);
+  hg.gain.setValueAtTime(0.12, t); hg.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  h.connect(hf); hf.connect(hg); hg.connect(masterGain); h.start(t); h.stop(t + 0.1);
+  [330, 440, 550].forEach((freq, i) => {
+    const b = audioCtx.createOscillator(); const bg = audioCtx.createGain();
+    b.type = 'sine'; b.frequency.value = freq;
+    bg.gain.setValueAtTime(0.08, t + i * 0.04); bg.gain.exponentialRampToValueAtTime(0.001, t + i * 0.04 + 0.06);
+    b.connect(bg); bg.connect(masterGain); b.start(t + i * 0.04); b.stop(t + i * 0.04 + 0.08);
+  });
+}
+
+function playDeath() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  const th = audioCtx.createOscillator(); const tg = audioCtx.createGain();
+  th.type = 'sine'; th.frequency.setValueAtTime(100, t); th.frequency.exponentialRampToValueAtTime(30, t + 0.2);
+  tg.gain.setValueAtTime(0.4, t); tg.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  th.connect(tg); tg.connect(masterGain); th.start(t); th.stop(t + 0.25);
+  const nLen = audioCtx.sampleRate * 0.15;
+  const nBuf = audioCtx.createBuffer(1, nLen, audioCtx.sampleRate);
+  const nD = nBuf.getChannelData(0);
+  for (let i = 0; i < nLen; i++) nD[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / nLen, 2);
+  const n = audioCtx.createBufferSource(); n.buffer = nBuf;
+  const ng = audioCtx.createGain(); const nf = audioCtx.createBiquadFilter();
+  nf.type = 'bandpass'; nf.frequency.value = 1500; ng.gain.value = 0.2;
+  n.connect(nf); nf.connect(ng); ng.connect(masterGain); n.start(t);
+  setTimeout(() => {
+    if (!audioCtx || !masterGain) return;
+    const sl = audioCtx.createOscillator(); const sg = audioCtx.createGain();
+    const sf = audioCtx.createBiquadFilter();
+    sl.type = 'sawtooth'; sl.frequency.setValueAtTime(300, audioCtx.currentTime);
+    sl.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.4);
+    sf.type = 'lowpass'; sf.frequency.value = 600;
+    sg.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    sg.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    sl.connect(sf); sf.connect(sg); sg.connect(masterGain);
+    sl.start(); sl.stop(audioCtx.currentTime + 0.4);
+  }, 150);
+}
+
+function playCountdownTick() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  const c = audioCtx.createOscillator(); const cg = audioCtx.createGain();
+  c.type = 'square'; c.frequency.setValueAtTime(800, t); c.frequency.exponentialRampToValueAtTime(400, t + 0.05);
+  cg.gain.setValueAtTime(0.2, t); cg.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+  c.connect(cg); cg.connect(masterGain); c.start(t); c.stop(t + 0.1);
+  const th = audioCtx.createOscillator(); const tg = audioCtx.createGain();
+  th.type = 'sine'; th.frequency.setValueAtTime(100, t); th.frequency.exponentialRampToValueAtTime(50, t + 0.1);
+  tg.gain.setValueAtTime(0.25, t); tg.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  th.connect(tg); tg.connect(masterGain); th.start(t); th.stop(t + 0.12);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GAME FLOW
+// ═══════════════════════════════════════════════════════════════════
+
+function showOverlay(id) {
+  document.querySelectorAll('.overlay').forEach(el => { el.classList.add('hidden'); el.classList.remove('active'); });
+  if (id) {
+    const el = document.getElementById(id);
+    el.classList.remove('hidden');
+    el.classList.add('active');
+  }
+}
+
+function startGame() {
+  initAudio();
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  if (!musicInterval) startMusic();
+
+  state = JepaEngine.init();
+  currentScore = 0;
+  particles = [];
+  screenFlash = 0;
+  countdown = '';
+  lastCountdown = '';
+  birdScaleX = 1; birdScaleY = 1;
+  pipeBuildings = {};
+  buildingCounter = 0;
+  deadTimer = 0;
+
+  // Assign building numbers to initial pipes
+  state.pipes.forEach((p, i) => {
+    const key = i;
+    pipeBuildings[key] = buildingCounter++;
+  });
+
+  phase = 'warmup';
+  warmupStart = Date.now();
+  showOverlay(null);
+  document.getElementById('score-hud').style.display = 'block';
+  document.getElementById('score-hud').textContent = '0';
+}
+
+function spawnDeathParticles(bx, by) {
+  const colors = [T.bat, T.undies, T.skin, T.belt, T.cape, '#fff'];
+  for (let i = 0; i < 25; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 2 + Math.random() * 5;
+    particles.push({
+      x: bx, y: by,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 3,
+      life: 1,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    });
+  }
+}
+
+function onDeath() {
+  const bx = BIRD_X_FRAC * W;
+  const by = state.birdY * groundY;
+  spawnDeathParticles(bx, by);
+  playDeath();
+  stopMusic();
+  phase = 'dead';
+  deadTimer = 0;
+}
+
+function showGameOver() {
+  if (currentScore > bestScore) bestScore = currentScore;
+  document.getElementById('go-msg').textContent =
+    GAME_OVER_MSGS[Math.floor(Math.random() * GAME_OVER_MSGS.length)];
+  document.getElementById('go-score').textContent = currentScore;
+  document.getElementById('score-hud').style.display = 'none';
+  phase = 'gameover';
+  showOverlay('gameover-overlay');
+}
+
+// ── Input ───────────────────────────────────────────────────────────
+function handleTap() {
+  if (phase === 'start') {
+    startGame();
+  } else if (phase === 'warmup' || phase === 'playing') {
+    humanTap = true;
+    birdScaleX = 0.7;
+    birdScaleY = 1.4;
+    playFlap();
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); handleTap(); }
+});
+canvas.addEventListener('mousedown', handleTap);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); handleTap(); });
+
+document.getElementById('btn-play').addEventListener('click', e => { e.stopPropagation(); startGame(); });
+document.getElementById('btn-again').addEventListener('click', e => { e.stopPropagation(); startGame(); });
+
+// ═══════════════════════════════════════════════════════════════════
+// GAME LOOP
+// ═══════════════════════════════════════════════════════════════════
+
+let prevScore = 0;
+// Track previous pipe x positions for building number assignment
+let prevPipeXs = [0, 0];
+
+function update() {
+  // Particle physics (always)
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life -= 0.02;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // Flash decay
+  if (screenFlash > 0) { screenFlash *= 0.85; if (screenFlash < 0.01) screenFlash = 0; }
+
+  // Squash/stretch recovery
+  birdScaleX += (1 - birdScaleX) * 0.15;
+  birdScaleY += (1 - birdScaleY) * 0.15;
+
+  if (phase === 'dead') {
+    deadTimer++;
+    if (deadTimer > 40) showGameOver();
+    return;
+  }
+
+  if (phase === 'warmup') {
+    const elapsed = (Date.now() - warmupStart) / 1000;
+    let newCountdown = countdown;
+    if (elapsed < 1) newCountdown = 'TAP TO FLAP';
+    else if (elapsed < 1.33) newCountdown = '3';
+    else if (elapsed < 1.66) newCountdown = '2';
+    else if (elapsed < 2) newCountdown = '1';
+    else newCountdown = 'GO!';
+
+    if (newCountdown !== lastCountdown) {
+      if (newCountdown === '3' || newCountdown === '2' || newCountdown === '1') playCountdownTick();
+      lastCountdown = newCountdown;
+    }
+    countdown = newCountdown;
+
+    if (newCountdown === 'GO!' && phase === 'warmup') {
+      phase = 'playing';
+      screenFlash = 0.5;
+      flashIsGreen = true;
+      setTimeout(() => { countdown = ''; }, 300);
+    }
+    // Don't step engine during warmup — just draw the idle state
+    return;
+  }
+
+  if (phase !== 'playing') return;
+
+  // Step the JEPA engine
+  const tap = humanTap;
+  humanTap = false;
+
+  prevScore = state.score;
+  const prevPipe0X = state.pipes[0].x;
+  const prevPipe1X = state.pipes[1].x;
+
+  state = JepaEngine.step(tap);
+
+  // Detect pipe recycling (x jumped far right) → assign new building number
+  if (state.pipes[0].x - prevPipe0X > 0.3) {
+    pipeBuildings[0] = buildingCounter++;
+  }
+  if (state.pipes[1].x - prevPipe1X > 0.3) {
+    pipeBuildings[1] = buildingCounter++;
+  }
+
+  // Score change
+  if (state.score > prevScore) {
+    currentScore = state.score;
+    document.getElementById('score-hud').textContent = currentScore;
+    screenFlash = 0.4;
+    flashIsGreen = false;
+    playScore();
+  }
+
+  // Death
+  if (!state.alive) {
+    onDeath();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DRAWING
+// ═══════════════════════════════════════════════════════════════════
+
+function draw() {
+  if (!state) return;
+
+  // Derived pixel values
+  const halfGap = GAP_SIZE / 2;
+  const pipeW = PIPE_W_FRAC * W;
+  const birdPx = BIRD_X_FRAC * W;
+  const birdPy = state.birdY * groundY;
+  // velocity: 0.5 = zero, map to visual range
+  const velVisual = (state.birdVY - 0.5) * 30;
+
+  // ── Sky gradient ────────────────────────────────────────────────
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  skyGrad.addColorStop(0, '#0a0a18');
+  skyGrad.addColorStop(0.4, T.sky);
+  skyGrad.addColorStop(0.8, T.skyDark);
+  skyGrad.addColorStop(1, '#000');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Stars ───────────────────────────────────────────────────────
+  ctx.fillStyle = '#fff';
+  for (let i = 0; i < 30; i++) {
+    const sx = (i * 137 + 50) % W;
+    const sy = (i * 89 + 20) % (H * 0.4);
+    ctx.globalAlpha = 0.3 + Math.sin(Date.now() / 1000 + i) * 0.2;
+    ctx.fillRect(sx, sy, 1, 1);
+  }
+  ctx.globalAlpha = 1;
+
+  // ── Moon ────────────────────────────────────────────────────────
+  const moonX = W - 70, moonY = 70;
+  const moonGlow = ctx.createRadialGradient(moonX, moonY, 20, moonX, moonY, 80);
+  moonGlow.addColorStop(0, 'rgba(254, 249, 195, 0.2)');
+  moonGlow.addColorStop(0.5, 'rgba(254, 249, 195, 0.05)');
+  moonGlow.addColorStop(1, 'rgba(254, 249, 195, 0)');
+  ctx.fillStyle = moonGlow;
+  ctx.fillRect(moonX - 80, moonY - 80, 160, 160);
+  ctx.fillStyle = T.moon;
+  ctx.globalAlpha = 0.9;
+  ctx.beginPath(); ctx.arc(moonX, moonY, 28, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.1)';
+  ctx.beginPath();
+  ctx.arc(moonX - 8, moonY - 5, 6, 0, Math.PI * 2);
+  ctx.arc(moonX + 10, moonY + 8, 4, 0, Math.PI * 2);
+  ctx.arc(moonX - 3, moonY + 10, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // ── Distant skyline ─────────────────────────────────────────────
+  ctx.fillStyle = '#0f172a';
+  for (let x = 0; x < W; x += 50) {
+    const seed = Math.sin(x * 0.1) * 0.5 + 0.5;
+    const h = 40 + seed * 50;
+    ctx.fillRect(x, groundY - h, 55, h);
+  }
+
+  // ── Buildings (pipes) ───────────────────────────────────────────
+  for (let pi = 0; pi < state.pipes.length; pi++) {
+    const pipe = state.pipes[pi];
+    const px = pipe.x * W;
+    const gapCenterY = pipe.gapY * groundY;
+    const gapH = GAP_SIZE * groundY;
+    const gapTop = gapCenterY - gapH / 2;
+    const gapBot = gapCenterY + gapH / 2;
+    const bNum = pipeBuildings[pi] || 0;
+
+    // Wobble
+    const wobble = Math.sin(Date.now() / 400 + bNum * 2.3) * 1;
+
+    ctx.save();
+    ctx.translate(px + pipeW / 2, 0);
+    ctx.translate(wobble, 0);
+    ctx.translate(-(px + pipeW / 2), 0);
+
+    // ─ Top building ─
+    ctx.fillStyle = T.building;
+    ctx.fillRect(px, 0, pipeW, gapTop);
+    ctx.fillStyle = T.buildingDark;
+    ctx.fillRect(px, 0, 4, gapTop);
+    ctx.fillRect(px + pipeW - 4, 0, 4, gapTop);
+    // Bottom ledge
+    ctx.fillRect(px - 8, gapTop - 15, pipeW + 16, 15);
+
+    // Windows (top building)
+    for (let wy = 20; wy < gapTop - 30; wy += 35) {
+      for (let wx = 10; wx < pipeW - 10; wx += 18) {
+        const seed = Math.abs(Math.sin(bNum * 0.37 + wx * 3 + wy * 7));
+        ctx.globalAlpha = seed > 0.35 ? 0.9 : 0.12;
+        ctx.fillStyle = T.window;
+        ctx.fillRect(px + wx, wy, 10, 15);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // ─ Bottom building ─
+    ctx.fillStyle = T.building;
+    ctx.fillRect(px, gapBot, pipeW, H - gapBot);
+    ctx.fillStyle = T.buildingDark;
+    ctx.fillRect(px, gapBot, 4, H - gapBot);
+    ctx.fillRect(px + pipeW - 4, gapBot, 4, H - gapBot);
+    // Top ledge
+    ctx.fillRect(px - 8, gapBot, pipeW + 16, 15);
+
+    // Windows (bottom building)
+    for (let wy = gapBot + 30; wy < groundY - 20; wy += 35) {
+      for (let wx = 10; wx < pipeW - 10; wx += 18) {
+        const seed = Math.abs(Math.sin(bNum * 0.53 + wx * 5 + wy * 11));
+        ctx.globalAlpha = seed > 0.3 ? 0.9 : 0.12;
+        ctx.fillStyle = T.window;
+        ctx.fillRect(px + wx, wy, 10, 15);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // ─ Rooftop decorations (every 4th building, after building 4) ─
+    const hasRooftop = (bNum >= 4) && (bNum % 4 === 0);
+    if (hasRooftop) {
+      const roofSeed = Math.abs(Math.sin(bNum * 1.7 + 42));
+      const roofTop = gapBot;
+      const roofCX = px + pipeW / 2;
+      const time = Date.now();
+
+      if (roofSeed > 0.7) {
+        // ── Spotlight ──
+        const sweepAngle = Math.sin(time / 800) * 0.6 - Math.PI / 2;
+        const beamLen = 120;
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(roofCX - 6, roofTop - 12, 12, 12);
+        ctx.save();
+        ctx.translate(roofCX, roofTop - 8);
+        ctx.rotate(sweepAngle);
+        const beamGrad = ctx.createLinearGradient(0, 0, 0, -beamLen);
+        beamGrad.addColorStop(0, 'rgba(254, 243, 199, 0.6)');
+        beamGrad.addColorStop(0.3, 'rgba(254, 243, 199, 0.2)');
+        beamGrad.addColorStop(1, 'rgba(254, 243, 199, 0)');
+        ctx.fillStyle = beamGrad;
+        ctx.beginPath();
+        ctx.moveTo(-4, 0); ctx.lineTo(-25, -beamLen); ctx.lineTo(25, -beamLen); ctx.lineTo(4, 0);
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = '#fef3c7';
+        ctx.shadowColor = '#fef3c7'; ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.arc(roofCX, roofTop - 8, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+
+      } else if (roofSeed > 0.4) {
+        // ── Water tower with tracking eyes ──
+        const tX = roofCX, tY = roofTop - 25;
+        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(tX - 10, roofTop); ctx.lineTo(tX - 6, tY + 10);
+        ctx.moveTo(tX + 10, roofTop); ctx.lineTo(tX + 6, tY + 10);
+        ctx.stroke();
+        ctx.fillStyle = '#475569';
+        ctx.beginPath(); ctx.ellipse(tX, tY, 14, 10, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillRect(tX - 14, tY - 5, 28, 10);
+        ctx.fillStyle = '#334155';
+        ctx.beginPath(); ctx.moveTo(tX - 12, tY - 5); ctx.lineTo(tX, tY - 15); ctx.lineTo(tX + 12, tY - 5); ctx.closePath(); ctx.fill();
+        const eyeTrackY = Math.max(-3, Math.min(3, (birdPy - tY) / 50));
+        const eyeTrackX = Math.max(-2, Math.min(2, (birdPx - tX) / 100));
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.ellipse(tX - 5, tY, 4, 5, 0, 0, Math.PI * 2);
+        ctx.ellipse(tX + 5, tY, 4, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(tX - 5 + eyeTrackX, tY + eyeTrackY, 2, 0, Math.PI * 2);
+        ctx.arc(tX + 5 + eyeTrackX, tY + eyeTrackY, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+      } else {
+        // ── Wacky waving tube man ──
+        const tubeX = roofCX + 5, tubeBaseY = roofTop, tubeH = 35;
+        const wave = time / 150;
+        ctx.fillStyle = '#374151';
+        ctx.fillRect(tubeX - 6, tubeBaseY - 5, 12, 5);
+        ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+        const w1 = Math.sin(wave) * 8, w2 = Math.sin(wave + 1) * 10, w3 = Math.sin(wave + 2) * 6;
+        ctx.beginPath(); ctx.moveTo(tubeX, tubeBaseY - 5);
+        ctx.quadraticCurveTo(tubeX + w1, tubeBaseY - tubeH * 0.33, tubeX + w2, tubeBaseY - tubeH * 0.66);
+        ctx.quadraticCurveTo(tubeX + w2 + w1 * 0.5, tubeBaseY - tubeH * 0.8, tubeX + w3, tubeBaseY - tubeH);
+        ctx.stroke();
+        ctx.fillStyle = '#f472b6';
+        ctx.beginPath(); ctx.arc(tubeX + w3, tubeBaseY - tubeH - 4, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 4;
+        const armY = tubeBaseY - tubeH * 0.7, armX = tubeX + w2;
+        ctx.beginPath(); ctx.moveTo(armX, armY);
+        ctx.quadraticCurveTo(armX - 10 + Math.sin(wave * 1.5) * 8, armY - 10 + Math.cos(wave * 1.3) * 5,
+          armX - 15 + Math.sin(wave * 2) * 10, armY - 5 + Math.sin(wave * 1.7) * 8);
+        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(armX, armY);
+        ctx.quadraticCurveTo(armX + 10 + Math.sin(wave * 1.3 + 1) * 8, armY - 12 + Math.cos(wave * 1.5 + 1) * 5,
+          armX + 18 + Math.sin(wave * 1.8 + 1) * 8, armY - 3 + Math.sin(wave * 2 + 1) * 6);
+        ctx.stroke();
+        ctx.lineCap = 'butt';
+      }
+    }
+
+    ctx.restore();
+  }
+
+  // ── Ground ──────────────────────────────────────────────────────
+  ctx.fillStyle = T.ground;
+  ctx.fillRect(0, groundY, W, H - groundY);
+  ctx.fillStyle = T.groundDark;
+  ctx.fillRect(0, groundY, W, 5);
+
+  // ── Hero ────────────────────────────────────────────────────────
+  if (phase === 'warmup' || phase === 'playing' || phase === 'dead') {
+    const drawBirdY = phase === 'warmup'
+      ? groundY * 0.5 + Math.sin(Date.now() / 200) * 8
+      : birdPy;
+
+    ctx.save();
+    ctx.translate(birdPx, drawBirdY);
+    ctx.scale(birdScaleX, birdScaleY);
+    const s = 24;
+
+    // Purple aura
+    ctx.shadowColor = T.heroGlow; ctx.shadowBlur = 15;
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.15)';
+    ctx.beginPath(); ctx.ellipse(0, 0, s * 1.2, s * 1.0, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Cape
+    ctx.shadowColor = T.cape; ctx.shadowBlur = 8;
+    ctx.fillStyle = T.cape;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.3, -s * 0.2);
+    ctx.quadraticCurveTo(-s * 1.4, s * 0.4 + velVisual * 2, -s * 1.8, s * 1.2);
+    ctx.lineTo(-s * 1.5, s * 0.9);
+    ctx.quadraticCurveTo(-s * 0.9, s * 0.3, -s * 0.3, s * 0.1);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Stick legs
+    ctx.strokeStyle = T.skin; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.2, s * 0.6); ctx.lineTo(-s * 0.3, s * 1.2);
+    ctx.moveTo(s * 0.2, s * 0.6); ctx.lineTo(s * 0.3, s * 1.2);
+    ctx.stroke();
+
+    // Boots
+    ctx.fillStyle = '#1e1b4b';
+    ctx.beginPath();
+    ctx.ellipse(-s * 0.3, s * 1.25, 4, 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(s * 0.3, s * 1.25, 4, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Chubby body
+    ctx.fillStyle = T.bat;
+    ctx.beginPath(); ctx.ellipse(0, 0, s * 0.7, s * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+    // Beer belly
+    ctx.fillStyle = T.skin;
+    ctx.beginPath(); ctx.ellipse(0, s * 0.15, s * 0.35, s * 0.25, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Hot pink underpants
+    ctx.shadowColor = T.undies; ctx.shadowBlur = 6;
+    ctx.fillStyle = T.undies;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.5, s * 0.3); ctx.lineTo(s * 0.5, s * 0.3);
+    ctx.lineTo(s * 0.4, s * 0.7); ctx.lineTo(-s * 0.4, s * 0.7);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Gold utility belt
+    ctx.shadowColor = T.beltGlow; ctx.shadowBlur = 10;
+    ctx.fillStyle = T.belt;
+    ctx.fillRect(-s * 0.6, s * 0.25, s * 1.2, s * 0.15);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = T.beltGlow;
+    ctx.beginPath(); ctx.ellipse(0, s * 0.32, s * 0.12, s * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#b45309';
+    ctx.fillRect(-s * 0.55, s * 0.2, s * 0.15, s * 0.2);
+    ctx.fillRect(s * 0.4, s * 0.2, s * 0.15, s * 0.2);
+
+    // Flailing arms
+    const armWave = Math.sin(Date.now() / 100) * 0.3;
+    ctx.strokeStyle = T.skin; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.5, 0); ctx.lineTo(-s * 1.0, -s * (0.3 + armWave));
+    ctx.moveTo(s * 0.5, 0); ctx.lineTo(s * 1.0, -s * (0.5 - armWave));
+    ctx.stroke();
+    // Gloved hands
+    ctx.fillStyle = '#1e1b4b';
+    ctx.beginPath();
+    ctx.arc(-s * 1.0, -s * (0.3 + armWave), 4, 0, Math.PI * 2);
+    ctx.arc(s * 1.0, -s * (0.5 - armWave), 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Head
+    ctx.fillStyle = T.bat;
+    ctx.beginPath(); ctx.arc(0, -s * 0.5, s * 0.45, 0, Math.PI * 2); ctx.fill();
+    // Face
+    ctx.fillStyle = T.skin;
+    ctx.beginPath(); ctx.ellipse(0, -s * 0.4, s * 0.25, s * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Derpy ears
+    ctx.fillStyle = T.bat;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.25, -s * 0.8); ctx.lineTo(-s * 0.35, -s * 1.3); ctx.lineTo(-s * 0.1, -s * 0.85);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(s * 0.25, -s * 0.8); ctx.lineTo(s * 0.4, -s * 1.25);
+    ctx.lineTo(s * 0.35, -s * 1.15); ctx.lineTo(s * 0.1, -s * 0.85);
+    ctx.fill();
+
+    // Derpy eyes
+    ctx.fillStyle = T.batEye;
+    ctx.beginPath();
+    ctx.ellipse(-s * 0.1, -s * 0.45, 5, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(s * 0.1, -s * 0.45, 5, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = T.batPupil;
+    ctx.beginPath();
+    ctx.arc(-s * 0.12, -s * 0.43, 2, 0, Math.PI * 2);
+    ctx.arc(s * 0.12, -s * 0.47, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Worried eyebrows
+    ctx.strokeStyle = T.bat; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.18, -s * 0.55); ctx.lineTo(-s * 0.02, -s * 0.58);
+    ctx.moveTo(s * 0.02, -s * 0.58); ctx.lineTo(s * 0.18, -s * 0.55);
+    ctx.stroke();
+
+    // Stressed mouth
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(0, -s * 0.25, s * 0.1, s * 0.08, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Sweat drops
+    ctx.shadowColor = T.sweat; ctx.shadowBlur = 4;
+    ctx.fillStyle = T.sweat;
+    const sweatA = (Date.now() / 150) % 1;
+    ctx.beginPath();
+    ctx.ellipse(-s * 0.4 - sweatA * 8, -s * 0.55 - sweatA * 5, 2, 3, 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(s * 0.45 + sweatA * 6, -s * 0.5 - sweatA * 4, 2, 3, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    if (Math.abs(velVisual) > 5) {
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      ctx.ellipse(-s * 0.2 - sweatA * 10, -s * 0.7 - sweatA * 8, 1.5, 2.5, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.shadowBlur = 0;
+
+    // 5 o'clock shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.beginPath(); ctx.ellipse(0, -s * 0.2, s * 0.15, s * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+
+    ctx.restore();
+  }
+
+  // ── Death particles ─────────────────────────────────────────────
+  for (const p of particles) {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 4 + p.life * 4, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // ── Screen flash ────────────────────────────────────────────────
+  if (screenFlash > 0) {
+    const c = flashIsGreen ? '163, 230, 53' : '255, 255, 255';
+    ctx.fillStyle = `rgba(${c}, ${screenFlash})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // ── Countdown text ──────────────────────────────────────────────
+  if (countdown) {
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (countdown === 'TAP TO FLAP') {
+      const pulse = 0.6 + Math.sin(Date.now() / 200) * 0.4;
+      ctx.globalAlpha = pulse;
+      ctx.font = 'bold 24px ui-monospace, monospace';
+      ctx.fillStyle = T.moon;
+      ctx.shadowColor = '#000'; ctx.shadowBlur = 4;
+      ctx.fillText('tap. carry him.', W / 2, H / 2 + 80);
+    } else if (countdown === 'GO!') {
+      ctx.font = 'bold 72px ui-monospace, monospace';
+      ctx.fillStyle = '#a855f7';
+      ctx.shadowColor = T.batEye; ctx.shadowBlur = 15;
+      ctx.fillText('GO!', W / 2, H / 2);
+    } else {
+      ctx.font = 'bold 96px ui-monospace, monospace';
+      ctx.fillStyle = '#fff';
+      ctx.shadowColor = '#000'; ctx.shadowBlur = 8;
+      ctx.fillText(countdown, W / 2, H / 2);
+    }
+    ctx.restore();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════════════════════════════════
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+JepaEngine.load('model_weights.json').then(() => {
+  document.getElementById('loading').style.display = 'none';
+  state = JepaEngine.init();
+  // Assign initial building numbers
+  state.pipes.forEach((p, i) => { pipeBuildings[i] = buildingCounter++; });
+  phase = 'start';
+  showOverlay('start-overlay');
+  loop();
+}).catch(err => {
+  document.getElementById('loading').textContent = 'Failed to load model: ' + err.message;
+});
+</script>
+</body>
+</html>
