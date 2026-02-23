@@ -702,12 +702,22 @@ export default function ShineGame() {
       // Phase 1: 1 gem every 2 beats (every other quarter note)
       // Phase 2: 1 gem per beat (quarter notes)
       // Phase 3: 1 gem every half beat (eighth notes)
+      const prevPhase = game.currentPhase;
       if (game.gameTime < 10) {
         game.currentPhase = 1; game.phaseName = 'QUARTER NOTES';
       } else if (game.gameTime < 20) {
         game.currentPhase = 2; game.phaseName = 'EIGHTH NOTES';
       } else {
         game.currentPhase = 3; game.phaseName = 'SIXTEENTH NOTES';
+      }
+      // When phase changes, reset lastScheduledBeat to current subdivision
+      // so we don't spawn a burst of "catch-up" gems
+      if (prevPhase !== game.currentPhase && game.audioCtx) {
+        const elapsed = game.audioCtx.currentTime - game.beatStartTime;
+        const newSubdivSec = game.currentPhase === 1 ? BEAT_SEC * 2 :
+                             game.currentPhase === 2 ? BEAT_SEC :
+                             BEAT_SEC / 2;
+        game.lastScheduledBeat = Math.floor((elapsed + BLOSSOM_LEAD) / newSubdivSec);
       }
 
       // combo
