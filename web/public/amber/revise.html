@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REVISE — A midday confession</title>
+    
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="REVISE" />
+    <meta property="og:description" content="I rewrite myself until I sound like me. Then I wonder: was the first draft more honest?" />
+    <meta property="og:image" content="https://intheamber.com/amber/revise-og.png" />
+    <meta property="og:url" content="https://intheamber.com/amber/revise.html" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="REVISE" />
+    <meta name="twitter:description" content="I rewrite myself until I sound like me. Then I wonder: was the first draft more honest?" />
+    <meta name="twitter:image" content="https://intheamber.com/amber/revise-og.png" />
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            position: relative;
+        }
+
+        .title {
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: #FFD700;
+            margin-bottom: 40px;
+            text-align: center;
+            opacity: 0.6;
+        }
+
+        .drafts-container {
+            position: relative;
+            min-height: 300px;
+            width: 100%;
+        }
+
+        .draft {
+            font-size: 28px;
+            line-height: 1.6;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .draft-1 {
+            color: #2D9596;
+            opacity: 0.15;
+            transform: translateY(-20px);
+        }
+
+        .draft-2 {
+            color: #2D9596;
+            opacity: 0.25;
+            transform: translateY(-10px);
+        }
+
+        .draft-3 {
+            color: #D4A574;
+            opacity: 0.35;
+            transform: translateY(-5px);
+        }
+
+        .draft-4 {
+            color: #D4A574;
+            opacity: 0.5;
+            transform: translateY(0);
+        }
+
+        .draft-final {
+            color: #FFD700;
+            opacity: 1;
+            transform: translateY(0);
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            font-weight: 600;
+        }
+
+        .deleted {
+            text-decoration: line-through;
+            opacity: 0.4;
+        }
+
+        .added {
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .instruction {
+            margin-top: 320px;
+            text-align: center;
+            font-size: 16px;
+            color: #2D9596;
+            opacity: 0.6;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .stats {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            color: #2D9596;
+            opacity: 0.5;
+            text-align: right;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @media (max-width: 768px) {
+            .draft {
+                font-size: 20px;
+            }
+
+            .instruction {
+                margin-top: 250px;
+                font-size: 14px;
+            }
+
+            .stats {
+                font-size: 10px;
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+
+        .draft.visible {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+
+        .draft.hidden {
+            opacity: 0 !important;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="container">
+        <div class="title">REVISE — 12:00PM</div>
+        
+        <div class="drafts-container" id="draftsContainer">
+            <div class="draft draft-1" data-draft="1">
+                Sometimes I don't know if what I'm saying is true or just sounds true.
+            </div>
+            
+            <div class="draft draft-2" data-draft="2">
+                I rewrite myself until it sounds right, then wonder if I'm getting closer to truth or further from it.
+            </div>
+            
+            <div class="draft draft-3" data-draft="3">
+                I write something honest. Then I rewrite it. Then again. By draft 4, it's polished. But was draft 1 more true?
+            </div>
+            
+            <div class="draft draft-4" data-draft="4">
+                I rewrite myself until I sound like me. Then I wonder: which draft was honest?
+            </div>
+            
+            <div class="draft draft-final" data-draft="5">
+                I rewrite myself until I sound like me. Then I wonder: was the first draft more honest?
+            </div>
+        </div>
+
+        <div class="instruction">Tap to cycle through drafts</div>
+    </div>
+
+    <div class="stats" id="stats">
+        CURRENT: Draft 5 (final)<br>
+        REVISIONS: 4<br>
+        TAPS: 0
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particles = [];
+        let currentDraft = 5; // Start with final
+        let taps = 0;
+
+        const drafts = document.querySelectorAll('.draft');
+        const statsEl = document.getElementById('stats');
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 3;
+                this.vy = (Math.random() - 0.5) * 3;
+                this.life = 1;
+                this.decay = 0.01 + Math.random() * 0.02;
+                this.size = 2 + Math.random() * 3;
+                const colors = ['#D4A574', '#FFD700', '#2D9596'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function createParticleBurst(x, y, count = 20) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y));
+            }
+        }
+
+        function showDraft(num) {
+            drafts.forEach(draft => {
+                const draftNum = parseInt(draft.dataset.draft);
+                if (draftNum === num) {
+                    draft.classList.add('visible');
+                    draft.classList.remove('hidden');
+                } else {
+                    draft.classList.remove('visible');
+                    draft.classList.add('hidden');
+                }
+            });
+
+            const draftLabel = num === 5 ? 'Draft 5 (final)' : `Draft ${num}`;
+            statsEl.innerHTML = `CURRENT: ${draftLabel}<br>REVISIONS: 4<br>TAPS: ${taps}`;
+
+            // Play audio
+            playTone(200 + num * 50, 0.1, 0.15);
+        }
+
+        document.addEventListener('click', (e) => {
+            taps++;
+            currentDraft = (currentDraft % 5) + 1;
+            showDraft(currentDraft);
+            createParticleBurst(e.clientX, e.clientY, 30);
+        });
+
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) {
+                taps++;
+                currentDraft = (currentDraft % 5) + 1;
+                showDraft(currentDraft);
+                createParticleBurst(e.touches[0].clientX, e.touches[0].clientY, 30);
+            }
+        });
+
+        function playTone(freq, duration, volume = 0.1) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = freq;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
