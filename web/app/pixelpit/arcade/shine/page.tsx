@@ -43,9 +43,23 @@ const GAME_ID = 'shine';
 const BPM = 110;
 const BEAT_SEC = 60 / BPM;
 
-// Each gem type maps to a different instrument sound
+// Song structure: 4-bar phrases, chord progression Am → F → C → G
+// Each bar = 4 beats. Full phrase = 16 beats.
+const CHORD_PROG = [
+  { root: 55, third: 65.4, fifth: 82.4 },   // Am (A2, C#3→C3, E3)
+  { root: 43.65, third: 55, fifth: 65.4 },   // F (F2, A2, C3)
+  { root: 32.7, third: 41.2, fifth: 49 },    // C (C2, E2, G2)
+  { root: 49, third: 61.7, fifth: 73.4 },    // G (G2, B2, D3)
+];
+
 interface GemType { color: string; points: number; name: string; instrument: 'hihat' | 'snare' | 'bass' | 'bell' | 'stab'; }
-interface Gem { x: number; y: number; type: GemType; radius: number; age: number; maxLife: number; pulse: number; alive: boolean; spawnTime: number; beatSubdiv: number; }
+interface Gem {
+  x: number; y: number; type: GemType; radius: number; targetRadius: number;
+  age: number; maxLife: number; pulse: number; alive: boolean;
+  spawnTime: number; beatSubdiv: number;
+  // Blossom: gem appears early, blossoms to full at "perfect" moment
+  blossomTime: number; // seconds from spawn to full blossom (perfect tap moment)
+}
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; color: string; size: number; }
 interface FloatingText { x: number; y: number; text: string; color: string; life: number; vy: number; }
 
@@ -108,7 +122,7 @@ export default function ShineGame() {
     hitFreeze: 0, missDarken: 0,
     comboBreakFlash: { timer: 0, scale: 1, text: '', mult: 1 },
     timerFlash: 0, safeTop: 0,
-    beatPulse: 0, // visual pulse on quarter notes
+    beatPulse: 0,
     currentPhase: 1 as 1 | 2 | 3,
     phaseName: 'QUARTER NOTES' as string,
     // tutorial state
@@ -118,9 +132,14 @@ export default function ShineGame() {
     // audio
     audioCtx: null as AudioContext | null,
     masterGain: null as GainNode | null,
+    // Song: continuous pad/bass that plays the chord progression
+    padOscs: [] as { osc: OscillatorNode; gain: GainNode }[],
+    bassOsc: null as OscillatorNode | null,
+    bassGain: null as GainNode | null,
+    lastChordIndex: -1,
     // beat clock
-    beatStartTime: 0, // audioContext.currentTime when game started
-    lastScheduledBeat: -1, // last beat subdivision index scheduled
+    beatStartTime: 0,
+    lastScheduledBeat: -1,
     running: false, W: 0, H: 0,
   });
 
@@ -130,7 +149,92 @@ export default function ShineGame() {
     if (game.audioCtx.state === 'suspended') game.audioCtx.resume();
   }, []);
 
-  // --- INSTRUMENT SOUNDS ---
+  // --- SONG: Start continuous pad + bass ---
+  const startSong = useCallback(() => {
+    const game = g.current;
+    const ctx = game.audioCtx; if (!ctx) return;
+    const dest = game.masterGain || ctx.destination;
+
+    // Pad: 3 detuned triangle waves for warm chord
+    const padGains: { osc: OscillatorNode; gain: GainNode }[] = [];
+    for (let i = 0; i < 3; i++) {
+      const osc = ctx.createOscillator();
+      const gn = ctx.createGain();
+      const filt = ctx.createBiquadFilter();
+      osc.type = 'triangle';
+      osc.frequency.value = 220; // will be updated per chord
+      osc.detune.value = (i - 1) * 8; // slight detune for warmth
+      filt.type = 'lowpass';
+      filt.frequency.value = 800;
+      osc.connect(filt);
+      filt.connect(gn);
+      gn.connect(dest);
+      gn.gain.value = 0.04;
+      osc.start();
+      padGains.push({ osc, gain: gn });
+    }
+    game.padOscs = padGains;
+
+    // Bass: sine wave sub bass
+    const bassOsc = ctx.createOscillator();
+    const bassGain = ctx.createGain();
+    const bassFilt = ctx.createBiquadFilter();
+    bassOsc.type = 'sine';
+    bassOsc.frequency.value = 55;
+    bassFilt.type = 'lowpass';
+    bassFilt.frequency.value = 200;
+    bassOsc.connect(bassFilt);
+    bassFilt.connect(bassGain);
+    bassGain.connect(dest);
+    bassGain.gain.value = 0.12;
+    bassOsc.start();
+    game.bassOsc = bassOsc;
+    game.bassGain = bassGain;
+    game.lastChordIndex = -1;
+  }, []);
+
+  const updateChord = useCallback((beatIndex: number) => {
+    const game = g.current;
+    const ctx = game.audioCtx; if (!ctx) return;
+    // Each chord lasts 4 beats (1 bar). Cycle through 4 chords = 16-beat phrase.
+    const chordIndex = Math.floor(beatIndex / 4) % 4;
+    if (chordIndex === game.lastChordIndex) return;
+    game.lastChordIndex = chordIndex;
+    const chord = CHORD_PROG[chordIndex];
+    const now = ctx.currentTime;
+
+    // Smoothly glide pad frequencies
+    const padFreqs = [chord.root * 4, chord.third * 4, chord.fifth * 4]; // octave up for pad
+    game.padOscs.forEach((p, i) => {
+      p.osc.frequency.setTargetAtTime(padFreqs[i], now, 0.1);
+    });
+
+    // Glide bass
+    if (game.bassOsc) {
+      game.bassOsc.frequency.setTargetAtTime(chord.root, now, 0.08);
+    }
+  }, []);
+
+  const stopSong = useCallback(() => {
+    const game = g.current;
+    const ctx = game.audioCtx; if (!ctx) return;
+    const now = ctx.currentTime;
+    game.padOscs.forEach(p => {
+      p.gain.gain.setTargetAtTime(0, now, 0.3);
+      p.osc.stop(now + 1.5);
+    });
+    if (game.bassGain) {
+      game.bassGain.gain.setTargetAtTime(0, now, 0.3);
+    }
+    if (game.bassOsc) {
+      game.bassOsc.stop(now + 1.5);
+    }
+    game.padOscs = [];
+    game.bassOsc = null;
+    game.bassGain = null;
+  }, []);
+
+  // --- INSTRUMENT SOUNDS (triggered by player taps) ---
   const playKick = useCallback((time: number) => {
     const ctx = g.current.audioCtx; if (!ctx) return;
     const dest = g.current.masterGain || ctx.destination;
@@ -139,14 +243,14 @@ export default function ShineGame() {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(150, time);
     osc.frequency.exponentialRampToValueAtTime(40, time + 0.12);
-    gn.gain.setValueAtTime(0.35, time);
+    gn.gain.setValueAtTime(0.3, time);
     gn.gain.exponentialRampToValueAtTime(0.001, time + 0.25);
     osc.start(time); osc.stop(time + 0.25);
     // click layer
     const osc2 = ctx.createOscillator(); const gn2 = ctx.createGain();
     osc2.connect(gn2); gn2.connect(dest);
     osc2.type = 'triangle'; osc2.frequency.value = 80;
-    gn2.gain.setValueAtTime(0.2, time);
+    gn2.gain.setValueAtTime(0.15, time);
     gn2.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
     osc2.start(time); osc2.stop(time + 0.08);
   }, []);
@@ -155,30 +259,27 @@ export default function ShineGame() {
     const ctx = g.current.audioCtx; if (!ctx) return;
     const dest = g.current.masterGain || ctx.destination;
     const now = ctx.currentTime;
-    const vol = perfect ? 0.2 : 0.08;
+    const vol = perfect ? 0.2 : 0.06;
 
     switch (instrument) {
       case 'hihat': {
-        // Noise-like hi-hat using high-freq square
         const osc = ctx.createOscillator(); const gn = ctx.createGain();
         const filt = ctx.createBiquadFilter();
         osc.type = 'square'; osc.frequency.value = 6000 + Math.random() * 2000;
-        filt.type = 'highpass'; filt.frequency.value = 7000;
+        filt.type = 'highpass'; filt.frequency.value = perfect ? 7000 : 9000;
         osc.connect(filt); filt.connect(gn); gn.connect(dest);
         gn.gain.setValueAtTime(vol, now);
-        gn.gain.exponentialRampToValueAtTime(0.001, now + (perfect ? 0.08 : 0.04));
+        gn.gain.exponentialRampToValueAtTime(0.001, now + (perfect ? 0.08 : 0.03));
         osc.start(now); osc.stop(now + 0.1);
         break;
       }
       case 'snare': {
-        // Snare: noise burst + body
         const osc = ctx.createOscillator(); const gn = ctx.createGain();
         osc.type = 'triangle'; osc.frequency.value = 200;
         osc.connect(gn); gn.connect(dest);
         gn.gain.setValueAtTime(vol * 1.2, now);
         gn.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
         osc.start(now); osc.stop(now + 0.15);
-        // noise layer
         const osc2 = ctx.createOscillator(); const gn2 = ctx.createGain();
         const filt = ctx.createBiquadFilter();
         osc2.type = 'square'; osc2.frequency.value = 4000 + Math.random() * 3000;
@@ -190,13 +291,15 @@ export default function ShineGame() {
         break;
       }
       case 'bass': {
-        // Synth bass
         const osc = ctx.createOscillator(); const gn = ctx.createGain();
         osc.type = 'sawtooth';
-        const notes = [55, 65.4, 73.4, 82.4];
-        osc.frequency.value = notes[Math.floor(Math.random() * notes.length)];
+        // Use current chord root for musical bass hits
+        const game = g.current;
+        const chordIdx = game.lastChordIndex >= 0 ? game.lastChordIndex : 0;
+        const bassNote = CHORD_PROG[chordIdx].root * 2;
+        osc.frequency.value = bassNote;
         const filt = ctx.createBiquadFilter();
-        filt.type = 'lowpass'; filt.frequency.value = perfect ? 600 : 300;
+        filt.type = 'lowpass'; filt.frequency.value = perfect ? 600 : 250;
         osc.connect(filt); filt.connect(gn); gn.connect(dest);
         gn.gain.setValueAtTime(vol * 1.5, now);
         gn.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
@@ -204,26 +307,30 @@ export default function ShineGame() {
         break;
       }
       case 'bell': {
-        // Bell / metallic
-        const freqs = [880, 1108, 1320];
+        // Musical bell using chord tones
+        const game = g.current;
+        const chordIdx = game.lastChordIndex >= 0 ? game.lastChordIndex : 0;
+        const chord = CHORD_PROG[chordIdx];
+        const freqs = [chord.root * 8, chord.third * 8, chord.fifth * 8];
         freqs.forEach((f, i) => {
           const osc = ctx.createOscillator(); const gn = ctx.createGain();
           osc.type = 'sine'; osc.frequency.value = f;
           osc.connect(gn); gn.connect(dest);
-          gn.gain.setValueAtTime(vol * 0.7, now + i * 0.01);
-          gn.gain.exponentialRampToValueAtTime(0.001, now + (perfect ? 0.4 : 0.15));
-          osc.start(now + i * 0.01); osc.stop(now + 0.5);
+          gn.gain.setValueAtTime(vol * 0.6, now + i * 0.02);
+          gn.gain.exponentialRampToValueAtTime(0.001, now + (perfect ? 0.5 : 0.15));
+          osc.start(now + i * 0.02); osc.stop(now + 0.6);
         });
         break;
       }
       case 'stab': {
-        // Chord stab
-        const root = [220, 247, 262, 294][Math.floor(Math.random() * 4)];
-        [root, root * 1.25, root * 1.5].forEach((f, i) => {
+        const game = g.current;
+        const chordIdx = game.lastChordIndex >= 0 ? game.lastChordIndex : 0;
+        const chord = CHORD_PROG[chordIdx];
+        [chord.root * 4, chord.third * 4, chord.fifth * 4].forEach((f, i) => {
           const osc = ctx.createOscillator(); const gn = ctx.createGain();
           osc.type = perfect ? 'sawtooth' : 'triangle'; osc.frequency.value = f;
           const filt = ctx.createBiquadFilter();
-          filt.type = 'lowpass'; filt.frequency.value = perfect ? 2000 : 800;
+          filt.type = 'lowpass'; filt.frequency.value = perfect ? 2000 : 600;
           osc.connect(filt); filt.connect(gn); gn.connect(dest);
           gn.gain.setValueAtTime(vol * 0.6, now + i * 0.01);
           gn.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
@@ -285,21 +392,22 @@ export default function ShineGame() {
     game.timerFlash = 0; game.beatPulse = 0;
     game.currentPhase = 1; game.phaseName = 'QUARTER NOTES';
     game.lastScheduledBeat = -1;
+    game.lastChordIndex = -1;
   }, []);
 
   const startGame = useCallback(() => {
     initGame(); initAudio();
     const game = g.current;
     game.phase = 'playing'; game.running = true;
-    // Setup master gain
     const ctx = game.audioCtx!;
     game.masterGain = ctx.createGain();
     game.masterGain.gain.value = 0.7;
     game.masterGain.connect(ctx.destination);
     game.beatStartTime = ctx.currentTime;
     game.lastScheduledBeat = -1;
+    startSong();
     setGameState('playing'); setShowShareModal(false); setProgression(null);
-  }, [initGame, initAudio]);
+  }, [initGame, initAudio, startSong]);
 
   const startTutorial = useCallback(() => {
     const game = g.current;
@@ -323,14 +431,22 @@ export default function ShineGame() {
     }
     resize(); window.addEventListener('resize', resize);
 
+    // BLOSSOM_LEAD: how many seconds before the beat the gem appears (anticipation window)
+    const BLOSSOM_LEAD = BEAT_SEC * 0.8;
+
     function spawnGemAt(game: typeof g.current, subdiv: number) {
       const margin = 60;
       const x = margin + Math.random() * (game.W - margin * 2);
       const y = margin + 100 + game.safeTop + Math.random() * (game.H - margin * 2 - 150 - game.safeTop);
       const type = selectGemType();
-      // Size based on subdivision: quarter=30, eighth=24, sixteenth=18
-      const radius = subdiv === 4 ? 30 : subdiv === 2 ? 24 : 18;
-      game.gems.push({ x, y, type, radius, age: 0, maxLife: BEAT_SEC * 1.5, pulse: 0, alive: true, spawnTime: game.gameTime, beatSubdiv: subdiv });
+      const targetRadius = subdiv === 4 ? 30 : subdiv === 2 ? 24 : 18;
+      // maxLife = blossom lead + 1 beat window to tap after perfect moment
+      const maxLife = BLOSSOM_LEAD + BEAT_SEC * 1.0;
+      game.gems.push({
+        x, y, type, radius: 0, targetRadius, age: 0, maxLife,
+        pulse: 0, alive: true, spawnTime: game.gameTime, beatSubdiv: subdiv,
+        blossomTime: BLOSSOM_LEAD, // perfect moment is when age == blossomTime
+      });
     }
 
     function spawnGem(game: typeof g.current) {
@@ -353,22 +469,22 @@ export default function ShineGame() {
       game.tutGems = []; game.tutCollected = 0;
       switch (game.tutStep) {
         case 0:
-          game.tutGems.push({ x: W / 2, y: H / 2, type: gemTypes[1], radius: 30, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4 });
+          game.tutGems.push({ x: W / 2, y: H / 2, type: gemTypes[1], radius: 30, targetRadius: 30, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4, blossomTime: 0 });
           break;
         case 1:
           [gemTypes[0], gemTypes[2], gemTypes[4]].forEach((t, i) => {
-            game.tutGems.push({ x: [W * 0.25, W * 0.5, W * 0.75][i], y: H / 2, type: t, radius: 28, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4 });
+            game.tutGems.push({ x: [W * 0.25, W * 0.5, W * 0.75][i], y: H / 2, type: t, radius: 28, targetRadius: 28, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4, blossomTime: 0 });
           });
           break;
         case 2:
           game.tutCombo = 0;
           [[-50, -40], [50, -40], [-50, 40], [50, 40]].forEach(([ox, oy]) => {
-            game.tutGems.push({ x: W / 2 + ox, y: H / 2 + oy, type: gemTypes[1], radius: 26, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4 });
+            game.tutGems.push({ x: W / 2 + ox, y: H / 2 + oy, type: gemTypes[1], radius: 26, targetRadius: 26, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4, blossomTime: 0 });
           });
           break;
         case 3:
           game.tutMissShown = false; game.tutTimeLeft = 15;
-          game.tutGems.push({ x: W / 2, y: H * 0.4, type: gemTypes[0], radius: 25, age: 0, maxLife: 2.0, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4 });
+          game.tutGems.push({ x: W / 2, y: H * 0.4, type: gemTypes[0], radius: 25, targetRadius: 25, age: 0, maxLife: 2.0, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4, blossomTime: 0 });
           break;
         case 4:
           game.tutTimeLeft = 10; game.tutCombo = 0; game.spawnTimer = 0;
@@ -385,7 +501,6 @@ export default function ShineGame() {
         game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1; game.maxCombo = 0;
         game.spawnTimer = 0; game.beatPulse = 0;
         game.currentPhase = 1; game.phaseName = 'QUARTER NOTES';
-        // Setup audio for actual game
         const actx = game.audioCtx;
         if (actx) {
           game.masterGain = actx.createGain();
@@ -393,6 +508,7 @@ export default function ShineGame() {
           game.masterGain.connect(actx.destination);
           game.beatStartTime = actx.currentTime;
           game.lastScheduledBeat = -1;
+          startSong();
         }
         return;
       }
@@ -440,6 +556,7 @@ export default function ShineGame() {
             game.masterGain.connect(actx.destination);
             game.beatStartTime = actx.currentTime;
             game.lastScheduledBeat = -1;
+            startSong();
           }
           return;
         }
@@ -447,7 +564,8 @@ export default function ShineGame() {
         for (let i = activeGems.length - 1; i >= 0; i--) {
           const gem = activeGems[i];
           const dx = px - gem.x, dy = py - gem.y;
-          if (dx * dx + dy * dy < gem.radius * gem.radius) {
+          const hitRadius = Math.max(gem.radius, gem.targetRadius * 0.5);
+          if (dx * dx + dy * dy < hitRadius * hitRadius) {
             game.score += gem.type.points; game.tutCollected++;
             if (game.tutStep === 2) { game.tutCombo++; game.combo++; game.comboTimer = 0.9; game.comboMultiplier = getComboMultiplier(game.combo); }
             spawnParticles(game, gem.x, gem.y, gem.type.color, 15);
@@ -466,9 +584,13 @@ export default function ShineGame() {
       for (let i = game.gems.length - 1; i >= 0; i--) {
         const gem = game.gems[i];
         const dx = px - gem.x, dy = py - gem.y;
-        if (dx * dx + dy * dy < (gem.radius + 5) * (gem.radius + 5)) {
-          const lifeRatio = gem.age / gem.maxLife;
-          const isPerfect = lifeRatio <= 0.4;
+        const hitRadius = Math.max(gem.radius + 5, gem.targetRadius * 0.6);
+        if (dx * dx + dy * dy < hitRadius * hitRadius) {
+          // PERFECT: tap near the blossom moment (within ±30% of a beat)
+          const blossomDist = Math.abs(gem.age - gem.blossomTime);
+          const perfectWindow = BEAT_SEC * 0.3;
+          const isPerfect = blossomDist <= perfectWindow;
+
           const mult = game.comboMultiplier;
           const basePoints = isPerfect ? gem.type.points : Math.max(1, Math.ceil(gem.type.points / 2));
           const pts = Math.round(basePoints * mult);
@@ -477,11 +599,13 @@ export default function ShineGame() {
           game.comboMultiplier = getComboMultiplier(game.combo);
           if (game.combo > game.maxCombo) game.maxCombo = game.combo;
 
-          const pCount = isPerfect ? 25 : 12;
+          const pCount = isPerfect ? 25 : 10;
           spawnParticles(game, gem.x, gem.y, isPerfect ? T.gold : gem.type.color, pCount);
           if (isPerfect) {
-            for (let j = 0; j < 8; j++) {
-              game.particles.push({ x: gem.x, y: gem.y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 0.5) * 12, life: 1, color: '#FFFFFF', size: Math.random() * 3 + 1 });
+            // Extra sparkle burst
+            for (let j = 0; j < 10; j++) {
+              const angle = (j / 10) * Math.PI * 2;
+              game.particles.push({ x: gem.x, y: gem.y, vx: Math.cos(angle) * 6, vy: Math.sin(angle) * 6, life: 1, color: '#FFFFFF', size: 2 });
             }
           }
 
@@ -491,7 +615,6 @@ export default function ShineGame() {
           spawnFloatingText(game, gem.x, gem.y - 30, `${tierLabel} +${pts}${comboText}`, tierColor);
           if (game.combo >= 3) spawnFloatingText(game, game.W / 2, game.H * 0.15, `${game.combo} COMBO!`, T.gold);
 
-          // Play instrument sound
           playInstrument(gem.type.instrument, isPerfect);
 
           if (gem.type.points >= 5) { game.hitFreeze = 0.03; game.screenShake = { timer: 0.08, intensity: 2 }; }
@@ -531,7 +654,7 @@ export default function ShineGame() {
             game.tutGems.splice(i, 1);
             setTimeout(() => {
               if (game.phase === 'tutorial' && game.tutStep === 3) {
-                game.tutGems.push({ x: game.W / 2, y: game.H * 0.6, type: gemTypes[2], radius: 28, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4 });
+                game.tutGems.push({ x: game.W / 2, y: game.H * 0.6, type: gemTypes[2], radius: 28, targetRadius: 28, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4, blossomTime: 0 });
               }
             }, 500);
           }
@@ -575,7 +698,10 @@ export default function ShineGame() {
       game.timeLeft -= dt;
       if (game.timeLeft <= 0) { game.timeLeft = 0; endGame(game); return; }
 
-      // Phase progression
+      // Phase progression — HALVED density:
+      // Phase 1: 1 gem every 2 beats (every other quarter note)
+      // Phase 2: 1 gem per beat (quarter notes)
+      // Phase 3: 1 gem every half beat (eighth notes)
       if (game.gameTime < 10) {
         game.currentPhase = 1; game.phaseName = 'QUARTER NOTES';
       } else if (game.gameTime < 20) {
@@ -596,54 +722,70 @@ export default function ShineGame() {
         }
       }
 
-      // Beat-synced spawning using audioContext.currentTime
+      // Beat-synced spawning
       const actx = game.audioCtx;
       if (actx) {
         const now = actx.currentTime;
         const elapsed = now - game.beatStartTime;
 
-        // Determine subdivision size based on phase
-        // Phase 1: quarter notes (1 per beat) → subdivIndex increments every BEAT_SEC
-        // Phase 2: eighth notes → subdivIndex increments every BEAT_SEC/2
-        // Phase 3: sixteenth notes → subdivIndex increments every BEAT_SEC/4
-        const subdivSec = game.currentPhase === 1 ? BEAT_SEC : game.currentPhase === 2 ? BEAT_SEC / 2 : BEAT_SEC / 4;
-        const currentSubdiv = Math.floor(elapsed / subdivSec);
+        // Subdivision interval — halved density from before:
+        // Phase 1: every 2 beats
+        // Phase 2: every 1 beat
+        // Phase 3: every half beat
+        const subdivSec = game.currentPhase === 1 ? BEAT_SEC * 2 :
+                          game.currentPhase === 2 ? BEAT_SEC :
+                          BEAT_SEC / 2;
 
-        // Schedule ahead by 0.1s
-        const lookAheadSubdiv = Math.floor((elapsed + 0.1) / subdivSec);
+        // We spawn gems BLOSSOM_LEAD seconds BEFORE the beat they're meant to be tapped on.
+        // So we schedule based on (elapsed + BLOSSOM_LEAD)
+        const scheduleElapsed = elapsed + BLOSSOM_LEAD;
+        const currentSubdiv = Math.floor(scheduleElapsed / subdivSec);
 
-        for (let si = game.lastScheduledBeat + 1; si <= lookAheadSubdiv; si++) {
-          const beatTime = game.beatStartTime + si * subdivSec;
-          // Is this a quarter note?
-          const isQuarter = (si * subdivSec) % BEAT_SEC < 0.001 || Math.abs((si * subdivSec) % BEAT_SEC - BEAT_SEC) < 0.001;
-          const isEighth = !isQuarter && ((si * subdivSec) % (BEAT_SEC / 2) < 0.001 || Math.abs((si * subdivSec) % (BEAT_SEC / 2) - BEAT_SEC / 2) < 0.001);
-
-          // Play kick on every quarter note
-          if (isQuarter || (si === 0)) {
-            playKick(beatTime);
-          }
-
-          // Determine subdivision type for the spawned gem
-          let subdivType = 1; // sixteenth
-          if (isQuarter || si === 0) subdivType = 4;
-          else if (isEighth) subdivType = 2;
-
-          // Spawn a gem on this subdivision
+        for (let si = game.lastScheduledBeat + 1; si <= currentSubdiv; si++) {
+          const beatTime = si * subdivSec; // when the player should tap (in elapsed time)
+          // Determine beat type for sizing
+          const isQuarter = Math.abs(beatTime % BEAT_SEC) < 0.01 || Math.abs(beatTime % BEAT_SEC - BEAT_SEC) < 0.01;
+          const subdivType = game.currentPhase === 1 ? 4 :
+                             game.currentPhase === 2 ? (isQuarter ? 4 : 2) :
+                             (isQuarter ? 4 : 2);
           spawnGemAt(game, subdivType);
         }
+        game.lastScheduledBeat = currentSubdiv;
 
-        game.lastScheduledBeat = lookAheadSubdiv;
+        // Kick on every quarter note (scheduled precisely)
+        const quarterElapsed = elapsed;
+        const currentQuarter = Math.floor(quarterElapsed / BEAT_SEC);
+        // Schedule kicks ahead
+        for (let qi = 0; qi <= currentQuarter + 1; qi++) {
+          const kickTime = game.beatStartTime + qi * BEAT_SEC;
+          if (kickTime >= now - 0.01 && kickTime <= now + 0.1) {
+            playKick(kickTime);
+          }
+        }
 
-        // Beat pulse (visual) - based on quarter notes
-        const quarterBeat = elapsed / BEAT_SEC;
-        const beatFrac = quarterBeat - Math.floor(quarterBeat);
-        game.beatPulse = Math.max(0, 1 - beatFrac * 4); // quick flash then fade
+        // Update chord progression
+        const currentBeat = Math.floor(elapsed / BEAT_SEC);
+        updateChord(currentBeat);
+
+        // Beat pulse visual
+        const beatFrac = (elapsed / BEAT_SEC) - Math.floor(elapsed / BEAT_SEC);
+        game.beatPulse = Math.max(0, 1 - beatFrac * 4);
       }
 
-      // gems age
+      // gems age + blossom animation
       for (let i = game.gems.length - 1; i >= 0; i--) {
         const gem = game.gems[i];
-        gem.age += dt; gem.pulse = Math.sin(gem.age * 5) * 0.2 + 1;
+        gem.age += dt;
+
+        // Blossom: grow from 0 to targetRadius as age approaches blossomTime
+        const blossomProgress = Math.min(1, gem.age / gem.blossomTime);
+        // Ease-out curve for smooth growth
+        const eased = 1 - Math.pow(1 - blossomProgress, 3);
+        gem.radius = gem.targetRadius * eased;
+
+        // Gentle pulse after blossom
+        gem.pulse = blossomProgress >= 1 ? (Math.sin(gem.age * 5) * 0.1 + 1) : 1;
+
         if (gem.age >= gem.maxLife) {
           game.timeLeft = Math.max(0, game.timeLeft - 0.35);
           game.missDarken = 0.1; game.timerFlash = 0.15;
@@ -676,7 +818,7 @@ export default function ShineGame() {
 
     function endGame(game: typeof g.current) {
       game.phase = 'over'; game.running = false;
-      // Fade out master gain
+      stopSong();
       if (game.masterGain && game.audioCtx) {
         game.masterGain.gain.setValueAtTime(game.masterGain.gain.value, game.audioCtx.currentTime);
         game.masterGain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.5);
@@ -687,20 +829,71 @@ export default function ShineGame() {
     }
 
     function drawGem(c: CanvasRenderingContext2D, gem: Gem) {
+      if (gem.radius < 1) return; // not visible yet
+
       const life = 1 - gem.age / gem.maxLife;
-      const alpha = Math.max(0, life);
+      const blossomProgress = Math.min(1, gem.age / Math.max(0.01, gem.blossomTime));
+
+      // Opacity: fade in during blossom, full at perfect moment, then fade out
+      let alpha: number;
+      if (blossomProgress < 1) {
+        // Growing phase: start very faint, ramp to full
+        alpha = 0.15 + blossomProgress * 0.85;
+      } else {
+        // After blossom: fade based on remaining life
+        const postBlossom = (gem.age - gem.blossomTime) / (gem.maxLife - gem.blossomTime);
+        alpha = Math.max(0, 1 - postBlossom * 0.8);
+      }
+
       const size = gem.radius * gem.pulse;
-      const hexA1 = Math.floor(alpha * 255).toString(16).padStart(2, '0');
-      const hexA2 = Math.floor(alpha * 100).toString(16).padStart(2, '0');
-      const grad = c.createRadialGradient(gem.x, gem.y, 0, gem.x, gem.y, size * 2);
-      grad.addColorStop(0, gem.type.color + hexA1); grad.addColorStop(0.5, gem.type.color + hexA2); grad.addColorStop(1, gem.type.color + '00');
-      c.fillStyle = grad; c.beginPath(); c.arc(gem.x, gem.y, size * 2, 0, Math.PI * 2); c.fill();
-      c.fillStyle = gem.type.color; c.globalAlpha = alpha;
-      c.beginPath(); c.arc(gem.x, gem.y, size, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
-      if (alpha > 0.7) {
-        c.strokeStyle = '#fff'; c.globalAlpha = (Math.sin(gem.age * 10) * 0.3 + 0.5) * alpha; c.lineWidth = 2;
-        c.beginPath(); c.moveTo(gem.x - size * 0.6, gem.y); c.lineTo(gem.x + size * 0.6, gem.y);
-        c.moveTo(gem.x, gem.y - size * 0.6); c.lineTo(gem.x, gem.y + size * 0.6); c.stroke(); c.globalAlpha = 1;
+
+      // Outer glow — brighter at blossom moment
+      const glowIntensity = blossomProgress >= 0.9 && blossomProgress <= 1.1 ? 0.6 : 0.3;
+      const hexA1 = Math.floor(alpha * 255 * glowIntensity).toString(16).padStart(2, '0');
+      const hexA2 = Math.floor(alpha * 80).toString(16).padStart(2, '0');
+      const grad = c.createRadialGradient(gem.x, gem.y, 0, gem.x, gem.y, size * 2.5);
+      grad.addColorStop(0, gem.type.color + hexA1);
+      grad.addColorStop(0.4, gem.type.color + hexA2);
+      grad.addColorStop(1, gem.type.color + '00');
+      c.fillStyle = grad; c.beginPath(); c.arc(gem.x, gem.y, size * 2.5, 0, Math.PI * 2); c.fill();
+
+      // Ring that fills in — shows timing visually
+      // Outer ring (target size) always visible as faint guide
+      if (blossomProgress < 1) {
+        c.strokeStyle = gem.type.color;
+        c.globalAlpha = 0.15;
+        c.lineWidth = 1.5;
+        c.beginPath(); c.arc(gem.x, gem.y, gem.targetRadius, 0, Math.PI * 2); c.stroke();
+        c.globalAlpha = 1;
+      }
+
+      // Main circle — solid fill
+      c.fillStyle = gem.type.color;
+      c.globalAlpha = alpha;
+      c.beginPath(); c.arc(gem.x, gem.y, size, 0, Math.PI * 2); c.fill();
+      c.globalAlpha = 1;
+
+      // Cross sparkle — only when fully blossomed
+      if (blossomProgress >= 0.8 && alpha > 0.5) {
+        const sparkleAlpha = Math.min(1, (blossomProgress - 0.8) / 0.2) * alpha;
+        c.strokeStyle = '#fff';
+        c.globalAlpha = (Math.sin(gem.age * 10) * 0.3 + 0.5) * sparkleAlpha;
+        c.lineWidth = 2;
+        c.beginPath();
+        c.moveTo(gem.x - size * 0.6, gem.y); c.lineTo(gem.x + size * 0.6, gem.y);
+        c.moveTo(gem.x, gem.y - size * 0.6); c.lineTo(gem.x, gem.y + size * 0.6);
+        c.stroke();
+        c.globalAlpha = 1;
+      }
+
+      // "Perfect" ring flash at blossom moment
+      if (Math.abs(gem.age - gem.blossomTime) < 0.15) {
+        const flash = 1 - Math.abs(gem.age - gem.blossomTime) / 0.15;
+        c.strokeStyle = T.gold;
+        c.globalAlpha = flash * 0.5;
+        c.lineWidth = 3;
+        c.beginPath(); c.arc(gem.x, gem.y, size + 4, 0, Math.PI * 2); c.stroke();
+        c.globalAlpha = 1;
       }
     }
 
@@ -765,7 +958,7 @@ export default function ShineGame() {
       const W = game.W, H = game.H;
 
       // Background with beat pulse
-      const pulseAlpha = game.beatPulse * 0.08;
+      const pulseAlpha = game.beatPulse * 0.06;
       ctx!.fillStyle = `rgba(0, 0, 0, ${0.25 - pulseAlpha})`;
       ctx!.fillRect(0, 0, W, H);
       if (pulseAlpha > 0.001) {
@@ -779,11 +972,11 @@ export default function ShineGame() {
         ctx!.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
       }
 
-      // Beat pulse ring in center
+      // Beat pulse ring
       if (game.beatPulse > 0.01) {
-        const ringRadius = 40 + (1 - game.beatPulse) * 80;
-        ctx!.strokeStyle = `rgba(255, 215, 0, ${game.beatPulse * 0.3})`;
-        ctx!.lineWidth = 2;
+        const ringRadius = 30 + (1 - game.beatPulse) * 60;
+        ctx!.strokeStyle = `rgba(255, 215, 0, ${game.beatPulse * 0.15})`;
+        ctx!.lineWidth = 1.5;
         ctx!.beginPath(); ctx!.arc(W / 2, H / 2, ringRadius, 0, Math.PI * 2); ctx!.stroke();
       }
 
@@ -842,7 +1035,7 @@ export default function ShineGame() {
         ctx!.fillText(timerStr, W - 16, 78 + hy);
       }
 
-      // Phase name display
+      // Phase name
       ctx!.textAlign = 'center';
       ctx!.fillStyle = T.teal; ctx!.font = 'bold 12px monospace';
       ctx!.globalAlpha = 0.6;
@@ -881,7 +1074,7 @@ export default function ShineGame() {
 
     return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); canvas.removeEventListener('touchstart', handleTap); canvas.removeEventListener('click', handleTap); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initAudio, playCollect, playComboBreak, playMissThud, playSound, playInstrument, playKick]);
+  }, [initAudio, playCollect, playComboBreak, playMissThud, playSound, playInstrument, playKick, startSong, stopSong, updateChord]);
 
   return (
     <>
