@@ -1,430 +1,295 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECHO — Repeat the pattern</title>
-    <meta property="og:title" content="ECHO — Repeat the pattern" />
-    <meta property="og:description" content="Watch. Remember. Repeat. No words needed." />
-    <meta property="og:image" content="https://kochi.to/amber/echo-og.png" />
-    <meta property="og:url" content="https://kochi.to/amber/echo.html" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ECHO — Tap. Listen. Fade.</title>
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="ECHO — Tap. Listen. Fade.">
+  <meta property="og:description" content="A minimal echo machine. Each tap creates a tone that repeats and fades into silence.">
+  <meta property="og:image" content="https://intheamber.com/amber/echo-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/echo.html">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        body {
-            background: #000;
-            font-family: 'Space Mono', monospace;
-            color: #D4A574;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            touch-action: manipulation;
-        }
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      touch-action: none;
+    }
 
-        #container {
-            width: 100%;
-            max-width: 500px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 30px;
-        }
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
 
-        #status {
-            font-size: 14px;
-            text-align: center;
-            min-height: 40px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: center;
-        }
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      pointer-events: none;
+      z-index: 10;
+    }
 
-        #level {
-            font-size: 24px;
-            color: #FFD700;
-        }
+    #title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #D4A574;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
 
-        #message {
-            opacity: 0.7;
-        }
+    #subtitle {
+      font-size: 14px;
+      color: rgba(212, 165, 116, 0.6);
+      margin-bottom: 20px;
+    }
 
-        #shapes {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            width: 100%;
-            max-width: 320px;
-        }
+    #instructions {
+      font-size: 12px;
+      color: rgba(212, 165, 116, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-        .shape {
-            width: 100%;
-            aspect-ratio: 1;
-            min-height: 120px;
-            cursor: pointer;
-            position: relative;
-            transition: transform 0.1s, opacity 0.2s;
-            opacity: 0.4;
-        }
+    #status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(212, 165, 116, 0.3);
+      transition: background 0.3s;
+    }
 
-        .shape:active {
-            transform: scale(0.95);
-        }
+    #status.active {
+      background: #2D9596;
+      box-shadow: 0 0 10px #2D9596;
+    }
 
-        .shape.flash {
-            opacity: 1;
-            transform: scale(1.05);
-        }
-
-        .shape.disabled {
-            pointer-events: none;
-            opacity: 0.2;
-        }
-
-        #circle {
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #FFD700, #D4A574);
-        }
-
-        #triangle {
-            width: 0;
-            height: 0;
-            border-left: 75px solid transparent;
-            border-right: 75px solid transparent;
-            border-bottom: 130px solid #2D9596;
-            margin: 0 auto;
-        }
-
-        #square {
-            background: linear-gradient(135deg, #7B68EE, #9370DB);
-        }
-
-        #diamond {
-            width: 106px;
-            height: 106px;
-            background: linear-gradient(135deg, #FF1493, #FF69B4);
-            transform: rotate(45deg);
-            margin: 27px auto;
-        }
-
-        #score {
-            font-size: 18px;
-            text-align: center;
-        }
-
-        .best {
-            font-size: 14px;
-            opacity: 0.6;
-            margin-top: 4px;
-        }
-
-        #particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1000;
-        }
-
-        @keyframes particle {
-            0% {
-                transform: translate(0, 0) scale(1);
-                opacity: 1;
-            }
-            100% {
-                transform: translate(var(--tx), var(--ty)) scale(0);
-                opacity: 0;
-            }
-        }
-
-        .particle {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: var(--color);
-            border-radius: 50%;
-            animation: particle 0.8s ease-out forwards;
-        }
-
-        #startBtn {
-            padding: 16px 32px;
-            font-size: 18px;
-            font-family: 'Space Mono', monospace;
-            background: #D4A574;
-            color: #000;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-weight: bold;
-        }
-
-        #startBtn:hover {
-            background: #FFD700;
-            transform: scale(1.05);
-        }
-
-        #startBtn:active {
-            transform: scale(0.95);
-        }
-
-        .hidden {
-            display: none;
-        }
-    </style>
+    @media (max-width: 768px) {
+      #title { font-size: 20px; }
+      #subtitle { font-size: 12px; }
+      #instructions { font-size: 11px; }
+    }
+  </style>
 </head>
 <body>
-    <div id="container">
-        <div id="status">
-            <div id="level">●</div>
-            <div id="message">👁</div>
-        </div>
-
-        <div id="shapes">
-            <div class="shape disabled" id="circle" data-id="0"></div>
-            <div class="shape disabled" id="triangle-container">
-                <div id="triangle" data-id="1"></div>
-            </div>
-            <div class="shape disabled" id="square" data-id="2"></div>
-            <div class="shape disabled" id="diamond-container">
-                <div id="diamond" data-id="3"></div>
-            </div>
-        </div>
-
-        <div id="score">
-            <div id="current">▶</div>
-            <div class="best" id="best">◆ 0</div>
-        </div>
-
-        <button id="startBtn">▶</button>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="title">ECHO</div>
+    <div id="subtitle">Tap. Listen. Fade.</div>
+    <div id="instructions">
+      <div id="status"></div>
+      <span id="instructionText">Tap anywhere to start</span>
     </div>
+  </div>
 
-    <canvas id="particles"></canvas>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const status = document.getElementById('status');
+    const instructionText = document.getElementById('instructionText');
 
-    <script>
-        const shapes = ['circle', 'triangle', 'square', 'diamond'];
-        const colors = ['#FFD700', '#2D9596', '#7B68EE', '#FF1493'];
-        const notes = [523.25, 659.25, 783.99, 880.00]; // C5, E5, G5, A5
+    let audioContext = null;
+    let audioStarted = false;
+    
+    // Canvas setup
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
-        let sequence = [];
-        let playerSequence = [];
-        let level = 1;
-        let isPlaying = false;
-        let isPlayerTurn = false;
-        let audioContext;
-        let bestScore = parseInt(localStorage.getItem('echo_best') || '0');
+    // Ring objects
+    const rings = [];
 
-        const shapeElements = shapes.map(id => {
-            if (id === 'triangle') return document.getElementById('triangle');
-            if (id === 'diamond') return document.getElementById('diamond');
-            return document.getElementById(id);
-        });
+    class Ring {
+      constructor(x, y, color, maxRadius) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.radius = 0;
+        this.maxRadius = maxRadius;
+        this.alpha = 1;
+        this.speed = 2; // pixels per frame
+        this.lineWidth = 2;
+      }
 
-        const shapeContainers = [
-            document.getElementById('circle'),
-            document.getElementById('triangle-container'),
-            document.getElementById('square'),
-            document.getElementById('diamond-container')
-        ];
-
-        document.getElementById('best').textContent = `◆ ${bestScore}`;
-
-        function initAudio() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
+      update() {
+        this.radius += this.speed;
+        
+        // Fade as it expands
+        this.alpha = 1 - (this.radius / this.maxRadius);
+        
+        // Fade out completely when near max
+        if (this.radius > this.maxRadius * 0.8) {
+          this.alpha *= (this.maxRadius - this.radius) / (this.maxRadius * 0.2);
         }
+        
+        return this.radius < this.maxRadius;
+      }
 
-        function playTone(freq, duration = 0.3) {
-            initAudio();
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            
-            osc.frequency.value = freq;
-            osc.type = 'sine';
-            
-            gain.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-            
-            osc.start(audioContext.currentTime);
-            osc.stop(audioContext.currentTime + duration);
+      draw() {
+        ctx.save();
+        ctx.strokeStyle = this.color;
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        ctx.lineWidth = this.lineWidth;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // Audio setup
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new AudioContext();
+        
+        // Create global delay node for echo effect
+        window.delayNode = audioContext.createDelay(2.0);
+        delayNode.delayTime.value = 0.3; // 300ms echo
+        
+        window.feedbackGain = audioContext.createGain();
+        feedbackGain.gain.value = 0.5; // 50% feedback
+        
+        window.wetGain = audioContext.createGain();
+        wetGain.gain.value = 0.7; // Echo volume
+        
+        window.dryGain = audioContext.createGain();
+        dryGain.gain.value = 0.8; // Direct signal volume
+        
+        // Create feedback loop: delay -> feedback -> delay
+        delayNode.connect(feedbackGain);
+        feedbackGain.connect(delayNode);
+        delayNode.connect(wetGain);
+        wetGain.connect(audioContext.destination);
+      }
+      
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+    }
+
+    // Play note with echo visualization
+    function playNote(x, y) {
+      if (!audioContext) return;
+      
+      // Map Y position to frequency (top = high, bottom = low)
+      const minFreq = 200;  // Low note
+      const maxFreq = 800;  // High note
+      const freq = maxFreq - ((y / canvas.height) * (maxFreq - minFreq));
+      
+      // Map X position to color
+      const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE'];
+      const colorIndex = Math.floor((x / canvas.width) * colors.length);
+      const color = colors[colorIndex];
+      
+      // Create oscillator
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      
+      // Envelope
+      const now = audioContext.currentTime;
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+      
+      // Route through dry and delay
+      osc.connect(gain);
+      gain.connect(dryGain);
+      gain.connect(delayNode);
+      
+      dryGain.connect(audioContext.destination);
+      
+      osc.start(now);
+      osc.stop(now + 0.5);
+      
+      // Create visual rings for the initial tap and echoes
+      spawnEchoRings(x, y, color, freq);
+    }
+
+    // Spawn rings for initial hit and echoes
+    function spawnEchoRings(x, y, color, freq) {
+      const echoCount = 5; // Number of echoes to visualize
+      const echoDelay = 300; // ms, matches audio delay
+      const maxRadius = 300;
+      
+      // Initial ring (largest)
+      rings.push(new Ring(x, y, color, maxRadius));
+      
+      // Echo rings (spawn with delay)
+      for (let i = 1; i <= echoCount; i++) {
+        setTimeout(() => {
+          const echoAlpha = Math.pow(0.5, i); // Fade each echo
+          const echoColor = color + Math.floor(echoAlpha * 255).toString(16).padStart(2, '0');
+          const echoMaxRadius = maxRadius * (1 - i * 0.1); // Smaller rings
+          rings.push(new Ring(x, y, echoColor, echoMaxRadius));
+        }, i * echoDelay);
+      }
+    }
+
+    // Animation loop
+    function animate() {
+      // Dark fade instead of clear for trails
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Update and draw rings
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const ring = rings[i];
+        const alive = ring.update();
+        ring.draw();
+        
+        if (!alive) {
+          rings.splice(i, 1);
         }
+      }
+      
+      requestAnimationFrame(animate);
+    }
 
-        function playFailSound() {
-            initAudio();
-            const osc = audioContext.createOscillator();
-const gain = audioContext.createGain();
-            
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            
-            osc.frequency.setValueAtTime(400, audioContext.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.5);
-            osc.type = 'sawtooth';
-            
-            gain.gain.setValueAtTime(0.2, audioContext.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-            
-            osc.start(audioContext.currentTime);
-            osc.stop(audioContext.currentTime + 0.5);
-        }
+    // Start animation immediately (visual works before audio)
+    animate();
 
-        function burstParticles(x, y, color) {
-            const canvas = document.getElementById('particles');
-            const count = 12;
-            
-            for (let i = 0; i < count; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                const angle = (Math.PI * 2 * i) / count;
-                const distance = 50 + Math.random() * 50;
-                particle.style.left = x + 'px';
-                particle.style.top = y + 'px';
-                particle.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
-                particle.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
-                particle.style.setProperty('--color', color);
-                canvas.appendChild(particle);
-                
-                setTimeout(() => particle.remove(), 800);
-            }
-        }
+    // Interaction
+    function handleTap(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+      const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+      
+      // Initialize audio on first tap
+      if (!audioStarted) {
+        initAudio();
+        audioStarted = true;
+        status.classList.add('active');
+        instructionText.textContent = 'Tap anywhere';
+      }
+      
+      playNote(x, y);
+    }
 
-        function flashShape(index) {
-            const container = shapeContainers[index];
-            container.classList.add('flash');
-            playTone(notes[index]);
-            
-            setTimeout(() => {
-                container.classList.remove('flash');
-            }, 400);
-        }
-
-        async function playSequence() {
-            isPlaying = true;
-            disableShapes();
-            
-            document.getElementById('message').textContent = '👁';
-            
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            for (let i = 0; i < sequence.length; i++) {
-                await new Promise(resolve => setTimeout(resolve, 200));
-                flashShape(sequence[i]);
-                await new Promise(resolve => setTimeout(resolve, 600));
-            }
-            
-            isPlaying = false;
-            isPlayerTurn = true;
-            enableShapes();
-            document.getElementById('message').textContent = '👆';
-        }
-
-        function enableShapes() {
-            shapeContainers.forEach(el => el.classList.remove('disabled'));
-        }
-
-        function disableShapes() {
-            shapeContainers.forEach(el => el.classList.add('disabled'));
-        }
-
-        function handleShapeClick(index, event) {
-            if (!isPlayerTurn || isPlaying) return;
-            
-            const rect = event.currentTarget.getBoundingClientRect();
-            const x = rect.left + rect.width / 2;
-            const y = rect.top + rect.height / 2;
-            
-            flashShape(index);
-            burstParticles(x, y, colors[index]);
-            
-            playerSequence.push(index);
-            
-            // Check if correct
-            const currentIndex = playerSequence.length - 1;
-            if (playerSequence[currentIndex] !== sequence[currentIndex]) {
-                // Failed
-                fail();
-                return;
-            }
-            
-            // Check if sequence complete
-            if (playerSequence.length === sequence.length) {
-                success();
-            }
-        }
-
-        function success() {
-            isPlayerTurn = false;
-            disableShapes();
-            
-            document.getElementById('message').textContent = '✓';
-            
-            if (level > bestScore) {
-                bestScore = level;
-                localStorage.setItem('echo_best', bestScore);
-                document.getElementById('best').textContent = `◆ ${bestScore}`;
-            }
-            
-            setTimeout(() => {
-                level++;
-                nextRound();
-            }, 1000);
-        }
-
-        function fail() {
-            isPlayerTurn = false;
-            disableShapes();
-            playFailSound();
-            
-            document.getElementById('message').textContent = '✗';
-            document.getElementById('level').textContent = `${level - 1}`;
-            
-            setTimeout(() => {
-                document.getElementById('startBtn').classList.remove('hidden');
-                document.getElementById('current').textContent = '▶';
-            }, 1500);
-        }
-
-        function nextRound() {
-            playerSequence = [];
-            sequence.push(Math.floor(Math.random() * 4));
-            document.getElementById('level').textContent = `${'●'.repeat(level)}`;
-            document.getElementById('current').textContent = `▶ ${level}`;
-            playSequence();
-        }
-
-        function startGame() {
-            initAudio();
-            document.getElementById('startBtn').classList.add('hidden');
-            sequence = [];
-            playerSequence = [];
-            level = 1;
-            document.getElementById('level').textContent = '●';
-            document.getElementById('current').textContent = '▶ 1';
-            nextRound();
-        }
-
-        shapeContainers.forEach((container, index) => {
-            container.addEventListener('click', (e) => handleShapeClick(index, e));
-        });
-
-        document.getElementById('startBtn').addEventListener('click', startGame);
-    </script>
+    canvas.addEventListener('click', handleTap);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleTap(e);
+    });
+  </script>
 </body>
 </html>
