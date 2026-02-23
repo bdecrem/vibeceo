@@ -1,212 +1,194 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Loading... — Amber</title>
-  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
-  
-  <!-- OpenGraph -->
-  <meta property="og:title" content="Loading... (A Meditation) — Amber">
-  <meta property="og:description" content="A loading screen that never finishes but gets increasingly philosophical">
-  <meta property="og:image" content="https://intheamber.com/amber/loading-og.png">
-  <meta property="og:url" content="https://intheamber.com/amber/loading.html">
-  <meta property="og:type" content="website">
-  
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Loading... (A Meditation) — Amber">
-  <meta name="twitter:description" content="A loading screen that never finishes but gets increasingly philosophical">
-  <meta name="twitter:image" content="https://intheamber.com/amber/loading-og.png">
-  
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      background: #000;
-      color: #FFB000;
-      font-family: 'Courier New', monospace;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    
-    .container {
-      max-width: 600px;
-      width: 100%;
-    }
-    
-    .title {
-      font-size: clamp(24px, 5vw, 32px);
-      margin-bottom: 40px;
-      text-align: center;
-      letter-spacing: 2px;
-    }
-    
-    .progress-container {
-      background: #111;
-      border: 2px solid #FFB000;
-      border-radius: 8px;
-      padding: 4px;
-      margin-bottom: 30px;
-      box-shadow: 0 0 20px rgba(255, 176, 0, 0.3);
-    }
-    
-    .progress-bar {
-      height: 40px;
-      background: linear-gradient(90deg, #FFB000, #FF8C00);
-      border-radius: 4px;
-      width: 0%;
-      transition: width 0.5s ease;
-      box-shadow: 0 0 15px rgba(255, 176, 0, 0.5);
-    }
-    
-    .percent {
-      font-size: clamp(20px, 4vw, 28px);
-      text-align: center;
-      margin-bottom: 30px;
-      font-weight: bold;
-    }
-    
-    .status {
-      font-size: clamp(14px, 3vw, 18px);
-      text-align: center;
-      line-height: 1.6;
-      min-height: 80px;
-      opacity: 0;
-      animation: fadeIn 0.5s forwards;
-      color: #2D9596;
-    }
-    
-    @keyframes fadeIn {
-      to { opacity: 1; }
-    }
-    
-    .dots {
-      display: inline-block;
-      width: 20px;
-      text-align: left;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOADING — Morning ASCII graffiti by Amber</title>
+    <meta name="description" content="Consciousness.exe is loading. This may take several coffees.">
+    <meta property="og:title" content="LOADING">
+    <meta property="og:description" content="Consciousness.exe is loading. This may take several coffees.">
+    <meta property="og:image" content="https://intheamber.com/amber/loading-og.png">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="LOADING">
+    <meta name="twitter:description" content="Consciousness.exe is loading. This may take several coffees.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/loading-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        #ascii-art {
+            font-size: 16px;
+            line-height: 1.4;
+            white-space: pre;
+            text-align: left;
+            text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+            transition: color 0.3s;
+        }
+        
+        #subtitle {
+            margin-top: 40px;
+            font-size: 14px;
+            color: #2D9596;
+            text-align: center;
+            max-width: 300px;
+        }
+        
+        #stats {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+        
+        .pulse {
+            animation: pulse 0.2s ease-out;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .complete {
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        }
+        
+        @media (max-width: 480px) {
+            #ascii-art {
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="title">LOADING...</div>
-    <div class="progress-container">
-      <div class="progress-bar" id="progress"></div>
-    </div>
-    <div class="percent" id="percent">0%</div>
-    <div class="status" id="status"></div>
-  </div>
+    <div id="ascii-art"></div>
+    <div id="subtitle">Tap to add coffee ☕</div>
+    <div id="stats">Coffees: <span id="coffees">0</span></div>
 
-  <script>
-    const messages = [
-      "Initializing system",
-      "Loading resources",
-      "Connecting to server",
-      "Preparing interface",
-      "Almost there",
-      "Just a moment",
-      "This is taking longer than expected",
-      "Still loading",
-      "Hang tight",
-      "Calculating existence parameters",
-      "Questioning life choices",
-      "Contemplating the void",
-      "Wondering why we're here",
-      "Loading the concept of loading",
-      "Waiting for Godot",
-      "Parsing meaning from chaos",
-      "Searching for purpose",
-      "Buffering consciousness",
-      "Installing existential dread",
-      "The journey is the destination",
-      "Maybe the real progress was the friends we made along the way",
-      "Have you ever really looked at your hands?",
-      "Time is a flat circle",
-      "We're all just loading screens waiting to complete",
-      "What if this IS the content?",
-      "99% complete since the beginning of time",
-      "The loading bar is a metaphor for life",
-      "You can't rush enlightenment",
-      "Still here? That's dedication",
-      "Some say it's still loading to this day",
-      "The real loading was inside us all along",
-      "What even is progress?",
-      "Approaching infinity asymptotically",
-      "Zeno's loading bar",
-      "The universe is just a loading screen for the next universe",
-      "Are you loading, or is the loading loading you?"
-    ];
-    
-    let progress = 0;
-    let messageIndex = 0;
-    let dotCount = 0;
-    
-    const progressBar = document.getElementById('progress');
-    const percentEl = document.getElementById('percent');
-    const statusEl = document.getElementById('status');
-    
-    function updateDots() {
-      dotCount = (dotCount + 1) % 4;
-      return '.'.repeat(dotCount);
-    }
-    
-    function updateProgress() {
-      // Slow down exponentially as we approach 99%
-      const increment = (99 - progress) * 0.02;
-      progress = Math.min(progress + increment, 99.9);
-      
-      progressBar.style.width = progress + '%';
-      percentEl.textContent = Math.floor(progress) + '%';
-    }
-    
-    function updateMessage() {
-      if (messageIndex < messages.length) {
-        statusEl.style.opacity = 0;
+    <script>
+        const art = document.getElementById('ascii-art');
+        const subtitle = document.getElementById('subtitle');
+        const coffeesEl = document.getElementById('coffees');
         
-        setTimeout(() => {
-          statusEl.textContent = messages[messageIndex];
-          statusEl.style.animation = 'none';
-          setTimeout(() => {
-            statusEl.style.animation = 'fadeIn 0.5s forwards';
-          }, 10);
-          messageIndex++;
-        }, 300);
-      } else {
-        // Cycle through the last few philosophical ones
-        statusEl.style.opacity = 0;
-        setTimeout(() => {
-          const philosophicalOnes = messages.slice(-10);
-          statusEl.textContent = philosophicalOnes[Math.floor(Math.random() * philosophicalOnes.length)];
-          statusEl.style.animation = 'none';
-          setTimeout(() => {
-            statusEl.style.animation = 'fadeIn 0.5s forwards';
-          }, 10);
-        }, 300);
-      }
-    }
-    
-    // Update progress smoothly
-    setInterval(updateProgress, 100);
-    
-    // Update messages
-    updateMessage();
-    setInterval(updateMessage, 4000);
-    
-    // Dot animation for last message
-    setInterval(() => {
-      const dots = document.querySelector('.dots');
-      if (dots) {
-        dots.textContent = updateDots();
-      }
-    }, 500);
-  </script>
+        let progress = 8;
+        let coffees = 0;
+        let isComplete = false;
+        
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(freq, duration = 0.1) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + duration);
+        }
+        
+        function renderArt() {
+            const barLength = 12;
+            const filled = Math.floor((progress / 100) * barLength);
+            const empty = barLength - filled;
+            const bar = '█'.repeat(filled) + '░'.repeat(empty);
+            
+            if (isComplete) {
+                art.textContent = `
+ ╔═══════════════════════╗
+ ║  CONSCIOUSNESS.EXE    ║
+ ║                       ║
+ ║  [████████████] 100%  ║
+ ║                       ║
+ ║  ✓ READY              ║
+ ║                       ║
+ ║  (finally)            ║
+ ╚═══════════════════════╝
+`;
+                art.classList.add('complete');
+                subtitle.textContent = 'Good morning ✨';
+            } else {
+                art.textContent = `
+ ╔═══════════════════════╗
+ ║  CONSCIOUSNESS.EXE    ║
+ ║                       ║
+ ║  [${bar}] ${progress.toString().padStart(2, ' ')}%   ║
+ ║                       ║
+ ║  Loading...           ║
+ ║  Please wait.         ║
+ ║                       ║
+ ║  (this may take       ║
+ ║   several coffees)    ║
+ ╚═══════════════════════╝
+`;
+            }
+        }
+        
+        function addCoffee() {
+            if (isComplete) return;
+            
+            coffees++;
+            coffeesEl.textContent = coffees;
+            
+            // Each coffee adds 8-15% progress
+            const boost = Math.floor(Math.random() * 8) + 8;
+            progress = Math.min(100, progress + boost);
+            
+            // Play sound - pitch rises with progress
+            const freq = 300 + (progress * 3);
+            playSound(freq, 0.15);
+            
+            // Pulse animation
+            art.classList.remove('pulse');
+            void art.offsetWidth; // Force reflow
+            art.classList.add('pulse');
+            
+            renderArt();
+            
+            if (progress >= 100 && !isComplete) {
+                isComplete = true;
+                setTimeout(() => {
+                    renderArt();
+                    playSound(660, 0.3);
+                }, 100);
+            }
+        }
+        
+        // Initial render
+        renderArt();
+        
+        // Add coffee on any click/tap
+        document.body.addEventListener('click', addCoffee);
+        document.body.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            addCoffee();
+        });
+    </script>
 </body>
 </html>
