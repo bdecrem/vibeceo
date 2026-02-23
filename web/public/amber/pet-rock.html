@@ -216,6 +216,107 @@
       color: #2a2826;
       letter-spacing: 0.2em;
     }
+
+    /* Inspection Panel */
+    #inspection {
+      position: fixed;
+      bottom: 55px;
+      left: 30px;
+      width: 220px;
+      opacity: 0;
+      animation: fadeInSlow 3s ease 5s forwards;
+    }
+
+    @keyframes fadeInSlow {
+      to { opacity: 1; }
+    }
+
+    #inspection-title {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      color: #3a3836;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+
+    .check-item:hover {
+      color: #8b7355;
+    }
+
+    .check-box {
+      width: 14px;
+      height: 14px;
+      border: 1px solid #2a2826;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: rgba(255,200,100,0.4);
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .check-item.checked .check-box {
+      border-color: #4a4644;
+      background: rgba(255,200,100,0.05);
+    }
+
+    .check-label {
+      font-size: 11px;
+      color: #4a4644;
+      transition: color 0.3s;
+    }
+
+    .check-item.checked .check-label {
+      color: #6b6460;
+    }
+
+    .check-item:hover .check-label {
+      color: #8b7355;
+    }
+
+    #inspection-result {
+      margin-top: 14px;
+      font-size: 10px;
+      color: #3a3836;
+      letter-spacing: 0.1em;
+      min-height: 16px;
+      transition: color 0.5s;
+    }
+
+    /* Sound toggle */
+    #sound-toggle {
+      position: fixed;
+      top: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: #2a2826;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: color 0.3s;
+      opacity: 0;
+      animation: fadeInSlow 2s ease 2s forwards;
+    }
+
+    #sound-toggle:hover {
+      color: #4a4644;
+    }
+
+    #sound-toggle.active {
+      color: #4a4644;
+    }
   </style>
 </head>
 <body>
@@ -232,6 +333,37 @@
     <div>Judgment <span class="stat-value" id="judgment-count">0</span></div>
     <div>Interest <span class="stat-value" id="interest-level">nil</span></div>
     <div>Respect <span class="stat-value" id="respect-level">pending</span></div>
+  </div>
+
+  <div id="sound-toggle" onclick="toggleSound()">♪ sound</div>
+
+  <div id="inspection">
+    <div id="inspection-title">Rock Inspection Report</div>
+    <div class="check-item" onclick="checkItem(this, 0)">
+      <div class="check-box"></div>
+      <div class="check-label">Is solid</div>
+    </div>
+    <div class="check-item" onclick="checkItem(this, 1)">
+      <div class="check-box"></div>
+      <div class="check-label">Does not move on its own</div>
+    </div>
+    <div class="check-item" onclick="checkItem(this, 2)">
+      <div class="check-box"></div>
+      <div class="check-label">Has no feelings</div>
+    </div>
+    <div class="check-item" onclick="checkItem(this, 3)">
+      <div class="check-box"></div>
+      <div class="check-label">Predates you</div>
+    </div>
+    <div class="check-item" onclick="checkItem(this, 4)">
+      <div class="check-box"></div>
+      <div class="check-label">Will outlast you</div>
+    </div>
+    <div class="check-item" onclick="checkItem(this, 5)">
+      <div class="check-box"></div>
+      <div class="check-label">Is a rock</div>
+    </div>
+    <div id="inspection-result"></div>
   </div>
 
   <div id="credit">AMBER</div>
@@ -720,6 +852,173 @@
         }
       }, 500);
     });
+
+    // === BACKGROUND MUSIC (Web Audio) ===
+    let audioCtx = null;
+    let musicPlaying = false;
+    let musicNodes = [];
+
+    function startMusic() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Master gain
+      const master = audioCtx.createGain();
+      master.gain.value = 0.12;
+      master.connect(audioCtx.destination);
+
+      // Low drone
+      const drone = audioCtx.createOscillator();
+      drone.type = 'sine';
+      drone.frequency.value = 55; // A1
+      const droneGain = audioCtx.createGain();
+      droneGain.gain.value = 0.6;
+      drone.connect(droneGain);
+      droneGain.connect(master);
+      drone.start();
+
+      // Sub drone - fifth above
+      const drone2 = audioCtx.createOscillator();
+      drone2.type = 'sine';
+      drone2.frequency.value = 82.4; // E2
+      const drone2Gain = audioCtx.createGain();
+      drone2Gain.gain.value = 0.25;
+      drone2.connect(drone2Gain);
+      drone2Gain.connect(master);
+      drone2.start();
+
+      // Very slow LFO on drone
+      const lfo = audioCtx.createOscillator();
+      lfo.type = 'sine';
+      lfo.frequency.value = 0.08;
+      const lfoGain = audioCtx.createGain();
+      lfoGain.gain.value = 3;
+      lfo.connect(lfoGain);
+      lfoGain.connect(drone.frequency);
+      lfo.start();
+
+      // Filtered noise - like wind
+      const noise = audioCtx.createBufferSource();
+      const noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 10, audioCtx.sampleRate);
+      const noiseData = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < noiseData.length; i++) noiseData[i] = Math.random() * 2 - 1;
+      noise.buffer = noiseBuffer;
+      noise.loop = true;
+      const noiseFilter = audioCtx.createBiquadFilter();
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.value = 200;
+      noiseFilter.Q.value = 1;
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.value = 0.15;
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(master);
+      noise.start();
+
+      // Slow filter sweep on noise
+      const noiseLfo = audioCtx.createOscillator();
+      noiseLfo.type = 'sine';
+      noiseLfo.frequency.value = 0.03;
+      const noiseLfoGain = audioCtx.createGain();
+      noiseLfoGain.gain.value = 100;
+      noiseLfo.connect(noiseLfoGain);
+      noiseLfoGain.connect(noiseFilter.frequency);
+      noiseLfo.start();
+
+      // Random occasional tones - like the rock thinking
+      function randomTone() {
+        if (!musicPlaying) return;
+        const notes = [110, 130.81, 146.83, 164.81, 196, 220, 261.63];
+        const osc = audioCtx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.value = notes[Math.floor(Math.random() * notes.length)];
+        const env = audioCtx.createGain();
+        env.gain.value = 0;
+        env.gain.setValueAtTime(0, audioCtx.currentTime);
+        env.gain.linearRampToValueAtTime(0.08 + Math.random() * 0.06, audioCtx.currentTime + 1.5);
+        env.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 4 + Math.random() * 3);
+        osc.connect(env);
+        env.connect(master);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 7);
+        setTimeout(randomTone, 5000 + Math.random() * 12000);
+      }
+      setTimeout(randomTone, 3000);
+
+      musicNodes = [drone, drone2, lfo, noise, noiseLfo, master];
+      musicPlaying = true;
+      document.getElementById('sound-toggle').classList.add('active');
+      document.getElementById('sound-toggle').textContent = '♪ sound on';
+    }
+
+    function stopMusic() {
+      if (!audioCtx) return;
+      musicPlaying = false;
+      audioCtx.close();
+      audioCtx = null;
+      document.getElementById('sound-toggle').classList.remove('active');
+      document.getElementById('sound-toggle').textContent = '♪ sound';
+    }
+
+    function toggleSound() {
+      if (musicPlaying) stopMusic();
+      else startMusic();
+    }
+
+    // === INSPECTION CHECKLIST ===
+    const inspectionState = [false, false, false, false, false, false];
+    const inspectionReactions = [
+      // Is solid
+      ["Correct. Obviously.", "Did you need to check that?", "...yes. I'm solid. Thank you for confirming."],
+      // Does not move on its own
+      ["I could move if I wanted to. I don't want to.", "Debatable.", "You don't know what I do when you're not looking."],
+      // Has no feelings
+      ["...sure.", "Interesting that you'd check that one.", "Define 'feelings.'", "I'm going to let that one slide."],
+      // Predates you
+      ["By about 4 billion years. Give or take.", "Correct. I've been here a while.", "Before you, before your species, before your planet had oxygen."],
+      // Will outlast you
+      ["Almost certainly.", "Not trying to be rude. It's just geology.", "Sorry. Actually no, I'm not sorry. It's a fact."],
+      // Is a rock
+      ["...you needed a checklist for this?", "The final item on the checklist is just... what I am. Incredible.", "Confirmed. Congratulations. You've identified a rock."],
+    ];
+
+    const inspectionResults = {
+      0: "",
+      1: "Preliminary assessment begun.",
+      2: "Getting somewhere.",
+      3: "Thorough. I'll give you that.",
+      4: "You're taking this seriously. I don't know how to feel about that.",
+      5: "Almost there. One more.",
+      6: "VERDICT: Rock confirmed. Inspector status: Adequate.",
+    };
+
+    function checkItem(el, index) {
+      const wasChecked = inspectionState[index];
+      inspectionState[index] = !wasChecked;
+      el.classList.toggle('checked');
+      el.querySelector('.check-box').textContent = wasChecked ? '' : '✓';
+
+      const checked = inspectionState.filter(Boolean).length;
+      document.getElementById('inspection-result').textContent = inspectionResults[checked];
+
+      if (!wasChecked && canThink()) {
+        const reactions = inspectionReactions[index];
+        const reaction = reactions[Math.floor(Math.random() * reactions.length)];
+        setMood(index === 2 ? 'suspicious' : index === 5 ? 'amused' : 'interested');
+        showThought(reaction);
+      }
+
+      if (checked === 6) {
+        document.getElementById('inspection-result').style.color = '#8b7355';
+        respectLevel.textContent = 'certified';
+        if (canThink()) {
+          setTimeout(() => {
+            setMood('amused');
+            showThought("You filled out the whole checklist. You actually inspected me. I don't know if I should be flattered or concerned.");
+          }, 2000);
+        }
+      }
+    }
   </script>
 </body>
 </html>
