@@ -386,7 +386,7 @@
         } else {
           // Ghost platform
           ctx.fillStyle = T.ghost;
-          ctx.globalAlpha = 0.25 + Math.sin(gameTime * 2 + plat.x) * 0.05;
+          ctx.globalAlpha = 0.25 + Math.sin(gameTime * 3 + plat.x) * 0.05;
           ctx.fillRect(plat.x - plat.w / 2, sy, plat.w, PLAT_H);
           ctx.globalAlpha = 1;
 
