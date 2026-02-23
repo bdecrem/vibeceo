@@ -40,28 +40,37 @@ const LEADERBOARD_COLORS: LeaderboardColors = {
 };
 
 const GAME_ID = 'shine';
+const BPM = 110;
+const BEAT_SEC = 60 / BPM;
 
-interface Gem { x: number; y: number; type: GemType; radius: number; age: number; maxLife: number; pulse: number; alive: boolean; spawnTime: number; }
-interface MusicState { playing: boolean; bpm: number; beatInterval: number; nextBeatTime: number; beatCount: number; bassOsc: OscillatorNode | null; bassGain: GainNode | null; padOsc1: OscillatorNode | null; padOsc2: OscillatorNode | null; padGain: GainNode | null; masterGain: GainNode | null; lastSpawnBeat: number; beatsPerSpawn: number; }
-interface GemType { color: string; points: number; freq: number; name: string; }
+// Each gem type maps to a different instrument sound
+interface GemType { color: string; points: number; name: string; instrument: 'hihat' | 'snare' | 'bass' | 'bell' | 'stab'; }
+interface Gem { x: number; y: number; type: GemType; radius: number; age: number; maxLife: number; pulse: number; alive: boolean; spawnTime: number; beatSubdiv: number; }
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; color: string; size: number; }
 interface FloatingText { x: number; y: number; text: string; color: string; life: number; vy: number; }
 
 const gemTypes: GemType[] = [
-  { color: T.amber, points: 1, freq: 440, name: 'amber' },
-  { color: T.gold, points: 2, freq: 550, name: 'gold' },
-  { color: T.teal, points: 3, freq: 660, name: 'teal' },
-  { color: T.violet, points: 5, freq: 770, name: 'violet' },
-  { color: T.pink, points: 10, freq: 880, name: 'pink' },
+  { color: T.amber, points: 1, name: 'amber', instrument: 'hihat' },
+  { color: T.gold, points: 2, name: 'gold', instrument: 'snare' },
+  { color: T.teal, points: 3, name: 'teal', instrument: 'bass' },
+  { color: T.violet, points: 5, name: 'violet', instrument: 'bell' },
+  { color: T.pink, points: 10, name: 'pink', instrument: 'stab' },
 ];
 
 function selectGemType(): GemType {
   const r = Math.random();
-  if (r < 0.40) return gemTypes[0];
-  if (r < 0.70) return gemTypes[1];
-  if (r < 0.85) return gemTypes[2];
-  if (r < 0.95) return gemTypes[3];
+  if (r < 0.35) return gemTypes[0];
+  if (r < 0.60) return gemTypes[1];
+  if (r < 0.80) return gemTypes[2];
+  if (r < 0.93) return gemTypes[3];
   return gemTypes[4];
+}
+
+function getComboMultiplier(c: number): number {
+  if (c >= 8) return 2.0;
+  if (c >= 5) return 1.5;
+  if (c >= 3) return 1.2;
+  return 1.0;
 }
 
 export default function ShineGame() {
@@ -96,15 +105,22 @@ export default function ShineGame() {
     combo: 0, comboTimer: 0, comboMultiplier: 1, maxCombo: 0,
     phase: 'start' as 'start' | 'playing' | 'over' | 'tutorial',
     screenShake: { timer: 0, intensity: 0 },
-    hitFreeze: 0, missDarken: 0, spawnTimer: 0,
+    hitFreeze: 0, missDarken: 0,
     comboBreakFlash: { timer: 0, scale: 1, text: '', mult: 1 },
     timerFlash: 0, safeTop: 0,
+    beatPulse: 0, // visual pulse on quarter notes
+    currentPhase: 1 as 1 | 2 | 3,
+    phaseName: 'QUARTER NOTES' as string,
     // tutorial state
     tutStep: 0, tutGems: [] as Gem[], tutCollected: 0, tutCombo: 0,
     tutSuccess: false, tutSuccessTimer: 0, tutMissShown: false,
-    tutTimeLeft: 0,
+    tutTimeLeft: 0, spawnTimer: 0,
+    // audio
     audioCtx: null as AudioContext | null,
-    music: { playing: false, bpm: 110, beatInterval: 60 / 110, nextBeatTime: 0, beatCount: 0, bassOsc: null, bassGain: null, padOsc1: null, padOsc2: null, padGain: null, masterGain: null, lastSpawnBeat: -1, beatsPerSpawn: 2 } as MusicState,
+    masterGain: null as GainNode | null,
+    // beat clock
+    beatStartTime: 0, // audioContext.currentTime when game started
+    lastScheduledBeat: -1, // last beat subdivision index scheduled
     running: false, W: 0, H: 0,
   });
 
@@ -114,24 +130,108 @@ export default function ShineGame() {
     if (game.audioCtx.state === 'suspended') game.audioCtx.resume();
   }, []);
 
-  const playCollect = useCallback((freq: number) => {
+  // --- INSTRUMENT SOUNDS ---
+  const playKick = useCallback((time: number) => {
     const ctx = g.current.audioCtx; if (!ctx) return;
+    const dest = g.current.masterGain || ctx.destination;
     const osc = ctx.createOscillator(); const gn = ctx.createGain();
-    osc.connect(gn); gn.connect(ctx.destination); osc.type = 'sine'; osc.frequency.value = freq;
-    gn.gain.setValueAtTime(0.15, ctx.currentTime);
-    gn.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-    osc.start(); osc.stop(ctx.currentTime + 0.15);
+    osc.connect(gn); gn.connect(dest);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(150, time);
+    osc.frequency.exponentialRampToValueAtTime(40, time + 0.12);
+    gn.gain.setValueAtTime(0.35, time);
+    gn.gain.exponentialRampToValueAtTime(0.001, time + 0.25);
+    osc.start(time); osc.stop(time + 0.25);
+    // click layer
+    const osc2 = ctx.createOscillator(); const gn2 = ctx.createGain();
+    osc2.connect(gn2); gn2.connect(dest);
+    osc2.type = 'triangle'; osc2.frequency.value = 80;
+    gn2.gain.setValueAtTime(0.2, time);
+    gn2.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+    osc2.start(time); osc2.stop(time + 0.08);
   }, []);
 
-  const playComboBreak = useCallback(() => {
+  const playInstrument = useCallback((instrument: string, perfect: boolean) => {
     const ctx = g.current.audioCtx; if (!ctx) return;
-    const osc = ctx.createOscillator(); const gn = ctx.createGain();
-    osc.connect(gn); gn.connect(ctx.destination); osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(400, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.2);
-    gn.gain.setValueAtTime(0.1, ctx.currentTime);
-    gn.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-    osc.start(); osc.stop(ctx.currentTime + 0.25);
+    const dest = g.current.masterGain || ctx.destination;
+    const now = ctx.currentTime;
+    const vol = perfect ? 0.2 : 0.08;
+
+    switch (instrument) {
+      case 'hihat': {
+        // Noise-like hi-hat using high-freq square
+        const osc = ctx.createOscillator(); const gn = ctx.createGain();
+        const filt = ctx.createBiquadFilter();
+        osc.type = 'square'; osc.frequency.value = 6000 + Math.random() * 2000;
+        filt.type = 'highpass'; filt.frequency.value = 7000;
+        osc.connect(filt); filt.connect(gn); gn.connect(dest);
+        gn.gain.setValueAtTime(vol, now);
+        gn.gain.exponentialRampToValueAtTime(0.001, now + (perfect ? 0.08 : 0.04));
+        osc.start(now); osc.stop(now + 0.1);
+        break;
+      }
+      case 'snare': {
+        // Snare: noise burst + body
+        const osc = ctx.createOscillator(); const gn = ctx.createGain();
+        osc.type = 'triangle'; osc.frequency.value = 200;
+        osc.connect(gn); gn.connect(dest);
+        gn.gain.setValueAtTime(vol * 1.2, now);
+        gn.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.start(now); osc.stop(now + 0.15);
+        // noise layer
+        const osc2 = ctx.createOscillator(); const gn2 = ctx.createGain();
+        const filt = ctx.createBiquadFilter();
+        osc2.type = 'square'; osc2.frequency.value = 4000 + Math.random() * 3000;
+        filt.type = 'bandpass'; filt.frequency.value = 5000; filt.Q.value = 0.5;
+        osc2.connect(filt); filt.connect(gn2); gn2.connect(dest);
+        gn2.gain.setValueAtTime(vol * 0.8, now);
+        gn2.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        osc2.start(now); osc2.stop(now + 0.1);
+        break;
+      }
+      case 'bass': {
+        // Synth bass
+        const osc = ctx.createOscillator(); const gn = ctx.createGain();
+        osc.type = 'sawtooth';
+        const notes = [55, 65.4, 73.4, 82.4];
+        osc.frequency.value = notes[Math.floor(Math.random() * notes.length)];
+        const filt = ctx.createBiquadFilter();
+        filt.type = 'lowpass'; filt.frequency.value = perfect ? 600 : 300;
+        osc.connect(filt); filt.connect(gn); gn.connect(dest);
+        gn.gain.setValueAtTime(vol * 1.5, now);
+        gn.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        osc.start(now); osc.stop(now + 0.2);
+        break;
+      }
+      case 'bell': {
+        // Bell / metallic
+        const freqs = [880, 1108, 1320];
+        freqs.forEach((f, i) => {
+          const osc = ctx.createOscillator(); const gn = ctx.createGain();
+          osc.type = 'sine'; osc.frequency.value = f;
+          osc.connect(gn); gn.connect(dest);
+          gn.gain.setValueAtTime(vol * 0.7, now + i * 0.01);
+          gn.gain.exponentialRampToValueAtTime(0.001, now + (perfect ? 0.4 : 0.15));
+          osc.start(now + i * 0.01); osc.stop(now + 0.5);
+        });
+        break;
+      }
+      case 'stab': {
+        // Chord stab
+        const root = [220, 247, 262, 294][Math.floor(Math.random() * 4)];
+        [root, root * 1.25, root * 1.5].forEach((f, i) => {
+          const osc = ctx.createOscillator(); const gn = ctx.createGain();
+          osc.type = perfect ? 'sawtooth' : 'triangle'; osc.frequency.value = f;
+          const filt = ctx.createBiquadFilter();
+          filt.type = 'lowpass'; filt.frequency.value = perfect ? 2000 : 800;
+          osc.connect(filt); filt.connect(gn); gn.connect(dest);
+          gn.gain.setValueAtTime(vol * 0.6, now + i * 0.01);
+          gn.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.start(now + i * 0.01); osc.stop(now + 0.3);
+        });
+        break;
+      }
+    }
   }, []);
 
   const playMissThud = useCallback(() => {
@@ -145,128 +245,24 @@ export default function ShineGame() {
     osc.start(); osc.stop(ctx.currentTime + 0.2);
   }, []);
 
-  const playPerfectSound = useCallback((freq: number) => {
+  const playComboBreak = useCallback(() => {
     const ctx = g.current.audioCtx; if (!ctx) return;
-    // Play a satisfying chord: root + major third + fifth
-    [freq, freq * 1.25, freq * 1.5].forEach((f, i) => {
-      const osc = ctx.createOscillator(); const gn = ctx.createGain();
-      osc.connect(gn); gn.connect(ctx.destination); osc.type = 'sine'; osc.frequency.value = f;
-      gn.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.02);
-      gn.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-      osc.start(ctx.currentTime + i * 0.02); osc.stop(ctx.currentTime + 0.35);
-    });
-  }, []);
-
-  const startMusic = useCallback(() => {
-    const ctx = g.current.audioCtx; if (!ctx) return;
-    const m = g.current.music;
-    if (m.playing) return;
-
-    m.masterGain = ctx.createGain();
-    m.masterGain.gain.value = 0.18;
-    m.masterGain.connect(ctx.destination);
-
-    // Bass oscillator - sub bass
-    m.bassOsc = ctx.createOscillator();
-    m.bassGain = ctx.createGain();
-    m.bassOsc.type = 'sine';
-    m.bassOsc.frequency.value = 55; // A1
-    m.bassGain.gain.value = 0.5;
-    const bassFilter = ctx.createBiquadFilter();
-    bassFilter.type = 'lowpass'; bassFilter.frequency.value = 120;
-    m.bassOsc.connect(bassFilter); bassFilter.connect(m.bassGain); m.bassGain.connect(m.masterGain);
-    m.bassOsc.start();
-
-    // Pad - two detuned triangle waves
-    m.padOsc1 = ctx.createOscillator(); m.padOsc2 = ctx.createOscillator();
-    m.padGain = ctx.createGain();
-    m.padOsc1.type = 'triangle'; m.padOsc2.type = 'triangle';
-    m.padOsc1.frequency.value = 220; m.padOsc2.frequency.value = 223; // slight detune for shimmer
-    m.padGain.gain.value = 0.15;
-    const padFilter = ctx.createBiquadFilter();
-    padFilter.type = 'lowpass'; padFilter.frequency.value = 800;
-    m.padOsc1.connect(padFilter); m.padOsc2.connect(padFilter);
-    padFilter.connect(m.padGain); m.padGain.connect(m.masterGain);
-    m.padOsc1.start(); m.padOsc2.start();
-
-    m.beatInterval = 60 / m.bpm;
-    m.nextBeatTime = ctx.currentTime;
-    m.beatCount = 0; m.lastSpawnBeat = -1; m.beatsPerSpawn = 2;
-    m.playing = true;
-  }, []);
-
-  const stopMusic = useCallback(() => {
-    const ctx = g.current.audioCtx; if (!ctx) return;
-    const m = g.current.music;
-    if (!m.playing) return;
-    // Fade out gracefully
-    if (m.masterGain) {
-      m.masterGain.gain.setValueAtTime(m.masterGain.gain.value, ctx.currentTime);
-      m.masterGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.0);
-    }
-    const stopTime = ctx.currentTime + 1.1;
-    try { m.bassOsc?.stop(stopTime); } catch {}
-    try { m.padOsc1?.stop(stopTime); } catch {}
-    try { m.padOsc2?.stop(stopTime); } catch {}
-    m.playing = false;
-    m.bassOsc = null; m.padOsc1 = null; m.padOsc2 = null;
-    m.bassGain = null; m.padGain = null; m.masterGain = null;
-  }, []);
-
-  const scheduleBeatClick = useCallback((time: number, beatNum: number) => {
-    const ctx = g.current.audioCtx; if (!ctx) return;
-    // Light hi-hat tick on every beat
     const osc = ctx.createOscillator(); const gn = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-    osc.type = 'square'; osc.frequency.value = 6000 + (beatNum % 4 === 0 ? 2000 : 0);
-    filter.type = 'highpass'; filter.frequency.value = 8000;
-    gn.gain.setValueAtTime(beatNum % 4 === 0 ? 0.04 : 0.02, time);
-    gn.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
-    osc.connect(filter); filter.connect(gn); gn.connect(g.current.music.masterGain || ctx.destination);
-    osc.start(time); osc.stop(time + 0.05);
-
-    // Bass note change every 4 beats
-    const m = g.current.music;
-    if (m.bassOsc && beatNum % 4 === 0) {
-      const bassNotes = [55, 55, 73.4, 65.4]; // A1, A1, D2, C2
-      const noteIdx = Math.floor(beatNum / 4) % bassNotes.length;
-      m.bassOsc.frequency.setValueAtTime(bassNotes[noteIdx], time);
-    }
-    // Pad chord changes every 8 beats
-    if (m.padOsc1 && m.padOsc2 && beatNum % 8 === 0) {
-      const chords = [[220, 223], [247, 250], [196, 199], [207, 210]]; // Am, B, G, Ab shimmer
-      const chordIdx = Math.floor(beatNum / 8) % chords.length;
-      m.padOsc1.frequency.setValueAtTime(chords[chordIdx][0], time);
-      m.padOsc2.frequency.setValueAtTime(chords[chordIdx][1], time);
-    }
+    osc.connect(gn); gn.connect(ctx.destination); osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(400, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.2);
+    gn.gain.setValueAtTime(0.1, ctx.currentTime);
+    gn.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    osc.start(); osc.stop(ctx.currentTime + 0.25);
   }, []);
 
-  function getSpawnInterval(gameTime: number): number {
-    const t = Math.min(gameTime / 30, 1);
-    return 0.8 - t * 0.3;
-  }
-
-  function getGemLifetime(gameTime: number): number {
-    const t = Math.min(gameTime / 30, 1);
-    return 2.5 - t * 0.7;
-  }
-
-  function getComboMultiplier(c: number): number {
-    if (c >= 8) return 2.0;
-    if (c >= 5) return 1.5;
-    if (c >= 3) return 1.2;
-    return 1.0;
-  }
-
-  const initGame = useCallback(() => {
-    const game = g.current;
-    game.gems = []; game.particles = []; game.floatingTexts = [];
-    game.score = 0; game.collected = 0; game.timeLeft = 30; game.gameTime = 0;
-    game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1; game.maxCombo = 0;
-    game.screenShake = { timer: 0, intensity: 0 };
-    game.hitFreeze = 0; game.missDarken = 0; game.spawnTimer = 0;
-    game.comboBreakFlash = { timer: 0, scale: 1, text: '', mult: 1 };
-    game.timerFlash = 0;
+  const playCollect = useCallback((freq: number) => {
+    const ctx = g.current.audioCtx; if (!ctx) return;
+    const osc = ctx.createOscillator(); const gn = ctx.createGain();
+    osc.connect(gn); gn.connect(ctx.destination); osc.type = 'sine'; osc.frequency.value = freq;
+    gn.gain.setValueAtTime(0.15, ctx.currentTime);
+    gn.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.start(); osc.stop(ctx.currentTime + 0.15);
   }, []);
 
   const playSound = useCallback((freq: number, duration: number, type: OscillatorType, vol: number) => {
@@ -278,12 +274,32 @@ export default function ShineGame() {
     osc.start(); osc.stop(ctx.currentTime + duration);
   }, []);
 
+  const initGame = useCallback(() => {
+    const game = g.current;
+    game.gems = []; game.particles = []; game.floatingTexts = [];
+    game.score = 0; game.collected = 0; game.timeLeft = 30; game.gameTime = 0;
+    game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1; game.maxCombo = 0;
+    game.screenShake = { timer: 0, intensity: 0 };
+    game.hitFreeze = 0; game.missDarken = 0;
+    game.comboBreakFlash = { timer: 0, scale: 1, text: '', mult: 1 };
+    game.timerFlash = 0; game.beatPulse = 0;
+    game.currentPhase = 1; game.phaseName = 'QUARTER NOTES';
+    game.lastScheduledBeat = -1;
+  }, []);
+
   const startGame = useCallback(() => {
     initGame(); initAudio();
-    g.current.phase = 'playing'; g.current.running = true;
-    startMusic();
+    const game = g.current;
+    game.phase = 'playing'; game.running = true;
+    // Setup master gain
+    const ctx = game.audioCtx!;
+    game.masterGain = ctx.createGain();
+    game.masterGain.gain.value = 0.7;
+    game.masterGain.connect(ctx.destination);
+    game.beatStartTime = ctx.currentTime;
+    game.lastScheduledBeat = -1;
     setGameState('playing'); setShowShareModal(false); setProgression(null);
-  }, [initGame, initAudio, startMusic]);
+  }, [initGame, initAudio]);
 
   const startTutorial = useCallback(() => {
     const game = g.current;
@@ -293,7 +309,6 @@ export default function ShineGame() {
     game.score = 0; game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1;
     game.gems = []; game.particles = []; game.floatingTexts = [];
     game.comboBreakFlash = { timer: 0, scale: 1, text: '', mult: 1 };
-    // setup step 0 happens in the useEffect via setupTutorialStep
     setGameState('playing'); setShowShareModal(false); setProgression(null);
   }, [initAudio]);
 
@@ -308,12 +323,18 @@ export default function ShineGame() {
     }
     resize(); window.addEventListener('resize', resize);
 
-    function spawnGem(game: typeof g.current) {
+    function spawnGemAt(game: typeof g.current, subdiv: number) {
       const margin = 60;
       const x = margin + Math.random() * (game.W - margin * 2);
       const y = margin + 100 + game.safeTop + Math.random() * (game.H - margin * 2 - 150 - game.safeTop);
       const type = selectGemType();
-      game.gems.push({ x, y, type, radius: 25, age: 0, maxLife: getGemLifetime(game.gameTime), pulse: 0, alive: true, spawnTime: game.gameTime });
+      // Size based on subdivision: quarter=30, eighth=24, sixteenth=18
+      const radius = subdiv === 4 ? 30 : subdiv === 2 ? 24 : 18;
+      game.gems.push({ x, y, type, radius, age: 0, maxLife: BEAT_SEC * 1.5, pulse: 0, alive: true, spawnTime: game.gameTime, beatSubdiv: subdiv });
+    }
+
+    function spawnGem(game: typeof g.current) {
+      spawnGemAt(game, 4);
     }
 
     function spawnParticles(game: typeof g.current, x: number, y: number, color: string, count: number) {
@@ -331,25 +352,25 @@ export default function ShineGame() {
       const W = game.W, H = game.H;
       game.tutGems = []; game.tutCollected = 0;
       switch (game.tutStep) {
-        case 0: // TAP TO COLLECT
-          game.tutGems.push({ x: W / 2, y: H / 2, type: gemTypes[1], radius: 30, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0 });
+        case 0:
+          game.tutGems.push({ x: W / 2, y: H / 2, type: gemTypes[1], radius: 30, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4 });
           break;
-        case 1: // GEM VALUES
+        case 1:
           [gemTypes[0], gemTypes[2], gemTypes[4]].forEach((t, i) => {
-            game.tutGems.push({ x: [W * 0.25, W * 0.5, W * 0.75][i], y: H / 2, type: t, radius: 28, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0 });
+            game.tutGems.push({ x: [W * 0.25, W * 0.5, W * 0.75][i], y: H / 2, type: t, radius: 28, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4 });
           });
           break;
-        case 2: // COMBOS
+        case 2:
           game.tutCombo = 0;
           [[-50, -40], [50, -40], [-50, 40], [50, 40]].forEach(([ox, oy]) => {
-            game.tutGems.push({ x: W / 2 + ox, y: H / 2 + oy, type: gemTypes[1], radius: 26, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0 });
+            game.tutGems.push({ x: W / 2 + ox, y: H / 2 + oy, type: gemTypes[1], radius: 26, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4 });
           });
           break;
-        case 3: // MISS PENALTY
+        case 3:
           game.tutMissShown = false; game.tutTimeLeft = 15;
-          game.tutGems.push({ x: W / 2, y: H * 0.4, type: gemTypes[0], radius: 25, age: 0, maxLife: 2.0, pulse: 0, alive: true, spawnTime: 0 });
+          game.tutGems.push({ x: W / 2, y: H * 0.4, type: gemTypes[0], radius: 25, age: 0, maxLife: 2.0, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4 });
           break;
-        case 4: // READY
+        case 4:
           game.tutTimeLeft = 10; game.tutCombo = 0; game.spawnTimer = 0;
           break;
       }
@@ -362,7 +383,17 @@ export default function ShineGame() {
         game.gems = []; game.particles = []; game.floatingTexts = [];
         game.score = 0; game.collected = 0; game.timeLeft = 30; game.gameTime = 0;
         game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1; game.maxCombo = 0;
-        game.spawnTimer = 0;
+        game.spawnTimer = 0; game.beatPulse = 0;
+        game.currentPhase = 1; game.phaseName = 'QUARTER NOTES';
+        // Setup audio for actual game
+        const actx = game.audioCtx;
+        if (actx) {
+          game.masterGain = actx.createGain();
+          game.masterGain.gain.value = 0.7;
+          game.masterGain.connect(actx.destination);
+          game.beatStartTime = actx.currentTime;
+          game.lastScheduledBeat = -1;
+        }
         return;
       }
       game.gems = []; game.particles = []; game.floatingTexts = [];
@@ -385,7 +416,6 @@ export default function ShineGame() {
       }
     }
 
-    // setup first tutorial step if we're starting in tutorial mode
     if (g.current.phase === 'tutorial') setupTutorialStep(g.current);
 
     const handleTap = (e: TouchEvent | MouseEvent) => {
@@ -397,13 +427,20 @@ export default function ShineGame() {
 
       if (game.phase === 'tutorial') {
         if (game.tutSuccess) return;
-        // SKIP button
         if (px >= game.W - 80 && py <= 50) {
           game.phase = 'playing';
           game.gems = []; game.particles = []; game.floatingTexts = [];
           game.score = 0; game.collected = 0; game.timeLeft = 30; game.gameTime = 0;
           game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1; game.maxCombo = 0;
           game.spawnTimer = 0;
+          const actx = game.audioCtx;
+          if (actx) {
+            game.masterGain = actx.createGain();
+            game.masterGain.gain.value = 0.7;
+            game.masterGain.connect(actx.destination);
+            game.beatStartTime = actx.currentTime;
+            game.lastScheduledBeat = -1;
+          }
           return;
         }
         const activeGems = game.tutStep === 4 ? game.gems : game.tutGems;
@@ -415,7 +452,7 @@ export default function ShineGame() {
             if (game.tutStep === 2) { game.tutCombo++; game.combo++; game.comboTimer = 0.9; game.comboMultiplier = getComboMultiplier(game.combo); }
             spawnParticles(game, gem.x, gem.y, gem.type.color, 15);
             spawnFloatingText(game, gem.x, gem.y - 30, '+' + gem.type.points, gem.type.color);
-            playCollect(gem.type.freq);
+            playCollect(440);
             if (gem.type.points >= 5) { game.hitFreeze = 0.03; game.screenShake = { timer: 0.08, intensity: 2 }; }
             activeGems.splice(i, 1);
             break;
@@ -429,7 +466,7 @@ export default function ShineGame() {
       for (let i = game.gems.length - 1; i >= 0; i--) {
         const gem = game.gems[i];
         const dx = px - gem.x, dy = py - gem.y;
-        if (dx * dx + dy * dy < gem.radius * gem.radius) {
+        if (dx * dx + dy * dy < (gem.radius + 5) * (gem.radius + 5)) {
           const lifeRatio = gem.age / gem.maxLife;
           const isPerfect = lifeRatio <= 0.4;
           const mult = game.comboMultiplier;
@@ -440,10 +477,9 @@ export default function ShineGame() {
           game.comboMultiplier = getComboMultiplier(game.combo);
           if (game.combo > game.maxCombo) game.maxCombo = game.combo;
 
-          const pCount = isPerfect ? (game.timeLeft < 10 ? 15 : 25) : (game.timeLeft < 10 ? 8 : 15);
+          const pCount = isPerfect ? 25 : 12;
           spawnParticles(game, gem.x, gem.y, isPerfect ? T.gold : gem.type.color, pCount);
           if (isPerfect) {
-            // Extra sparkle particles for PERFECT
             for (let j = 0; j < 8; j++) {
               game.particles.push({ x: gem.x, y: gem.y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 0.5) * 12, life: 1, color: '#FFFFFF', size: Math.random() * 3 + 1 });
             }
@@ -455,11 +491,9 @@ export default function ShineGame() {
           spawnFloatingText(game, gem.x, gem.y - 30, `${tierLabel} +${pts}${comboText}`, tierColor);
           if (game.combo >= 3) spawnFloatingText(game, game.W / 2, game.H * 0.15, `${game.combo} COMBO!`, T.gold);
 
-          if (isPerfect) {
-            playPerfectSound(gem.type.freq);
-          } else {
-            playCollect(gem.type.freq);
-          }
+          // Play instrument sound
+          playInstrument(gem.type.instrument, isPerfect);
+
           if (gem.type.points >= 5) { game.hitFreeze = 0.03; game.screenShake = { timer: 0.08, intensity: 2 }; }
           game.gems.splice(i, 1);
           break;
@@ -486,7 +520,6 @@ export default function ShineGame() {
         if (game.tutSuccessTimer <= 0) advanceTutorial(game);
       }
 
-      // step 3: miss penalty demo
       if (game.tutStep === 3 && !game.tutSuccess) {
         for (let i = game.tutGems.length - 1; i >= 0; i--) {
           const gem = game.tutGems[i];
@@ -498,14 +531,13 @@ export default function ShineGame() {
             game.tutGems.splice(i, 1);
             setTimeout(() => {
               if (game.phase === 'tutorial' && game.tutStep === 3) {
-                game.tutGems.push({ x: game.W / 2, y: game.H * 0.6, type: gemTypes[2], radius: 28, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0 });
+                game.tutGems.push({ x: game.W / 2, y: game.H * 0.6, type: gemTypes[2], radius: 28, age: 0, maxLife: 999, pulse: 0, alive: true, spawnTime: 0, beatSubdiv: 4 });
               }
             }, 500);
           }
         }
       }
 
-      // step 4: mini round
       if (game.tutStep === 4 && !game.tutSuccess) {
         game.tutTimeLeft -= dt;
         if (game.tutTimeLeft <= 0) game.tutTimeLeft = 0;
@@ -521,12 +553,10 @@ export default function ShineGame() {
         }
       }
 
-      // pulse non-step3/4 gems
       if (game.tutStep !== 3 && game.tutStep !== 4) {
         for (const gem of game.tutGems) { gem.age += dt; gem.pulse = Math.sin(gem.age * 5) * 0.2 + 1; }
       }
 
-      // particles + floating text
       for (let i = game.particles.length - 1; i >= 0; i--) { const p = game.particles[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= 0.02; if (p.life <= 0) game.particles.splice(i, 1); }
       for (let i = game.floatingTexts.length - 1; i >= 0; i--) { const ft = game.floatingTexts[i]; ft.y += ft.vy; ft.life -= dt * 1.5; if (ft.life <= 0) game.floatingTexts.splice(i, 1); }
       if (game.screenShake.timer > 0) game.screenShake.timer -= dt;
@@ -545,6 +575,15 @@ export default function ShineGame() {
       game.timeLeft -= dt;
       if (game.timeLeft <= 0) { game.timeLeft = 0; endGame(game); return; }
 
+      // Phase progression
+      if (game.gameTime < 10) {
+        game.currentPhase = 1; game.phaseName = 'QUARTER NOTES';
+      } else if (game.gameTime < 20) {
+        game.currentPhase = 2; game.phaseName = 'EIGHTH NOTES';
+      } else {
+        game.currentPhase = 3; game.phaseName = 'SIXTEENTH NOTES';
+      }
+
       // combo
       if (game.comboTimer > 0) {
         game.comboTimer -= dt;
@@ -557,31 +596,51 @@ export default function ShineGame() {
         }
       }
 
-      // Beat-synced spawning + music scheduling
-      const m = game.music;
-      if (m.playing && game.audioCtx) {
-        const now = game.audioCtx.currentTime;
-        // Schedule beats ahead
-        while (m.nextBeatTime <= now + 0.1) {
-          scheduleBeatClick(m.nextBeatTime, m.beatCount);
-          // Spawn gems on beat subdivisions - ramp difficulty by reducing beatsPerSpawn
-          const t = Math.min(game.gameTime / 30, 1);
-          m.beatsPerSpawn = t < 0.3 ? 2 : t < 0.7 ? 1.5 : 1;
-          if (m.beatCount - m.lastSpawnBeat >= m.beatsPerSpawn) {
-            spawnGem(game);
-            m.lastSpawnBeat = m.beatCount;
+      // Beat-synced spawning using audioContext.currentTime
+      const actx = game.audioCtx;
+      if (actx) {
+        const now = actx.currentTime;
+        const elapsed = now - game.beatStartTime;
+
+        // Determine subdivision size based on phase
+        // Phase 1: quarter notes (1 per beat) → subdivIndex increments every BEAT_SEC
+        // Phase 2: eighth notes → subdivIndex increments every BEAT_SEC/2
+        // Phase 3: sixteenth notes → subdivIndex increments every BEAT_SEC/4
+        const subdivSec = game.currentPhase === 1 ? BEAT_SEC : game.currentPhase === 2 ? BEAT_SEC / 2 : BEAT_SEC / 4;
+        const currentSubdiv = Math.floor(elapsed / subdivSec);
+
+        // Schedule ahead by 0.1s
+        const lookAheadSubdiv = Math.floor((elapsed + 0.1) / subdivSec);
+
+        for (let si = game.lastScheduledBeat + 1; si <= lookAheadSubdiv; si++) {
+          const beatTime = game.beatStartTime + si * subdivSec;
+          // Is this a quarter note?
+          const isQuarter = (si * subdivSec) % BEAT_SEC < 0.001 || Math.abs((si * subdivSec) % BEAT_SEC - BEAT_SEC) < 0.001;
+          const isEighth = !isQuarter && ((si * subdivSec) % (BEAT_SEC / 2) < 0.001 || Math.abs((si * subdivSec) % (BEAT_SEC / 2) - BEAT_SEC / 2) < 0.001);
+
+          // Play kick on every quarter note
+          if (isQuarter || (si === 0)) {
+            playKick(beatTime);
           }
-          m.beatCount++;
-          m.nextBeatTime += m.beatInterval;
+
+          // Determine subdivision type for the spawned gem
+          let subdivType = 1; // sixteenth
+          if (isQuarter || si === 0) subdivType = 4;
+          else if (isEighth) subdivType = 2;
+
+          // Spawn a gem on this subdivision
+          spawnGemAt(game, subdivType);
         }
-      } else {
-        // Fallback if no music
-        game.spawnTimer += dt;
-        const interval = getSpawnInterval(game.gameTime);
-        if (game.spawnTimer >= interval) { spawnGem(game); game.spawnTimer -= interval; }
+
+        game.lastScheduledBeat = lookAheadSubdiv;
+
+        // Beat pulse (visual) - based on quarter notes
+        const quarterBeat = elapsed / BEAT_SEC;
+        const beatFrac = quarterBeat - Math.floor(quarterBeat);
+        game.beatPulse = Math.max(0, 1 - beatFrac * 4); // quick flash then fade
       }
 
-      // gems
+      // gems age
       for (let i = game.gems.length - 1; i >= 0; i--) {
         const gem = game.gems[i];
         gem.age += dt; gem.pulse = Math.sin(gem.age * 5) * 0.2 + 1;
@@ -617,7 +676,11 @@ export default function ShineGame() {
 
     function endGame(game: typeof g.current) {
       game.phase = 'over'; game.running = false;
-      stopMusic();
+      // Fade out master gain
+      if (game.masterGain && game.audioCtx) {
+        game.masterGain.gain.setValueAtTime(game.masterGain.gain.value, game.audioCtx.currentTime);
+        game.masterGain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.5);
+      }
       setScore(game.score); setFinalCollected(game.collected); setFinalMaxCombo(game.maxCombo);
       setGameState('gameover');
       if (game.score >= 1) fetch('/api/pixelpit/stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: GAME_ID }) }).catch(() => {});
@@ -658,7 +721,6 @@ export default function ShineGame() {
       for (const ft of game.floatingTexts) { ctx!.fillStyle = ft.color; ctx!.globalAlpha = ft.life; ctx!.font = 'bold 18px monospace'; ctx!.textAlign = 'center'; ctx!.fillText(ft.text, ft.x, ft.y); ctx!.globalAlpha = 1; }
       if (game.missDarken > 0) { ctx!.fillStyle = `rgba(0,0,0,${game.missDarken * 3})`; ctx!.fillRect(0, 0, W, H); }
 
-      // HUD
       ctx!.textAlign = 'center';
       ctx!.fillStyle = T.muted; ctx!.font = '12px monospace';
       ctx!.fillText('TUTORIAL ' + (game.tutStep + 1) + ' / 5', W / 2, 28 + hy);
@@ -689,10 +751,8 @@ export default function ShineGame() {
         ctx!.shadowBlur = 0; ctx!.globalAlpha = 1;
       }
 
-      // SKIP button
       ctx!.textAlign = 'right'; ctx!.fillStyle = T.muted; ctx!.font = '12px monospace';
       ctx!.fillText('SKIP >', W - 16, 28 + hy);
-      // Score
       ctx!.textAlign = 'left'; ctx!.fillStyle = T.muted; ctx!.font = '10px monospace'; ctx!.fillText('SCORE', 16, H - 24);
       ctx!.fillStyle = T.gold; ctx!.font = 'bold 16px monospace'; ctx!.fillText(game.score + '', 16, H - 8);
       ctx!.textAlign = 'left';
@@ -704,7 +764,14 @@ export default function ShineGame() {
       if (game.phase === 'tutorial') { drawTutorial(); return; }
       const W = game.W, H = game.H;
 
-      ctx!.fillStyle = 'rgba(0, 0, 0, 0.25)'; ctx!.fillRect(0, 0, W, H);
+      // Background with beat pulse
+      const pulseAlpha = game.beatPulse * 0.08;
+      ctx!.fillStyle = `rgba(0, 0, 0, ${0.25 - pulseAlpha})`;
+      ctx!.fillRect(0, 0, W, H);
+      if (pulseAlpha > 0.001) {
+        ctx!.fillStyle = `rgba(255, 215, 0, ${pulseAlpha})`;
+        ctx!.fillRect(0, 0, W, H);
+      }
 
       ctx!.save();
       if (game.screenShake.timer > 0) {
@@ -712,10 +779,16 @@ export default function ShineGame() {
         ctx!.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
       }
 
-      // gems
+      // Beat pulse ring in center
+      if (game.beatPulse > 0.01) {
+        const ringRadius = 40 + (1 - game.beatPulse) * 80;
+        ctx!.strokeStyle = `rgba(255, 215, 0, ${game.beatPulse * 0.3})`;
+        ctx!.lineWidth = 2;
+        ctx!.beginPath(); ctx!.arc(W / 2, H / 2, ringRadius, 0, Math.PI * 2); ctx!.stroke();
+      }
+
       for (const gem of game.gems) drawGem(ctx!, gem);
 
-      // particles
       for (const p of game.particles) {
         ctx!.fillStyle = p.color; ctx!.globalAlpha = p.life;
         ctx!.beginPath(); ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx!.fill();
@@ -723,20 +796,17 @@ export default function ShineGame() {
       }
       ctx!.restore();
 
-      // floating text
       for (const ft of game.floatingTexts) {
         ctx!.fillStyle = ft.color; ctx!.globalAlpha = ft.life;
         ctx!.font = 'bold 18px monospace'; ctx!.textAlign = 'center';
         ctx!.fillText(ft.text, ft.x, ft.y); ctx!.globalAlpha = 1;
       }
 
-      // miss darken
       if (game.missDarken > 0) {
         ctx!.fillStyle = `rgba(0,0,0,${game.missDarken * 3})`;
         ctx!.fillRect(0, 0, W, H);
       }
 
-      // combo border
       if (game.combo >= 3) {
         ctx!.strokeStyle = T.gold; ctx!.lineWidth = 2;
         ctx!.globalAlpha = 0.3 + Math.sin(game.gameTime * 8) * 0.15;
@@ -772,6 +842,13 @@ export default function ShineGame() {
         ctx!.fillText(timerStr, W - 16, 78 + hy);
       }
 
+      // Phase name display
+      ctx!.textAlign = 'center';
+      ctx!.fillStyle = T.teal; ctx!.font = 'bold 12px monospace';
+      ctx!.globalAlpha = 0.6;
+      ctx!.fillText(game.phaseName, W / 2, H - 20);
+      ctx!.globalAlpha = 1;
+
       // combo display
       if (game.combo >= 3) {
         ctx!.textAlign = 'center'; ctx!.fillStyle = T.gold;
@@ -804,7 +881,7 @@ export default function ShineGame() {
 
     return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); canvas.removeEventListener('touchstart', handleTap); canvas.removeEventListener('click', handleTap); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initAudio, playCollect, playComboBreak, playMissThud, playSound, playPerfectSound, stopMusic, scheduleBeatClick]);
+  }, [initAudio, playCollect, playComboBreak, playMissThud, playSound, playInstrument, playKick]);
 
   return (
     <>
@@ -817,7 +894,7 @@ export default function ShineGame() {
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: `radial-gradient(circle, ${T.gold}, ${T.amber})`, margin: '0 auto 20px', boxShadow: `0 0 30px ${T.gold}66` }} />
             <h1 style={{ fontFamily: 'ui-monospace, monospace', fontSize: 64, fontWeight: 300, color: T.gold, marginBottom: 20, letterSpacing: 8, textShadow: `0 0 40px rgba(255,215,0,0.4)` }}>SHINE</h1>
             <p style={{ fontSize: 14, fontFamily: 'ui-monospace, monospace', color: T.amber, marginBottom: 35, lineHeight: 1.8, letterSpacing: 2 }}>
-              tap gems before they fade<br />build combos for multipliers<br />missed gems cost time
+              tap gems on the beat<br />build combos for multipliers<br />missed gems cost time
             </p>
             <button onClick={startGame} style={{ background: T.gold, color: COLORS.bg, border: 'none', padding: '16px 50px', fontSize: 16, fontFamily: 'ui-monospace, monospace', fontWeight: 600, cursor: 'pointer', borderRadius: 8, letterSpacing: 2, boxShadow: `0 8px 30px rgba(255,215,0,0.3)` }}>play</button>
             <button onClick={startTutorial} style={{ background: 'transparent', border: `1px solid ${T.muted}`, color: T.muted, padding: '10px 30px', fontSize: 12, fontFamily: 'ui-monospace, monospace', cursor: 'pointer', borderRadius: 6, letterSpacing: 2, marginTop: 12 }}>tutorial</button>
