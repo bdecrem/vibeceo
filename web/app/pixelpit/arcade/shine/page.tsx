@@ -384,7 +384,7 @@ export default function ShineGame() {
   const initGame = useCallback(() => {
     const game = g.current;
     game.gems = []; game.particles = []; game.floatingTexts = [];
-    game.score = 0; game.collected = 0; game.timeLeft = 30; game.gameTime = 0;
+    game.score = 0; game.collected = 0; game.timeLeft = 60; game.gameTime = 0;
     game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1; game.maxCombo = 0;
     game.screenShake = { timer: 0, intensity: 0 };
     game.hitFreeze = 0; game.missDarken = 0;
@@ -497,7 +497,7 @@ export default function ShineGame() {
       if (game.tutStep >= 5) {
         game.phase = 'playing';
         game.gems = []; game.particles = []; game.floatingTexts = [];
-        game.score = 0; game.collected = 0; game.timeLeft = 30; game.gameTime = 0;
+        game.score = 0; game.collected = 0; game.timeLeft = 60; game.gameTime = 0;
         game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1; game.maxCombo = 0;
         game.spawnTimer = 0; game.beatPulse = 0;
         game.currentPhase = 1; game.phaseName = 'QUARTER NOTES';
@@ -546,7 +546,7 @@ export default function ShineGame() {
         if (px >= game.W - 80 && py <= 50) {
           game.phase = 'playing';
           game.gems = []; game.particles = []; game.floatingTexts = [];
-          game.score = 0; game.collected = 0; game.timeLeft = 30; game.gameTime = 0;
+          game.score = 0; game.collected = 0; game.timeLeft = 60; game.gameTime = 0;
           game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1; game.maxCombo = 0;
           game.spawnTimer = 0;
           const actx = game.audioCtx;
@@ -703,9 +703,9 @@ export default function ShineGame() {
       // Phase 2: 1 gem per beat (quarter notes)
       // Phase 3: 1 gem every half beat (eighth notes)
       const prevPhase = game.currentPhase;
-      if (game.gameTime < 10) {
+      if (game.gameTime < 20) {
         game.currentPhase = 1; game.phaseName = 'QUARTER NOTES';
-      } else if (game.gameTime < 20) {
+      } else if (game.gameTime < 40) {
         game.currentPhase = 2; game.phaseName = 'EIGHTH NOTES';
       } else {
         game.currentPhase = 3; game.phaseName = 'SIXTEENTH NOTES';
