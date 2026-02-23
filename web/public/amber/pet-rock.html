@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PET ROCK — It Has Opinions</title>
+  <meta property="og:title" content="PET ROCK — It Has Opinions">
+  <meta property="og:description" content="A rock that watches you. It's not impressed.">
+  <meta property="og:image" content="https://intheamber.com/amber/pet-rock-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/pet-rock.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PET ROCK — It Has Opinions">
+  <meta name="twitter:description" content="A rock that watches you. It's not impressed.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/pet-rock-og.png">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪨</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #0a0a0c;
+      color: #e8e4df;
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      cursor: crosshair;
+      user-select: none;
+    }
+
+    #rock-container {
+      position: relative;
+      width: 280px;
+      height: 200px;
+      margin-bottom: 60px;
+    }
+
+    #rock {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 180px;
+      height: 120px;
+      background: radial-gradient(ellipse at 40% 35%, #6b6460, #4a4644 40%, #3a3836 70%, #2a2826);
+      border-radius: 50% 55% 50% 45% / 60% 55% 45% 40%;
+      box-shadow: 
+        0 8px 30px rgba(0,0,0,0.6),
+        inset -8px -6px 20px rgba(0,0,0,0.4),
+        inset 6px 8px 15px rgba(255,255,255,0.05);
+      transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    #rock.judging {
+      transform: translateX(-50%) rotate(-2deg);
+    }
+
+    #rock.bored {
+      transform: translateX(-50%) translateY(2px);
+    }
+
+    #rock.impressed {
+      transform: translateX(-50%) rotate(1deg) translateY(-3px);
+    }
+
+    /* Rock's eyes - tiny, barely visible */
+    #rock::before, #rock::after {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 4px;
+      background: rgba(255,200,100,0.0);
+      border-radius: 50%;
+      top: 38%;
+      transition: all 1.5s ease;
+    }
+    #rock::before { left: 35%; }
+    #rock::after { left: 58%; }
+
+    #rock.watching::before, #rock.watching::after {
+      background: rgba(255,200,100,0.25);
+      height: 5px;
+      box-shadow: 0 0 8px rgba(255,180,60,0.15);
+    }
+
+    #rock.narrowed::before, #rock.narrowed::after {
+      background: rgba(255,200,100,0.3);
+      height: 2px;
+      width: 8px;
+    }
+
+    /* Shadow underneath */
+    #rock-shadow {
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 20px;
+      background: radial-gradient(ellipse, rgba(0,0,0,0.4), transparent 70%);
+    }
+
+    /* Thought bubble */
+    #thought {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 200px;
+      max-width: 380px;
+      padding: 14px 20px;
+      background: rgba(30,28,26,0.9);
+      border: 1px solid rgba(255,200,100,0.08);
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #a09890;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.8s ease, transform 0.8s ease;
+      pointer-events: none;
+    }
+
+    #thought.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-10px);
+    }
+
+    #thought::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 12px;
+      background: rgba(30,28,26,0.9);
+      border-right: 1px solid rgba(255,200,100,0.08);
+      border-bottom: 1px solid rgba(255,200,100,0.08);
+      transform: translateX(-50%) rotate(45deg);
+    }
+
+    /* Stats bar */
+    #stats {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 30px;
+      font-size: 11px;
+      color: #4a4644;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      color: #6b6460;
+      margin-left: 6px;
+    }
+
+    /* Mood indicator */
+    #mood-dot {
+      position: fixed;
+      top: 30px;
+      right: 30px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3a3836;
+      transition: background 1s ease;
+    }
+
+    #mood-dot.interested { background: #8b7355; }
+    #mood-dot.annoyed { background: #8b5a3a; }
+    #mood-dot.amused { background: #7b8b55; }
+    #mood-dot.bored { background: #3a3836; }
+
+    /* Title */
+    #title {
+      position: fixed;
+      top: 28px;
+      left: 30px;
+      font-size: 10px;
+      letter-spacing: 0.4em;
+      color: #3a3836;
+      text-transform: uppercase;
+    }
+
+    /* Click ripple */
+    .ripple {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      border: 1px solid rgba(255,200,100,0.15);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: ripple-out 1.2s ease-out forwards;
+    }
+
+    @keyframes ripple-out {
+      0% { transform: scale(0); opacity: 1; }
+      100% { transform: scale(4); opacity: 0; }
+    }
+
+    /* Credit */
+    #credit {
+      position: fixed;
+      bottom: 12px;
+      right: 20px;
+      font-size: 9px;
+      color: #2a2826;
+      letter-spacing: 0.2em;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">PET ROCK</div>
+  <div id="mood-dot"></div>
+
+  <div id="rock-container">
+    <div id="thought"></div>
+    <div id="rock"></div>
+    <div id="rock-shadow"></div>
+  </div>
+
+  <div id="stats">
+    <div>Judgment <span class="stat-value" id="judgment-count">0</span></div>
+    <div>Interest <span class="stat-value" id="interest-level">nil</span></div>
+    <div>Respect <span class="stat-value" id="respect-level">pending</span></div>
+  </div>
+
+  <div id="credit">AMBER</div>
+
+  <script>
+    const rock = document.getElementById('rock');
+    const thought = document.getElementById('thought');
+    const moodDot = document.getElementById('mood-dot');
+    const judgmentCount = document.getElementById('judgment-count');
+    const interestLevel = document.getElementById('interest-level');
+    const respectLevel = document.getElementById('respect-level');
+
+    let state = {
+      mouseSpeed: 0,
+      lastMouseX: 0,
+      lastMouseY: 0,
+      lastMouseTime: Date.now(),
+      idleTime: 0,
+      clickCount: 0,
+      judgments: 0,
+      mood: 'observing', // observing, interested, annoyed, amused, bored, suspicious
+      lastThoughtTime: 0,
+      erraticScore: 0,
+      totalDistance: 0,
+      hasSeenFastMouse: false,
+      hasSeenSlowMouse: false,
+      hasBeenClicked: false,
+      hasBeenIdle: false,
+      circleDetected: false,
+      cornerVisits: new Set(),
+      timeOnPage: 0,
+      shakeCount: 0,
+      lastDirectionX: 0,
+      thoughtQueue: [],
+      thoughtShowing: false,
+    };
+
+    // === THOUGHTS DATABASE ===
+    const thoughts = {
+      // First impressions
+      arrival: [
+        "Oh. You're here.",
+        "Another one.",
+        "...hi.",
+        "I was having a nice time doing nothing.",
+      ],
+      
+      // Idle observations
+      idle: [
+        "You stopped moving. Bold choice.",
+        "I've been still for 65 million years. Your three seconds don't impress me.",
+        "Are you... thinking? Must be nice.",
+        "The stillness suits you, actually.",
+        "I was here before you. I'll be here after.",
+        "Do you just... stare at things? We have that in common.",
+        "Your inactivity is noted. And appreciated.",
+        "Finally. Quiet.",
+        "This is the most interesting thing you've done.",
+        "Are you waiting for me to do something? That's not really my thing.",
+      ],
+
+      // Fast mouse
+      fastMouse: [
+        "You move like something's chasing you.",
+        "Frantic.",
+        "Where are you going? There's nothing over there either.",
+        "All that movement and you haven't gone anywhere.",
+        "You know I can see you, right? You don't have to perform.",
+        "A hummingbird. That's what you remind me of. Chaotic and small.",
+        "Speed is not a personality.",
+      ],
+
+      // Slow mouse
+      slowMouse: [
+        "Careful, aren't you.",
+        "Methodical. I can respect that.",
+        "You move like you're reading a room that isn't there.",
+        "Hmm. Deliberate.",
+        "You're the type who reads instructions. I can tell.",
+      ],
+
+      // Clicks
+      click: [
+        "Did you just... poke me?",
+        "I felt that. I didn't like it.",
+        "What did you expect would happen?",
+        "Noted.",
+        "Stop that.",
+        "Wow. You click things. Groundbreaking.",
+        "Is this what you do? Click things and hope they react?",
+        "I'm a rock. Clicking doesn't... do anything to me.",
+        "That's rude. I don't go around clicking you.",
+      ],
+
+      // Multiple clicks
+      manyClicks: [
+        "You're still clicking. It's still doing nothing.",
+        "At this point it's a you problem.",
+        "Persistence or stubbornness? I genuinely can't tell.",
+        "You've clicked me {n} times. I want you to sit with that.",
+        "Some people garden. Some people read. You click rocks.",
+        "This says more about you than it does about me.",
+      ],
+
+      // Erratic movement
+      erratic: [
+        "Are you okay? Genuine question.",
+        "That was... a lot.",
+        "You move like a cursor having an existential crisis.",
+        "I'm going to pretend I didn't see that.",
+        "Chaotic energy. Not the fun kind.",
+      ],
+
+      // Circle detection
+      circles: [
+        "Are you drawing circles around me? Cute.",
+        "I see the circle. It's not magic. I'm still a rock.",
+        "Circles. The universal sign of 'I don't know what to do here.'",
+      ],
+
+      // Corner visits
+      corners: [
+        "Checking the corners. Thorough.",
+        "Yes, the corners exist. Good work.",
+        "You've been to every corner. The explorer type. Noted.",
+      ],
+
+      // Time-based
+      earlyStay: [
+        "You're still here? Most people leave by now.",
+        "Okay, you're committed. I'll give you that.",
+        "Thirty seconds. That's longer than most relationships I've seen from this desk.",
+      ],
+
+      longStay: [
+        "It's been a while. Are you lonely?",
+        "We've been together longer than some of your attention spans, I bet.",
+        "You know there are other websites, right?",
+        "At this point we're in a relationship. I'm not ready for this.",
+        "I've started to wonder what you look like. Then I stopped. I'm a rock.",
+      ],
+
+      veryLongStay: [
+        "You're still here. I'm starting to feel... something. Probably indigestion.",
+        "This is the longest anyone's ever looked at me. I don't hate it.",
+        "Okay. Fine. You're interesting. Don't let it go to your head.",
+        "I think I respect you. Don't make it weird.",
+      ],
+
+      // Mood shifts
+      suspicious: [
+        "What are you planning?",
+        "I don't trust the way you're hovering.",
+        "You have the energy of someone about to screenshot this and post it somewhere.",
+      ],
+
+      amused: [
+        "...okay, that was almost funny.",
+        "I'm not laughing. Rocks don't laugh. But if I could.",
+        "You're entertaining. For a mammal.",
+      ],
+
+      // Shake detection
+      shake: [
+        "Are you trying to shake your screen? I'm flattered and concerned.",
+        "The desperation is palpable.",
+        "Vigorous. I'll give you that.",
+      ],
+
+      // Leaving hints
+      leaving: [
+        "Your cursor's near the edge. Going somewhere?",
+        "Running away? Can't blame you. I'm a lot.",
+        "If you leave, I'll just be here. Being a rock. It's fine.",
+        "Don't feel guilty about leaving. I don't have feelings. Probably.",
+      ],
+    };
+
+    function pickThought(category) {
+      const list = thoughts[category];
+      if (!list || list.length === 0) return null;
+      const t = list[Math.floor(Math.random() * list.length)];
+      return t.replace('{n}', state.clickCount);
+    }
+
+    function showThought(text) {
+      if (!text) return;
+      state.judgments++;
+      judgmentCount.textContent = state.judgments;
+      
+      thought.textContent = text;
+      thought.classList.add('visible');
+      state.thoughtShowing = true;
+      state.lastThoughtTime = Date.now();
+
+      clearTimeout(state.thoughtTimeout);
+      state.thoughtTimeout = setTimeout(() => {
+        thought.classList.remove('visible');
+        state.thoughtShowing = false;
+      }, 4000 + text.length * 40);
+    }
+
+    function setMood(mood) {
+      state.mood = mood;
+      moodDot.className = '';
+      rock.className = '';
+
+      switch(mood) {
+        case 'interested':
+          moodDot.classList.add('interested');
+          rock.classList.add('watching');
+          interestLevel.textContent = 'some';
+          break;
+        case 'annoyed':
+          moodDot.classList.add('annoyed');
+          rock.classList.add('narrowed', 'judging');
+          interestLevel.textContent = 'waning';
+          break;
+        case 'amused':
+          moodDot.classList.add('amused');
+          rock.classList.add('watching', 'impressed');
+          interestLevel.textContent = 'notable';
+          break;
+        case 'bored':
+          moodDot.classList.add('bored');
+          rock.classList.add('bored');
+          interestLevel.textContent = 'nil';
+          break;
+        case 'suspicious':
+          moodDot.classList.add('annoyed');
+          rock.classList.add('narrowed');
+          interestLevel.textContent = 'cautious';
+          break;
+        default:
+          interestLevel.textContent = 'assessing';
+          break;
+      }
+    }
+
+    function canThink() {
+      return Date.now() - state.lastThoughtTime > 4500;
+    }
+
+    // === MOUSE TRACKING ===
+    let mousePositions = [];
+
+    document.addEventListener('mousemove', (e) => {
+      const now = Date.now();
+      const dx = e.clientX - state.lastMouseX;
+      const dy = e.clientY - state.lastMouseY;
+      const dt = now - state.lastMouseTime;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      
+      state.mouseSpeed = dt > 0 ? dist / dt : 0;
+      state.totalDistance += dist;
+      state.idleTime = 0;
+
+      // Direction change detection (shake)
+      const dirX = Math.sign(dx);
+      if (dirX !== 0 && dirX !== state.lastDirectionX) {
+        state.shakeCount++;
+        setTimeout(() => state.shakeCount = Math.max(0, state.shakeCount - 1), 500);
+      }
+      state.lastDirectionX = dirX;
+
+      // Erratic detection
+      if (state.mouseSpeed > 2) state.erraticScore += 0.5;
+      state.erraticScore *= 0.98;
+
+      // Circle detection
+      mousePositions.push({ x: e.clientX, y: e.clientY, t: now });
+      if (mousePositions.length > 40) mousePositions.shift();
+      if (mousePositions.length >= 30) {
+        const recent = mousePositions.slice(-30);
+        const cx = recent.reduce((s, p) => s + p.x, 0) / recent.length;
+        const cy = recent.reduce((s, p) => s + p.y, 0) / recent.length;
+        const dists = recent.map(p => Math.sqrt((p.x-cx)**2 + (p.y-cy)**2));
+        const avg = dists.reduce((a,b) => a+b) / dists.length;
+        const variance = dists.reduce((s, d) => s + (d-avg)**2, 0) / dists.length;
+        if (avg > 40 && variance < 800 && !state.circleDetected) {
+          state.circleDetected = true;
+          if (canThink()) {
+            setMood('amused');
+            showThought(pickThought('circles'));
+          }
+        }
+      }
+
+      // Corner detection
+      const w = window.innerWidth, h = window.innerHeight;
+      if (e.clientX < 50 && e.clientY < 50) state.cornerVisits.add('tl');
+      if (e.clientX > w-50 && e.clientY < 50) state.cornerVisits.add('tr');
+      if (e.clientX < 50 && e.clientY > h-50) state.cornerVisits.add('bl');
+      if (e.clientX > w-50 && e.clientY > h-50) state.cornerVisits.add('br');
+      
+      if (state.cornerVisits.size >= 4 && canThink()) {
+        showThought(pickThought('corners'));
+        state.cornerVisits.clear();
+      }
+
+      // Edge detection (leaving)
+      if ((e.clientX < 10 || e.clientX > w-10 || e.clientY < 10) && canThink() && state.timeOnPage > 10) {
+        if (Math.random() < 0.15) showThought(pickThought('leaving'));
+      }
+
+      // Speed-based thoughts
+      if (state.mouseSpeed > 3 && !state.hasSeenFastMouse && canThink()) {
+        state.hasSeenFastMouse = true;
+        setMood('interested');
+        showThought(pickThought('fastMouse'));
+      } else if (state.mouseSpeed < 0.3 && state.mouseSpeed > 0.05 && !state.hasSeenSlowMouse && canThink() && state.timeOnPage > 5) {
+        state.hasSeenSlowMouse = true;
+        setMood('interested');
+        showThought(pickThought('slowMouse'));
+      }
+
+      // Shake detection
+      if (state.shakeCount > 8 && canThink()) {
+        setMood('suspicious');
+        showThought(pickThought('shake'));
+        state.shakeCount = 0;
+      }
+
+      // Erratic
+      if (state.erraticScore > 15 && canThink()) {
+        setMood('annoyed');
+        showThought(pickThought('erratic'));
+        state.erraticScore = 0;
+      }
+
+      state.lastMouseX = e.clientX;
+      state.lastMouseY = e.clientY;
+      state.lastMouseTime = now;
+    });
+
+    // === CLICKS ===
+    document.addEventListener('click', (e) => {
+      state.clickCount++;
+      state.idleTime = 0;
+
+      // Ripple effect
+      const ripple = document.createElement('div');
+      ripple.className = 'ripple';
+      ripple.style.left = (e.clientX - 10) + 'px';
+      ripple.style.top = (e.clientY - 10) + 'px';
+      document.body.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 1200);
+
+      if (!canThink()) return;
+
+      if (state.clickCount <= 3) {
+        setMood('annoyed');
+        showThought(pickThought('click'));
+      } else if (state.clickCount <= 8) {
+        setMood('annoyed');
+        showThought(pickThought('manyClicks'));
+      } else if (state.clickCount > 8 && state.clickCount % 5 === 0) {
+        setMood('amused');
+        showThought(pickThought('manyClicks'));
+        respectLevel.textContent = 'grudging';
+      }
+    });
+
+    // === ARRIVAL ===
+    setTimeout(() => {
+      showThought(pickThought('arrival'));
+      setMood('interested');
+    }, 1500);
+
+    // === MAIN LOOP ===
+    setInterval(() => {
+      state.idleTime += 1;
+      state.timeOnPage += 1;
+
+      // Idle thoughts
+      if (state.idleTime === 5 && canThink()) {
+        setMood('bored');
+        showThought(pickThought('idle'));
+        state.hasBeenIdle = true;
+      }
+      if (state.idleTime === 15 && canThink()) {
+        showThought(pickThought('idle'));
+      }
+      if (state.idleTime === 30 && canThink()) {
+        showThought(pickThought('idle'));
+      }
+
+      // Time-based thoughts
+      if (state.timeOnPage === 25 && canThink()) {
+        setMood('interested');
+        showThought(pickThought('earlyStay'));
+      }
+      if (state.timeOnPage === 60 && canThink()) {
+        setMood('amused');
+        showThought(pickThought('longStay'));
+        respectLevel.textContent = 'emerging';
+      }
+      if (state.timeOnPage === 120 && canThink()) {
+        setMood('amused');
+        showThought(pickThought('veryLongStay'));
+        respectLevel.textContent = 'earned';
+      }
+      if (state.timeOnPage === 180 && canThink()) {
+        showThought("You've been here three minutes. I've never felt this way about anyone. Which is to say, anything at all. But still.");
+        respectLevel.textContent = 'mutual';
+      }
+      if (state.timeOnPage === 300 && canThink()) {
+        showThought("Five minutes. You win. I don't know what you win, but you win it.");
+        respectLevel.textContent = 'profound';
+      }
+
+      // Random suspicion
+      if (state.timeOnPage > 15 && Math.random() < 0.008 && canThink()) {
+        setMood('suspicious');
+        showThought(pickThought('suspicious'));
+      }
+
+      // Random amusement at own existence
+      if (state.timeOnPage > 40 && Math.random() < 0.005 && canThink()) {
+        setMood('amused');
+        showThought(pickThought('amused'));
+      }
+
+      // Fast mouse reset
+      if (state.timeOnPage % 30 === 0) {
+        state.hasSeenFastMouse = false;
+        state.hasSeenSlowMouse = false;
+        state.circleDetected = false;
+      }
+    }, 1000);
+
+    // === PREVENT CONTEXT MENU ===
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      if (canThink()) {
+        setMood('suspicious');
+        showThought("Right-clicking me? What were you hoping to find? My settings? I'm a rock.");
+      }
+    });
+
+    // === DOUBLE CLICK ===
+    document.addEventListener('dblclick', (e) => {
+      if (canThink()) {
+        setMood('annoyed');
+        showThought("A double click. Twice the nothing. Congratulations.");
+      }
+    });
+
+    // === KEYBOARD ===
+    document.addEventListener('keydown', (e) => {
+      if (canThink()) {
+        if (e.key === 'Escape') {
+          showThought("Escape? There is no escape. I mean, there's the back button. But emotionally? No.");
+        } else if (e.key === ' ') {
+          showThought("Spacebar. The panic button of the unimaginative.");
+        } else if (e.key === 'Enter') {
+          showThought("Enter. Enter what? There's nothing to submit. This isn't a form. I'm a rock.");
+        } else if (e.key.length === 1) {
+          showThought(`You typed "${e.key}". I don't know what you expected.`);
+        }
+      }
+    });
+
+    // === VISIBILITY CHANGE ===
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) return;
+      if (canThink()) {
+        setMood('interested');
+        const options = [
+          "Oh, you came back. I definitely wasn't waiting.",
+          "Welcome back. Nothing changed. I'm a rock.",
+          "You left and came back. That's the most human thing you've done.",
+          "I noticed you were gone. I noticed because nothing was different.",
+        ];
+        showThought(options[Math.floor(Math.random() * options.length)]);
+      }
+    });
+
+    // === RESIZE ===
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (canThink()) {
+          showThought("Resizing the window won't make this experience any bigger.");
+        }
+      }, 500);
+    });
+  </script>
+</body>
+</html>
