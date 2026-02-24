@@ -70,9 +70,13 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: `Unknown agent: ${agentName}` }, { status: 400 });
     }
 
-    console.log(`[agent-chat] ${agentName} — ${messages.length} messages`);
+    // Extract just the last user message — the main session has its own history
+    const lastUserMsg = messages.filter((m: any) => m.role === 'user').pop();
+    const userText = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : JSON.stringify(lastUserMsg?.content || '');
+    console.log(`[agent-chat] ${agentName} — "${userText.slice(0, 80)}"`);
 
-    // Pass through to OpenClaw chat completions — full agent mode
+    // Chat completions with the main session's user key
+    // Context is shared via daily memory files (logged below)
     const resp = await fetch(`${agent.url}/v1/chat/completions`, {
       method: 'POST',
       headers: {
@@ -82,9 +86,11 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         model: 'openclaw:main',
-        messages,
+        messages: [
+          { role: 'system', content: 'This message is from the iPhone app. You have the same tools, memory, and capabilities as in Discord. Read your daily memory files for recent context from other sessions.' },
+          { role: 'user', content: userText },
+        ],
         stream: false,
-        // No user field — routes to the main agent session (same as Discord/WhatsApp)
       }),
     });
 
@@ -98,14 +104,23 @@ export async function POST(request: NextRequest) {
     const content = data.choices?.[0]?.message?.content || '';
     console.log(`[agent-chat] ${agentName} done (${Date.now() - t0}ms): ${content.slice(0, 80)}`);
 
-    // Log to daily memory so all sessions can see app chats
-    const lastUser = messages.filter((m: any) => m.role === 'user').pop();
-    if (lastUser?.content && content) {
-      const userText = typeof lastUser.content === 'string' ? lastUser.content : JSON.stringify(lastUser.content);
-      logExchange(agentName.charAt(0).toUpperCase() + agentName.slice(1), userText, content);
+    // Log to daily memory
+    if (userText && content) {
+      logExchange(agentName.charAt(0).toUpperCase() + agentName.slice(1), userText, typeof content === 'string' ? content : JSON.stringify(content));
     }
 
-    return Response.json(data);
+    // Wrap in OpenAI chat completions format for the iPhone app
+    return Response.json({
+      id: `chatcmpl-${Date.now()}`,
+      object: 'chat.completion',
+      created: Math.floor(Date.now() / 1000),
+      model: 'openclaw:main',
+      choices: [{
+        index: 0,
+        message: { role: 'assistant', content: typeof content === 'string' ? content : JSON.stringify(content) },
+        finish_reason: 'stop',
+      }],
+    });
   } catch (error) {
     console.error('[agent-chat] error:', error);
     return Response.json({ error: 'Internal error' }, { status: 500 });
