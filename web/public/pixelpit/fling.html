@@ -821,6 +821,13 @@
           }
         }
 
+        // Death warning: red tint when no strand nearby and falling fast
+        if (!nearestStrand && spider.vy > 100) {
+          spider.deathWarning = Math.min((spider.deathWarning || 0) + dt * 2, 1);
+        } else {
+          spider.deathWarning = Math.max((spider.deathWarning || 0) - dt * 4, 0);
+        }
+
         // Death: fell off screen
         if (spider.y - cameraY > H + 50) {
           die();
@@ -1071,6 +1078,16 @@
         ctx.globalAlpha = alpha;
         ctx.fillRect(0, 0, edgeW, H);
         ctx.fillRect(W - edgeW, 0, edgeW, H);
+        ctx.globalAlpha = 1;
+      }
+
+      // Death warning — red edge tint
+      if (spider.deathWarning > 0.05) {
+        const a = spider.deathWarning * 0.3;
+        ctx.strokeStyle = T.wasp;
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = a;
+        ctx.strokeRect(2, 2, W - 4, H - 4);
         ctx.globalAlpha = 1;
       }
 
