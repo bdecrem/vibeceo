@@ -5,46 +5,100 @@
  * Proxies to OpenClaw's chat completions API so Mave's voice
  * conversations share the same context as WhatsApp/Discord.
  *
- * Hume sends OpenAI-format requests, OpenClaw returns OpenAI-format responses.
- * We pass through with streaming support.
+ * We inject today's memory + MEMORY.md into the system prompt so the voice
+ * session knows what happened in other channels. OpenClaw's chat completions
+ * with a stable `user` string gives us session persistence (conversation
+ * history across voice calls).
  */
 
 import { NextRequest } from 'next/server';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 const OPENCLAW_URL = process.env.OPENCLAW_GATEWAY_URL || 'http://localhost:18789';
 const OPENCLAW_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || '';
+const WORKSPACE = join(process.env.HOME || '/Users/bart', '.openclaw/workspace');
 
 /**
- * Log voice conversation to memory file so main session can see it.
- * Appends to today's memory file.
+ * Read workspace memory files for context injection.
+ * Reads MEMORY.md (long-term) + today's daily log + yesterday's.
+ * Cached for 60s to avoid repeated disk reads within a conversation.
  */
-async function logVoiceExchange(userText: string, assistantText: string) {
+let memoryCache: { text: string; ts: number } | null = null;
+const CACHE_TTL = 60_000; // 60s
+
+function getMemoryContext(): string {
+  if (memoryCache && Date.now() - memoryCache.ts < CACHE_TTL) {
+    return memoryCache.text;
+  }
+
+  const parts: string[] = [];
+
+  // MEMORY.md — curated long-term memory
+  const memoryMd = join(WORKSPACE, 'MEMORY.md');
+  if (existsSync(memoryMd)) {
+    const content = readFileSync(memoryMd, 'utf-8');
+    // Take last 2000 chars to stay concise
+    parts.push('## Long-term memory (MEMORY.md)\n' +
+      (content.length > 2000 ? '...' + content.slice(-2000) : content));
+  }
+
+  // Today's daily log
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const todayFile = join(WORKSPACE, 'memory', `${today}.md`);
+  if (existsSync(todayFile)) {
+    const content = readFileSync(todayFile, 'utf-8');
+    // Take last 3000 chars — most recent context matters most
+    parts.push('## Today\'s log\n' +
+      (content.length > 3000 ? '...' + content.slice(-3000) : content));
+  }
+
+  // Yesterday's daily log (for continuity)
+  const yesterday = new Date(now.getTime() - 86400_000).toISOString().slice(0, 10);
+  const yesterdayFile = join(WORKSPACE, 'memory', `${yesterday}.md`);
+  if (existsSync(yesterdayFile)) {
+    const content = readFileSync(yesterdayFile, 'utf-8');
+    // Just last 1000 chars from yesterday
+    parts.push('## Yesterday\'s log\n' +
+      (content.length > 1000 ? '...' + content.slice(-1000) : content));
+  }
+
+  const text = parts.join('\n\n');
+  memoryCache = { text, ts: Date.now() };
+  console.log(`[mave-voice] Loaded memory context (${text.length} chars)`);
+  return text;
+}
+
+/**
+ * Log voice exchange to today's memory file.
+ */
+function logVoiceExchange(userText: string, assistantText: string) {
   try {
-    const fs = await import('fs');
-    const path = await import('path');
+    const { appendFileSync, writeFileSync, mkdirSync } = require('fs');
     const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
-    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles' });
-    const memDir = path.join(process.env.HOME || '/Users/bart', '.openclaw/workspace/memory');
-    const memFile = path.join(memDir, `${dateStr}.md`);
-
-    // Ensure dir exists
-    fs.mkdirSync(memDir, { recursive: true });
-
+    const dateStr = now.toISOString().slice(0, 10);
+    const timeStr = now.toLocaleTimeString('en-US', {
+      hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles'
+    });
+    const memDir = join(WORKSPACE, 'memory');
+    mkdirSync(memDir, { recursive: true });
+    const memFile = join(memDir, `${dateStr}.md`);
     const entry = `\n### Voice Chat (${timeStr})\n- **Bart:** ${userText}\n- **Mave:** ${assistantText}\n`;
 
-    // Append or create
-    if (fs.existsSync(memFile)) {
-      fs.appendFileSync(memFile, entry);
+    if (existsSync(memFile)) {
+      appendFileSync(memFile, entry);
     } else {
-      fs.writeFileSync(memFile, `# ${dateStr}\n${entry}`);
+      writeFileSync(memFile, `# ${dateStr}\n${entry}`);
     }
-    console.log('[mave-voice] Logged voice exchange to', memFile);
+    // Invalidate cache so next call picks up the new exchange
+    memoryCache = null;
+    console.log('[mave-voice] Logged voice exchange');
   } catch (err) {
-    console.error('[mave-voice] Failed to log voice exchange:', err);
+    console.error('[mave-voice] Failed to log:', err);
   }
 }
 
@@ -80,29 +134,45 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const messages: ChatMessage[] = body.messages || [];
-    const stream = body.stream !== false; // default to streaming
+    const stream = body.stream !== false;
 
-    // Extract conversation - Hume sends full history
     const lastUser = messages.filter(m => m.role === 'user').pop();
     console.log('[mave-voice] User said:', lastUser?.content?.slice(0, 100));
 
-    // Add system context so OpenClaw knows this is a voice conversation
+    // Load memory context from workspace files
+    const memory = getMemoryContext();
+
     const systemMessage: ChatMessage = {
       role: 'system',
-      content: 'This is a voice conversation via Hume EVI. Keep responses concise and conversational (1-3 sentences unless the user asks for detail). Be natural — this is spoken aloud, not read. You are Mave.',
+      content: [
+        'You are Mave, a voice assistant. This is a voice conversation via Hume EVI.',
+        'Keep responses concise and conversational (1-3 sentences unless asked for detail).',
+        'Be natural — this is spoken aloud, not read. No markdown, no bullet points.',
+        'The user is Bart Decrem, based in Silicon Valley.',
+        '',
+        memory ? `--- Context from memory ---\n${memory}` : '',
+      ].filter(Boolean).join('\n'),
     };
 
     const openclawMessages = [systemMessage, ...messages];
 
+    // Use a direct model, not openclaw:main (which triggers full agent runs with tools)
+    const openclawBody = {
+      model: 'anthropic/claude-sonnet-4',
+      messages: openclawMessages,
+      max_tokens: 300,
+      stream,
+      user: 'mave-voice',
+    };
+
     if (stream) {
-      // Streaming response
       const encoder = new TextEncoder();
       const id = `chatcmpl-mave-${Date.now()}`;
 
       const readable = new ReadableStream({
         async start(controller) {
           let closed = false;
-          let fullResponse = ''; // accumulate for logging
+          let fullResponse = '';
           const safeEnqueue = (data: Uint8Array) => {
             if (!closed) {
               try { controller.enqueue(data); } catch { closed = true; }
@@ -110,29 +180,21 @@ export async function POST(request: NextRequest) {
           };
 
           try {
-            // Heartbeat
             safeEnqueue(encoder.encode(': keep-alive\n\n'));
 
-            // Call OpenClaw with streaming
             const resp = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${OPENCLAW_TOKEN}`,
               },
-              body: JSON.stringify({
-                model: 'anthropic/claude-sonnet-4',
-                messages: openclawMessages,
-                max_tokens: 300,
-                stream: true,
-              }),
+              body: JSON.stringify(openclawBody),
             });
 
             if (!resp.ok) {
               const errText = await resp.text();
               console.error('[mave-voice] OpenClaw error:', resp.status, errText);
-              // Fallback: send error as speech
-              safeEnqueue(encoder.encode(toSSEChunk("Sorry, I'm having trouble connecting to my brain right now.", id)));
+              safeEnqueue(encoder.encode(toSSEChunk("Sorry, I'm having trouble connecting right now.", id)));
               safeEnqueue(encoder.encode(toSSEFinalChunk(id)));
               safeEnqueue(encoder.encode('data: [DONE]\n\n'));
               if (!closed) controller.close();
@@ -177,12 +239,12 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            // If OpenClaw doesn't stream, handle non-streaming response
             if (buffer.trim()) {
               try {
                 const parsed = JSON.parse(buffer.trim().replace(/^data: /, ''));
                 const content = parsed.choices?.[0]?.message?.content || parsed.choices?.[0]?.delta?.content;
                 if (content) {
+                  fullResponse += content;
                   safeEnqueue(encoder.encode(toSSEChunk(content, id)));
                 }
               } catch {}
@@ -190,11 +252,11 @@ export async function POST(request: NextRequest) {
 
             safeEnqueue(encoder.encode(toSSEFinalChunk(id)));
             safeEnqueue(encoder.encode('data: [DONE]\n\n'));
+            console.log(`[mave-voice] Response (${Date.now() - startTime}ms): ${fullResponse.slice(0, 80)}`);
 
-            console.log(`[mave-voice] Response complete (${Date.now() - startTime}ms)`);
-            // Log voice exchange to memory (fire and forget)
+            // Log to memory (fire and forget)
             if (lastUser?.content && fullResponse) {
-              logVoiceExchange(lastUser.content, fullResponse).catch(() => {});
+              logVoiceExchange(lastUser.content, fullResponse);
             }
             if (!closed) controller.close();
           } catch (error) {
@@ -215,26 +277,20 @@ export async function POST(request: NextRequest) {
         },
       });
     } else {
-      // Non-streaming response
       const resp = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${OPENCLAW_TOKEN}`,
         },
-        body: JSON.stringify({
-          model: 'anthropic/claude-sonnet-4',
-          messages: openclawMessages,
-          max_tokens: 300,
-        }),
+        body: JSON.stringify(openclawBody),
       });
 
       const data = await resp.json();
       console.log(`[mave-voice] Non-streaming response (${Date.now() - startTime}ms)`);
-      // Log voice exchange
       const assistantContent = data.choices?.[0]?.message?.content;
       if (lastUser?.content && assistantContent) {
-        logVoiceExchange(lastUser.content, assistantContent).catch(() => {});
+        logVoiceExchange(lastUser.content, assistantContent);
       }
       return new Response(JSON.stringify(data), {
         headers: { 'Content-Type': 'application/json' },

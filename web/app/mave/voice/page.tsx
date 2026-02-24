@@ -4,16 +4,28 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { VoiceProvider, useVoice, VoiceReadyState } from '@humeai/voice-react';
 
 /**
- * Mave Voice — Interactive voice chat with Mave via Hume EVI
+ * Voice Chat — Interactive voice chat with Mave or Amber via Hume EVI
  *
- * Push-to-talk interface. Hume handles STT + TTS.
- * CLM endpoint proxies to OpenClaw for full context continuity.
+ * Push-to-talk interface with agent toggle.
+ * Each agent has its own Hume EVI config pointing to different CLM endpoints.
  */
 
-function VoiceInner() {
+interface AgentDef {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  configId: string;
+}
+
+const AGENTS: AgentDef[] = [
+  { id: 'mave', name: 'MAVE', emoji: '🌊', color: '#2D9596', configId: '186f612c-cb58-47bd-a1b2-eadb9fd9fb32' },
+  { id: 'amber', name: 'AMBER', emoji: '🎨', color: '#E8915A', configId: '665c8db8-af07-48d6-9e15-023c10f1d54f' },
+];
+
+function VoiceInner({ agent, onSwitch }: { agent: AgentDef; onSwitch: () => void }) {
   const { connect, disconnect, readyState, messages, isMuted, mute, unmute } = useVoice();
   const [token, setToken] = useState<string | null>(null);
-  const [configId, setConfigId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isTalking, setIsTalking] = useState(false);
   const [transcript, setTranscript] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([]);
@@ -23,30 +35,15 @@ function VoiceInner() {
   const isConnected = readyState === VoiceReadyState.OPEN;
   const isConnecting = readyState === VoiceReadyState.CONNECTING;
 
-  // Fetch token + config on mount
+  // Fetch token on mount
   useEffect(() => {
     fetch('/api/hume-token')
       .then(res => res.json())
       .then(data => {
-        if (data.accessToken) {
-          setToken(data.accessToken);
-        } else {
-          setError('Failed to get Hume token');
-        }
+        if (data.accessToken) setToken(data.accessToken);
+        else setError('Failed to get Hume token');
       })
       .catch(err => setError(`Token error: ${err.message}`));
-
-    // Fetch or create EVI config
-    fetch('/api/mave/voice/config')
-      .then(res => res.json())
-      .then(data => {
-        if (data.configId) {
-          setConfigId(data.configId);
-        } else {
-          setError('Failed to get EVI config');
-        }
-      })
-      .catch(err => setError(`Config error: ${err.message}`));
   }, []);
 
   // Track messages from Hume
@@ -55,7 +52,6 @@ function VoiceInner() {
     const last = messages[messages.length - 1];
     if (last.type === 'user_message' && last.message?.content) {
       setTranscript(prev => {
-        // Avoid duplicates
         const lastEntry = prev[prev.length - 1];
         if (lastEntry?.role === 'user' && lastEntry.text === last.message.content) return prev;
         return [...prev, { role: 'user', text: last.message.content }];
@@ -82,24 +78,29 @@ function VoiceInner() {
   }, [isTalking]);
 
   const handleConnect = useCallback(async () => {
-    if (!token || !configId) return;
+    if (!token) return;
     setError(null);
     try {
       await connect({
         auth: { type: 'accessToken', value: token },
-        configId,
+        configId: agent.configId,
       });
-      // Start muted — user presses TALK to speak
       mute();
     } catch (err: any) {
       setError(`Connection failed: ${err.message}`);
     }
-  }, [token, configId, connect, mute]);
+  }, [token, agent.configId, connect, mute]);
 
   const handleDisconnect = useCallback(() => {
     disconnect();
     setTranscript([]);
   }, [disconnect]);
+
+  const handleSwitch = useCallback(() => {
+    if (isConnected) disconnect();
+    setTranscript([]);
+    onSwitch();
+  }, [isConnected, disconnect, onSwitch]);
 
   const handleTalkStart = useCallback(() => {
     if (!isConnected) return;
@@ -112,16 +113,13 @@ function VoiceInner() {
     mute();
   }, [mute]);
 
-  // Colors matching Mave's teal/gold aesthetic
   const C = {
     bg: '#0a0a0f',
     surface: '#14141f',
-    teal: '#2D9596',
+    accent: agent.color,
     gold: '#FFD700',
     text: '#e0e0e0',
     muted: '#666',
-    user: '#2D9596',
-    assistant: '#FFD700',
   };
 
   return (
@@ -141,9 +139,29 @@ function VoiceInner() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 20 }}>🌊</span>
-          <span style={{ fontSize: 16, fontWeight: 600, color: C.teal }}>MAVE</span>
-          <span style={{ fontSize: 11, color: C.muted }}>voice</span>
+          {/* Agent toggle tabs */}
+          {AGENTS.map(a => (
+            <button
+              key={a.id}
+              onClick={() => { if (a.id !== agent.id) handleSwitch(); }}
+              style={{
+                background: a.id === agent.id ? a.color + '22' : 'transparent',
+                border: a.id === agent.id ? `1px solid ${a.color}44` : `1px solid transparent`,
+                borderRadius: 8,
+                padding: '6px 14px',
+                display: 'flex', alignItems: 'center', gap: 6,
+                cursor: a.id === agent.id ? 'default' : 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span style={{ fontSize: 16 }}>{a.emoji}</span>
+              <span style={{
+                fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
+                color: a.id === agent.id ? a.color : C.muted,
+              }}>{a.name}</span>
+            </button>
+          ))}
+          <span style={{ fontSize: 11, color: C.muted, marginLeft: 4 }}>voice</span>
         </div>
         {isConnected && (
           <button
@@ -174,32 +192,32 @@ function VoiceInner() {
           }}>
             <div style={{
               width: 60, height: 60, borderRadius: '50%',
-              background: `radial-gradient(circle, ${C.teal}, ${C.bg})`,
-              boxShadow: `0 0 40px ${C.teal}44`,
+              background: `radial-gradient(circle, ${C.accent}, ${C.bg})`,
+              boxShadow: `0 0 40px ${C.accent}44`,
             }} />
             <div style={{ fontSize: 14, color: C.muted, textAlign: 'center', lineHeight: 1.8 }}>
-              tap to connect<br />
+              talk to <span style={{ color: C.accent }}>{agent.name.toLowerCase()}</span><br />
               <span style={{ fontSize: 11 }}>hold TALK to speak</span>
             </div>
             <button
               onClick={handleConnect}
-              disabled={!token || !configId}
+              disabled={!token}
               style={{
-                background: C.teal, color: C.bg, border: 'none',
+                background: C.accent, color: C.bg, border: 'none',
                 padding: '14px 40px', borderRadius: 8, fontSize: 15,
                 fontFamily: 'inherit', fontWeight: 600, cursor: 'pointer',
-                opacity: (!token || !configId) ? 0.4 : 1,
-                boxShadow: `0 4px 20px ${C.teal}44`,
+                opacity: !token ? 0.4 : 1,
+                boxShadow: `0 4px 20px ${C.accent}44`,
               }}
             >
-              {!token || !configId ? 'loading...' : 'connect'}
+              {!token ? 'loading...' : 'connect'}
             </button>
           </div>
         )}
 
         {isConnecting && (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ color: C.muted, fontSize: 14 }}>connecting...</span>
+            <span style={{ color: C.muted, fontSize: 14 }}>connecting to {agent.name.toLowerCase()}...</span>
           </div>
         )}
 
@@ -212,12 +230,12 @@ function VoiceInner() {
             }}
           >
             <div style={{
-              background: msg.role === 'user' ? C.teal + '22' : C.gold + '15',
-              border: `1px solid ${msg.role === 'user' ? C.teal + '44' : C.gold + '33'}`,
+              background: msg.role === 'user' ? C.accent + '22' : C.accent + '15',
+              border: `1px solid ${C.accent + (msg.role === 'user' ? '44' : '33')}`,
               borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
               padding: '10px 14px',
               fontSize: 14,
-              color: msg.role === 'user' ? C.user : C.assistant,
+              color: msg.role === 'user' ? C.accent : C.gold,
               lineHeight: 1.5,
             }}>
               {msg.text}
@@ -228,7 +246,7 @@ function VoiceInner() {
               paddingLeft: msg.role === 'assistant' ? 4 : 0,
               paddingRight: msg.role === 'user' ? 4 : 0,
             }}>
-              {msg.role === 'user' ? 'you' : 'mave'}
+              {msg.role === 'user' ? 'you' : agent.name.toLowerCase()}
             </div>
           </div>
         ))}
@@ -252,11 +270,11 @@ function VoiceInner() {
             style={{
               width: 80, height: 80, borderRadius: '50%',
               background: isTalking
-                ? `radial-gradient(circle, ${C.teal}, ${C.teal}88)`
+                ? `radial-gradient(circle, ${C.accent}, ${C.accent}88)`
                 : `radial-gradient(circle, ${C.surface}, ${C.bg})`,
-              border: `2px solid ${isTalking ? C.teal : C.muted + '44'}`,
+              border: `2px solid ${isTalking ? C.accent : C.muted + '44'}`,
               boxShadow: isTalking
-                ? `0 0 ${20 + Math.sin(pulse * 0.3) * 10}px ${C.teal}66`
+                ? `0 0 ${20 + Math.sin(pulse * 0.3) * 10}px ${C.accent}66`
                 : 'none',
               cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -266,8 +284,8 @@ function VoiceInner() {
               touchAction: 'none',
             }}
           >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={isTalking ? C.teal : C.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" fill={isTalking ? C.teal + '44' : 'none'} />
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={isTalking ? C.accent : C.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" fill={isTalking ? C.accent + '44' : 'none'} />
               <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
               <line x1="12" y1="19" x2="12" y2="23" />
               <line x1="8" y1="23" x2="16" y2="23" />
@@ -297,10 +315,18 @@ function VoiceInner() {
   );
 }
 
-export default function MaveVoicePage() {
+export default function VoicePage() {
+  const [agentIndex, setAgentIndex] = useState(0);
+  const agent = AGENTS[agentIndex];
+
+  const handleSwitch = useCallback(() => {
+    setAgentIndex(i => (i + 1) % AGENTS.length);
+  }, []);
+
+  // VoiceProvider needs to remount when agent changes to reset connection
   return (
-    <VoiceProvider>
-      <VoiceInner />
+    <VoiceProvider key={agent.id}>
+      <VoiceInner agent={agent} onSwitch={handleSwitch} />
     </VoiceProvider>
   );
 }

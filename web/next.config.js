@@ -24,6 +24,7 @@ const nextConfig = {
   },
   // Ensure trailing slashes are handled correctly
   trailingSlash: true,
+  skipTrailingSlashRedirect: true,
   // Rewrites for static HTML apps in public/
   async rewrites() {
     return {
