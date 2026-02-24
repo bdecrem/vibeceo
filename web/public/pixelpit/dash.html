@@ -775,6 +775,32 @@
         ctx.globalAlpha = 1;
       }
 
+      // Electric blue haze vignette when charged
+      if (charge >= 4) {
+        const hazeAlpha = charge >= MAX_CHARGE ? 0.12 : 0.06;
+        const edgeW = W * 0.3;
+        // Left edge
+        const gl = ctx.createLinearGradient(0, 0, edgeW, 0);
+        gl.addColorStop(0, `rgba(34,211,238,${hazeAlpha})`);
+        gl.addColorStop(1, 'rgba(34,211,238,0)');
+        ctx.fillStyle = gl; ctx.fillRect(0, 0, edgeW, H);
+        // Right edge
+        const gr = ctx.createLinearGradient(W, 0, W - edgeW, 0);
+        gr.addColorStop(0, `rgba(34,211,238,${hazeAlpha})`);
+        gr.addColorStop(1, 'rgba(34,211,238,0)');
+        ctx.fillStyle = gr; ctx.fillRect(W - edgeW, 0, edgeW, H);
+        // Top edge
+        const gt = ctx.createLinearGradient(0, 0, 0, edgeW);
+        gt.addColorStop(0, `rgba(34,211,238,${hazeAlpha * 0.7})`);
+        gt.addColorStop(1, 'rgba(34,211,238,0)');
+        ctx.fillStyle = gt; ctx.fillRect(0, 0, W, edgeW);
+        // Bottom edge
+        const gb = ctx.createLinearGradient(0, H, 0, H - edgeW);
+        gb.addColorStop(0, `rgba(34,211,238,${hazeAlpha * 0.7})`);
+        gb.addColorStop(1, 'rgba(34,211,238,0)');
+        ctx.fillStyle = gb; ctx.fillRect(0, H - edgeW, W, edgeW);
+      }
+
       // --- HUD ---
       // Score
       ctx.fillStyle = T.white;
