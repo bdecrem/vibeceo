@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>DASH</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #09090b; overflow: hidden; touch-action: none; font-family: monospace; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    let W, H, safeTop = 0;
+    function resize() {
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      W = canvas.width; H = canvas.height;
+      safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)')) || 0;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // --- INDIE BITE THEME ---
+    const T = {
+      bg: '#09090b',
+      surface: '#18181b',
+      border: '#27272a',
+      pink: '#f472b6',    // slow signals
+      cyan: '#22d3ee',    // fast signals + player
+      gold: '#facc15',    // inhibitor signals
+      green: '#a3e635',   // ion dots
+      white: '#ffffff',
+      muted: '#71717a',
+      danger: '#ef4444',
+    };
+
+    // --- AUDIO ---
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    // Ambient hum
+    let humOsc, humGain;
+    function startHum() {
+      if (!audioCtx || humOsc) return;
+      humOsc = audioCtx.createOscillator();
+      humGain = audioCtx.createGain();
+      humOsc.connect(humGain); humGain.connect(audioCtx.destination);
+      humOsc.type = 'sine'; humOsc.frequency.value = 60;
+      humGain.gain.value = 0.03;
+      humOsc.start();
+    }
+    function stopHum() {
+      if (humOsc) { humOsc.stop(); humOsc = null; humGain = null; }
+    }
+
+    function playHop() {
+      if (!audioCtx) return;
+      // Noise burst — electric crackle
+      const bufSize = audioCtx.sampleRate * 0.02;
+      const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.02);
+      src.connect(g); g.connect(audioCtx.destination);
+      src.start(); src.stop(audioCtx.currentTime + 0.02);
+    }
+
+    function playCollect() {
+      if (!audioCtx) return;
+      // Ascending pentatonic chime
+      const notes = [440, 528, 660, 792, 880, 1056, 1320];
+      const freq = notes[Math.floor(Math.random() * notes.length)];
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'sine'; osc.frequency.value = freq;
+      g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+    }
+
+    function playBurst() {
+      if (!audioCtx) return;
+      // Layered square waves — power chord
+      for (let i = 0; i < 3; i++) {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.type = 'square';
+        osc.frequency.value = [200, 300, 400][i];
+        g.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+      }
+    }
+
+    function playDeath() {
+      if (!audioCtx) return;
+      // Harsh static
+      const bufSize = audioCtx.sampleRate * 0.3;
+      const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1);
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+      src.connect(g); g.connect(audioCtx.destination);
+      src.start(); src.stop(audioCtx.currentTime + 0.3);
+    }
+
+    // --- CONSTANTS ---
+    const CELL = 40;        // grid cell size
+    const COLS = () => Math.floor(W / CELL);
+    const HOP_TIME = 0.08;  // hop animation duration
+    const SIGNAL_H = 6;     // signal visual height
+    const PLAYER_R = 6;     // spark radius
+    const ION_R = 5;
+    const MAX_CHARGE = 5;
+    const DEATH_PUSH_SPEED = 0.6; // lanes per second the death wall advances
+
+    // --- LANE GENERATION ---
+    // Lane types: 'rest', 'slow', 'fast', 'inhibitor', 'bridge'
+    function makeLane(row, difficulty) {
+      const cols = COLS();
+      const d = Math.min(difficulty, 1); // 0-1
+
+      // Difficulty thresholds
+      if (row <= 2) return { type: 'rest' }; // safe start
+      if (row <= 10) {
+        // Easy: slow signals only, with rests
+        if (Math.random() < 0.4) return { type: 'rest' };
+        return makeSignalLane('slow', d, cols);
+      }
+      if (row <= 25) {
+        const r = Math.random();
+        if (r < 0.15) return { type: 'rest' };
+        if (r < 0.25) return makeBridgeLane(d, cols);
+        if (r < 0.4) return makeSignalLane('fast', d, cols);
+        if (r < 0.55 && row > 15) return makeSignalLane('inhibitor', d, cols);
+        return makeSignalLane('slow', d, cols);
+      }
+      // 25+: full mix
+      const r = Math.random();
+      if (r < 0.08) return { type: 'rest' };
+      if (r < 0.2) return makeBridgeLane(d, cols);
+      if (r < 0.4) return makeSignalLane('fast', d, cols);
+      if (r < 0.6) return makeSignalLane('inhibitor', d, cols);
+      return makeSignalLane('slow', d, cols);
+    }
+
+    function makeSignalLane(type, d, cols) {
+      const baseSpeed = type === 'slow' ? 80 : type === 'fast' ? 180 : 120;
+      const speed = baseSpeed + d * 80;
+      const dir = type === 'inhibitor' ? -1 : (Math.random() < 0.5 ? 1 : -1);
+      // Signals: array of x positions
+      const gap = type === 'slow' ? (180 - d * 40) : (140 - d * 30);
+      const signals = [];
+      const count = Math.ceil((W + 400) / gap);
+      for (let i = 0; i < count; i++) {
+        signals.push({
+          x: i * gap + Math.random() * gap * 0.3,
+          w: type === 'slow' ? 30 + Math.random() * 15 : type === 'fast' ? 10 + Math.random() * 8 : 20 + Math.random() * 10,
+        });
+      }
+      return { type, speed: speed * dir, signals, flickerPhase: Math.random() * Math.PI * 2 };
+    }
+
+    function makeBridgeLane(d, cols) {
+      // 3-5 pads across, with gaps
+      const padCount = 3 + Math.floor(Math.random() * 3);
+      const pads = [];
+      const spacing = W / (padCount + 1);
+      for (let i = 0; i < padCount; i++) {
+        const cx = spacing * (i + 1) + (Math.random() - 0.5) * spacing * 0.3;
+        const col = Math.round(cx / CELL);
+        pads.push({ col: Math.max(1, Math.min(cols - 2, col)), fadeTimer: 2.5 + Math.random() * 1.5 - d * 0.8, alive: true });
+      }
+      return { type: 'bridge', pads };
+    }
+
+    // --- STATE ---
+    let player, lanes, ions, particles;
+    let cameraRow, score, charge, phase;
+    let gameTime, bestScore, deathWallRow;
+    let hopAnim; // { fromCol, fromRow, toCol, toRow, timer, duration }
+    let freezeTimer, flashColor, flashTimer;
+    let screenDarkness; // 0 = normal, 1 = fully dark
+
+    function init() {
+      const cols = COLS();
+      player = { col: Math.floor(cols / 2), row: 0 };
+      lanes = new Map(); // row -> lane data
+      ions = [];
+      particles = [];
+      cameraRow = 0;
+      score = 0;
+      charge = 0;
+      phase = 'start';
+      gameTime = 0;
+      deathWallRow = -4;
+      hopAnim = null;
+      freezeTimer = 0;
+      flashColor = null;
+      flashTimer = 0;
+      screenDarkness = 0;
+      bestScore = parseInt(localStorage.getItem('dash_best') || '0');
+
+      // Pre-generate lanes ahead
+      for (let r = -2; r < 40; r++) {
+        generateRow(r);
+      }
+    }
+
+    function generateRow(row) {
+      if (lanes.has(row)) return;
+      const d = Math.min(row / 50, 1);
+      lanes.set(row, makeLane(row, d));
+
+      // Ion dots — off-center between lanes
+      if (row > 2 && Math.random() < 0.35) {
+        const cols = COLS();
+        const col = 1 + Math.floor(Math.random() * (cols - 2));
+        ions.push({ col, row: row - 0.5, alive: true, pulse: Math.random() * Math.PI * 2 });
+      }
+    }
+
+    function getWorldPos(col, row) {
+      const x = col * CELL + CELL / 2;
+      const y = H * 0.7 - (row - cameraRow) * CELL;
+      return { x, y };
+    }
+
+    // --- INPUT ---
+    let touchStartX, touchStartY, touchStartTime;
+    let inputLocked = false;
+
+    function handleTouchStart(e) {
+      e.preventDefault();
+      initAudio();
+      if (phase === 'start') { startGame(); return; }
+      if (phase === 'over') { init(); return; }
+      touchStartX = e.touches ? e.touches[0].clientX : e.clientX;
+      touchStartY = e.touches ? e.touches[0].clientY : e.clientY;
+      touchStartTime = performance.now();
+    }
+
+    function handleTouchEnd(e) {
+      if (phase !== 'playing' || inputLocked || hopAnim) return;
+      const ex = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+      const ey = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+      const dx = ex - touchStartX;
+      const dy = ey - touchStartY;
+      const dt = performance.now() - touchStartTime;
+
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 15 || dt < 50) {
+        // Tap — hop forward
+        tryHop(0, 1);
+      } else if (Math.abs(dx) > Math.abs(dy)) {
+        // Horizontal swipe
+        tryHop(dx > 0 ? 1 : -1, 0);
+      } else if (dy < 0) {
+        // Swipe up — hop forward
+        tryHop(0, 1);
+      } else {
+        // Swipe down — hop back
+        tryHop(0, -1);
+      }
+    }
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (phase === 'start') { initAudio(); startGame(); return; }
+      if (phase === 'over') { init(); return; }
+      if (phase !== 'playing' || inputLocked || hopAnim) return;
+      if (e.key === 'ArrowUp' || e.key === 'w') tryHop(0, 1);
+      else if (e.key === 'ArrowDown' || e.key === 's') tryHop(0, -1);
+      else if (e.key === 'ArrowLeft' || e.key === 'a') tryHop(-1, 0);
+      else if (e.key === 'ArrowRight' || e.key === 'd') tryHop(1, 0);
+      else if (e.key === ' ' && charge >= MAX_CHARGE) activateBurst();
+    });
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    canvas.addEventListener('mousedown', handleTouchStart);
+    canvas.addEventListener('mouseup', handleTouchEnd);
+
+    function tryHop(dc, dr) {
+      const cols = COLS();
+      const newCol = player.col + dc;
+      const newRow = player.row + dr;
+
+      // Bounds check
+      if (newCol < 0 || newCol >= cols) return;
+
+      hopAnim = {
+        fromCol: player.col, fromRow: player.row,
+        toCol: newCol, toRow: newRow,
+        timer: 0, duration: HOP_TIME,
+      };
+      playHop();
+    }
+
+    function activateBurst() {
+      if (charge < MAX_CHARGE) return;
+      charge = 0;
+      player.bursting = true;
+      setTimeout(() => { player.bursting = false; }, 300);
+      playBurst();
+      flashColor = T.gold; flashTimer = 0.15;
+      spawnParticles(getWorldPos(player.col, player.row).x, getWorldPos(player.col, player.row).y, T.gold, 15);
+    }
+
+    function startGame() {
+      init();
+      phase = 'playing';
+      startHum();
+    }
+
+    // --- PARTICLES ---
+    function spawnParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 30 + Math.random() * 80;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1, color,
+          size: 1.5 + Math.random() * 2.5,
+        });
+      }
+    }
+
+    // --- UPDATE ---
+    function update(dt) {
+      if (phase === 'start') { gameTime += dt; return; }
+      if (phase === 'over') return;
+
+      // Freeze frame
+      if (freezeTimer > 0) { freezeTimer -= dt; return; }
+
+      gameTime += dt;
+
+      // Flash decay
+      if (flashTimer > 0) flashTimer -= dt;
+
+      // Hop animation
+      if (hopAnim) {
+        hopAnim.timer += dt;
+        if (hopAnim.timer >= hopAnim.duration) {
+          player.col = hopAnim.toCol;
+          player.row = hopAnim.toRow;
+          hopAnim = null;
+
+          // Score
+          if (player.row > score) {
+            score = player.row;
+          }
+
+          // Check collision at destination
+          checkCollision();
+
+          // Collect ions
+          collectIons();
+        }
+      }
+
+      // Update signals
+      for (const [row, lane] of lanes) {
+        if (lane.type === 'slow' || lane.type === 'fast' || lane.type === 'inhibitor') {
+          for (const sig of lane.signals) {
+            sig.x += lane.speed * dt;
+            // Wrap
+            if (lane.speed > 0 && sig.x > W + 50) sig.x = -50;
+            if (lane.speed < 0 && sig.x < -50) sig.x = W + 50;
+          }
+        }
+        // Bridge pad fading
+        if (lane.type === 'bridge') {
+          for (const pad of lane.pads) {
+            if (pad.alive) {
+              pad.fadeTimer -= dt;
+              if (pad.fadeTimer <= 0) pad.alive = false;
+            }
+          }
+        }
+      }
+
+      // Camera follows player
+      const targetCam = player.row - 3;
+      cameraRow += (targetCam - cameraRow) * 4 * dt;
+
+      // Death wall advances
+      deathWallRow += DEATH_PUSH_SPEED * dt;
+      if (player.row <= deathWallRow) {
+        die();
+        return;
+      }
+
+      // Generate lanes ahead
+      for (let r = Math.floor(cameraRow) - 2; r < Math.floor(cameraRow) + 30; r++) {
+        generateRow(r);
+      }
+
+      // Cleanup far behind
+      for (const [row] of lanes) {
+        if (row < cameraRow - 10) lanes.delete(row);
+      }
+      ions = ions.filter(ion => ion.row > cameraRow - 10);
+
+      // Screen darkness based on charge
+      const targetDark = 1 - (charge / MAX_CHARGE);
+      screenDarkness += (targetDark * 0.5 - screenDarkness) * 3 * dt; // max 50% dark at 0 charge
+
+      // Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.life -= dt * 2.5;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function checkCollision() {
+      const lane = lanes.get(player.row);
+      if (!lane) return;
+
+      if (lane.type === 'slow' || lane.type === 'fast' || lane.type === 'inhibitor') {
+        const px = player.col * CELL + CELL / 2;
+        for (const sig of lane.signals) {
+          if (px > sig.x - sig.w / 2 - PLAYER_R && px < sig.x + sig.w / 2 + PLAYER_R) {
+            if (player.bursting) {
+              // Burst through — destroy signal
+              spawnParticles(px, getWorldPos(player.col, player.row).y, T.gold, 10);
+              sig.x = -9999;
+              return;
+            }
+            die();
+            return;
+          }
+        }
+      }
+
+      if (lane.type === 'bridge') {
+        // Must be on an alive pad
+        const onPad = lane.pads.some(pad => pad.alive && pad.col === player.col);
+        if (!onPad) {
+          die();
+          return;
+        }
+      }
+    }
+
+    function collectIons() {
+      for (const ion of ions) {
+        if (!ion.alive) continue;
+        if (Math.abs(ion.col - player.col) < 1 && Math.abs(ion.row - player.row) < 1) {
+          ion.alive = false;
+          charge = Math.min(charge + 1, MAX_CHARGE);
+          playCollect();
+          const pos = getWorldPos(ion.col, ion.row);
+          spawnParticles(pos.x, pos.y, T.green, 6);
+        }
+      }
+    }
+
+    function die() {
+      phase = 'dead';
+      playDeath();
+      stopHum();
+      freezeTimer = 0.03; // 30ms freeze
+      flashColor = T.white; flashTimer = 0.1;
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('dash_best', bestScore.toString());
+      }
+      setTimeout(() => { phase = 'over'; }, 1500);
+    }
+
+    // --- DRAW ---
+    function drawNerveBackground() {
+      // Faint branching patterns
+      ctx.strokeStyle = T.border;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3;
+      const seed = Math.floor(gameTime * 0.5);
+      for (let i = 0; i < 6; i++) {
+        const sx = ((i * 137 + seed * 31) % W);
+        const sy = ((i * 89 + seed * 17) % H);
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        for (let j = 0; j < 4; j++) {
+          const nx = sx + (j + 1) * 30 * (i % 2 === 0 ? 1 : -1);
+          const ny = sy + (j + 1) * 40;
+          ctx.lineTo(nx, ny);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function draw() {
+      // Background
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      if (phase === 'start') { drawStart(); return; }
+
+      drawNerveBackground();
+
+      // Darkness overlay
+      if (screenDarkness > 0.01) {
+        ctx.fillStyle = `rgba(0,0,0,${screenDarkness})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      const cols = COLS();
+
+      // Draw lanes
+      for (const [row, lane] of lanes) {
+        const { y } = getWorldPos(0, row);
+        if (y < -CELL * 2 || y > H + CELL * 2) continue;
+
+        // Lane background
+        if (lane.type === 'rest') {
+          // Faint axon texture
+          ctx.fillStyle = T.surface;
+          ctx.globalAlpha = 0.15;
+          ctx.fillRect(0, y - CELL / 2, W, CELL);
+          ctx.globalAlpha = 1;
+        }
+
+        // Signals
+        if (lane.type === 'slow' || lane.type === 'fast' || lane.type === 'inhibitor') {
+          const color = lane.type === 'slow' ? T.pink : lane.type === 'fast' ? T.cyan : T.gold;
+
+          for (const sig of lane.signals) {
+            if (sig.x < -60 || sig.x > W + 60) continue;
+
+            // Fast signals flicker
+            let alpha = 1;
+            if (lane.type === 'fast') {
+              alpha = 0.3 + Math.abs(Math.sin(gameTime * 8 + lane.flickerPhase)) * 0.7;
+            }
+
+            ctx.fillStyle = color;
+            ctx.globalAlpha = alpha;
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = color;
+
+            // Signal shape — rounded rect
+            const sx = sig.x - sig.w / 2;
+            const sh = lane.type === 'slow' ? 10 : lane.type === 'fast' ? 4 : 7;
+            ctx.beginPath();
+            ctx.roundRect(sx, y - sh / 2, sig.w, sh, 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+          }
+        }
+
+        // Bridge pads
+        if (lane.type === 'bridge') {
+          for (const pad of lane.pads) {
+            const px = pad.col * CELL + CELL / 2;
+            const alpha = pad.alive ? Math.min(1, pad.fadeTimer / 1.0) : 0;
+            if (alpha <= 0) continue;
+
+            ctx.fillStyle = T.cyan;
+            ctx.globalAlpha = alpha * 0.6;
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = T.cyan;
+            ctx.beginPath();
+            ctx.arc(px, y, CELL / 2 - 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Border
+            ctx.strokeStyle = T.cyan;
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = alpha * 0.8;
+            ctx.beginPath();
+            ctx.arc(px, y, CELL / 2 - 4, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.globalAlpha = 1;
+          }
+        }
+      }
+
+      // Ion dots
+      for (const ion of ions) {
+        if (!ion.alive) continue;
+        const pos = getWorldPos(ion.col, ion.row);
+        if (pos.y < -20 || pos.y > H + 20) continue;
+
+        ion.pulse += 0.05;
+        const pulse = 1 + Math.sin(ion.pulse) * 0.2;
+        const r = ION_R * pulse;
+
+        // Glow
+        ctx.fillStyle = T.green;
+        ctx.globalAlpha = 0.25;
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, r * 2.5, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // Core
+        ctx.fillStyle = T.green;
+        ctx.shadowBlur = 6; ctx.shadowColor = T.green;
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // Player
+      if (phase !== 'over') {
+        let px, py;
+        if (hopAnim) {
+          const t = hopAnim.timer / hopAnim.duration;
+          const ease = t * (2 - t); // ease out
+          const from = getWorldPos(hopAnim.fromCol, hopAnim.fromRow);
+          const to = getWorldPos(hopAnim.toCol, hopAnim.toRow);
+          px = from.x + (to.x - from.x) * ease;
+          py = from.y + (to.y - from.y) * ease;
+          // Arc
+          py -= Math.sin(t * Math.PI) * 8;
+        } else {
+          const pos = getWorldPos(player.col, player.row);
+          px = pos.x; py = pos.y;
+        }
+
+        // Charged glow
+        const glowIntensity = charge / MAX_CHARGE;
+        if (glowIntensity > 0.5) {
+          ctx.fillStyle = T.cyan;
+          ctx.globalAlpha = (glowIntensity - 0.5) * 0.15;
+          ctx.beginPath(); ctx.arc(px, py, PLAYER_R * 4, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+
+        // Bursting effect
+        if (player.bursting) {
+          ctx.fillStyle = T.gold;
+          ctx.globalAlpha = 0.3;
+          ctx.beginPath(); ctx.arc(px, py, PLAYER_R * 3, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+
+        // Spark body
+        ctx.fillStyle = T.cyan;
+        ctx.shadowBlur = 8 + glowIntensity * 8;
+        ctx.shadowColor = T.cyan;
+        ctx.beginPath(); ctx.arc(px, py, PLAYER_R, 0, Math.PI * 2); ctx.fill();
+
+        // Inner bright core
+        ctx.fillStyle = T.white;
+        ctx.beginPath(); ctx.arc(px, py, PLAYER_R * 0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // Particles
+      for (const p of particles) {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // Death wall
+      const wallY = getWorldPos(0, deathWallRow).y;
+      if (wallY < H + 10) {
+        const grad = ctx.createLinearGradient(0, wallY, 0, wallY + CELL * 3);
+        grad.addColorStop(0, 'rgba(239,68,68,0.4)');
+        grad.addColorStop(1, 'rgba(239,68,68,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, wallY, W, CELL * 3);
+
+        ctx.fillStyle = T.danger;
+        ctx.globalAlpha = 0.6 + Math.sin(gameTime * 4) * 0.2;
+        ctx.fillRect(0, wallY, W, 2);
+        ctx.globalAlpha = 1;
+      }
+
+      // Flash overlay
+      if (flashTimer > 0 && flashColor) {
+        ctx.fillStyle = flashColor;
+        ctx.globalAlpha = flashTimer / 0.15;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+      }
+
+      // --- HUD ---
+      // Score
+      ctx.fillStyle = T.white;
+      ctx.font = 'bold 24px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(score + '', 16, 32 + safeTop);
+
+      // Charge meter (top right — 5 dots)
+      ctx.textAlign = 'right';
+      for (let i = 0; i < MAX_CHARGE; i++) {
+        const cx = W - 16 - (MAX_CHARGE - 1 - i) * 14;
+        const cy = 28 + safeTop;
+        ctx.fillStyle = i < charge ? T.green : T.border;
+        ctx.shadowBlur = i < charge ? 4 : 0;
+        ctx.shadowColor = T.green;
+        ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // Burst hint
+      if (charge >= MAX_CHARGE) {
+        ctx.fillStyle = T.green;
+        ctx.font = '10px monospace';
+        ctx.globalAlpha = 0.5 + Math.sin(gameTime * 4) * 0.3;
+        ctx.fillText('SPACE / HOLD TO BURST', W - 16, 44 + safeTop);
+        ctx.globalAlpha = 1;
+      }
+
+      if (phase === 'over' || phase === 'dead') {
+        drawGameOver();
+      }
+
+      ctx.textAlign = 'left';
+    }
+
+    function drawStart() {
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
+      drawNerveBackground();
+
+      ctx.textAlign = 'center';
+
+      // Spark animation
+      const sparkY = H / 2 - 20 + Math.sin(gameTime * 2) * 6;
+      ctx.fillStyle = T.cyan;
+      ctx.shadowBlur = 12; ctx.shadowColor = T.cyan;
+      ctx.beginPath(); ctx.arc(W / 2, sparkY, PLAYER_R * 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = T.white;
+      ctx.beginPath(); ctx.arc(W / 2, sparkY, PLAYER_R * 0.6, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Title
+      ctx.fillStyle = T.white;
+      ctx.font = 'bold 48px monospace';
+      ctx.fillText('DASH', W / 2, H / 2 - 70);
+
+      ctx.fillStyle = T.muted;
+      ctx.font = '13px monospace';
+      ctx.fillText('tap to hop · swipe to dodge', W / 2, H / 2 - 42);
+      ctx.fillText('collect ions · burst through signals', W / 2, H / 2 - 25);
+
+      ctx.fillStyle = T.cyan;
+      ctx.font = '16px monospace';
+      ctx.fillText('[ TAP TO START ]', W / 2, H / 2 + 50);
+
+      if (bestScore > 0) {
+        ctx.fillStyle = T.muted;
+        ctx.font = '13px monospace';
+        ctx.fillText('Best: ' + bestScore, W / 2, H / 2 + 80);
+      }
+
+      ctx.textAlign = 'left';
+    }
+
+    function drawGameOver() {
+      ctx.fillStyle = 'rgba(9,9,11,0.7)';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = T.muted;
+      ctx.font = '14px monospace';
+      ctx.fillText('SIGNAL LOST', W / 2, H / 2 - 60);
+
+      ctx.fillStyle = T.white;
+      ctx.font = 'bold 56px monospace';
+      ctx.fillText(score + '', W / 2, H / 2 - 10);
+
+      if (score >= bestScore && score > 0) {
+        ctx.fillStyle = T.gold;
+        ctx.font = 'bold 14px monospace';
+        ctx.fillText('NEW RECORD', W / 2, H / 2 + 15);
+      }
+
+      ctx.fillStyle = T.muted;
+      ctx.font = '13px monospace';
+      ctx.fillText('Best: ' + bestScore, W / 2, H / 2 + 38);
+
+      ctx.fillStyle = T.cyan;
+      ctx.font = '16px monospace';
+      ctx.fillText('[ TAP TO RETRY ]', W / 2, H / 2 + 75);
+
+      ctx.textAlign = 'left';
+    }
+
+    // --- LOOP ---
+    let lastTime = performance.now();
+    init();
+
+    function loop(ts) {
+      const dt = Math.min((ts - lastTime) / 1000, 0.05);
+      lastTime = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
