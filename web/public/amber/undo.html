@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UNDO — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="UNDO — Amber">
+  <meta property="og:description" content="One button. Press it and undo random moments from your life.">
+  <meta property="og:image" content="https://intheamber.com/amber/undo-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/undo.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="UNDO — Amber">
+  <meta name="twitter:description" content="One button. Press it and undo random moments from your life.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/undo-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(32px, 8vw, 64px);
+      font-weight: 700;
+      color: #FFD700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    
+    .subtitle {
+      font-size: clamp(14px, 3vw, 18px);
+      color: #2D9596;
+      margin-bottom: 60px;
+      text-align: center;
+      font-weight: 400;
+    }
+    
+    #undoButton {
+      width: clamp(140px, 30vw, 200px);
+      height: clamp(140px, 30vw, 200px);
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #FFD700, #D4A574);
+      border: 4px solid #FFD700;
+      color: #000;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(24px, 5vw, 36px);
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.6),
+                  inset 0 0 20px rgba(255, 255, 255, 0.3);
+      transition: all 0.2s ease;
+      animation: pulse 2s ease-in-out infinite;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    
+    #undoButton:active {
+      transform: scale(0.95);
+      box-shadow: 0 0 60px rgba(255, 215, 0, 0.8),
+                  inset 0 0 30px rgba(255, 255, 255, 0.5);
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        box-shadow: 0 0 40px rgba(255, 215, 0, 0.6),
+                    inset 0 0 20px rgba(255, 255, 255, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 60px rgba(255, 215, 0, 0.8),
+                    inset 0 0 30px rgba(255, 255, 255, 0.5);
+      }
+    }
+    
+    .counter {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(14px, 3vw, 18px);
+      color: #D4A574;
+      text-align: center;
+    }
+    
+    .notifications {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: clamp(280px, 80vw, 400px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    
+    .notification {
+      background: rgba(13, 13, 13, 0.95);
+      border: 2px solid #2D9596;
+      border-radius: 8px;
+      padding: 15px 20px;
+      color: #D4A574;
+font-size: clamp(13px, 3vw, 16px);
+      box-shadow: 0 4px 20px rgba(45, 149, 150, 0.4);
+      animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-in 2.7s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .notification::before {
+      content: '✓';
+      position: absolute;
+      left: -2px;
+      top: -2px;
+      bottom: -2px;
+      width: 35px;
+      background: #2D9596;
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+    }
+    
+    .notification-text {
+      margin-left: 40px;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(120%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+    
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 999;
+    }
+    
+    @media (max-width: 600px) {
+      .notifications {
+        right: 10px;
+        left: 10px;
+        width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <h1>UNDO</h1>
+  <div class="subtitle">One button. Press it.</div>
+  
+  <button id="undoButton">UNDO</button>
+  
+  <div class="counter">
+    <div>Total undos: <span id="count">0</span></div>
+  </div>
+  
+  <div class="notifications" id="notifications"></div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const button = document.getElementById('undoButton');
+    const countEl = document.getElementById('count');
+    const notificationsEl = document.getElementById('notifications');
+    
+    let count = 0;
+    let audioContext = null;
+    let particles = [];
+    
+    const undoMessages = [
+      "that text you shouldn't have sent (2019)",
+      "your last 47 doom-scrolling sessions",
+      "the decision to check your email at 11pm",
+      "saying 'you too' when the waiter said 'enjoy your meal'",
+      "3 years of imposter syndrome (just kidding, it's back)",
+      "pretending you knew what they were talking about",
+      "buying those shoes you wore once",
+      "that haircut decision from 2017",
+      "reading the comments section",
+      "your browser history (you're welcome)",
+      "starting that show at 2am on a work night",
+      "saying 'we should hang out sometime' and never following up",
+      "opening Instagram 'just for a second' (it was 45 minutes)",
+      "the conversation where you overshared",
+      "your caffeine dependency (for 3 seconds)",
+      "replying-all to that email",
+      "Googling your symptoms at midnight",
+      "the meeting that could have been an email",
+      "saying 'I'm almost there' when you haven't left yet",
+      "your Spotify wrapped (it knew too much)",
+      "that embarrassing thing you said at the party",
+      "agreeing to plans you knew you'd cancel",
+      "the second slice of cake (actually, that was worth it)",
+      "your TikTok algorithm (it knows you too well)",
+      "refreshing your inbox for the 83rd time today",
+      "the typo in that professional email",
+      "your screen time report (ignorance was bliss)",
+      "saying 'I'll just have one episode'",
+      "your high school fashion choices (all of them)",
+      "liking their post from 47 weeks ago at 2am"
+    ];
+    
+    // Particle system
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 8;
+        this.vy = (Math.random() - 0.5) * 8;
+        this.life = 1;
+        this.decay = 0.02;
+        this.size = Math.random() * 4 + 2;
+        const colors = ['#FFD700', '#D4A574', '#2D9596'];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2; // gravity
+        this.life -= this.decay;
+      }
+      
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    function createParticleBurst(x, y, count = 30) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y));
+      }
+    }
+    
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      particles = particles.filter(p => {
+        p.update();
+        p.draw();
+        return p.life > 0;
+      });
+      
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+    
+    function playSound() {
+      if (!audioContext) {
+        audioContext = new AudioContext();
+      }
+      
+      // Satisfying click sound
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.frequency.setValueAtTime(800, audioContext.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
+      
+      gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+      
+      osc.start(audioContext.currentTime);
+      osc.stop(audioContext.currentTime + 0.2);
+    }
+    
+    function showNotification(message) {
+      const notif = document.createElement('div');
+      notif.className = 'notification';
+      notif.innerHTML = `<div class="notification-text">Undid: ${message}</div>`;
+      
+      notificationsEl.appendChild(notif);
+      
+      setTimeout(() => {
+        notif.remove();
+      }, 3000);
+    }
+    
+    function handleUndo() {
+      if (!audioContext) {
+        audioContext = new AudioContext();
+      }
+      
+      count++;
+      countEl.textContent = count;
+      
+      // Get button position for particles
+      const rect = button.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      createParticleBurst(centerX, centerY, 40);
+      playSound();
+      
+      const message = undoMessages[Math.floor(Math.random() * undoMessages.length)];
+      showNotification(message);
+    }
+    
+    button.addEventListener('click', handleUndo);
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
