@@ -54,13 +54,13 @@ function VoiceInner({ agent, onSwitch }: { agent: AgentDef; onSwitch: () => void
       setTranscript(prev => {
         const lastEntry = prev[prev.length - 1];
         if (lastEntry?.role === 'user' && lastEntry.text === last.message.content) return prev;
-        return [...prev, { role: 'user', text: last.message.content }];
+        return [...prev, { role: 'user' as const, text: last.message.content ?? '' }];
       });
     } else if (last.type === 'assistant_message' && last.message?.content) {
       setTranscript(prev => {
         const lastEntry = prev[prev.length - 1];
         if (lastEntry?.role === 'assistant' && lastEntry.text === last.message.content) return prev;
-        return [...prev, { role: 'assistant', text: last.message.content }];
+        return [...prev, { role: 'assistant' as const, text: last.message.content ?? '' }];
       });
     }
   }, [messages]);
