@@ -45,6 +45,8 @@ const nextConfig = {
         { source: '/amber/junk-drawer', destination: '/amber/junk-drawer/index.html' },
         // JEPA Flappy Bird AI demo
         { source: '/pixelpit/jepa-flappy', destination: '/pixelpit/jepa-flappy/index.html' },
+        // JEPA Game Engine demo
+        { source: '/pixelpit/jepa-engine', destination: '/pixelpit/jepa-engine/index.html' },
       ],
     }
   },

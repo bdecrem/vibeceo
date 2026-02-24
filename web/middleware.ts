@@ -203,6 +203,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // Pixelpit games/demos at /pixelpit/*
+    if (pathname.startsWith('/pixelpit')) {
+      return NextResponse.next()
+    }
+
     // Rewrite all other paths to /kochi/* (e.g., /peel -> /kochi/peel)
     const newUrl = new URL(`/kochi${pathname}`, request.url)
     log(`[Middleware] Kochi domain rewrite ${pathname} -> ${newUrl.pathname}`)
