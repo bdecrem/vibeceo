@@ -7,6 +7,7 @@
  * For Amber: Falls back to chat completions (separate machine).
  */
 import { NextRequest } from 'next/server';
+import { checkAuth } from '../../auth-guard';
 import { existsSync, appendFileSync, writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { execSync } from 'child_process';
 import { join } from 'path';
@@ -267,6 +268,9 @@ async function sendViaChatCompletions(agent: typeof AGENTS.mave, message: string
 
 export async function POST(request: NextRequest) {
   const t0 = Date.now();
+
+  const authError = checkAuth(request);
+  if (authError) return authError;
 
   try {
     const body = await request.json();

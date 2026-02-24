@@ -6,6 +6,7 @@
  * Response: audio/mpeg binary (mp3)
  */
 import { NextRequest } from 'next/server';
+import { checkAuth } from '../auth-guard';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -18,6 +19,9 @@ const AGENT_VOICES: Record<string, { provider: string; name: string }> = {
 };
 
 export async function POST(request: NextRequest) {
+  const authError = checkAuth(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     const text = body.text;
