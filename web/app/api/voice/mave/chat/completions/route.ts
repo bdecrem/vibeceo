@@ -3,9 +3,13 @@
  * Routes through OpenClaw with full tool access.
  */
 import { NextRequest } from 'next/server';
+import { existsSync, appendFileSync, writeFileSync, mkdirSync } from 'fs';
+import { join } from 'path';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
+
+const WORKSPACE = join(process.env.HOME || '/Users/bart', '.openclaw/workspace');
 
 const AGENT = {
   url: 'http://localhost:18789',
@@ -80,6 +84,21 @@ export async function POST(request: NextRequest) {
     const data = await resp.json();
     const content = data.choices?.[0]?.message?.content || '...';
     console.log(`[voice-clm] ${AGENT.name} done (${Date.now() - t0}ms): ${content.slice(0, 80)}`);
+
+    // Log to daily memory so main session can see voice exchanges
+    if (lastUser?.content && content !== '...') {
+      try {
+        const now = new Date();
+        const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+        const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles' });
+        const entry = `\n### Voice Chat — Mave (${time})\n- **Bart:** ${lastUser.content}\n- **Mave:** ${content}\n`;
+        const memDir = join(WORKSPACE, 'memory');
+        mkdirSync(memDir, { recursive: true });
+        const memFile = join(memDir, `${date}.md`);
+        if (existsSync(memFile)) appendFileSync(memFile, entry);
+        else writeFileSync(memFile, `# ${date}\n${entry}`);
+      } catch (e) { console.error('[voice-clm] log error:', e); }
+    }
 
     return new Response(wantsStream ? sse(content) : nonStream(content), {
       headers: { 'Content-Type': wantsStream ? 'text/event-stream' : 'application/json', 'Cache-Control': 'no-cache' },
