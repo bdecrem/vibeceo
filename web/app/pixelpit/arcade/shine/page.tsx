@@ -1224,7 +1224,6 @@ export default function ShineGame() {
               tap gems on the beat<br />build combos for multipliers<br />missed gems cost time
             </p>
             <button onClick={startGame} style={{ background: T.gold, color: COLORS.bg, border: 'none', padding: '16px 50px', fontSize: 16, fontFamily: 'ui-monospace, monospace', fontWeight: 600, cursor: 'pointer', borderRadius: 8, letterSpacing: 2, boxShadow: `0 8px 30px rgba(255,215,0,0.3)` }}>play</button>
-            <button onClick={startTutorial} style={{ background: 'transparent', border: `1px solid ${T.muted}`, color: T.muted, padding: '10px 30px', fontSize: 12, fontFamily: 'ui-monospace, monospace', cursor: 'pointer', borderRadius: 6, letterSpacing: 2, marginTop: 12 }}>tutorial</button>
           </div>
           <div style={{ marginTop: 30, fontSize: 12, fontFamily: 'ui-monospace, monospace', letterSpacing: 3 }}>
             <span style={{ color: T.gold }}>pixel</span><span style={{ color: T.teal }}>pit</span><span style={{ color: COLORS.text, opacity: 0.4 }}> arcade</span>
