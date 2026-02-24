@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
         model: 'openclaw:main',
         messages: [voiceHint, ...messages],
         stream: false,
-        user: AGENT.sessionUser,
+        // No user field — routes to main session (same as Discord/WhatsApp)
       }),
     });
 

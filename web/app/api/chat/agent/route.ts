@@ -81,10 +81,10 @@ export async function POST(request: NextRequest) {
         'x-openclaw-agent-id': agent.agentId,
       },
       body: JSON.stringify({
-        model: 'openclaw:main',  // let the gateway route to its configured model
+        model: 'openclaw:main',
         messages,
         stream: false,
-        user: `crash-app-${agentName}`, // stable session key
+        // No user field — routes to the main agent session (same as Discord/WhatsApp)
       }),
     });
 
