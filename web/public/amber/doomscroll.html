@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DOOMSCROLL — "Just one quick check"</title>
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="DOOMSCROLL — Just one quick check">
+  <meta property="og:description" content="8-bit pixel art: You opened your phone at 2pm. It's 7pm now.">
+  <meta property="og:image" content="https://intheamber.com/amber/doomscroll-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/doomscroll.html">
+  <meta property="og:type" content="website">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DOOMSCROLL — Just one quick check">
+  <meta name="twitter:description" content="8-bit pixel art: You opened your phone at 2pm. It's 7pm now.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/doomscroll-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      color: #D4A574;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    #container {
+      text-align: center;
+      padding: 20px;
+      max-width: 100%;
+    }
+
+    canvas {
+      border: 3px solid #D4A574;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      max-width: 100%;
+      height: auto;
+      cursor: pointer;
+    }
+
+    h1 {
+      font-size: clamp(18px, 5vw, 24px);
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+      color: #FFD700;
+    }
+
+    .subtitle {
+      font-size: clamp(12px, 3vw, 14px);
+      color: #2D9596;
+      margin-bottom: 20px;
+    }
+
+    .stats {
+      margin-top: 15px;
+      font-size: clamp(11px, 2.5vw, 13px);
+      color: #D4A574;
+      line-height: 1.6;
+    }
+
+    .instruction {
+      margin-top: 10px;
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: #7B68EE;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 480px) {
+      #container {
+        padding: 10px;
+      }
+      canvas {
+        border: 2px solid #D4A574;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h1>DOOMSCROLL</h1>
+    <div class="subtitle">"Just one quick check"</div>
+    <canvas id="canvas" width="320" height="240"></canvas>
+    <div class="stats">
+      <div>TIME: <span id="time">2:00 PM</span></div>
+      <div>SCROLLS: <span id="scrolls">0</span></div>
+      <div>HOURS WASTED: <span id="hours">0.0</span></div>
+    </div>
+    <div class="instruction">TAP THE SCREEN TO SCROLL</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const timeEl = document.getElementById('time');
+    const scrollsEl = document.getElementById('scrolls');
+    const hoursEl = document.getElementById('hours');
+
+    // Audio context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Game state
+    let startHour = 14; // 2pm
+    let currentMinute = 0;
+    let scrollCount = 0;
+    let hoursWasted = 0;
+    let phoneContent = 0; // Scroll position on phone
+
+    // Colors (8-bit palette)
+    const COLORS = {
+      bg: '#0D0D0D',
+      wall: '#2A2A2A',
+      window: '#87CEEB', // Day sky
+      character: '#D4A574', // Amber
+      phone: '#1A1A1A',
+      phoneScreen: '#2D9596', // Teal
+      clock: '#FFD700', // Gold
+      furniture: '#4A4A4A',
+      text: '#FFFFFF'
+    };
+
+    function drawPixel(x, y, size, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * size, y * size, size, size);
+    }
+
+    function drawRect(x, y, w, h, size, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * size, y * size, w * size, h * size);
+    }
+
+    function getWindowColor() {
+      const totalMinutes = (currentMinute / 60) * 5; // Each scroll = 5 minutes
+      const hour = startHour + totalMinutes / 60;
+      
+      if (hour < 16) return '#87CEEB'; // Day - blue
+      if (hour < 18) return '#FFA500'; // Sunset - orange
+      if (hour < 19) return '#FF6347'; // Late sunset - red
+      if (hour < 20) return '#4B0082'; // Dusk - purple
+      return '#0A0A0A'; // Night - black
+    }
+
+    function getTimeString() {
+      const totalMinutes = (scrollCount * 5);
+      const hour = startHour + Math.floor(totalMinutes / 60);
+      const minute = totalMinutes % 60;
+      const displayHour = hour > 12 ? hour - 12 : hour;
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      return `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm}`;
+    }
+
+    function draw() {
+      const pixelSize = 4;
+
+      // Clear
+      ctx.fillStyle = COLORS.bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Room background (wall)
+      drawRect(0, 0, 80, 60, pixelSize, COLORS.wall);
+
+      // Window (showing time of day)
+      const windowColor = getWindowColor();
+      drawRect(5, 5, 15, 12, pixelSize, windowColor);
+      // Window frame
+      ctx.strokeStyle = COLORS.furniture;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(5 * pixelSize, 5 * pixelSize, 15 * pixelSize, 12 * pixelSize);
+
+      // Clock on wall
+      drawRect(55, 6, 8, 8, pixelSize, COLORS.clock);
+      // Clock hands (simple X shape)
+      drawPixel(57, 8, pixelSize, COLORS.bg);
+      drawPixel(59, 8, pixelSize, COLORS.bg);
+      drawPixel(59, 10, pixelSize, COLORS.bg);
+      drawPixel(61, 10, pixelSize, COLORS.bg);
+
+      // Bed/couch
+      drawRect(10, 35, 25, 15, pixelSize, COLORS.furniture);
+
+      // Character (stick figure lying down with phone)
+      // Head
+      drawRect(15, 38, 4, 4, pixelSize, COLORS.character);
+      // Body
+      drawRect(19, 39, 8, 3, pixelSize, COLORS.character);
+      // Arms (holding phone)
+      drawPixel(19, 42, pixelSize, COLORS.character);
+      drawPixel(20, 42, pixelSize, COLORS.character);
+      drawPixel(25, 42, pixelSize, COLORS.character);
+      drawPixel(26, 42, pixelSize, COLORS.character);
+      // Legs
+      drawPixel(27, 40, pixelSize, COLORS.character);
+      drawPixel(28, 41, pixelSize, COLORS.character);
+      drawPixel(29, 40, pixelSize, COLORS.character);
+      drawPixel(30, 41, pixelSize, COLORS.character);
+
+      // Phone (in hands)
+      drawRect(21, 43, 4, 6, pixelSize, COLORS.phone);
+      // Phone screen (scrolling content)
+      const screenOffset = (phoneContent % 3);
+      drawRect(21, 43 + screenOffset, 4, 2, pixelSize, COLORS.phoneScreen);
+      drawPixel(22, 45 + screenOffset, pixelSize, '#FFD700');
+      drawPixel(23, 46 + screenOffset, pixelSize, '#7B68EE');
+
+      // Z's if late at night
+      const hour = startHour + Math.floor((scrollCount * 5) / 60);
+      if (hour >= 22) {
+        // Floating Z's
+        drawPixel(13, 35, pixelSize, COLORS.text);
+        drawPixel(11, 33, pixelSize, COLORS.text);
+        drawPixel(10, 31, pixelSize, COLORS.text);
+      }
+
+      // Game UI - stats box
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(5 * pixelSize, 52 * pixelSize, 70 * pixelSize, 6 * pixelSize);
+      
+      // Pixel text
+      ctx.fillStyle = COLORS.text;
+      ctx.font = '12px "Courier New", monospace';
+      ctx.fillText(`TIME WASTED: ${hoursWasted.toFixed(1)} HOURS`, 6 * pixelSize, 55 * pixelSize);
+      ctx.fillText(`SCROLLS: ${scrollCount}`, 6 * pixelSize, 57 * pixelSize);
+    }
+
+    function scroll() {
+      scrollCount++;
+      phoneContent++;
+      currentMinute += 5;
+      hoursWasted = (scrollCount * 5) / 60;
+
+      // Updatestats
+      timeEl.textContent = getTimeString();
+      scrollsEl.textContent = scrollCount;
+      hoursEl.textContent = hoursWasted.toFixed(1);
+
+      // Play scroll sound (short beep)
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = 300 + (scrollCount % 10) * 20;
+      gain.gain.value = 0.05;
+      
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      osc.stop(audioCtx.currentTime + 0.05);
+
+      draw();
+    }
+
+    // Event listeners
+    canvas.addEventListener('click', scroll);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      scroll();
+    });
+
+    // Initial draw
+    draw();
+  </script>
+</body>
+</html>
