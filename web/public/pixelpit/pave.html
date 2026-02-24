@@ -109,6 +109,105 @@
     let dragActive, dragX;
     let screenShake;
 
+    // --- TUTORIAL STATE ---
+    let tutStep, tutSuccess, tutSuccessTimer, tutBounces, tutDotsCollected, tutFellThrough, tutScore;
+
+    const TUT_STEPS = [
+      {
+        name: 'BOUNCE & STEER',
+        instruction: 'DRAG TO STEER MID-AIR',
+        setup() {
+          player = { x: W / 2, y: 0, vx: 0, vy: 0 };
+          platforms = []; dots = []; particles = [];
+          cameraY = 0; tutBounces = 0; dots_count = 99;
+          // 3 solid platforms staggered left-center-right
+          platforms.push({ x: W / 2, y: 50, w: PLAT_W * 1.5, solid: true, flash: 0 });
+          platforms.push({ x: W * 0.3, y: -40, w: PLAT_W * 1.3, solid: true, flash: 0 });
+          platforms.push({ x: W * 0.7, y: -130, w: PLAT_W * 1.3, solid: true, flash: 0 });
+          platforms.push({ x: W * 0.4, y: -220, w: PLAT_W * 1.3, solid: true, flash: 0 });
+        },
+        check() { return tutBounces >= 3; },
+      },
+      {
+        name: 'COLLECT DOTS',
+        instruction: 'FLY THROUGH CYAN DOTS',
+        setup() {
+          player = { x: W / 2, y: 0, vx: 0, vy: 0 };
+          platforms = []; dots = []; particles = [];
+          cameraY = 0; tutDotsCollected = 0; dots_count = 0;
+          // platforms with dots between them
+          platforms.push({ x: W / 2, y: 50, w: PLAT_W * 1.5, solid: true, flash: 0 });
+          platforms.push({ x: W * 0.35, y: -50, w: PLAT_W * 1.3, solid: true, flash: 0 });
+          dots.push({ x: W * 0.45, y: -10, alive: true, pulse: 0 });
+          platforms.push({ x: W * 0.65, y: -150, w: PLAT_W * 1.3, solid: true, flash: 0 });
+          dots.push({ x: W * 0.5, y: -100, alive: true, pulse: 1 });
+          platforms.push({ x: W * 0.4, y: -250, w: PLAT_W * 1.3, solid: true, flash: 0 });
+          dots.push({ x: W * 0.55, y: -200, alive: true, pulse: 2 });
+        },
+        check() { return tutDotsCollected >= 3; },
+      },
+      {
+        name: 'BUILD YOUR PATH',
+        instruction: 'DOTS SOLIDIFY GHOST PLATFORMS',
+        setup() {
+          player = { x: W / 2, y: 0, vx: 0, vy: 0 };
+          platforms = []; dots = []; particles = [];
+          cameraY = 0; dots_count = 0;
+          // solid start, dot, then ghost platform
+          platforms.push({ x: W / 2, y: 50, w: PLAT_W * 1.5, solid: true, flash: 0 });
+          dots.push({ x: W / 2, y: -10, alive: true, pulse: 0 });
+          platforms.push({ x: W * 0.5, y: -70, w: PLAT_W * 1.3, solid: false, flash: 0 });
+          // second ghost above with another dot
+          dots.push({ x: W * 0.4, y: -110, alive: true, pulse: 1 });
+          platforms.push({ x: W * 0.45, y: -170, w: PLAT_W * 1.3, solid: false, flash: 0 });
+        },
+        check() {
+          return platforms.filter(p => p.solid).length >= 3; // start + 2 solidified
+        },
+      },
+      {
+        name: 'NO DOTS = DANGER',
+        instruction: 'EMPTY? YOU FALL THROUGH',
+        setup() {
+          player = { x: W / 2, y: 0, vx: 0, vy: 0 };
+          platforms = []; dots = []; particles = [];
+          cameraY = 0; dots_count = 0; tutFellThrough = false;
+          // solid start
+          platforms.push({ x: W / 2, y: 50, w: PLAT_W * 1.5, solid: true, flash: 0 });
+          // ghost above (will fall through with 0 dots)
+          platforms.push({ x: W / 2, y: -40, w: PLAT_W * 1.3, solid: false, flash: 0 });
+          // solid safety net below
+          platforms.push({ x: W / 2, y: 150, w: W, solid: true, flash: 0 });
+          // dot and ghost after safety bounce
+          dots.push({ x: W * 0.5, y: 90, alive: true, pulse: 0 });
+          platforms.push({ x: W * 0.5, y: -40, w: PLAT_W * 1.3, solid: false, flash: 0 });
+        },
+        check() { return tutFellThrough && platforms.some(p => p.solid && p.y < 0); },
+      },
+      {
+        name: 'CLIMB!',
+        instruction: 'REACH HEIGHT 15',
+        setup() {
+          // mini real game
+          player = { x: W / 2, y: 0, vx: 0, vy: 0 };
+          platforms = []; dots = []; particles = [];
+          cameraY = 0; score = 0; maxHeight = 0; dots_count = 2;
+          gameTime = 0; spawnTimer = 0;
+          platforms.push({ x: W / 2, y: 50, w: PLAT_W * 1.5, solid: true, flash: 0 });
+          let lastY = 50;
+          for (let i = 0; i < 20; i++) {
+            lastY -= PLAT_SPACING_MIN + Math.random() * (PLAT_SPACING_MAX - PLAT_SPACING_MIN) * 0.8;
+            const x = 40 + Math.random() * (W - 80);
+            platforms.push({ x, y: lastY, w: PLAT_W, solid: false, flash: 0 });
+            if (Math.random() < 0.7) {
+              dots.push({ x: x + (Math.random() - 0.5) * 60, y: lastY - 25 - Math.random() * 30, alive: true, pulse: Math.random() * 6 });
+            }
+          }
+        },
+        check() { return score >= 15; },
+      },
+    ];
+
     function init() {
       player = { x: W / 2, y: 0, vx: 0, vy: 0 };
       platforms = [];
@@ -117,13 +216,14 @@
       cameraY = 0;
       score = 0;
       maxHeight = 0;
-      dots_count = 1; // start with 1 dot — teaches scarcity immediately
+      dots_count = 1;
       phase = 'start';
       gameTime = 0;
       deadTimer = 0;
       dragActive = false;
       dragX = 0;
       screenShake = { timer: 0, intensity: 0 };
+      tutStep = 0; tutSuccess = false; tutSuccessTimer = 0;
       bestScore = parseInt(localStorage.getItem('pave_best') || '0');
 
       // Generate initial platforms
@@ -188,10 +288,22 @@
     }
 
     // --- INPUT ---
-    function handleStart(x) {
+    let lastTapY = 0;
+    function handleStart(x, y) {
       initAudio();
-      if (phase === 'start') { phase = 'playing'; player.vy = BOUNCE_VY; return; }
+      lastTapY = y || 0;
+      if (phase === 'start') {
+        // Check TUTORIAL button
+        const tutBtnY = H / 2 + 105 + (bestScore > 0 ? 25 : 0);
+        if (x >= W / 2 - 80 && x <= W / 2 + 80 && lastTapY >= tutBtnY - 18 && lastTapY <= tutBtnY + 18) {
+          startTutorial(); return;
+        }
+        phase = 'playing'; player.vy = BOUNCE_VY; return;
+      }
       if (phase === 'over') { init(); return; }
+      if (phase === 'tutorial') {
+        if (x >= W - 80 && lastTapY <= 50 + safeTop) { skipTutorial(); return; }
+      }
       dragActive = true;
       dragX = x;
     }
@@ -209,21 +321,328 @@
 
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      handleStart(e.touches[0].clientX);
+      handleStart(e.touches[0].clientX, e.touches[0].clientY);
     });
     canvas.addEventListener('touchmove', (e) => {
       e.preventDefault();
       handleMove(e.touches[0].clientX);
     });
     canvas.addEventListener('touchend', handleEnd);
-    canvas.addEventListener('mousedown', (e) => handleStart(e.clientX));
+    canvas.addEventListener('mousedown', (e) => handleStart(e.clientX, e.clientY));
     canvas.addEventListener('mousemove', (e) => { if (dragActive) handleMove(e.clientX); });
     canvas.addEventListener('mouseup', handleEnd);
+
+    // --- TUTORIAL ---
+    function startTutorial() {
+      phase = 'tutorial';
+      tutStep = 0; tutSuccess = false; tutSuccessTimer = 0;
+      score = 0; gameTime = 0;
+      screenShake = { timer: 0, intensity: 0 };
+      TUT_STEPS[0].setup();
+      player.vy = BOUNCE_VY;
+    }
+
+    function advanceTutorial() {
+      tutStep++;
+      tutSuccess = false; tutSuccessTimer = 0;
+      if (tutStep >= TUT_STEPS.length) {
+        // start real game
+        phase = 'playing';
+        player = { x: W / 2, y: 0, vx: 0, vy: 0 };
+        platforms = []; dots = []; particles = [];
+        cameraY = 0; score = 0; maxHeight = 0; dots_count = 1;
+        gameTime = 0; deadTimer = 0;
+        platforms.push({ x: W / 2, y: 50, w: PLAT_W * 1.5, solid: true, flash: 0 });
+        let lastY = 50;
+        for (let i = 0; i < 30; i++) {
+          lastY -= PLAT_SPACING_MIN + Math.random() * (PLAT_SPACING_MAX - PLAT_SPACING_MIN);
+          const x = 30 + Math.random() * (W - 60);
+          platforms.push({ x, y: lastY, w: PLAT_W, solid: false, flash: 0 });
+          if (Math.random() < 0.6) {
+            dots.push({ x: x + (Math.random() - 0.5) * 80, y: lastY - 20 - Math.random() * 40, alive: true, pulse: Math.random() * Math.PI * 2 });
+          }
+        }
+        player.vy = BOUNCE_VY;
+        return;
+      }
+      TUT_STEPS[tutStep].setup();
+      player.vy = BOUNCE_VY;
+    }
+
+    function skipTutorial() {
+      phase = 'playing';
+      player = { x: W / 2, y: 0, vx: 0, vy: 0 };
+      platforms = []; dots = []; particles = [];
+      cameraY = 0; score = 0; maxHeight = 0; dots_count = 1;
+      gameTime = 0; deadTimer = 0;
+      platforms.push({ x: W / 2, y: 50, w: PLAT_W * 1.5, solid: true, flash: 0 });
+      let lastY = 50;
+      for (let i = 0; i < 30; i++) {
+        lastY -= PLAT_SPACING_MIN + Math.random() * (PLAT_SPACING_MAX - PLAT_SPACING_MIN);
+        const x = 30 + Math.random() * (W - 60);
+        platforms.push({ x, y: lastY, w: PLAT_W, solid: false, flash: 0 });
+        if (Math.random() < 0.6) {
+          dots.push({ x: x + (Math.random() - 0.5) * 80, y: lastY - 20 - Math.random() * 40, alive: true, pulse: Math.random() * Math.PI * 2 });
+        }
+      }
+      player.vy = BOUNCE_VY;
+    }
+
+    function updateTutorial(dt) {
+      gameTime += dt;
+
+      // Physics (same as main game)
+      player.vy += GRAVITY * dt;
+      player.y += player.vy * dt;
+      player.x += player.vx * dt;
+      player.vx *= 0.88;
+      if (player.x < -PLAYER_R) player.x = W + PLAYER_R;
+      if (player.x > W + PLAYER_R) player.x = -PLAYER_R;
+
+      // Collect dots
+      for (const dot of dots) {
+        if (!dot.alive) continue;
+        const dx = player.x - dot.x, dy = player.y - dot.y;
+        if (dx * dx + dy * dy < (PLAYER_R + DOT_R) * (PLAYER_R + DOT_R)) {
+          dot.alive = false;
+          dots_count++;
+          if (tutStep === 1) tutDotsCollected++;
+          playCollect();
+          spawnParticles(dot.x, dot.y, T.dot, 6);
+        }
+      }
+
+      // Platform collision
+      if (player.vy > 0) {
+        for (const plat of platforms) {
+          if (player.y + PLAYER_R >= plat.y && player.y + PLAYER_R <= plat.y + PLAT_H + player.vy * dt &&
+              player.x >= plat.x - plat.w / 2 - PLAYER_R * 0.5 && player.x <= plat.x + plat.w / 2 + PLAYER_R * 0.5) {
+            if (plat.solid) {
+              player.y = plat.y - PLAYER_R;
+              player.vy = BOUNCE_VY;
+              tutBounces = (tutBounces || 0) + 1;
+              playBounce(440);
+              spawnParticles(player.x, plat.y, T.solid, 4);
+            } else if (dots_count > 0) {
+              dots_count--;
+              plat.solid = true;
+              plat.flash = 0.3;
+              player.y = plat.y - PLAYER_R;
+              player.vy = BOUNCE_VY;
+              tutBounces = (tutBounces || 0) + 1;
+              playSolidify();
+              spawnParticles(player.x, plat.y, T.solid, 8);
+              screenShake = { timer: 0.06, intensity: 1.5 };
+            } else {
+              // Fall through ghost — step 4 teaches this
+              if (tutStep === 3) {
+                tutFellThrough = true;
+                playFallThrough();
+                screenShake = { timer: 0.1, intensity: 2 };
+              }
+              // Don't die in tutorial — just fall through
+            }
+            break;
+          }
+        }
+      }
+
+      // Camera
+      const targetCam = player.y - H * 0.6;
+      cameraY += (targetCam - cameraY) * 4 * dt;
+
+      // Score for step 5
+      if (tutStep === 4) {
+        const height = Math.floor(-player.y / 10);
+        if (height > maxHeight) { maxHeight = height; score = maxHeight; }
+        generateAbove();
+      }
+
+      // Safety: if player falls way below, respawn on nearest solid
+      if (player.y > cameraY + H + 100 && tutStep !== 4) {
+        const solidPlats = platforms.filter(p => p.solid);
+        if (solidPlats.length > 0) {
+          const highest = solidPlats.reduce((a, b) => a.y < b.y ? a : b);
+          player.x = highest.x;
+          player.y = highest.y - PLAYER_R;
+          player.vy = BOUNCE_VY;
+          player.vx = 0;
+        }
+      }
+
+      // Step 5 death recovery
+      if (tutStep === 4 && player.y > cameraY + H + 50) {
+        // Respawn at last solid
+        const solidPlats = platforms.filter(p => p.solid);
+        if (solidPlats.length > 0) {
+          const best = solidPlats.reduce((a, b) => a.y < b.y ? a : b);
+          player.x = best.x; player.y = best.y - PLAYER_R;
+          player.vy = BOUNCE_VY; player.vx = 0;
+          cameraY = player.y - H * 0.6;
+        }
+      }
+
+      // Success check
+      if (!tutSuccess && TUT_STEPS[tutStep].check()) {
+        tutSuccess = true;
+        tutSuccessTimer = 1.5;
+        playBounce(880);
+      }
+      if (tutSuccess) {
+        tutSuccessTimer -= dt;
+        if (tutSuccessTimer <= 0) advanceTutorial();
+      }
+
+      // Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 200 * dt;
+        p.life -= dt * 2;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      for (const plat of platforms) { if (plat.flash > 0) plat.flash -= dt; }
+      if (screenShake.timer > 0) screenShake.timer -= dt;
+
+      // Cleanup below camera
+      platforms = platforms.filter(p => p.y < cameraY + H + 200);
+      dots = dots.filter(d => d.y < cameraY + H + 200);
+    }
+
+    function drawTutorial() {
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      const step = TUT_STEPS[tutStep];
+
+      ctx.save();
+      if (screenShake.timer > 0) {
+        const s = screenShake.intensity * (screenShake.timer / 0.15);
+        ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      }
+
+      // Platforms
+      for (const plat of platforms) {
+        const sy = plat.y - cameraY;
+        if (sy < -20 || sy > H + 20) continue;
+        if (plat.solid) {
+          const flashAlpha = plat.flash > 0 ? plat.flash / 0.3 : 0;
+          ctx.fillStyle = T.solid;
+          ctx.shadowBlur = flashAlpha > 0 ? 12 : 0; ctx.shadowColor = T.solid;
+          ctx.fillRect(plat.x - plat.w / 2, sy, plat.w, PLAT_H);
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = T.solidBorder; ctx.lineWidth = 2;
+          ctx.strokeRect(plat.x - plat.w / 2, sy, plat.w, PLAT_H);
+          if (flashAlpha > 0) {
+            ctx.fillStyle = `rgba(255,255,255,${flashAlpha * 0.5})`;
+            ctx.fillRect(plat.x - plat.w / 2, sy, plat.w, PLAT_H);
+          }
+        } else {
+          ctx.fillStyle = T.ghost;
+          ctx.globalAlpha = 0.25 + Math.sin(gameTime * 3 + plat.x) * 0.05;
+          ctx.fillRect(plat.x - plat.w / 2, sy, plat.w, PLAT_H);
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = T.ghost; ctx.lineWidth = 1;
+          ctx.setLineDash([4, 4]);
+          ctx.strokeRect(plat.x - plat.w / 2, sy, plat.w, PLAT_H);
+          ctx.setLineDash([]);
+        }
+      }
+
+      // Dots
+      for (const dot of dots) {
+        if (!dot.alive) continue;
+        const sy = dot.y - cameraY;
+        if (sy < -20 || sy > H + 20) continue;
+        dot.pulse += 0.05;
+        const pulse = 1 + Math.sin(dot.pulse) * 0.15;
+        const r = DOT_R * pulse;
+        ctx.fillStyle = T.dot; ctx.globalAlpha = 0.3;
+        ctx.beginPath(); ctx.arc(dot.x, sy, r * 2, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = T.dot;
+        ctx.beginPath(); ctx.arc(dot.x, sy, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.globalAlpha = 0.6;
+        ctx.beginPath(); ctx.arc(dot.x - r * 0.3, sy - r * 0.3, r * 0.3, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // Player
+      const py = player.y - cameraY;
+      ctx.fillStyle = 'rgba(0,0,0,0.1)';
+      ctx.beginPath(); ctx.arc(player.x + 2, py + 2, PLAYER_R, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = T.player;
+      ctx.beginPath(); ctx.arc(player.x, py, PLAYER_R, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      const eyeOff = player.vx > 10 ? 2 : player.vx < -10 ? -2 : 0;
+      ctx.beginPath(); ctx.arc(player.x - 3 + eyeOff, py - 2, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(player.x + 3 + eyeOff, py - 2, 2.5, 0, Math.PI * 2); ctx.fill();
+
+      // Particles
+      for (const p of particles) {
+        const psy = p.y - cameraY;
+        ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
+        ctx.beginPath(); ctx.arc(p.x, psy, p.size, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.restore();
+
+      // --- Tutorial HUD ---
+      ctx.textAlign = 'center';
+
+      // Step indicator
+      ctx.fillStyle = T.muted; ctx.font = '12px monospace';
+      ctx.fillText('TUTORIAL ' + (tutStep + 1) + ' / ' + TUT_STEPS.length, W / 2, 24 + safeTop);
+
+      // Step name
+      ctx.fillStyle = T.text; ctx.font = 'bold 20px monospace';
+      ctx.fillText(step.name, W / 2, 48 + safeTop);
+
+      // Instruction
+      if (!tutSuccess) {
+        ctx.fillStyle = T.muted; ctx.font = '14px monospace';
+        ctx.fillText(step.instruction, W / 2, H - 40);
+      }
+
+      // Dot counter
+      ctx.textAlign = 'right';
+      ctx.fillStyle = dots_count > 0 ? T.dot : T.danger;
+      ctx.font = 'bold 20px monospace';
+      ctx.fillText(dots_count + '', W - 16, 36 + safeTop);
+      ctx.fillStyle = T.muted; ctx.font = '10px monospace';
+      ctx.fillText('DOTS', W - 16, 50 + safeTop);
+
+      // Score (step 5)
+      if (tutStep === 4) {
+        ctx.textAlign = 'left';
+        ctx.fillStyle = T.text; ctx.font = 'bold 22px monospace';
+        ctx.fillText(score + ' / 15', 16, 36 + safeTop);
+      }
+
+      // Success
+      if (tutSuccess) {
+        const a = Math.min(1, tutSuccessTimer);
+        ctx.globalAlpha = a;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = T.solid; ctx.font = 'bold 28px monospace';
+        const txt = tutStep === TUT_STEPS.length - 1 ? 'GO!' : 'NICE!';
+        ctx.fillText(txt, W / 2, H / 2);
+        ctx.globalAlpha = 1;
+      }
+
+      // SKIP button
+      ctx.textAlign = 'right';
+      ctx.fillStyle = T.muted; ctx.font = '12px monospace';
+      ctx.fillText('SKIP ›', W - 16, 24 + safeTop);
+
+      ctx.textAlign = 'left';
+    }
 
     // --- UPDATE ---
     function update(dt) {
       if (phase === 'start') { gameTime += dt; return; }
       if (phase === 'over') return;
+      if (phase === 'tutorial') { updateTutorial(dt); return; }
 
       if (phase === 'dead') {
         deadTimer += dt;
@@ -352,6 +771,7 @@
 
       if (phase === 'start') { drawStart(); return; }
       if (phase === 'over') { drawGameOver(); return; }
+      if (phase === 'tutorial') { drawTutorial(); return; }
 
       ctx.save();
       if (screenShake.timer > 0) {
@@ -530,6 +950,11 @@
         ctx.font = '14px monospace';
         ctx.fillText('Best: ' + bestScore, W / 2, H / 2 + 100);
       }
+
+      // TUTORIAL button
+      ctx.fillStyle = T.muted;
+      ctx.font = '14px monospace';
+      ctx.fillText('[ TUTORIAL ]', W / 2, H / 2 + 105 + (bestScore > 0 ? 25 : 0));
 
       ctx.textAlign = 'left';
     }
