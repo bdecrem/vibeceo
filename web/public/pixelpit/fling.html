@@ -169,6 +169,134 @@
     let catchTimer; // delay between staggered catches
     let strandMagnetTarget; // for falling phase magnetism
 
+    // --- TUTORIAL STATE ---
+    let tutStep, tutSuccess, tutSuccessTimer, tutCatches, tutFlings;
+
+    const TUT_STEPS = [
+      {
+        name: 'SLIDE & FLING',
+        instruction: 'TAP TO FLING OFF THE STRAND',
+        setup() {
+          spider = { x: W / 2, y: H * 0.3, vy: 0, vx: 0, onStrand: null, legAnim: 0 };
+          strands = []; bugs = []; silkLines = []; particles = []; dewdrops = [];
+          cameraY = 0; score = 0; combo = 0; comboTimer = 0; flingCount = 0;
+          slowmoTimer = 0; catchQueue = []; catchIndex = 0; catchTimer = 0;
+          screenShake = { timer: 0, intensity: 0 }; flashColor = null; flashTimer = 0;
+          strandMagnetTarget = null; tutFlings = 0;
+          for (let i = 0; i < 4; i++) {
+            strands.push({ x: W * 0.3 + Math.random() * W * 0.4, y: i * STRAND_SPACING + 100, len: 100 });
+          }
+          spider.onStrand = strands[0]; spider.x = strands[0].x; spider.y = strands[0].y;
+        },
+        check() { return tutFlings >= 2; },
+      },
+      {
+        name: 'CATCH BUGS',
+        instruction: 'FLING NEAR BUGS TO CATCH',
+        setup() {
+          spider = { x: W / 2, y: H * 0.3, vy: 0, vx: 0, onStrand: null, legAnim: 0 };
+          strands = []; bugs = []; silkLines = []; particles = []; dewdrops = [];
+          cameraY = 0; score = 0; combo = 0; comboTimer = 0; flingCount = 0;
+          slowmoTimer = 0; catchQueue = []; catchIndex = 0; catchTimer = 0;
+          screenShake = { timer: 0, intensity: 0 }; flashColor = null; flashTimer = 0;
+          strandMagnetTarget = null; tutCatches = 0;
+          strands.push({ x: W / 2, y: 100, len: 90 });
+          bugs.push(makeBug(W / 2 + 40, 60, 'gnat', 0));
+          bugs.push(makeBug(W / 2 - 30, 70, 'gnat', 0));
+          bugs.push(makeBug(W / 2 + 10, 50, 'gnat', 0));
+          bugs.forEach(b => { b.vx = 0; b.vy = 0; });
+          strands.push({ x: W * 0.4, y: 350, len: 90 });
+          strands.push({ x: W * 0.6, y: 600, len: 90 });
+          spider.onStrand = strands[0]; spider.x = strands[0].x; spider.y = strands[0].y;
+        },
+        check() { return tutCatches >= 2; },
+      },
+      {
+        name: 'AVOID WASPS',
+        instruction: 'RED BUGS COST -5 POINTS',
+        setup() {
+          spider = { x: W / 2, y: H * 0.3, vy: 0, vx: 0, onStrand: null, legAnim: 0 };
+          strands = []; bugs = []; silkLines = []; particles = []; dewdrops = [];
+          cameraY = 0; score = 10; combo = 0; comboTimer = 0; flingCount = 0;
+          slowmoTimer = 0; catchQueue = []; catchIndex = 0; catchTimer = 0;
+          screenShake = { timer: 0, intensity: 0 }; flashColor = null; flashTimer = 0;
+          strandMagnetTarget = null;
+          strands.push({ x: W / 2, y: 100, len: 90 });
+          bugs.push(makeBug(W / 2 - 40, 65, 'gnat', 0));
+          bugs.push(makeBug(W / 2 + 50, 55, 'wasp', 0));
+          bugs.forEach(b => { b.vx = 0; b.vy = 0; });
+          strands.push({ x: W * 0.45, y: 350, len: 90 });
+          strands.push({ x: W * 0.55, y: 600, len: 90 });
+          spider.onStrand = strands[0]; spider.x = strands[0].x; spider.y = strands[0].y;
+        },
+        check() { return flingCount >= 1; },
+      },
+      {
+        name: 'COMBO',
+        instruction: 'CATCH 3+ FOR COMBO BONUS',
+        setup() {
+          spider = { x: W / 2, y: H * 0.3, vy: 0, vx: 0, onStrand: null, legAnim: 0 };
+          strands = []; bugs = []; silkLines = []; particles = []; dewdrops = [];
+          cameraY = 0; score = 0; combo = 0; comboTimer = 0; flingCount = 0;
+          slowmoTimer = 0; catchQueue = []; catchIndex = 0; catchTimer = 0;
+          screenShake = { timer: 0, intensity: 0 }; flashColor = null; flashTimer = 0;
+          strandMagnetTarget = null;
+          strands.push({ x: W / 2, y: 100, len: 90 });
+          bugs.push(makeBug(W / 2 - 30, 60, 'gnat', 0));
+          bugs.push(makeBug(W / 2 + 20, 55, 'gnat', 0));
+          bugs.push(makeBug(W / 2 - 10, 45, 'gnat', 0));
+          bugs.push(makeBug(W / 2 + 40, 50, 'moth', 0));
+          bugs.forEach(b => { b.vx = 0; b.vy = 0; });
+          strands.push({ x: W * 0.5, y: 350, len: 90 });
+          spider.onStrand = strands[0]; spider.x = strands[0].x; spider.y = strands[0].y;
+        },
+        check() { return combo >= 3; },
+      },
+      {
+        name: 'HUNT!',
+        instruction: 'REACH SCORE 10',
+        setup() {
+          spider = { x: W / 2, y: H * 0.3, vy: 0, vx: 0, onStrand: null, legAnim: 0 };
+          strands = []; bugs = []; silkLines = []; particles = []; dewdrops = [];
+          cameraY = 0; score = 0; combo = 0; comboTimer = 0; flingCount = 0;
+          slowmoTimer = 0; catchQueue = []; catchIndex = 0; catchTimer = 0;
+          screenShake = { timer: 0, intensity: 0 }; flashColor = null; flashTimer = 0;
+          strandMagnetTarget = null;
+          for (let i = 0; i < 15; i++) {
+            const x = 40 + Math.random() * (W - 80);
+            const sy = i * STRAND_SPACING + 100;
+            strands.push({ x, y: sy, len: 80 + Math.random() * 60 });
+            const bugCount = 2 + Math.floor(Math.random() * 3);
+            for (let j = 0; j < bugCount; j++) {
+              bugs.push(makeBug(x + (Math.random() - 0.5) * 100, sy - 30 - Math.random() * (STRAND_SPACING - 80), 'gnat', 0));
+            }
+          }
+          spider.onStrand = strands[0]; spider.x = strands[0].x; spider.y = strands[0].y;
+        },
+        check() { return score >= 10; },
+      },
+    ];
+
+    function startTutorial() {
+      phase = 'tutorial_sliding';
+      tutStep = 0; tutSuccess = false; tutSuccessTimer = 0;
+      gameTime = 0;
+      TUT_STEPS[0].setup();
+      startSlideHum();
+    }
+
+    function advanceTutorial() {
+      tutStep++;
+      tutSuccess = false; tutSuccessTimer = 0;
+      if (tutStep >= TUT_STEPS.length) {
+        stopSlideHum(); init(); startGame(); return;
+      }
+      TUT_STEPS[tutStep].setup();
+      phase = 'tutorial_sliding';
+    }
+
+    function skipTutorial() { stopSlideHum(); init(); startGame(); }
+
     function init() {
       spider = { x: W / 2, y: H * 0.3, vy: 0, vx: 0, onStrand: null, legAnim: 0, dewSlowTimer: 0 };
       strands = [];
@@ -191,6 +319,7 @@
       catchIndex = 0;
       catchTimer = 0;
       strandMagnetTarget = null;
+      tutStep = 0; tutSuccess = false; tutSuccessTimer = 0;
       bestScore = parseInt(localStorage.getItem('fling_best') || '0');
 
       // Generate initial strands
@@ -269,18 +398,64 @@
     }
 
     // --- INPUT ---
-    function handleTap() {
+    function handleTap(e) {
       initAudio();
-      if (phase === 'start') { startGame(); return; }
+      if (phase === 'start') {
+        // Check tutorial button
+        const ey = e ? (e.touches ? e.touches[0].clientY : e.clientY) : 0;
+        const tutBtnY = H / 2 + 125 + (bestScore > 0 ? 25 : 0);
+        if (ey >= tutBtnY - 16 && ey <= tutBtnY + 16) { startTutorial(); return; }
+        startGame(); return;
+      }
       if (phase === 'over') { init(); return; }
+      if (phase === 'tutorial_sliding') {
+        // SKIP check
+        if (e) {
+          const ex = e.touches ? e.touches[0].clientX : e.clientX;
+          const ey2 = e.touches ? e.touches[0].clientY : e.clientY;
+          if (ex >= W - 80 && ey2 <= 50 + safeTop) { skipTutorial(); return; }
+        }
+        tutorialFling(); return;
+      }
       if (phase === 'sliding') {
-        // FLING!
         fling();
       }
     }
 
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(); }, { passive: false });
-    canvas.addEventListener('mousedown', handleTap);
+    function tutorialFling() {
+      phase = 'tutorial_flinging';
+      spider.onStrand = null;
+      spider.vy = FLING_VY;
+      spider.vx = (Math.random() - 0.5) * FLING_VX_RANGE;
+      spider.legAnim = 1;
+      playFlingLaunch();
+      setTimeout(() => {
+        if (phase !== 'tutorial_flinging') return;
+        // Enter tutorial slowmo
+        phase = 'tutorial_slowmo';
+        slowmoTimer = SLOWMO_DURATION;
+        catchQueue = [];
+        for (const bug of bugs) {
+          if (!bug.alive || bug.caught) continue;
+          const dx = bug.x - spider.x;
+          const dy = (bug.y - cameraY) - (spider.y - cameraY);
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist <= FLING_RANGE) {
+            if (bug.type === 'firefly') {
+              const vis = Math.sin(gameTime * 4 + bug.blinkPhase);
+              if (vis < 0) continue;
+            }
+            catchQueue.push({ bug, dist });
+          }
+        }
+        catchQueue.sort((a, b) => a.dist - b.dist);
+        catchIndex = 0;
+        combo = 0;
+      }, 120);
+    }
+
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(e); }, { passive: false });
+    canvas.addEventListener('mousedown', (e) => handleTap(e));
     document.addEventListener('keydown', (e) => {
       if (e.key === ' ' || e.key === 'Enter') handleTap();
     });
@@ -335,10 +510,167 @@
       combo = 0;
     }
 
+    // --- TUTORIAL UPDATE ---
+    function updateTutorial(dt) {
+      gameTime += dt;
+      if (flashTimer > 0) flashTimer -= dt;
+      if (comboTimer > 0) comboTimer -= dt;
+      if (screenShake.timer > 0) screenShake.timer -= dt;
+
+      const inSlowmo = phase === 'tutorial_slowmo';
+      const timeScale = inSlowmo ? 0.15 : 1;
+
+      // Bugs
+      for (const bug of bugs) {
+        if (!bug.alive || bug.caught) continue;
+        bug.x += bug.vx * dt * timeScale;
+        bug.y += bug.vy * dt * timeScale;
+        if (bug.x < -20) bug.x = W + 20;
+        if (bug.x > W + 20) bug.x = -20;
+      }
+
+      if (phase === 'tutorial_sliding') {
+        const speed = SLIDE_SPEED_BASE;
+        spider.y += speed * dt;
+        updateSlideHum(speed);
+        if (spider.onStrand && spider.y > spider.onStrand.y + spider.onStrand.len) {
+          tutorialFling();
+        }
+        const targetCam = spider.y - H * 0.3;
+        cameraY += (targetCam - cameraY) * 3 * dt;
+      }
+
+      if (phase === 'tutorial_flinging') {
+        spider.vy += GRAVITY * dt;
+        spider.y += spider.vy * dt;
+        spider.x += spider.vx * dt;
+        spider.legAnim = Math.max(0, spider.legAnim - dt * 3);
+        const targetCam = spider.y - H * 0.4;
+        cameraY += (targetCam - cameraY) * 3 * dt;
+      }
+
+      if (phase === 'tutorial_slowmo') {
+        slowmoTimer -= dt;
+        spider.vy += GRAVITY * dt * 0.15;
+        spider.y += spider.vy * dt * 0.15;
+        spider.x += spider.vx * dt * 0.15;
+
+        if (catchIndex < catchQueue.length) {
+          const entry = catchQueue[catchIndex];
+          silkLines.push({
+            x1: spider.x, y1: spider.y - cameraY,
+            x2: entry.bug.x, y2: entry.bug.y - cameraY,
+            timer: 0.12,
+          });
+          entry.bug.caught = true; entry.bug.alive = false;
+          if (entry.bug.type === 'wasp') {
+            score = Math.max(0, score - 5);
+            screenShake = { timer: 0.15, intensity: 3 };
+            playWaspBuzz();
+            spawnParticles(entry.bug.x, entry.bug.y - cameraY, T.wasp, 8);
+          } else {
+            const pts = entry.bug.type === 'gnat' ? 1 : entry.bug.type === 'moth' ? 3 : 5;
+            score += pts;
+            combo++;
+            tutCatches = (tutCatches || 0) + 1;
+            playCatch(catchIndex);
+            spawnParticles(entry.bug.x, entry.bug.y - cameraY, getBugColor(entry.bug.type), 5);
+          }
+          catchIndex++;
+        }
+
+        if (slowmoTimer <= 0) {
+          if (combo === 0) playMiss();
+          if (combo >= 3) { playComboChord(); flashColor = T.gold; flashTimer = 0.2; comboTimer = 2; }
+          flingCount++;
+          tutFlings = (tutFlings || 0) + 1;
+          phase = 'tutorial_falling';
+        }
+
+        const targetCam = spider.y - H * 0.4;
+        cameraY += (targetCam - cameraY) * 1 * dt;
+      }
+
+      if (phase === 'tutorial_falling') {
+        spider.vy += GRAVITY * dt;
+        spider.y += spider.vy * dt;
+        spider.x += spider.vx * dt;
+        spider.legAnim = Math.max(0, spider.legAnim - dt * 3);
+
+        for (const strand of strands) {
+          if (spider.y >= strand.y && spider.y <= strand.y + strand.len &&
+              Math.abs(spider.x - strand.x) < 25 && spider.vy > 0) {
+            spider.onStrand = strand; spider.x = strand.x;
+            spider.vy = 0; spider.vx = 0;
+            phase = 'tutorial_sliding';
+            break;
+          }
+        }
+
+        // Safety: fell off screen → respawn
+        if (spider.y - cameraY > H + 100) {
+          const closest = strands.reduce((best, s) => {
+            if (s.y > cameraY && s.y < cameraY + H * 2) return (!best || s.y < best.y) ? s : best;
+            return best;
+          }, null);
+          if (closest) {
+            spider.onStrand = closest; spider.x = closest.x;
+            spider.y = closest.y; spider.vy = 0; spider.vx = 0;
+            cameraY = spider.y - H * 0.3;
+            phase = 'tutorial_sliding';
+          }
+        }
+
+        const targetCam = spider.y - H * 0.4;
+        cameraY += (targetCam - cameraY) * 3 * dt;
+      }
+
+      // Generate more strands in step 5
+      if (tutStep === 4) {
+        let lastY = strands.length > 0 ? strands[strands.length - 1].y : 0;
+        while (lastY < cameraY + H * 2) {
+          lastY += STRAND_SPACING;
+          const x = 40 + Math.random() * (W - 80);
+          strands.push({ x, y: lastY, len: 80 + Math.random() * 60 });
+          const cnt = 2 + Math.floor(Math.random() * 3);
+          for (let j = 0; j < cnt; j++) {
+            bugs.push(makeBug(x + (Math.random() - 0.5) * 100, lastY - 30 - Math.random() * (STRAND_SPACING - 80), 'gnat', 0));
+          }
+        }
+      }
+
+      // Silk lines
+      for (let i = silkLines.length - 1; i >= 0; i--) {
+        silkLines[i].timer -= dt;
+        if (silkLines[i].timer <= 0) silkLines.splice(i, 1);
+      }
+      // Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 100 * dt;
+        p.life -= dt * 2.5;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      // Cleanup
+      strands = strands.filter(s => s.y + s.len > cameraY - 100);
+      bugs = bugs.filter(b => b.y > cameraY - 100);
+
+      // Success check
+      if (!tutSuccess && TUT_STEPS[tutStep].check()) {
+        tutSuccess = true; tutSuccessTimer = 1.5;
+        playCatch(0);
+      }
+      if (tutSuccess) {
+        tutSuccessTimer -= dt;
+        if (tutSuccessTimer <= 0) advanceTutorial();
+      }
+    }
+
     // --- UPDATE ---
     function update(dt) {
       if (phase === 'start') { gameTime += dt; return; }
       if (phase === 'over') return;
+      if (phase.startsWith('tutorial')) { updateTutorial(dt); return; }
 
       gameTime += dt;
       if (flashTimer > 0) flashTimer -= dt;
@@ -572,7 +904,7 @@
       // Cobweb background (parallax)
       drawCobwebs();
 
-      const inSlowmo = phase === 'slowmo';
+      const inSlowmo = phase === 'slowmo' || phase === 'tutorial_slowmo';
 
       ctx.save();
       if (screenShake.timer > 0) {
@@ -762,6 +1094,33 @@
 
       if (phase === 'over' || phase === 'dead') drawGameOver();
 
+      // Tutorial HUD overlay
+      if (phase.startsWith('tutorial')) {
+        const step = TUT_STEPS[tutStep];
+        ctx.textAlign = 'center';
+        ctx.fillStyle = T.muted; ctx.font = '12px monospace';
+        ctx.fillText('TUTORIAL ' + (tutStep + 1) + ' / ' + TUT_STEPS.length, W / 2, 24 + safeTop);
+        ctx.fillStyle = T.white; ctx.font = 'bold 20px monospace';
+        ctx.fillText(step.name, W / 2, 48 + safeTop);
+        if (!tutSuccess) {
+          ctx.fillStyle = T.muted; ctx.font = '14px monospace';
+          ctx.fillText(step.instruction, W / 2, H - 40);
+        }
+        if (tutStep === 4) {
+          ctx.textAlign = 'left'; ctx.fillStyle = T.white; ctx.font = 'bold 22px monospace';
+          ctx.fillText(score + ' / 10', 16, 32 + safeTop);
+        }
+        if (tutSuccess) {
+          ctx.globalAlpha = Math.min(1, tutSuccessTimer);
+          ctx.textAlign = 'center'; ctx.fillStyle = T.gold; ctx.font = 'bold 28px monospace';
+          ctx.shadowBlur = 15; ctx.shadowColor = T.gold;
+          ctx.fillText(tutStep === TUT_STEPS.length - 1 ? 'GO!' : 'NICE!', W / 2, H / 2);
+          ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+        }
+        ctx.textAlign = 'right'; ctx.fillStyle = T.muted; ctx.font = '12px monospace';
+        ctx.fillText('SKIP ›', W - 16, 24 + safeTop);
+      }
+
       ctx.textAlign = 'left';
     }
 
@@ -839,6 +1198,10 @@
         ctx.font = '13px monospace';
         ctx.fillText('Best: ' + bestScore, W / 2, H / 2 + 118);
       }
+
+      ctx.fillStyle = T.muted;
+      ctx.font = '14px monospace';
+      ctx.fillText('[ TUTORIAL ]', W / 2, H / 2 + 125 + (bestScore > 0 ? 25 : 0));
 
       ctx.textAlign = 'left';
     }
