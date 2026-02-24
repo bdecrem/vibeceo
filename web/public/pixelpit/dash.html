@@ -199,6 +199,8 @@
     let hopAnim; // { fromCol, fromRow, toCol, toRow, timer, duration }
     let freezeTimer, flashColor, flashTimer;
     let screenDarkness; // 0 = normal, 1 = fully dark
+    let trail = []; // ghost positions for spark trail
+    let deathPulseTimer = 0; // heartbeat during death wait
 
     function init() {
       const cols = COLS();
@@ -267,6 +269,13 @@
       const dt = performance.now() - touchStartTime;
 
       const dist = Math.sqrt(dx * dx + dy * dy);
+
+      // FIX #1: Long press = burst (mobile)
+      if (dt > 400 && dist < 15 && charge >= MAX_CHARGE) {
+        activateBurst();
+        return;
+      }
+
       if (dist < 15 || dt < 50) {
         // Tap — hop forward
         tryHop(0, 1);
@@ -356,12 +365,41 @@
 
       gameTime += dt;
 
+      // Trail — record position every few frames
+      if (!hopAnim) {
+        const pos = getWorldPos(player.col, player.row);
+        if (trail.length === 0 || trail[trail.length - 1].x !== pos.x || trail[trail.length - 1].y !== pos.y) {
+          trail.push({ x: pos.x, y: pos.y, age: 0 });
+        }
+      } else {
+        const t = hopAnim.timer / hopAnim.duration;
+        const ease = t * (2 - t);
+        const from = getWorldPos(hopAnim.fromCol, hopAnim.fromRow);
+        const to = getWorldPos(hopAnim.toCol, hopAnim.toRow);
+        trail.push({
+          x: from.x + (to.x - from.x) * ease,
+          y: from.y + (to.y - from.y) * ease - Math.sin(t * Math.PI) * 8,
+          age: 0,
+        });
+      }
+      for (const tp of trail) tp.age += dt;
+      trail = trail.filter(tp => tp.age < 0.15);
+      if (trail.length > 5) trail = trail.slice(-5);
+
       // Flash decay
       if (flashTimer > 0) flashTimer -= dt;
 
-      // Hop animation
+      // Hop animation — FIX #2: check collision every frame during hop
       if (hopAnim) {
         hopAnim.timer += dt;
+        const t = Math.min(hopAnim.timer / hopAnim.duration, 1);
+        // Interpolated position for mid-hop collision
+        const midCol = hopAnim.fromCol + (hopAnim.toCol - hopAnim.fromCol) * t;
+        const midRow = hopAnim.fromRow + (hopAnim.toRow - hopAnim.fromRow) * t;
+        // Check collision at interpolated position (uses destination lane)
+        if (t > 0.3) { // only check in second half of hop
+          if (checkCollisionAt(hopAnim.toCol, hopAnim.toRow)) return;
+        }
         if (hopAnim.timer >= hopAnim.duration) {
           player.col = hopAnim.toCol;
           player.row = hopAnim.toRow;
@@ -371,9 +409,6 @@
           if (player.row > score) {
             score = player.row;
           }
-
-          // Check collision at destination
-          checkCollision();
 
           // Collect ions
           collectIons();
@@ -436,34 +471,35 @@
       }
     }
 
-    function checkCollision() {
-      const lane = lanes.get(player.row);
-      if (!lane) return;
+    // FIX #2 + #3: collision with position args, generous bridge tolerance
+    function checkCollisionAt(col, row) {
+      const lane = lanes.get(row);
+      if (!lane) return false;
 
       if (lane.type === 'slow' || lane.type === 'fast' || lane.type === 'inhibitor') {
-        const px = player.col * CELL + CELL / 2;
+        const px = col * CELL + CELL / 2;
         for (const sig of lane.signals) {
           if (px > sig.x - sig.w / 2 - PLAYER_R && px < sig.x + sig.w / 2 + PLAYER_R) {
             if (player.bursting) {
-              // Burst through — destroy signal
-              spawnParticles(px, getWorldPos(player.col, player.row).y, T.gold, 10);
+              spawnParticles(px, getWorldPos(col, row).y, T.gold, 10);
               sig.x = -9999;
-              return;
+              return false;
             }
             die();
-            return;
+            return true;
           }
         }
       }
 
       if (lane.type === 'bridge') {
-        // Must be on an alive pad
-        const onPad = lane.pads.some(pad => pad.alive && pad.col === player.col);
+        // FIX #3: distance-based pad check, generous radius
+        const onPad = lane.pads.some(pad => pad.alive && Math.abs(pad.col - col) <= 1);
         if (!onPad) {
           die();
-          return;
+          return true;
         }
       }
+      return false;
     }
 
     function collectIons() {
@@ -485,28 +521,40 @@
       stopHum();
       freezeTimer = 0.03; // 30ms freeze
       flashColor = T.white; flashTimer = 0.1;
+      deathPulseTimer = 0;
       if (score > bestScore) {
         bestScore = score;
         localStorage.setItem('dash_best', bestScore.toString());
       }
-      setTimeout(() => { phase = 'over'; }, 1500);
+      // Heartbeat pulses during 1.5s death wait
+      const pulseInterval = setInterval(() => {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.type = 'sine'; osc.frequency.value = 40;
+        g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+      }, 500);
+      setTimeout(() => { clearInterval(pulseInterval); phase = 'over'; }, 1500);
     }
 
     // --- DRAW ---
     function drawNerveBackground() {
-      // Faint branching patterns
+      // Faint branching patterns that scroll with camera
       ctx.strokeStyle = T.border;
       ctx.lineWidth = 1;
       ctx.globalAlpha = 0.3;
-      const seed = Math.floor(gameTime * 0.5);
-      for (let i = 0; i < 6; i++) {
-        const sx = ((i * 137 + seed * 31) % W);
-        const sy = ((i * 89 + seed * 17) % H);
+      const scrollOffset = cameraRow * CELL * 0.3; // parallax scroll
+      for (let i = 0; i < 8; i++) {
+        const sx = ((i * 137 + 42) % W);
+        const baseY = ((i * 89 + 17) % (H + 200)) - 100 + (scrollOffset % (H + 200));
         ctx.beginPath();
-        ctx.moveTo(sx, sy);
-        for (let j = 0; j < 4; j++) {
-          const nx = sx + (j + 1) * 30 * (i % 2 === 0 ? 1 : -1);
-          const ny = sy + (j + 1) * 40;
+        ctx.moveTo(sx, baseY);
+        for (let j = 0; j < 5; j++) {
+          const nx = sx + (j + 1) * 25 * (i % 2 === 0 ? 1 : -1);
+          const ny = baseY + (j + 1) * 35;
           ctx.lineTo(nx, ny);
         }
         ctx.stroke();
@@ -572,6 +620,18 @@
 
             ctx.shadowBlur = 0;
             ctx.globalAlpha = 1;
+
+            // Direction arrow on inhibitor signals
+            if (lane.type === 'inhibitor') {
+              const dir = lane.speed > 0 ? '›' : '‹';
+              ctx.fillStyle = color;
+              ctx.globalAlpha = 0.7;
+              ctx.font = '9px monospace';
+              ctx.textAlign = 'center';
+              ctx.fillText(dir, sig.x, y + 3);
+              ctx.textAlign = 'left';
+              ctx.globalAlpha = 1;
+            }
           }
         }
 
@@ -625,6 +685,17 @@
         ctx.shadowBlur = 6; ctx.shadowColor = T.green;
         ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2); ctx.fill();
         ctx.shadowBlur = 0;
+      }
+
+      // Spark trail
+      for (let i = 0; i < trail.length; i++) {
+        const tp = trail[i];
+        const alpha = (1 - tp.age / 0.15) * 0.4;
+        const r = PLAYER_R * (1 - tp.age / 0.15) * 0.7;
+        ctx.fillStyle = T.cyan;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath(); ctx.arc(tp.x, tp.y, r, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
       }
 
       // Player
@@ -728,7 +799,7 @@
         ctx.fillStyle = T.green;
         ctx.font = '10px monospace';
         ctx.globalAlpha = 0.5 + Math.sin(gameTime * 4) * 0.3;
-        ctx.fillText('SPACE / HOLD TO BURST', W - 16, 44 + safeTop);
+        ctx.fillText('LONG PRESS TO BURST', W - 16, 44 + safeTop);
         ctx.globalAlpha = 1;
       }
 
