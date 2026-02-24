@@ -166,9 +166,11 @@
     let screenShake, flashColor, flashTimer;
     let catchQueue; // bugs to catch during slowmo
     let catchIndex;
+    let catchTimer; // delay between staggered catches
+    let strandMagnetTarget; // for falling phase magnetism
 
     function init() {
-      spider = { x: W / 2, y: H * 0.3, vy: 0, vx: 0, onStrand: null, legAnim: 0 };
+      spider = { x: W / 2, y: H * 0.3, vy: 0, vx: 0, onStrand: null, legAnim: 0, dewSlowTimer: 0 };
       strands = [];
       bugs = [];
       silkLines = [];
@@ -187,6 +189,8 @@
       flashTimer = 0;
       catchQueue = [];
       catchIndex = 0;
+      catchTimer = 0;
+      strandMagnetTarget = null;
       bestScore = parseInt(localStorage.getItem('fling_best') || '0');
 
       // Generate initial strands
@@ -204,15 +208,41 @@
       const strand = { x, y: worldY, len: 80 + Math.random() * 60 };
       strands.push(strand);
 
-      // Generate bugs near this strand
+      // Generate bugs near this strand — PLACED clusters, not random
       const d = Math.min(flingCount / 30, 1);
-      const bugCount = 2 + Math.floor(Math.random() * 3) + Math.floor(d * 2);
+      const clusterCount = 1 + Math.floor(Math.random() * 2) + Math.floor(d);
+      for (let c = 0; c < clusterCount; c++) {
+        const cx = 40 + Math.random() * (W - 80);
+        const cy = worldY - 40 - Math.random() * (STRAND_SPACING - 80);
 
-      for (let i = 0; i < bugCount; i++) {
-        const bx = Math.random() * W;
-        const by = worldY - 40 - Math.random() * (STRAND_SPACING - 80);
-        const type = chooseBugType(d);
-        bugs.push(makeBug(bx, by, type, d));
+        // Gnat cluster
+        const gnatCount = 2 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < gnatCount; i++) {
+          const bx = cx + (Math.random() - 0.5) * 30;
+          const by = cy + (Math.random() - 0.5) * 20;
+          bugs.push(makeBug(bx, by, 'gnat', d));
+        }
+
+        // Place wasp at cluster edge (intentional, readable)
+        if (flingCount > 15 && Math.random() < Math.min(0.15 + d * 0.3, 0.5)) {
+          const wx = cx + (Math.random() < 0.5 ? -25 : 25);
+          const wy = cy + (Math.random() - 0.5) * 15;
+          bugs.push(makeBug(wx, wy, 'wasp', d));
+        }
+
+        // Solo moth (from edges)
+        if (flingCount > 5 && Math.random() < 0.3 + d * 0.2) {
+          const mx = Math.random() < 0.5 ? -10 : W + 10;
+          const my = cy + (Math.random() - 0.5) * 40;
+          bugs.push(makeBug(mx, my, 'moth', d));
+        }
+
+        // Firefly (rare, between clusters)
+        if (flingCount > 15 && Math.random() < 0.15 + d * 0.1) {
+          const fx = Math.random() * W;
+          const fy = cy + (Math.random() - 0.5) * 60;
+          bugs.push(makeBug(fx, fy, 'firefly', d));
+        }
       }
 
       // Dewdrops on strand
@@ -223,29 +253,6 @@
           alive: true, pulse: Math.random() * Math.PI * 2,
         });
       }
-    }
-
-    function chooseBugType(d) {
-      if (flingCount <= 5) return 'gnat';
-      if (flingCount <= 15) {
-        const r = Math.random();
-        if (r < 0.6) return 'gnat';
-        if (r < 0.85) return 'moth';
-        return 'gnat';
-      }
-      if (flingCount <= 25) {
-        const r = Math.random();
-        if (r < 0.4) return 'gnat';
-        if (r < 0.65) return 'moth';
-        if (r < 0.8) return 'firefly';
-        return 'wasp';
-      }
-      const r = Math.random();
-      if (r < 0.3) return 'gnat';
-      if (r < 0.5) return 'moth';
-      if (r < 0.65) return 'firefly';
-      if (r < 0.85) return 'wasp';
-      return 'gnat';
     }
 
     function makeBug(x, y, type, d) {
@@ -324,6 +331,7 @@
       }
       catchQueue.sort((a, b) => a.dist - b.dist);
       catchIndex = 0;
+      catchTimer = 0;
       combo = 0;
     }
 
@@ -351,12 +359,13 @@
       }
 
       if (phase === 'sliding') {
-        // Slide down strand
-        const speed = SLIDE_SPEED_BASE + flingCount * 2;
+        // Slide down strand (dewdrop slows to 60%)
+        const baseSpeed = SLIDE_SPEED_BASE + flingCount * 2;
+        const speed = spider.dewSlowTimer > 0 ? baseSpeed * 0.6 : baseSpeed;
         spider.y += speed * dt;
         updateSlideHum(speed);
 
-        // Collect dewdrops
+        // Collect dewdrops (bonus pts + brief slowdown)
         for (const dew of dewdrops) {
           if (!dew.alive) continue;
           const dx = spider.x - dew.x;
@@ -364,10 +373,13 @@
           if (dx * dx + dy * dy < 400) {
             dew.alive = false;
             score += 2;
+            spider.dewSlowTimer = 0.3; // 0.3s speed reduction
             spawnParticles(dew.x, dew.y - cameraY, T.cyan, 4);
             playCatch(0);
           }
         }
+        // Dewdrop slowdown decay
+        if (spider.dewSlowTimer > 0) spider.dewSlowTimer -= dt;
 
         // Check if fell off strand bottom
         if (spider.onStrand && spider.y > spider.onStrand.y + spider.onStrand.len) {
@@ -397,14 +409,17 @@
         spider.y += spider.vy * dt * 0.15;
         spider.x += spider.vx * dt * 0.15;
 
-        // Stagger catches
-        if (catchIndex < catchQueue.length) {
+        // Stagger catches with delay
+        catchTimer -= dt;
+        if (catchIndex < catchQueue.length && catchTimer <= 0) {
+          catchTimer = CATCH_DELAY; // reset delay
           const entry = catchQueue[catchIndex];
-          // Fire silk line and catch
+          // Fire silk line and catch — use current spider position
           silkLines.push({
             x1: spider.x, y1: spider.y - cameraY,
             x2: entry.bug.x, y2: entry.bug.y - cameraY,
-            timer: 0.12,
+            timer: 0.15,
+            live: true, // for dynamic silk drawing
           });
           entry.bug.caught = true;
           entry.bug.alive = false;
@@ -445,6 +460,19 @@
         spider.y += spider.vy * dt;
         spider.x += spider.vx * dt;
         spider.legAnim = Math.max(0, spider.legAnim - dt * 3);
+
+        // FIX #3: Magnetize toward nearest strand within 40px
+        let nearestStrand = null;
+        let nearestDist = 40;
+        for (const strand of strands) {
+          if (spider.y >= strand.y - 20 && spider.y <= strand.y + strand.len + 20) {
+            const dx = Math.abs(spider.x - strand.x);
+            if (dx < nearestDist) { nearestDist = dx; nearestStrand = strand; }
+          }
+        }
+        if (nearestStrand) {
+          spider.x += (nearestStrand.x - spider.x) * 3 * dt;
+        }
 
         // Check landing on strand
         for (const strand of strands) {
@@ -552,9 +580,9 @@
         ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
       }
 
-      // Slowmo dimming
+      // Slowmo dimming — heavy, only spider + bugs stay bright
       if (inSlowmo) {
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
         ctx.fillRect(0, 0, W, H);
       }
 
@@ -603,20 +631,28 @@
           if (vis < 0) alpha = 0.1;
         }
 
+        // Wasp wobble (agitated, readable during slide)
+        let drawX = bug.x;
+        let drawY = by;
+        if (bug.type === 'wasp') {
+          drawX += (Math.random() * 2 - 1) * 1.5;
+          drawY += (Math.random() * 2 - 1) * 1.5;
+        }
+
         ctx.fillStyle = color;
         ctx.globalAlpha = alpha;
-        ctx.shadowBlur = inSlowmo ? 8 : 3;
+        ctx.shadowBlur = inSlowmo ? 14 : 3;
         ctx.shadowColor = color;
-        ctx.beginPath(); ctx.arc(bug.x, by, bug.size, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(drawX, drawY, bug.size, 0, Math.PI * 2); ctx.fill();
 
         // Wings for moths
         if (bug.type === 'moth') {
           const wingAngle = Math.sin(gameTime * 6) * 0.3;
           ctx.beginPath();
-          ctx.ellipse(bug.x - 4, by, 3, 5, wingAngle, 0, Math.PI * 2);
+          ctx.ellipse(drawX - 4, drawY, 3, 5, wingAngle, 0, Math.PI * 2);
           ctx.fill();
           ctx.beginPath();
-          ctx.ellipse(bug.x + 4, by, 3, 5, -wingAngle, 0, Math.PI * 2);
+          ctx.ellipse(drawX + 4, drawY, 3, 5, -wingAngle, 0, Math.PI * 2);
           ctx.fill();
         }
 
@@ -624,15 +660,16 @@
         ctx.globalAlpha = 1;
       }
 
-      // Silk lines
+      // Silk lines — draw from spider's CURRENT position
       for (const sl of silkLines) {
-        const alpha = sl.timer / 0.12;
+        const alpha = sl.timer / 0.15;
         ctx.strokeStyle = T.silk;
         ctx.lineWidth = 1.5;
         ctx.globalAlpha = alpha;
-        ctx.shadowBlur = 4; ctx.shadowColor = T.silk;
+        ctx.shadowBlur = 6; ctx.shadowColor = T.silk;
         ctx.beginPath();
-        ctx.moveTo(sl.x1, sl.y1);
+        // Live silk stretches from current spider pos
+        ctx.moveTo(spider.x, spider.y - cameraY);
         ctx.lineTo(sl.x2, sl.y2);
         ctx.stroke();
         ctx.shadowBlur = 0;
