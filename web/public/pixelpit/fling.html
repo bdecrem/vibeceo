@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>FLING</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #09090b; overflow: hidden; touch-action: none; font-family: monospace; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    let W, H, safeTop = 0;
+    function resize() {
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      W = canvas.width; H = canvas.height;
+      safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)')) || 0;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // --- INDIE BITE THEME ---
+    const T = {
+      bg: '#09090b',
+      surface: '#18181b',
+      border: '#27272a',
+      white: '#ffffff',
+      gnat: '#a3e635',    // green
+      moth: '#f472b6',    // pink
+      firefly: '#facc15',  // gold
+      wasp: '#ef4444',     // red
+      silk: '#ffffff',
+      muted: '#71717a',
+      gold: '#facc15',
+      cyan: '#22d3ee',
+    };
+
+    // --- AUDIO ---
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    // Slide hum
+    let slideOsc, slideGain;
+    function startSlideHum() {
+      if (!audioCtx || slideOsc) return;
+      slideOsc = audioCtx.createOscillator();
+      slideGain = audioCtx.createGain();
+      slideOsc.connect(slideGain); slideGain.connect(audioCtx.destination);
+      slideOsc.type = 'sine'; slideOsc.frequency.value = 800;
+      slideGain.gain.value = 0.02;
+      slideOsc.start();
+    }
+    function stopSlideHum() {
+      if (slideOsc) { slideOsc.stop(); slideOsc = null; slideGain = null; }
+    }
+    function updateSlideHum(speed) {
+      if (slideOsc) slideOsc.frequency.value = 600 + speed * 2;
+    }
+
+    function playFlingLaunch() {
+      if (!audioCtx) return;
+      // Whoosh: noise + sine sweep
+      const bufSize = audioCtx.sampleRate * 0.08;
+      const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize) * 0.3;
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+      src.connect(g); g.connect(audioCtx.destination);
+      src.start(); src.stop(audioCtx.currentTime + 0.08);
+      // Sine sweep
+      const osc = audioCtx.createOscillator();
+      const og = audioCtx.createGain();
+      osc.connect(og); og.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.08);
+      og.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      og.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+    }
+
+    function playCatch(index) {
+      if (!audioCtx) return;
+      // Plucked string — triangle wave, pentatonic
+      const notes = [523, 587, 659, 784, 880, 1047, 1175];
+      const freq = notes[index % notes.length];
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'triangle'; osc.frequency.value = freq;
+      g.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function playComboChord() {
+      if (!audioCtx) return;
+      [523, 659, 784].forEach((f, i) => {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.type = 'triangle'; osc.frequency.value = f;
+        g.gain.setValueAtTime(0.06, audioCtx.currentTime + i * 0.03);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+        osc.start(audioCtx.currentTime + i * 0.03);
+        osc.stop(audioCtx.currentTime + 0.4);
+      });
+    }
+
+    function playWaspBuzz() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'sawtooth'; osc.frequency.value = 120;
+      g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function playMiss() {
+      if (!audioCtx) return;
+      // Hollow wind
+      const bufSize = audioCtx.sampleRate * 0.3;
+      const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.15 * (1 - i / bufSize);
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const filt = audioCtx.createBiquadFilter();
+      filt.type = 'lowpass'; filt.frequency.value = 400;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+      src.connect(filt); filt.connect(g); g.connect(audioCtx.destination);
+      src.start(); src.stop(audioCtx.currentTime + 0.3);
+    }
+
+    // --- CONSTANTS ---
+    const SPIDER_R = 5;
+    const SLIDE_SPEED_BASE = 100; // px/s downward
+    const FLING_RANGE = 120;      // catch radius during slow-mo
+    const SLOWMO_DURATION = 0.6;  // seconds of slow-mo
+    const FLING_VY = -350;        // upward launch velocity
+    const FLING_VX_RANGE = 80;    // horizontal scatter on fling
+    const GRAVITY = 500;
+    const STRAND_SPACING = 200;   // vertical distance between strands
+    const CATCH_DELAY = 0.08;     // stagger between silk shots
+
+    // --- STATE ---
+    let spider, strands, bugs, silkLines, particles, dewdrops;
+    let cameraY, score, combo, comboTimer, flingCount;
+    let phase; // 'start', 'sliding', 'flinging', 'slowmo', 'falling', 'dead', 'over'
+    let gameTime, bestScore, slowmoTimer;
+    let screenShake, flashColor, flashTimer;
+    let catchQueue; // bugs to catch during slowmo
+    let catchIndex;
+
+    function init() {
+      spider = { x: W / 2, y: H * 0.3, vy: 0, vx: 0, onStrand: null, legAnim: 0 };
+      strands = [];
+      bugs = [];
+      silkLines = [];
+      particles = [];
+      dewdrops = [];
+      cameraY = 0;
+      score = 0;
+      combo = 0;
+      comboTimer = 0;
+      flingCount = 0;
+      phase = 'start';
+      gameTime = 0;
+      slowmoTimer = 0;
+      screenShake = { timer: 0, intensity: 0 };
+      flashColor = null;
+      flashTimer = 0;
+      catchQueue = [];
+      catchIndex = 0;
+      bestScore = parseInt(localStorage.getItem('fling_best') || '0');
+
+      // Generate initial strands
+      for (let i = 0; i < 15; i++) {
+        generateStrand(i * STRAND_SPACING + 100);
+      }
+      // Place spider on first strand
+      spider.onStrand = strands[0];
+      spider.x = strands[0].x;
+      spider.y = strands[0].y;
+    }
+
+    function generateStrand(worldY) {
+      const x = 40 + Math.random() * (W - 80);
+      const strand = { x, y: worldY, len: 80 + Math.random() * 60 };
+      strands.push(strand);
+
+      // Generate bugs near this strand
+      const d = Math.min(flingCount / 30, 1);
+      const bugCount = 2 + Math.floor(Math.random() * 3) + Math.floor(d * 2);
+
+      for (let i = 0; i < bugCount; i++) {
+        const bx = Math.random() * W;
+        const by = worldY - 40 - Math.random() * (STRAND_SPACING - 80);
+        const type = chooseBugType(d);
+        bugs.push(makeBug(bx, by, type, d));
+      }
+
+      // Dewdrops on strand
+      if (Math.random() < 0.4) {
+        dewdrops.push({
+          x: strand.x + (Math.random() - 0.5) * 20,
+          y: worldY - 10 - Math.random() * (strand.len - 20),
+          alive: true, pulse: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+
+    function chooseBugType(d) {
+      if (flingCount <= 5) return 'gnat';
+      if (flingCount <= 15) {
+        const r = Math.random();
+        if (r < 0.6) return 'gnat';
+        if (r < 0.85) return 'moth';
+        return 'gnat';
+      }
+      if (flingCount <= 25) {
+        const r = Math.random();
+        if (r < 0.4) return 'gnat';
+        if (r < 0.65) return 'moth';
+        if (r < 0.8) return 'firefly';
+        return 'wasp';
+      }
+      const r = Math.random();
+      if (r < 0.3) return 'gnat';
+      if (r < 0.5) return 'moth';
+      if (r < 0.65) return 'firefly';
+      if (r < 0.85) return 'wasp';
+      return 'gnat';
+    }
+
+    function makeBug(x, y, type, d) {
+      const speed = type === 'wasp' ? 60 + d * 40 : type === 'moth' ? 30 + d * 20 : 15 + d * 10;
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      return {
+        x, y, type, alive: true,
+        vx: speed * dir,
+        vy: (Math.random() - 0.5) * 10,
+        size: type === 'gnat' ? 3 : type === 'moth' ? 5 : type === 'firefly' ? 3 : 4,
+        blinkPhase: Math.random() * Math.PI * 2,
+        caught: false,
+      };
+    }
+
+    // --- INPUT ---
+    function handleTap() {
+      initAudio();
+      if (phase === 'start') { startGame(); return; }
+      if (phase === 'over') { init(); return; }
+      if (phase === 'sliding') {
+        // FLING!
+        fling();
+      }
+    }
+
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(); }, { passive: false });
+    canvas.addEventListener('mousedown', handleTap);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') handleTap();
+    });
+
+    function startGame() {
+      init();
+      phase = 'sliding';
+      spider.onStrand = strands[0];
+      spider.x = strands[0].x;
+      spider.y = strands[0].y;
+      startSlideHum();
+    }
+
+    function fling() {
+      phase = 'flinging';
+      spider.onStrand = null;
+      spider.vy = FLING_VY;
+      spider.vx = (Math.random() - 0.5) * FLING_VX_RANGE;
+      spider.legAnim = 1;
+      playFlingLaunch();
+
+      // After brief upward travel, enter slow-mo
+      setTimeout(() => {
+        if (phase !== 'flinging') return;
+        enterSlowmo();
+      }, 120);
+    }
+
+    function enterSlowmo() {
+      phase = 'slowmo';
+      slowmoTimer = SLOWMO_DURATION;
+
+      // Find bugs in range
+      catchQueue = [];
+      for (const bug of bugs) {
+        if (!bug.alive || bug.caught) continue;
+        const dx = bug.x - spider.x;
+        const dy = (bug.y - cameraY) - (spider.y - cameraY);
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist <= FLING_RANGE) {
+          // Firefly visibility check
+          if (bug.type === 'firefly') {
+            const vis = Math.sin(gameTime * 4 + bug.blinkPhase);
+            if (vis < 0) continue; // invisible, can't catch
+          }
+          catchQueue.push({ bug, dist });
+        }
+      }
+      catchQueue.sort((a, b) => a.dist - b.dist);
+      catchIndex = 0;
+      combo = 0;
+    }
+
+    // --- UPDATE ---
+    function update(dt) {
+      if (phase === 'start') { gameTime += dt; return; }
+      if (phase === 'over') return;
+
+      gameTime += dt;
+      if (flashTimer > 0) flashTimer -= dt;
+      if (comboTimer > 0) comboTimer -= dt;
+
+      // Screen shake
+      if (screenShake.timer > 0) screenShake.timer -= dt;
+
+      // Update bugs
+      const timeScale = phase === 'slowmo' ? 0.15 : 1;
+      for (const bug of bugs) {
+        if (!bug.alive || bug.caught) continue;
+        bug.x += bug.vx * dt * timeScale;
+        bug.y += bug.vy * dt * timeScale;
+        // Wrap horizontally
+        if (bug.x < -20) bug.x = W + 20;
+        if (bug.x > W + 20) bug.x = -20;
+      }
+
+      if (phase === 'sliding') {
+        // Slide down strand
+        const speed = SLIDE_SPEED_BASE + flingCount * 2;
+        spider.y += speed * dt;
+        updateSlideHum(speed);
+
+        // Collect dewdrops
+        for (const dew of dewdrops) {
+          if (!dew.alive) continue;
+          const dx = spider.x - dew.x;
+          const dy = spider.y - dew.y;
+          if (dx * dx + dy * dy < 400) {
+            dew.alive = false;
+            score += 2;
+            spawnParticles(dew.x, dew.y - cameraY, T.cyan, 4);
+            playCatch(0);
+          }
+        }
+
+        // Check if fell off strand bottom
+        if (spider.onStrand && spider.y > spider.onStrand.y + spider.onStrand.len) {
+          // Auto-fling at end of strand
+          fling();
+        }
+
+        // Camera follows
+        const targetCam = spider.y - H * 0.3;
+        cameraY += (targetCam - cameraY) * 3 * dt;
+      }
+
+      if (phase === 'flinging') {
+        spider.vy += GRAVITY * dt;
+        spider.y += spider.vy * dt;
+        spider.x += spider.vx * dt;
+        spider.legAnim = Math.max(0, spider.legAnim - dt * 3);
+
+        const targetCam = spider.y - H * 0.4;
+        cameraY += (targetCam - cameraY) * 3 * dt;
+      }
+
+      if (phase === 'slowmo') {
+        slowmoTimer -= dt;
+        // Slow physics
+        spider.vy += GRAVITY * dt * 0.15;
+        spider.y += spider.vy * dt * 0.15;
+        spider.x += spider.vx * dt * 0.15;
+
+        // Stagger catches
+        if (catchIndex < catchQueue.length) {
+          const entry = catchQueue[catchIndex];
+          // Fire silk line and catch
+          silkLines.push({
+            x1: spider.x, y1: spider.y - cameraY,
+            x2: entry.bug.x, y2: entry.bug.y - cameraY,
+            timer: 0.12,
+          });
+          entry.bug.caught = true;
+          entry.bug.alive = false;
+
+          if (entry.bug.type === 'wasp') {
+            score = Math.max(0, score - 5);
+            screenShake = { timer: 0.15, intensity: 3 };
+            playWaspBuzz();
+            spawnParticles(entry.bug.x, entry.bug.y - cameraY, T.wasp, 8);
+          } else {
+            const pts = entry.bug.type === 'gnat' ? 1 : entry.bug.type === 'moth' ? 3 : 5;
+            score += pts;
+            combo++;
+            playCatch(catchIndex);
+            spawnParticles(entry.bug.x, entry.bug.y - cameraY, getBugColor(entry.bug.type), 5);
+          }
+          catchIndex++;
+        }
+
+        // End slowmo
+        if (slowmoTimer <= 0) {
+          if (combo === 0) playMiss();
+          if (combo >= 3) {
+            playComboChord();
+            flashColor = T.gold; flashTimer = 0.2;
+            comboTimer = 2;
+          }
+          flingCount++;
+          phase = 'falling';
+        }
+
+        const targetCam = spider.y - H * 0.4;
+        cameraY += (targetCam - cameraY) * 1 * dt;
+      }
+
+      if (phase === 'falling') {
+        spider.vy += GRAVITY * dt;
+        spider.y += spider.vy * dt;
+        spider.x += spider.vx * dt;
+        spider.legAnim = Math.max(0, spider.legAnim - dt * 3);
+
+        // Check landing on strand
+        for (const strand of strands) {
+          const sy = strand.y;
+          if (spider.y >= sy && spider.y <= sy + strand.len &&
+              Math.abs(spider.x - strand.x) < 20 && spider.vy > 0) {
+            // Land!
+            spider.onStrand = strand;
+            spider.x = strand.x;
+            spider.vy = 0;
+            spider.vx = 0;
+            phase = 'sliding';
+            break;
+          }
+        }
+
+        // Death: fell off screen
+        if (spider.y - cameraY > H + 50) {
+          die();
+        }
+
+        const targetCam = spider.y - H * 0.4;
+        cameraY += (targetCam - cameraY) * 3 * dt;
+      }
+
+      // Generate strands ahead
+      const furthest = strands.reduce((max, s) => Math.max(max, s.y), 0);
+      while (furthest < cameraY + H * 2) {
+        const newY = strands.length > 0 ? strands[strands.length - 1].y + STRAND_SPACING : 0;
+        generateStrand(newY);
+        break;
+      }
+      // Actually, let me fix generation
+      let lastStrandY = strands.length > 0 ? strands[strands.length - 1].y : 0;
+      while (lastStrandY < cameraY + H * 2) {
+        lastStrandY += STRAND_SPACING;
+        generateStrand(lastStrandY);
+      }
+
+      // Cleanup above camera
+      strands = strands.filter(s => s.y + s.len > cameraY - 100);
+      bugs = bugs.filter(b => b.y > cameraY - 100);
+      dewdrops = dewdrops.filter(d => d.y > cameraY - 100);
+
+      // Silk lines decay
+      for (let i = silkLines.length - 1; i >= 0; i--) {
+        silkLines[i].timer -= dt;
+        if (silkLines[i].timer <= 0) silkLines.splice(i, 1);
+      }
+
+      // Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.vy += 100 * dt;
+        p.life -= dt * 2.5;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function die() {
+      phase = 'dead';
+      stopSlideHum();
+      playMiss();
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('fling_best', bestScore.toString());
+      }
+      setTimeout(() => { phase = 'over'; }, 1200);
+    }
+
+    function getBugColor(type) {
+      return type === 'gnat' ? T.gnat : type === 'moth' ? T.moth : type === 'firefly' ? T.firefly : T.wasp;
+    }
+
+    function spawnParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 20 + Math.random() * 60;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1, color,
+          size: 1.5 + Math.random() * 2,
+        });
+      }
+    }
+
+    // --- DRAW ---
+    function draw() {
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      if (phase === 'start') { drawStart(); return; }
+
+      // Cobweb background (parallax)
+      drawCobwebs();
+
+      const inSlowmo = phase === 'slowmo';
+
+      ctx.save();
+      if (screenShake.timer > 0) {
+        const s = screenShake.intensity * (screenShake.timer / 0.15);
+        ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      }
+
+      // Slowmo dimming
+      if (inSlowmo) {
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // Strands
+      for (const strand of strands) {
+        const sy = strand.y - cameraY;
+        if (sy + strand.len < -20 || sy > H + 20) continue;
+
+        ctx.strokeStyle = T.white;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = inSlowmo ? 0.2 : 0.5;
+        ctx.shadowBlur = 3; ctx.shadowColor = T.white;
+        ctx.beginPath();
+        ctx.moveTo(strand.x, sy);
+        ctx.lineTo(strand.x, sy + strand.len);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      }
+
+      // Dewdrops
+      for (const dew of dewdrops) {
+        if (!dew.alive) continue;
+        const dy = dew.y - cameraY;
+        if (dy < -10 || dy > H + 10) continue;
+        dew.pulse += 0.04;
+        const pulse = 1 + Math.sin(dew.pulse) * 0.2;
+        ctx.fillStyle = T.cyan;
+        ctx.globalAlpha = inSlowmo ? 0.15 : 0.7;
+        ctx.beginPath(); ctx.arc(dew.x, dy, 3 * pulse, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // Bugs
+      for (const bug of bugs) {
+        if (!bug.alive) continue;
+        const by = bug.y - cameraY;
+        if (by < -20 || by > H + 20) continue;
+
+        let alpha = inSlowmo ? 1 : 0.9;
+        const color = getBugColor(bug.type);
+
+        // Firefly blink
+        if (bug.type === 'firefly') {
+          const vis = Math.sin(gameTime * 4 + bug.blinkPhase);
+          if (vis < 0) alpha = 0.1;
+        }
+
+        ctx.fillStyle = color;
+        ctx.globalAlpha = alpha;
+        ctx.shadowBlur = inSlowmo ? 8 : 3;
+        ctx.shadowColor = color;
+        ctx.beginPath(); ctx.arc(bug.x, by, bug.size, 0, Math.PI * 2); ctx.fill();
+
+        // Wings for moths
+        if (bug.type === 'moth') {
+          const wingAngle = Math.sin(gameTime * 6) * 0.3;
+          ctx.beginPath();
+          ctx.ellipse(bug.x - 4, by, 3, 5, wingAngle, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.ellipse(bug.x + 4, by, 3, 5, -wingAngle, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      }
+
+      // Silk lines
+      for (const sl of silkLines) {
+        const alpha = sl.timer / 0.12;
+        ctx.strokeStyle = T.silk;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = alpha;
+        ctx.shadowBlur = 4; ctx.shadowColor = T.silk;
+        ctx.beginPath();
+        ctx.moveTo(sl.x1, sl.y1);
+        ctx.lineTo(sl.x2, sl.y2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      }
+
+      // Catch range indicator during slowmo
+      if (inSlowmo) {
+        ctx.strokeStyle = T.white;
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = 0.15;
+        ctx.beginPath();
+        ctx.arc(spider.x, spider.y - cameraY, FLING_RANGE, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      // Spider
+      if (phase !== 'over') {
+        const sx = spider.x;
+        const sy = spider.y - cameraY;
+
+        // Body
+        ctx.fillStyle = T.white;
+        ctx.shadowBlur = inSlowmo ? 12 : 4;
+        ctx.shadowColor = T.white;
+        ctx.beginPath(); ctx.arc(sx, sy, SPIDER_R, 0, Math.PI * 2); ctx.fill();
+
+        // Legs (4 pairs, animated during fling)
+        ctx.strokeStyle = T.white;
+        ctx.lineWidth = 1;
+        ctx.shadowBlur = 0;
+        const legSpread = spider.legAnim > 0 ? 8 + spider.legAnim * 6 : 6;
+        for (let i = 0; i < 4; i++) {
+          const angle = (i - 1.5) * 0.4;
+          const lx = Math.cos(angle + Math.PI / 2) * legSpread;
+          const ly = Math.sin(angle) * 3;
+          ctx.beginPath();
+          ctx.moveTo(sx - lx, sy + ly - 2 + i * 2);
+          ctx.lineTo(sx - lx - 4, sy + ly + 2 + i * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(sx + lx, sy + ly - 2 + i * 2);
+          ctx.lineTo(sx + lx + 4, sy + ly + 2 + i * 2);
+          ctx.stroke();
+        }
+
+        ctx.shadowBlur = 0;
+      }
+
+      // Particles
+      for (const p of particles) {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.restore();
+
+      // Flash overlay
+      if (flashTimer > 0 && flashColor) {
+        // Edge pulse only (gold combo flash)
+        const edgeW = W * 0.15;
+        const alpha = flashTimer / 0.2 * 0.3;
+        ctx.fillStyle = flashColor;
+        ctx.globalAlpha = alpha;
+        ctx.fillRect(0, 0, edgeW, H);
+        ctx.fillRect(W - edgeW, 0, edgeW, H);
+        ctx.globalAlpha = 1;
+      }
+
+      // --- HUD ---
+      ctx.fillStyle = T.white;
+      ctx.font = 'bold 24px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(score + '', 16, 32 + safeTop);
+
+      // Combo counter
+      if (comboTimer > 0 && combo >= 3) {
+        ctx.textAlign = 'center';
+        ctx.fillStyle = T.gold;
+        ctx.font = 'bold 18px monospace';
+        ctx.globalAlpha = Math.min(1, comboTimer / 0.5);
+        ctx.shadowBlur = 6; ctx.shadowColor = T.gold;
+        ctx.fillText(combo + 'x COMBO', W / 2, 32 + safeTop);
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      }
+
+      if (phase === 'over' || phase === 'dead') drawGameOver();
+
+      ctx.textAlign = 'left';
+    }
+
+    function drawCobwebs() {
+      ctx.strokeStyle = T.border;
+      ctx.lineWidth = 0.5;
+      ctx.globalAlpha = 0.2;
+      const scroll = cameraY * 0.2;
+      for (let i = 0; i < 5; i++) {
+        const cx = ((i * 173 + 50) % W);
+        const cy = ((i * 127 + scroll) % (H + 200)) - 100;
+        ctx.beginPath();
+        for (let j = 0; j < 6; j++) {
+          const a = j * Math.PI / 3;
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(a) * 60, cy + Math.sin(a) * 60);
+        }
+        ctx.stroke();
+        // Concentric rings
+        for (let r = 20; r <= 60; r += 20) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawStart() {
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
+      drawCobwebs();
+
+      ctx.textAlign = 'center';
+
+      // Spider bob
+      const bobY = Math.sin(gameTime * 2) * 6;
+
+      // Strand
+      ctx.strokeStyle = T.white;
+      ctx.lineWidth = 1.5; ctx.globalAlpha = 0.4;
+      ctx.beginPath(); ctx.moveTo(W / 2, H / 2 - 40); ctx.lineTo(W / 2, H / 2 + 60); ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Spider on strand
+      ctx.fillStyle = T.white;
+      ctx.shadowBlur = 6; ctx.shadowColor = T.white;
+      ctx.beginPath(); ctx.arc(W / 2, H / 2 + bobY, SPIDER_R * 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Gnats
+      for (let i = 0; i < 3; i++) {
+        const gx = W / 2 + 40 + i * 12;
+        const gy = H / 2 - 20 + Math.sin(gameTime * 3 + i) * 5;
+        ctx.fillStyle = T.gnat;
+        ctx.shadowBlur = 4; ctx.shadowColor = T.gnat;
+        ctx.beginPath(); ctx.arc(gx, gy, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.fillStyle = T.white;
+      ctx.font = 'bold 48px monospace';
+      ctx.fillText('FLING', W / 2, H / 2 - 80);
+
+      ctx.fillStyle = T.muted;
+      ctx.font = '13px monospace';
+      ctx.fillText('tap to fling · catch bugs mid-air', W / 2, H / 2 - 52);
+
+      ctx.fillStyle = T.white;
+      ctx.font = '16px monospace';
+      ctx.fillText('[ TAP TO START ]', W / 2, H / 2 + 90);
+
+      if (bestScore > 0) {
+        ctx.fillStyle = T.muted;
+        ctx.font = '13px monospace';
+        ctx.fillText('Best: ' + bestScore, W / 2, H / 2 + 118);
+      }
+
+      ctx.textAlign = 'left';
+    }
+
+    function drawGameOver() {
+      ctx.fillStyle = 'rgba(9,9,11,0.7)';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = T.muted;
+      ctx.font = '14px monospace';
+      ctx.fillText('WEB SNAPPED', W / 2, H / 2 - 60);
+
+      ctx.fillStyle = T.white;
+      ctx.font = 'bold 56px monospace';
+      ctx.fillText(score + '', W / 2, H / 2 - 10);
+
+      if (score >= bestScore && score > 0) {
+        ctx.fillStyle = T.gold;
+        ctx.font = 'bold 14px monospace';
+        ctx.fillText('NEW RECORD', W / 2, H / 2 + 15);
+      }
+
+      ctx.fillStyle = T.muted;
+      ctx.font = '13px monospace';
+      ctx.fillText('Best: ' + bestScore, W / 2, H / 2 + 38);
+
+      ctx.fillStyle = T.white;
+      ctx.font = '16px monospace';
+      ctx.fillText('[ TAP TO RETRY ]', W / 2, H / 2 + 75);
+
+      ctx.textAlign = 'left';
+    }
+
+    // --- LOOP ---
+    let lastTime = performance.now();
+    init();
+
+    function loop(ts) {
+      const dt = Math.min((ts - lastTime) / 1000, 0.05);
+      lastTime = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
