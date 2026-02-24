@@ -555,12 +555,15 @@
         spider.y += spider.vy * dt * 0.15;
         spider.x += spider.vx * dt * 0.15;
 
-        if (catchIndex < catchQueue.length) {
+        // Staggered catches (same as main game)
+        catchTimer -= dt;
+        if (catchIndex < catchQueue.length && catchTimer <= 0) {
+          catchTimer = CATCH_DELAY;
           const entry = catchQueue[catchIndex];
           silkLines.push({
             x1: spider.x, y1: spider.y - cameraY,
             x2: entry.bug.x, y2: entry.bug.y - cameraY,
-            timer: 0.12,
+            timer: 0.15, live: true,
           });
           entry.bug.caught = true; entry.bug.alive = false;
           if (entry.bug.type === 'wasp') {
