@@ -15,7 +15,6 @@ const HUME_API_KEY = process.env.HUME_API_KEY || 'oSCMTs2HVD3kTy6QUCSJqFVWn0OSRW
 
 const AGENT_VOICES: Record<string, { provider: string; name: string }> = {
   mave: { provider: 'HUME_AI', name: 'ITO' },
-  amber: { provider: 'HUME_AI', name: 'FUMIKO' },
 };
 
 export async function POST(request: NextRequest) {

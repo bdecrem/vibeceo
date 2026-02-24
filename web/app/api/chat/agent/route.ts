@@ -9,7 +9,6 @@
 import { NextRequest } from 'next/server';
 import { checkAuth } from '../../auth-guard';
 import { existsSync, appendFileSync, writeFileSync, mkdirSync, readFileSync } from 'fs';
-import { execSync } from 'child_process';
 import { join } from 'path';
 import { createPrivateKey, createPublicKey, sign, randomUUID } from 'crypto';
 
@@ -17,8 +16,6 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
 const WORKSPACE = join(process.env.HOME || '/Users/bart', '.openclaw/workspace');
-const AMBER_SSH = 'bartssh@100.66.170.98';
-const AMBER_WS = '/Users/bartssh/.openclaw/agents/amber/workspace';
 
 // Device identity for WebSocket auth
 const DEVICE_IDENTITY = (() => {
@@ -49,15 +46,7 @@ function logExchange(agentName: string, userText: string, assistantText: string)
     if (existsSync(memFile)) appendFileSync(memFile, entry);
     else writeFileSync(memFile, `# ${date}\n${entry}`);
 
-    if (agentName.toLowerCase() === 'amber') {
-      try {
-        const escaped = entry.replace(/'/g, "'\\''");
-        execSync(
-          `ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no ${AMBER_SSH} "mkdir -p '${AMBER_WS}/memory' && echo '${escaped}' >> '${AMBER_WS}/memory/${date}.md'"`,
-          { timeout: 5000, stdio: ['pipe', 'pipe', 'pipe'] }
-        );
-      } catch {}
-    }
+
   } catch (e) { console.error('[agent-chat] log error:', e); }
 }
 
@@ -68,11 +57,7 @@ const AGENTS: Record<string, { url: string; token: string; agentId: string; sess
     agentId: 'main',
     sessionKey: 'agent:main:main', // THE main session — same as Discord
   },
-  amber: {
-    url: 'http://100.66.170.98:18789',
-    token: '2484c09c132e9dbcf544c7d399a8fe8664df1fbd9e013bee',
-    agentId: 'amber',
-  },
+
 };
 
 /**
@@ -240,31 +225,6 @@ async function sendViaWsRpc(agent: typeof AGENTS.mave, message: string): Promise
   });
 }
 
-/**
- * Fallback: chat completions for agents on other machines (Amber)
- */
-async function sendViaChatCompletions(agent: typeof AGENTS.mave, message: string): Promise<string> {
-  const resp = await fetch(`${agent.url}/v1/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${agent.token}`,
-      'x-openclaw-agent-id': agent.agentId,
-    },
-    body: JSON.stringify({
-      model: 'openclaw:main',
-      messages: [{ role: 'user', content: message }],
-      stream: false,
-    }),
-  });
-
-  if (!resp.ok) {
-    throw new Error(`Chat completions error: ${resp.status}`);
-  }
-
-  const data = await resp.json();
-  return data.choices?.[0]?.message?.content || '';
-}
 
 export async function POST(request: NextRequest) {
   const t0 = Date.now();
@@ -274,37 +234,26 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const agentName = (body.agent || 'amber').toLowerCase();
     const messages = body.messages || [];
-    const agent = AGENTS[agentName];
-
-    if (!agent) {
-      return Response.json({ error: `Unknown agent: ${agentName}` }, { status: 400 });
-    }
+    const agent = AGENTS.mave;
 
     const lastUserMsg = messages.filter((m: any) => m.role === 'user').pop();
     const userText = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : JSON.stringify(lastUserMsg?.content || '');
-    console.log(`[agent-chat] ${agentName} — "${userText.slice(0, 80)}"`);
+    console.log(`[agent-chat] mave — "${userText.slice(0, 80)}"`);
 
     let content: string;
 
-    // Use WebSocket RPC for agents with a sessionKey (main session unification)
-    if (agent.sessionKey && DEVICE_IDENTITY) {
-      try {
-        content = await sendViaWsRpc(agent, userText);
-      } catch (err: any) {
-        console.error(`[agent-chat] WS RPC failed, falling back to chat completions:`, err.message);
-        content = await sendViaChatCompletions(agent, userText);
-      }
-    } else {
-      content = await sendViaChatCompletions(agent, userText);
+    if (!DEVICE_IDENTITY) {
+      return Response.json({ error: 'Device identity not configured' }, { status: 500 });
     }
 
-    console.log(`[agent-chat] ${agentName} done (${Date.now() - t0}ms): ${content.slice(0, 80)}`);
+    content = await sendViaWsRpc(agent, userText);
+
+    console.log(`[agent-chat] mave done (${Date.now() - t0}ms): ${content.slice(0, 80)}`);
 
     // Log to daily memory
     if (userText && content) {
-      logExchange(agentName.charAt(0).toUpperCase() + agentName.slice(1), userText, content);
+      logExchange('Mave', userText, content);
     }
 
     return Response.json({

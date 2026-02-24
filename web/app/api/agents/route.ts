@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 const AGENTS = [
   { id: 'mave', name: 'Mave', emoji: '🌊', color: '#00CCCC' },
-  { id: 'amber', name: 'Amber', emoji: '🎨', color: '#E8915A' },
 ];
 
 export async function GET(request: NextRequest) {
