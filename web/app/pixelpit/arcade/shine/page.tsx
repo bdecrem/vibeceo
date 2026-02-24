@@ -144,6 +144,7 @@ export default function ShineGame() {
     countdownTimer: 0, // seconds remaining in countdown
     countdownBeat: 0, // which beat of countdown we're on (for tick sound)
     countdownLastTick: -1, // last tick index played
+    totalSpawned: 0,
     running: false, W: 0, H: 0,
   });
 
@@ -201,7 +202,7 @@ export default function ShineGame() {
     const game = g.current;
     const ctx = game.audioCtx; if (!ctx) return;
     // Each chord lasts 4 beats (1 bar). Cycle through 4 chords = 16-beat phrase.
-    const chordIndex = Math.floor(beatIndex / 4) % 4;
+    const chordIndex = ((Math.floor(beatIndex / 4) % 4) + 4) % 4;
     if (chordIndex === game.lastChordIndex) return;
     game.lastChordIndex = chordIndex;
     const chord = CHORD_PROG[chordIndex];
@@ -397,6 +398,7 @@ export default function ShineGame() {
     game.currentPhase = 1; game.phaseName = 'QUARTER NOTES';
     game.lastScheduledBeat = -1;
     game.lastChordIndex = -1;
+    game.totalSpawned = 0;
   }, []);
 
   const startGame = useCallback(() => {
@@ -543,10 +545,11 @@ export default function ShineGame() {
     if (g.current.phase === 'tutorial') setupTutorialStep(g.current);
 
     const handleTap = (e: TouchEvent | MouseEvent) => {
-      if (e instanceof TouchEvent) e.preventDefault();
+      const isTouch = typeof TouchEvent !== 'undefined' && e instanceof TouchEvent;
+      if (isTouch) e.preventDefault();
       const game = g.current;
-      const px = e instanceof TouchEvent ? e.touches[0].clientX : e.clientX;
-      const py = e instanceof TouchEvent ? e.touches[0].clientY : e.clientY;
+      const px = isTouch ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
+      const py = isTouch ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
       initAudio();
 
       if (game.phase === 'tutorial') {
@@ -729,6 +732,14 @@ export default function ShineGame() {
       if (game.countdownTimer <= 0) {
         game.phase = 'playing';
         game.gameTime = 0;
+        // Resync beat clock to actual audio time so elapsed starts at 0
+        // (frame-based countdown and audio clock can drift, especially on mobile)
+        if (game.audioCtx) {
+          // Start beat clock ahead so first gem doesn't appear until 2 full empty beats
+          // (BLOSSOM_LEAD = time before beat that gem becomes visible)
+          game.beatStartTime = game.audioCtx.currentTime + BEAT_SEC * 2 + BLOSSOM_LEAD;
+          game.lastScheduledBeat = -1;
+        }
       }
     }
 
@@ -784,11 +795,14 @@ export default function ShineGame() {
         const now = actx.currentTime;
         const elapsed = now - game.beatStartTime;
 
-        // Subdivision interval — halved density from before:
+        // Subdivision interval:
+        // Warmup (first 8 gems): every 4 beats (whole notes) — easy intro
         // Phase 1: every 2 beats
         // Phase 2: every 1 beat
         // Phase 3: every half beat
-        const subdivSec = game.currentPhase === 1 ? BEAT_SEC * 2 :
+        const inWarmup = game.totalSpawned < 4;
+        const subdivSec = inWarmup ? BEAT_SEC * 4 :
+                          game.currentPhase === 1 ? BEAT_SEC * 2 :
                           game.currentPhase === 2 ? BEAT_SEC :
                           BEAT_SEC / 2;
 
@@ -805,8 +819,16 @@ export default function ShineGame() {
                              game.currentPhase === 2 ? (isQuarter ? 4 : 2) :
                              (isQuarter ? 4 : 2);
           spawnGemAt(game, subdivType);
+          game.totalSpawned++;
         }
         game.lastScheduledBeat = currentSubdiv;
+        // When warmup just ended, resync lastScheduledBeat to the faster interval
+        if (game.totalSpawned >= 4 && inWarmup) {
+          const normalSec = game.currentPhase === 1 ? BEAT_SEC * 2 :
+                            game.currentPhase === 2 ? BEAT_SEC :
+                            BEAT_SEC / 2;
+          game.lastScheduledBeat = Math.floor(scheduleElapsed / normalSec);
+        }
 
         // Kick on every quarter note (scheduled precisely)
         const quarterElapsed = elapsed;
