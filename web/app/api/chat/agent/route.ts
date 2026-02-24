@@ -6,9 +6,43 @@
  * Same agent, same tools, same session — just a different UI.
  */
 import { NextRequest } from 'next/server';
+import { existsSync, appendFileSync, writeFileSync, mkdirSync } from 'fs';
+import { execSync } from 'child_process';
+import { join } from 'path';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 120; // tools can take a while
+export const maxDuration = 120;
+
+const WORKSPACE = join(process.env.HOME || '/Users/bart', '.openclaw/workspace');
+const AMBER_SSH = 'bartssh@100.66.170.98';
+const AMBER_WS = '/Users/bartssh/.openclaw/agents/amber/workspace';
+
+function logExchange(agentName: string, userText: string, assistantText: string) {
+  try {
+    const now = new Date();
+    const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+    const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles' });
+    const entry = `\n### App Chat — ${agentName} (${time})\n- **Bart:** ${userText}\n- **${agentName}:** ${assistantText}\n`;
+
+    // Log locally (Mave's memory)
+    const memDir = join(WORKSPACE, 'memory');
+    mkdirSync(memDir, { recursive: true });
+    const memFile = join(memDir, `${date}.md`);
+    if (existsSync(memFile)) appendFileSync(memFile, entry);
+    else writeFileSync(memFile, `# ${date}\n${entry}`);
+
+    // For Amber, also log to M4
+    if (agentName.toLowerCase() === 'amber') {
+      try {
+        const escaped = entry.replace(/'/g, "'\\''");
+        execSync(
+          `ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no ${AMBER_SSH} "mkdir -p '${AMBER_WS}/memory' && echo '${escaped}' >> '${AMBER_WS}/memory/${date}.md'"`,
+          { timeout: 5000, stdio: ['pipe', 'pipe', 'pipe'] }
+        );
+      } catch {}
+    }
+  } catch (e) { console.error('[agent-chat] log error:', e); }
+}
 
 const AGENTS: Record<string, { url: string; token: string; agentId: string }> = {
   mave: {
@@ -63,6 +97,13 @@ export async function POST(request: NextRequest) {
     const data = await resp.json();
     const content = data.choices?.[0]?.message?.content || '';
     console.log(`[agent-chat] ${agentName} done (${Date.now() - t0}ms): ${content.slice(0, 80)}`);
+
+    // Log to daily memory so all sessions can see app chats
+    const lastUser = messages.filter((m: any) => m.role === 'user').pop();
+    if (lastUser?.content && content) {
+      const userText = typeof lastUser.content === 'string' ? lastUser.content : JSON.stringify(lastUser.content);
+      logExchange(agentName.charAt(0).toUpperCase() + agentName.slice(1), userText, content);
+    }
 
     return Response.json(data);
   } catch (error) {
