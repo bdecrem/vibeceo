@@ -1,22 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SNOOZE — The Math Never Works</title>
+  <title>SNOOZE — Just 9 more minutes</title>
   
-  <!-- Open Graph -->
-  <meta property="og:title" content="SNOOZE — The Math Never Works">
-  <meta property="og:description" content="5 more minutes (a time loop)">
-  <meta property="og:image" content="https://kochi.to/amber/snooze-og.png">
-  <meta property="og:url" content="https://kochi.to/amber/snooze.html">
-  <meta property="og:type" content="website">
-  
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="SNOOZE — The Math Never Works">
-  <meta name="twitter:description" content="5 more minutes (a time loop)">
-  <meta name="twitter:image" content="https://kochi.to/amber/snooze-og.png">
+  <!-- OG tags -->
+  <meta property="og:title" content="SNOOZE — Just 9 more minutes" />
+  <meta property="og:description" content="First alarm vs fifth alarm. An ASCII graffiti piece by Amber." />
+  <meta property="og:image" content="https://intheamber.com/amber/snooze-og.png" />
+  <meta property="og:url" content="https://intheamber.com/amber/snooze.html" />
+  <meta name="twitter:card" content="summary_large_image" />
   
   <style>
     * {
@@ -30,133 +24,229 @@
       color: #D4A574;
       font-family: 'Courier New', monospace;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       min-height: 100vh;
       padding: 20px;
-      overflow: hidden;
-    }
-    
-    .container {
-      text-align: center;
-      font-size: 16px;
-      line-height: 1.4;
-      white-space: pre;
       user-select: none;
       -webkit-user-select: none;
-      -webkit-touch-callout: none;
+      touch-action: manipulation;
     }
     
-    .time {
-      color: #FFD700;
-      font-weight: bold;
+    #container {
+      text-align: center;
+      max-width: 400px;
     }
     
-    .lie {
-      color: #7B68EE;
-      opacity: 0.7;
-      font-size: 14px;
-    }
-    
-    .button {
-      margin-top: 30px;
-      padding: 15px 30px;
-      background: #0D0D0D;
+    #alarm-box {
       border: 2px solid #D4A574;
+      padding: 30px 20px;
+      position: relative;
+      background: rgba(13, 13, 13, 0.8);
+    }
+    
+    #title {
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+    
+    #icon {
+      font-size: 48px;
+      margin: 20px 0;
+      transition: all 0.3s;
+    }
+    
+    #time {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 20px 0;
+      transition: color 0.3s;
+    }
+    
+    #snooze-btn {
+      border: 2px solid #D4A574;
+      background: transparent;
       color: #D4A574;
       font-family: 'Courier New', monospace;
-      font-size: 16px;
+      font-size: 18px;
+      padding: 12px 30px;
       cursor: pointer;
+      margin: 20px 0;
       transition: all 0.2s;
-      white-space: nowrap;
+      touch-action: manipulation;
+      min-width: 150px;
     }
     
-    .button:active {
+    #snooze-btn:hover {
       background: #D4A574;
       color: #000;
+    }
+    
+    #snooze-btn:active {
       transform: scale(0.95);
     }
     
-    .counter {
-      margin-top: 20px;
-      font-size: 12px;
-      opacity: 0.5;
+    #message {
+      font-size: 14px;
+      margin-top: 15px;
+      min-height: 20px;
+      transition: all 0.3s;
     }
     
-    @media (max-width: 600px) {
-      .container {
-        font-size: 14px;
-      }
-      .button {
-        font-size: 14px;
-        padding: 12px 24px;
-      }
+    #counter {
+      font-size: 12px;
+      margin-top: 15px;
+      opacity: 0.6;
+    }
+    
+    .shake {
+      animation: shake 0.5s;
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    
+    .pulse {
+      animation: pulse 0.3s;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+    
+    .panic {
+      color: #FF6B6B !important;
+    }
+    
+    .warning {
+      color: #FFD700 !important;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div id="art"></div>
-    <button class="button" id="snoozeBtn">[ HIT SNOOZE ]</button>
-    <div class="counter" id="counter">times snoozed: 0</div>
+  <div id="container">
+    <div id="alarm-box">
+      <div id="title">⏰ ALARM ⏰</div>
+      <div id="icon">♪ ♫ ♪</div>
+      <div id="time">6:00</div>
+      <button id="snooze-btn">[SNOOZE]</button>
+      <div id="message">just 9 more minutes...</div>
+      <div id="counter">snoozes: 0</div>
+    </div>
   </div>
 
   <script>
-    const art = document.getElementById('art');
-    const btn = document.getElementById('snoozeBtn');
-    const counter = document.getElementById('counter');
+    let snoozeCount = 0;
+    let baseTime = 360; // 6:00am in minutes
     
-    const times = [
-      { display: '7:00', promise: '5 more minutes' },
-      { display: '7:09', promise: '5 more minutes' },
-      { display: '7:18', promise: '5 more minutes' },
-      { display: '7:27', promise: '5 more minutes' },
-      { display: '7:36', promise: 'okay seriously 5 more' },
-      { display: '7:45', promise: 'LAST TIME 5 more' },
-      { display: '7:54', promise: 'the math never works' },
-      { display: '8:03', promise: 'you're late' },
-      { display: '8:12', promise: 'very late' },
-      { display: '8:21', promise: 'just get up' }
+    const icons = [
+      "♪ ♫ ♪",
+      "♫ ♪ ♫",
+      "⚠ ♪ ⚠",
+      "⚠ ⚠ ⚠",
+      "🔥 ⚠ 🔥",
+      "💀 💀 💀"
     ];
     
-    let snoozeCount = 0;
+    const messages = [
+      "just 9 more minutes...",
+      "okay, 9 more...",
+      "this is the last one...",
+      "you should probably get up...",
+      "YOU'RE LATE",
+      "TOO LATE"
+    ];
     
-    function render() {
-      const timeData = times[snoozeCount % times.length];
-      
-      art.innerHTML = `
-   ┌─────────────────────┐
-   │                     │
-   │   <span class="time">${timeData.display}</span>   AM       │
-   │                     │
-   │   <span class="lie">${timeData.promise}</span>   │
-   │                     │
-   └─────────────────────┘
-`;
-    }
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     
-    btn.addEventListener('click', () => {
-      snoozeCount++;
-      render();
-      counter.textContent = `times snoozed: ${snoozeCount}`;
-      
-      // Audio feedback
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+    function playSound(frequency, duration) {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
       
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(audioContext.destination);
       
-      osc.frequency.value = 200;
-      gain.gain.value = 0.1;
+      osc.frequency.value = frequency;
+      osc.type = 'square';
+      
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
       
       osc.start();
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      osc.stop(ctx.currentTime + 0.3);
+      osc.stop(audioContext.currentTime + duration);
+    }
+    
+    function formatTime(minutes) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return `${hours}:${mins.toString().padStart(2, '0')}`;
+    }
+    
+    function updateState() {
+      const icon = document.getElementById('icon');
+      const time = document.getElementById('time');
+      const message = document.getElementById('message');
+      const btn = document.getElementById('snooze-btn');
+      const counter = document.getElementById('counter');
+      const alarmBox = document.getElementById('alarm-box');
+      
+      const currentTime = baseTime + (snoozeCount * 9);
+      
+      icon.textContent = icons[snoozeCount];
+      time.textContent = formatTime(currentTime);
+      message.textContent = messages[snoozeCount];
+      counter.textContent = `snoozes: ${snoozeCount}`;
+      
+      // Color changes
+      if (snoozeCount >= 4) {
+        time.classList.add('panic');
+        message.classList.add('panic');
+        icon.classList.add('panic');
+      } else if (snoozeCount >= 2) {
+        time.classList.add('warning');
+      }
+      
+      // Shake on later snoozes
+      if (snoozeCount >= 3) {
+        alarmBox.classList.add('shake');
+        setTimeout(() => alarmBox.classList.remove('shake'), 500);
+      }
+      
+      // Disable button after 5 snoozes
+      if (snoozeCount >= 5) {
+        btn.disabled = true;
+        btn.textContent = "[GAME OVER]";
+        btn.style.opacity = "0.5";
+        btn.style.cursor = "not-allowed";
+      }
+    }
+    
+    document.getElementById('snooze-btn').addEventListener('click', () => {
+      if (snoozeCount >= 5) return;
+      
+      snoozeCount++;
+      
+      // Play increasingly urgent sound
+      const baseFreq = 400;
+      const freq = baseFreq + (snoozeCount * 100);
+      playSound(freq, 0.1);
+      
+      // Pulse animation
+      const icon = document.getElementById('icon');
+      icon.classList.add('pulse');
+      setTimeout(() => icon.classList.remove('pulse'), 300);
+      
+      updateState();
     });
     
-    render();
+    // Initialize
+    updateState();
   </script>
 </body>
 </html>
