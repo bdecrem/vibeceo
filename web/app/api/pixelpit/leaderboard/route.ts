@@ -16,6 +16,98 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY!
 );
 
+// ============ Anti-cheat: Score caps per game ============
+// Hard ceiling = ~10x the maxScore (XP benchmark). Legit outliers welcome, absurd scores rejected.
+const SCORE_CAPS: Record<string, number> = {
+  superbeam: 200,
+  batdash: 150,
+  tapper: 350,
+  beam: 1000,
+  catch: 150,
+  "cat-tower": 400,
+  cavemoth: 10000,
+  emoji: 5000,
+  flappy: 600,
+  flip: 10000,
+  haunt: 50,
+  pixel: 10,
+  rain: 500,
+  singularity: 1000,
+  "sprout-run": 20000,
+  "tap-beats": 700000,
+  threads: 10000,
+  orbit: 750,
+  blast: 5000,
+  dash: 2000,
+  fling: 2000,
+  drop: 5000,
+  devour: 2000,
+  puff: 5000,
+  fold: 1000,
+  phase: 1000,
+  snip: 1000,
+  sift: 2000,
+  shine: 2000,
+  pave: 1000,
+  melt: 5000,
+  melt2: 5000,
+  melt3: 5000,
+  clump: 5000,
+  "swoop-ci": 2000,
+  swoop: 2000,
+  slide: 2000,
+  ballz: 5000,
+  climb: 5000,
+  crossy: 5000,
+  yertle: 5000,
+  swarm: 5000,
+  chroma: 5000,
+  seance: 5000,
+  glop: 5000,
+  flop: 5000,
+  paralysis: 5000,
+  pour: 5000,
+};
+
+// ============ Anti-cheat: Gameplay proof validation ============
+// Proof is a base64-encoded JSON: { d: duration_ms, i: input_count, f: frame_count, t: timestamp }
+// Phase 1: log suspicious proofs but accept all submissions (monitor before rejecting)
+function validateProof(proofStr: string | undefined, score: number, game: string): { valid: boolean; reason?: string } {
+  if (!proofStr) {
+    // No proof = old client. Accept for now.
+    return { valid: true, reason: "no_proof" };
+  }
+
+  try {
+    const decoded = JSON.parse(Buffer.from(proofStr, "base64").toString());
+    const { d, i, f } = decoded;
+
+    if (typeof d !== "number" || typeof i !== "number" || typeof f !== "number") {
+      return { valid: false, reason: "malformed_proof" };
+    }
+
+    // Session too short (< 2 seconds)
+    if (d < 2000) {
+      return { valid: false, reason: `duration_too_short:${d}ms` };
+    }
+
+    // No input events at all
+    if (i < 3) {
+      return { valid: false, reason: `too_few_inputs:${i}` };
+    }
+
+    // Frame rate sanity: should be roughly 20-120 fps
+    const fps = f / (d / 1000);
+    if (fps < 5 || fps > 200) {
+      return { valid: false, reason: `implausible_fps:${fps.toFixed(1)}` };
+    }
+
+    return { valid: true };
+  } catch {
+    return { valid: false, reason: "proof_decode_error" };
+  }
+}
+
 // GET - fetch leaderboard for a game
 // Dedupes registered users (best score only), keeps all guest entries
 // Optional: pass userId or nickname to get player's rank if not in top
@@ -501,7 +593,7 @@ async function createMagicStreakPair(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { game, score, nickname, userId, maxScore: rawMaxScore, xpDivisor, groupCode, refUserId } = body;
+    const { game, score, nickname, userId, maxScore: rawMaxScore, xpDivisor, groupCode, refUserId, proof } = body;
     // Client sends maxScore via ScoreFlow prop — single source of truth per game
     const maxScore = rawMaxScore ?? (xpDivisor ? xpDivisor * 50 : 50);
 
@@ -518,6 +610,20 @@ export async function POST(request: NextRequest) {
         { error: "Either userId or nickname required" },
         { status: 400 }
       );
+    }
+
+    // Anti-cheat: hard score cap — reject obviously impossible scores
+    const cap = SCORE_CAPS[game];
+    if (cap && score > cap) {
+      console.warn(`[anti-cheat] Score rejected: ${game} score=${score} cap=${cap} user=${userId || nickname}`);
+      return NextResponse.json({ error: "Invalid score" }, { status: 400 });
+    }
+
+    // Anti-cheat: gameplay proof validation (Phase 1 — log only, don't reject)
+    const proofResult = validateProof(proof, score, game);
+    if (!proofResult.valid) {
+      console.warn(`[anti-cheat] Suspicious proof: ${game} score=${score} reason=${proofResult.reason} user=${userId || nickname}`);
+      // Phase 1: allow through. Phase 2: return error for failed proofs.
     }
 
     // Fat-finger prevention: check for duplicate submission within last 10 seconds

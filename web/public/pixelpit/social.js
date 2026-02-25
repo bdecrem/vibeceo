@@ -21,6 +21,39 @@ window.PixelpitSocial = (function() {
   const STORAGE_KEY = 'pixelpit_user';
   const API_BASE = '/api/pixelpit';
 
+  // ============ Gameplay Proof (passive anti-cheat) ============
+  // Tracks ambient signals from page load to detect non-browser submissions.
+  // All listeners are passive — they cannot interfere with game input.
+
+  const _proof = {
+    t0: Date.now(),
+    inputs: 0,
+    frames: 0,
+  };
+
+  // Count input events (passive, capture phase — invisible to games)
+  function _countInput() { _proof.inputs++; }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('touchstart', _countInput, { passive: true, capture: true });
+    document.addEventListener('mousedown', _countInput, { passive: true, capture: true });
+    document.addEventListener('keydown', _countInput, { passive: true, capture: true });
+
+    // Count animation frames
+    (function _tick() {
+      _proof.frames++;
+      requestAnimationFrame(_tick);
+    })();
+  }
+
+  function _getProof() {
+    return btoa(JSON.stringify({
+      d: Date.now() - _proof.t0,
+      i: _proof.inputs,
+      f: _proof.frames,
+      t: Date.now(),
+    }));
+  }
+
   // ============ State ============
 
   /**
@@ -200,6 +233,9 @@ window.PixelpitSocial = (function() {
     if (refUserId && user && refUserId !== user.id) {
       body.refUserId = refUserId;
     }
+
+    // Attach gameplay proof (passive anti-cheat)
+    body.proof = _getProof();
 
     const res = await fetch(`${API_BASE}/leaderboard`, {
       method: 'POST',
