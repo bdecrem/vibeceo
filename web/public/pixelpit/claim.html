@@ -176,6 +176,154 @@
     let floodMoths; // moths to trap during flood
     let litCount; // tracked incrementally, not scanned per frame
 
+    // --- TUTORIAL STATE ---
+    let tutActive = false;
+    let tutStep = 0;
+    let tutSuccess = false;
+    let tutSuccessTimer = 0;
+    let tutTurns = 0;
+    let tutReturned = false;
+    let tutClaimed = false;
+    let tutClaimedArea = 0;
+    let tutTrappedMoth = false;
+
+    const TUT_STEPS = [
+      {
+        name: 'STEER',
+        instruction: 'SWIPE TO TURN',
+        setup(g) {
+          // Empty meadow, no moths, just territory
+          moths.length = 0;
+          tutTurns = 0;
+        },
+        check() { return tutTurns >= 3; }
+      },
+      {
+        name: 'LEAVE & RETURN',
+        instruction: 'EXIT ZONE, THEN COME BACK',
+        setup(g) {
+          moths.length = 0;
+          tutReturned = false;
+        },
+        check() { return tutReturned; }
+      },
+      {
+        name: 'CLOSE THE LOOP',
+        instruction: 'MAKE A LOOP TO CLAIM LAND',
+        setup(g) {
+          moths.length = 0;
+          tutClaimed = false;
+          tutClaimedArea = 0;
+        },
+        check() { return tutClaimedArea > 0; }
+      },
+      {
+        name: 'TRAP MOTHS',
+        instruction: 'LOOP AROUND A MOTH',
+        setup(g) {
+          tutTrappedMoth = false;
+          // Spawn one slow moth near territory
+          const cx = Math.floor(gridW / 2), cy = Math.floor(gridH / 2);
+          moths = [{
+            x: cx * CELL + CELL * 4,
+            y: cy * CELL - CELL * 2,
+            vx: 0, vy: 0,
+            speed: 15,
+            flicker: 0,
+            alive: true,
+          }];
+        },
+        check() { return tutTrappedMoth; }
+      },
+      {
+        name: 'LIGHT THE MEADOW',
+        instruction: 'REACH 5% LIT',
+        setup(g) {
+          moths.length = 0;
+          // Spawn a few moths for real feel
+          for (let i = 0; i < 2; i++) spawnMoth();
+        },
+        check() { return score >= 5; }
+      },
+    ];
+
+    function startTutorial() {
+      tutActive = true;
+      tutStep = 0;
+      tutSuccess = false;
+      tutSuccessTimer = 0;
+      // Reset game state
+      gridW = Math.ceil(W / CELL);
+      gridH = Math.ceil(H / CELL);
+      territory = [];
+      for (let y = 0; y < gridH; y++) territory[y] = new Float32Array(gridW);
+      const cx = Math.floor(gridW / 2), cy = Math.floor(gridH / 2);
+      litCount = 0;
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+          const gx = cx + dx, gy = cy + dy;
+          if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH) {
+            territory[gy][gx] = 0.01;
+            litCount++;
+          }
+        }
+      }
+      player = { x: cx * CELL + CELL / 2, y: cy * CELL + CELL / 2, dx: 0, dy: -1, inZone: true };
+      trail = []; moths = []; particles = [];
+      score = Math.round(litCount / (gridW * gridH) * 100);
+      gameTime = 0.02;
+      phase = 'playing';
+      outsideTimer = 0; decayMult = 1;
+      floodQueue = []; floodTimer = 0; floodActive = false; floodMoths = [];
+      flashTimer = 0; deathTimer = 0;
+      TUT_STEPS[0].setup();
+    }
+
+    function advanceTutorial() {
+      tutStep++;
+      tutSuccess = false;
+      tutSuccessTimer = 0;
+      if (tutStep >= TUT_STEPS.length) {
+        tutActive = false;
+        init();
+        initAudio(); startCrickets(); startHum();
+        phase = 'playing';
+        return;
+      }
+      // Reset position to center of territory
+      const cx = Math.floor(gridW / 2), cy = Math.floor(gridH / 2);
+      player.x = cx * CELL + CELL / 2;
+      player.y = cy * CELL + CELL / 2;
+      player.dx = 0; player.dy = -1;
+      player.inZone = true;
+      trail = [];
+      outsideTimer = 0;
+      stopHeartbeat();
+      setHumVolume(0);
+      gameTime = 0.02;
+      TUT_STEPS[tutStep].setup();
+    }
+
+    function skipTutorial() {
+      tutActive = false;
+      init();
+      initAudio(); startCrickets(); startHum();
+      phase = 'playing';
+    }
+
+    function tutRespawn() {
+      const cx = Math.floor(gridW / 2), cy = Math.floor(gridH / 2);
+      player.x = cx * CELL + CELL / 2;
+      player.y = cy * CELL + CELL / 2;
+      player.dx = 0; player.dy = -1;
+      player.inZone = true;
+      trail = [];
+      outsideTimer = 0;
+      stopHeartbeat();
+      setHumVolume(0);
+      TUT_STEPS[tutStep].setup();
+    }
+
     function init() {
       gridW = Math.ceil(W / CELL);
       gridH = Math.ceil(H / CELL);
@@ -350,9 +498,23 @@
     let swipeStart = null;
     let lastSwipeDir = null;
 
+    function isTutorialTap(e) {
+      const r = e.touches ? e.touches[0] : e;
+      return r.clientX > W/2 - 70 && r.clientX < W/2 + 70 && r.clientY > H * 0.6 && r.clientY < H * 0.6 + 30;
+    }
+    function isSkipTap(e) {
+      const r = e.touches ? e.touches[0] : e;
+      return r.clientX > W - 80 && r.clientY < safeTop + 50;
+    }
+
     function handleDown(e) {
       e.preventDefault();
       if (phase === 'start') {
+        if (isTutorialTap(e)) {
+          initAudio(); startCrickets(); startHum();
+          startTutorial();
+          return;
+        }
         initAudio(); startCrickets(); startHum();
         phase = 'playing';
         return;
@@ -361,6 +523,10 @@
         init();
         initAudio(); startCrickets(); startHum();
         phase = 'playing';
+        return;
+      }
+      if (tutActive && isSkipTap(e)) {
+        skipTutorial();
         return;
       }
       const touch = e.touches ? e.touches[0] : e;
@@ -387,6 +553,9 @@
       }
       // Block 180° turn (only allow 90° turns)
       if (ndx !== -player.dx || ndy !== -player.dy) {
+        if (ndx !== player.dx || ndy !== player.dy) {
+          if (tutActive) tutTurns++;
+        }
         player.dx = ndx;
         player.dy = ndy;
       }
@@ -408,10 +577,12 @@
       if (phase === 'start') { initAudio(); startCrickets(); startHum(); phase = 'playing'; return; }
       if (phase === 'over') { init(); initAudio(); startCrickets(); startHum(); phase = 'playing'; return; }
       // No 180° reversal
+      const odx = player.dx, ody = player.dy;
       if ((e.key === 'ArrowUp' || e.key === 'w') && player.dy !== 1) { player.dx = 0; player.dy = -1; }
       if ((e.key === 'ArrowDown' || e.key === 's') && player.dy !== -1) { player.dx = 0; player.dy = 1; }
       if ((e.key === 'ArrowLeft' || e.key === 'a') && player.dx !== 1) { player.dx = -1; player.dy = 0; }
       if ((e.key === 'ArrowRight' || e.key === 'd') && player.dx !== -1) { player.dx = 1; player.dy = 0; }
+      if (tutActive && (player.dx !== odx || player.dy !== ody)) tutTurns++;
     });
 
     // --- UPDATE ---
@@ -463,6 +634,13 @@
         if (trail.length > 0) {
           const bonus = claimLoop();
           score += bonus;
+          if (tutActive) {
+            tutReturned = true;
+            if (bonus > 0) { tutClaimed = true; tutClaimedArea += bonus; }
+          }
+        } else if (tutActive && !wasInZone) {
+          // Returned to zone without a loop — still counts as "returned"
+          tutReturned = true;
         }
         outsideTimer = 0;
         stopHeartbeat();
@@ -493,6 +671,7 @@
             fm.done = true;
             spawnParticles(fm.moth.x, fm.moth.y, T.mothGold, 8);
             playMothPing();
+            if (tutActive) tutTrappedMoth = true;
           } else {
             anyLeft = true;
           }
@@ -514,11 +693,13 @@
       // Score = lit percentage
       score = Math.round(litCount / (gridW * gridH) * 100);
 
-      // Moth spawning
-      const d = Math.min(gameTime / 60, 1);
-      const maxMoths = 3 + Math.floor(d * 8);
-      if (moths.filter(m => m.alive).length < maxMoths && Math.random() < 0.02 + d * 0.03) {
-        spawnMoth();
+      // Moth spawning (suppressed during tutorial except step 5)
+      if (!tutActive || tutStep >= 4) {
+        const d = Math.min(gameTime / 60, 1);
+        const maxMoths = tutActive ? 3 : 3 + Math.floor(d * 8);
+        if (moths.filter(m => m.alive).length < maxMoths && Math.random() < 0.02 + d * 0.03) {
+          spawnMoth();
+        }
       }
 
       // Update moths
@@ -586,9 +767,32 @@
       particles = particles.filter(p => p.life > 0);
 
       if (flashTimer > 0) flashTimer -= dt;
+
+      // Tutorial: check step completion
+      if (tutActive && !tutSuccess && TUT_STEPS[tutStep].check()) {
+        tutSuccess = true;
+        tutSuccessTimer = 1.2;
+        spawnParticles(player.x, player.y, T.firefly, 12);
+        flashColor = T.firefly; flashTimer = 0.1;
+      }
+      if (tutActive && tutSuccess) {
+        tutSuccessTimer -= dt;
+        if (tutSuccessTimer <= 0) advanceTutorial();
+      }
+
+      // Tutorial: suppress territory decay
+      if (tutActive) {
+        decayMult = 1; // keep decay stable
+      }
     }
 
     function die() {
+      if (tutActive) {
+        spawnParticles(player.x, player.y, T.red, 8);
+        flashColor = T.red; flashTimer = 0.1;
+        tutRespawn();
+        return;
+      }
       phase = 'dying';
       deathTimer = 0;
       stopHeartbeat();
@@ -788,6 +992,39 @@
         }
       }
 
+      // Tutorial HUD
+      if (tutActive && phase === 'playing') {
+        const step = TUT_STEPS[tutStep];
+        ctx.fillStyle = T.firefly;
+        ctx.font = 'bold 14px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(step.name, W / 2, safeTop + 24);
+        ctx.fillStyle = T.white;
+        ctx.font = '12px monospace';
+        ctx.fillText(step.instruction, W / 2, safeTop + 42);
+        // Progress dots
+        for (let i = 0; i < TUT_STEPS.length; i++) {
+          const dotX = W / 2 + (i - 2) * 16;
+          const dotY = H - 40;
+          ctx.fillStyle = i < tutStep ? T.firefly : i === tutStep ? T.white : T.muted;
+          ctx.beginPath(); ctx.arc(dotX, dotY, i === tutStep ? 4 : 3, 0, Math.PI * 2); ctx.fill();
+        }
+        // Skip button
+        ctx.fillStyle = T.muted;
+        ctx.font = '11px monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('SKIP ▸', W - 16, safeTop + 24);
+        // Success overlay
+        if (tutSuccess) {
+          ctx.fillStyle = T.firefly;
+          ctx.font = 'bold 24px monospace';
+          ctx.textAlign = 'center';
+          ctx.shadowBlur = 12; ctx.shadowColor = T.firefly;
+          ctx.fillText('NICE!', W / 2, H * 0.4);
+          ctx.shadowBlur = 0;
+        }
+      }
+
       // Start screen
       if (phase === 'start') {
         ctx.fillStyle = 'rgba(0,0,0,0.7)';
@@ -815,6 +1052,12 @@
           ctx.font = '12px monospace';
           ctx.fillText('BEST: ' + bestScore + '%', W / 2, H * 0.55 + 25);
         }
+        // Tutorial button
+        ctx.fillStyle = T.firefly;
+        ctx.font = '13px monospace';
+        ctx.globalAlpha = 0.7;
+        ctx.fillText('TUTORIAL', W / 2, H * 0.62);
+        ctx.globalAlpha = 1;
       }
 
       // Game over
