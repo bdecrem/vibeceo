@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENVELOPE — The shape of sound's life</title>
+    
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="ENVELOPE — The shape of sound's life" />
+    <meta property="og:description" content="Amber art by @intheamber" />
+    <meta property="og:image" content="https://intheamber.com/amber/envelope-og.png" />
+    <meta property="og:url" content="https://intheamber.com/amber/envelope.html" />
+    <meta property="og:type" content="website" />
+    
+    <!-- Twitter Card tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ENVELOPE — The shape of sound's life" />
+    <meta name="twitter:description" content="Amber art by @intheamber" />
+    <meta name="twitter:image" content="https://intheamber.com/amber/envelope-og.png" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: #D4A574;
+            font-size: 12px;
+            opacity: 0.7;
+            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #title {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        #title h1 {
+            color: #FFD700;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+
+        #title p {
+            color: #2D9596;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 600px) {
+            #title h1 {
+                font-size: 24px;
+            }
+            #title p {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div id="title">
+        <h1>ENVELOPE</h1>
+        <p>THE SHAPE OF SOUND'S LIFE</p>
+    </div>
+    
+    <div id="info">
+        TAP TO SPAWN SOUND ENVELOPES
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Audio context
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let audioStarted = false;
+
+        // Color palette - bold and saturated
+        const colors = [
+            '#ec4899', // hot pink
+            '#3b82f6', // electric blue
+            '#f97316', // coral
+            '#2D9596', // teal
+            '#FFD700', // gold
+            '#8b5cf6', // purple
+            '#f472b6', // light pink
+            '#60a5fa', // light blue
+        ];
+
+        // Envelope class - ADSR lifecycle
+        class Envelope {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.age = 0; // milliseconds
+                this.dead = false;
+                
+                // ADSR timings (ms)
+                this.attackTime = 200;
+                this.decayTime = 200;
+                this.sustainTime = 800;
+                this.releaseTime = 600;
+                this.totalTime = this.attackTime + this.decayTime + this.sustainTime + this.releaseTime;
+                
+                // Visual properties
+                this.maxRadius = 80 + Math.random() * 40;
+                this.currentRadius = 0;
+                this.opacity = 0;
+                this.particles = [];
+                
+                // Spawn initial particles
+                for (let i = 0; i < 20; i++) {
+                    this.particles.push({
+                        angle: (Math.PI * 2 * i) / 20,
+                        distance: 0,
+                        speed: 0.5 + Math.random() * 0.5,
+                        size: 2 + Math.random() * 3,
+                    });
+                }
+            }
+            
+            update(deltaTime) {
+                this.age += deltaTime;
+                
+                if (this.age >= this.totalTime) {
+                    this.dead = true;
+                    return;
+                }
+                
+                // Calculate ADSR envelope value
+                let envValue = 0;
+                
+                if (this.age < this.attackTime) {
+                    // Attack phase - rise from 0 to 1
+                    envValue = this.age / this.attackTime;
+                } else if (this.age < this.attackTime + this.decayTime) {
+                    // Decay phase - fall from 1 to 0.7
+                    const decayProgress = (this.age - this.attackTime) / this.decayTime;
+                    envValue = 1 - (decayProgress * 0.3);
+                } else if (this.age < this.attackTime + this.decayTime + this.sustainTime) {
+                    // Sustain phase - hold at 0.7
+                    envValue = 0.7;
+                } else {
+                    // Release phase - fall from 0.7 to 0
+                    const releaseProgress = (this.age - this.attackTime - this.decayTime - this.sustainTime) / this.releaseTime;
+                    envValue = 0.7 * (1 - releaseProgress);
+                }
+                
+                // Apply envelope to visual properties
+                this.currentRadius = this.maxRadius * envValue;
+                this.opacity = envValue;
+                
+                // Update particles
+                this.particles.forEach(p => {
+                    p.distance = this.currentRadius + Math.sin(this.age * 0.01 + p.angle * 3) * 10;
+                });
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                
+                // Draw main circle with gradient
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.currentRadius);
+                gradient.addColorStop(0, this.color + '80');
+                gradient.addColorStop(0.5, this.color + '40');
+                gradient.addColorStop(1, this.color + '00');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw boundary circle
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Draw particles on boundary
+                ctx.fillStyle = this.color;
+                this.particles.forEach(p => {
+                    const px = this.x + Math.cos(p.angle) * p.distance;
+                    const py = this.y + Math.sin(p.angle) * p.distance;
+                    
+                    ctx.beginPath();
+                    ctx.arc(px, py, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                // Draw glow at center
+                const centerGlow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, 30);
+                centerGlow.addColorStop(0, this.color + 'FF');
+                centerGlow.addColorStop(1, this.color + '00');
+                ctx.fillStyle = centerGlow;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 30, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+
+        // Envelopes array
+        const envelopes = [];
+        let lastTime = Date.now();
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const now = Date.now();
+            const deltaTime = now - lastTime;
+            lastTime = now;
+            
+            // Fade background slightly (trails)
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Update and draw envelopes
+            for (let i = envelopes.length - 1; i >= 0; i--) {
+                const env = envelopes[i];
+                env.update(deltaTime);
+                env.draw();
+                
+                if (env.dead) {
+                    envelopes.splice(i, 1);
+                }
+            }
+        }
+
+        // Audio function with ADSR envelope
+        function playEnvelope(frequency) {
+            if (!audioStarted) return;
+            
+            const now = audioContext.currentTime;
+            
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+            
+            osc.frequency.value = frequency;
+            osc.type = 'sine';
+            
+            filter.type = 'lowpass';
+            filter.frequency.value = 1200;
+            
+            // ADSR envelope on gain
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.15, now + 0.2); // Attack
+            gain.gain.linearRampToValueAtTime(0.1, now + 0.4); // Decay
+            gain.gain.setValueAtTime(0.1, now + 1.2); // Sustain
+            gain.gain.linearRampToValueAtTime(0, now + 1.8); // Release
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.start(now);
+            osc.stop(now + 1.8);
+        }
+
+        // Spawn envelope on click/touch
+        function spawnEnvelope(x, y) {
+            // Start audio context on first interaction
+            if (!audioStarted && audioContext.state === 'suspended') {
+                audioContext.resume();
+                audioStarted = true;
+            }
+            
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const env = new Envelope(x, y, color);
+            envelopes.push(env);
+            
+            // Play sound
+            const frequency = 200 + Math.random() * 400;
+            playEnvelope(frequency);
+        }
+
+        // Mouse/touch handlers
+        canvas.addEventListener('click', (e) => {
+            spawnEnvelope(e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            for (let touch of e.touches) {
+                spawnEnvelope(touch.clientX, touch.clientY);
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            for (let touch of e.touches) {
+                spawnEnvelope(touch.clientX, touch.clientY);
+            }
+        });
+
+        // Start animation
+        animate();
+
+        // Auto-spawn some envelopes on load for visual interest
+        setTimeout(() => {
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const x = width * 0.2 + Math.random() * width * 0.6;
+                    const y = height * 0.3 + Math.random() * height * 0.4;
+                    spawnEnvelope(x, y);
+                }, i * 400);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
