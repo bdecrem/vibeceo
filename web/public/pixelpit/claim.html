@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>CLAIM</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #09090b; overflow: hidden; touch-action: none; font-family: monospace; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    let W, H, safeTop = 0;
+    function resize() {
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      W = canvas.width; H = canvas.height;
+      safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)')) || 0;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // --- THEME ---
+    const T = {
+      bg: '#09090b',
+      firefly: '#facc15',
+      trail: '#facc15',
+      territory: '#facc15',
+      territoryEdge: '#a3e635',
+      ember: '#92400e',
+      moth: '#f472b6',
+      mothGold: '#facc15',
+      white: '#ffffff',
+      muted: '#71717a',
+      red: '#ef4444',
+    };
+
+    // --- CONSTANTS ---
+    const CELL = 12;             // grid cell size
+    const PLAYER_SPEED = 100;    // px/s
+    const PLAYER_R = 4;
+    const GLOW_RADIUS = 40;      // visibility radius around player
+    const MOTH_SPEED_BASE = 35;
+    const MOTH_ATTRACT_RANGE = 120;
+    const TERRITORY_DECAY = 45;  // seconds before territory fades
+    const DECAY_ACCEL = 0.985;   // decay speeds up over time
+    const TRAIL_MOTH_KILL = 8;   // px distance for moth to snuff trail
+
+    // --- AUDIO ---
+    let audioCtx;
+    function initAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    function unlockAudio() {
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('click', unlockAudio);
+    }
+    document.addEventListener('touchstart', unlockAudio);
+    document.addEventListener('click', unlockAudio);
+
+    // Crickets — filtered noise
+    let cricketNode, cricketGain;
+    function startCrickets() {
+      if (!audioCtx || cricketNode) return;
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1);
+      cricketNode = audioCtx.createBufferSource(); cricketNode.buffer = buf; cricketNode.loop = true;
+      const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 4000; bp.Q.value = 8;
+      cricketGain = audioCtx.createGain(); cricketGain.gain.value = 0.02;
+      cricketNode.connect(bp).connect(cricketGain).connect(audioCtx.destination);
+      cricketNode.start();
+    }
+
+    // Heartbeat — outside zone pulse
+    let heartbeatInterval = null;
+    function startHeartbeat(bpm) {
+      stopHeartbeat();
+      heartbeatInterval = setInterval(() => {
+        if (!audioCtx) return;
+        const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = 50;
+        const g = audioCtx.createGain(); g.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
+        o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.15);
+      }, 60000 / bpm);
+    }
+    function stopHeartbeat() {
+      if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+    }
+
+    // Trail hum
+    let humNode, humGain;
+    function startHum() {
+      if (!audioCtx || humNode) return;
+      humNode = audioCtx.createOscillator(); humNode.type = 'sine'; humNode.frequency.value = 220;
+      humGain = audioCtx.createGain(); humGain.gain.value = 0;
+      humNode.connect(humGain).connect(audioCtx.destination); humNode.start();
+    }
+    function setHumVolume(v) {
+      if (humGain) humGain.gain.setTargetAtTime(Math.min(v, 0.08), audioCtx.currentTime, 0.05);
+    }
+
+    function playClaim(area) {
+      if (!audioCtx) return;
+      // Whomp
+      const o = audioCtx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(120, audioCtx.currentTime);
+      o.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.2);
+      const g = audioCtx.createGain(); g.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+      o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.3);
+      // Chime cascade
+      const notes = [523, 659, 784, 1047, 1319];
+      for (let i = 0; i < Math.min(area, 5); i++) {
+        const t = audioCtx.currentTime + 0.05 * i;
+        const c = audioCtx.createOscillator(); c.type = 'triangle'; c.frequency.value = notes[i % notes.length];
+        const cg = audioCtx.createGain(); cg.gain.setValueAtTime(0.08, t);
+        cg.gain.linearRampToValueAtTime(0, t + 0.15);
+        c.connect(cg).connect(audioCtx.destination); c.start(t); c.stop(t + 0.15);
+      }
+    }
+
+    function playMothPing() {
+      if (!audioCtx) return;
+      const pentatonic = [523, 587, 659, 784, 880];
+      const freq = pentatonic[Math.floor(Math.random() * pentatonic.length)];
+      const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+      const g = audioCtx.createGain(); g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+      o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function playDeath() {
+      if (!audioCtx) return;
+      // Trail snuff — rapid descending
+      for (let i = 0; i < 6; i++) {
+        const t = audioCtx.currentTime + i * 0.04;
+        const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = 400 - i * 50;
+        const g = audioCtx.createGain(); g.gain.setValueAtTime(0.1, t);
+        g.gain.linearRampToValueAtTime(0, t + 0.03);
+        o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + 0.04);
+      }
+      // Low tone after silence
+      const lo = audioCtx.createOscillator(); lo.type = 'sine'; lo.frequency.value = 55;
+      const lg = audioCtx.createGain(); lg.gain.setValueAtTime(0, audioCtx.currentTime);
+      lg.gain.setValueAtTime(0.15, audioCtx.currentTime + 0.5);
+      lg.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
+      lo.connect(lg).connect(audioCtx.destination); lo.start(); lo.stop(audioCtx.currentTime + 2);
+    }
+
+    // --- GRID STATE ---
+    let gridW, gridH, territory, trailAge;
+    // territory[y][x] = timestamp when claimed (0 = unclaimed)
+    // trailAge not needed separately — use trail array
+
+    // --- GAME STATE ---
+    let player, trail, moths, particles;
+    let score, bestScore, gameTime, phase;
+    let flashTimer, flashColor;
+    let deathTimer;
+    let outsideTimer; // time spent outside zone
+    let decayMult; // decay speed multiplier
+
+    function init() {
+      gridW = Math.ceil(W / CELL);
+      gridH = Math.ceil(H / CELL);
+      territory = [];
+      for (let y = 0; y < gridH; y++) {
+        territory[y] = new Float32Array(gridW); // 0 = unclaimed
+      }
+
+      // Starting zone: small 4x4 lit area in center
+      const cx = Math.floor(gridW / 2), cy = Math.floor(gridH / 2);
+      const startTime = 0.01; // nonzero = claimed
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+          const gx = cx + dx, gy = cy + dy;
+          if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH) {
+            territory[gy][gx] = startTime;
+          }
+        }
+      }
+
+      player = {
+        x: cx * CELL + CELL / 2,
+        y: cy * CELL + CELL / 2,
+        dx: 0, dy: -1, // moving up initially
+        inZone: true,
+      };
+      trail = []; // [{x, y, gx, gy}] — grid cells in current trail
+      moths = [];
+      particles = [];
+      score = 0;
+      bestScore = parseInt(localStorage.getItem('claim_best') || '0');
+      gameTime = 0;
+      phase = 'start';
+      flashTimer = 0; flashColor = '';
+      deathTimer = 0;
+      outsideTimer = 0;
+      decayMult = 1;
+    }
+
+    function spawnMoth() {
+      // Spawn at edge of visible area
+      const angle = Math.random() * Math.PI * 2;
+      const dist = Math.max(W, H) * 0.4 + Math.random() * 50;
+      const d = Math.min(gameTime / 60, 1);
+      moths.push({
+        x: player.x + Math.cos(angle) * dist,
+        y: player.y + Math.sin(angle) * dist,
+        vx: (Math.random() - 0.5) * 20,
+        vy: (Math.random() - 0.5) * 20,
+        speed: MOTH_SPEED_BASE + d * 30 + Math.random() * 15,
+        flicker: Math.random() * Math.PI * 2,
+        alive: true,
+      });
+    }
+
+    function spawnParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const spd = 30 + Math.random() * 80;
+        particles.push({
+          x, y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+          life: 0.2 + Math.random() * 0.3, maxLife: 0.2 + Math.random() * 0.3,
+          color, size: 1 + Math.random() * 2,
+        });
+      }
+    }
+
+    function isTerritory(gx, gy) {
+      if (gx < 0 || gx >= gridW || gy < 0 || gy >= gridH) return false;
+      return territory[gy][gx] > 0;
+    }
+
+    function isTrail(gx, gy) {
+      return trail.some(t => t.gx === gx && t.gy === gy);
+    }
+
+    function countLitCells() {
+      let count = 0;
+      for (let y = 0; y < gridH; y++) {
+        for (let x = 0; x < gridW; x++) {
+          if (territory[y][x] > 0) count++;
+        }
+      }
+      return count;
+    }
+
+    // Flood fill to claim enclosed area
+    function claimLoop() {
+      if (trail.length < 3) { trail = []; return 0; }
+
+      // Mark trail cells as territory
+      for (const t of trail) {
+        if (t.gx >= 0 && t.gx < gridW && t.gy >= 0 && t.gy < gridH) {
+          territory[t.gy][t.gx] = gameTime;
+        }
+      }
+
+      // Flood fill from edges to find OUTSIDE cells
+      const outside = [];
+      for (let y = 0; y < gridH; y++) {
+        outside[y] = new Uint8Array(gridW);
+      }
+      const queue = [];
+      // Seed edges
+      for (let x = 0; x < gridW; x++) {
+        if (!isTerritory(x, 0)) { queue.push([x, 0]); outside[0][x] = 1; }
+        if (!isTerritory(x, gridH - 1)) { queue.push([x, gridH - 1]); outside[gridH - 1][x] = 1; }
+      }
+      for (let y = 1; y < gridH - 1; y++) {
+        if (!isTerritory(0, y)) { queue.push([0, y]); outside[y][0] = 1; }
+        if (!isTerritory(gridW - 1, y)) { queue.push([gridW - 1, y]); outside[y][gridW - 1] = 1; }
+      }
+      // BFS
+      while (queue.length > 0) {
+        const [cx, cy] = queue.shift();
+        const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+        for (const [ddx, ddy] of dirs) {
+          const nx = cx + ddx, ny = cy + ddy;
+          if (nx < 0 || nx >= gridW || ny < 0 || ny >= gridH) continue;
+          if (outside[ny][nx] || isTerritory(nx, ny)) continue;
+          outside[ny][nx] = 1;
+          queue.push([nx, ny]);
+        }
+      }
+
+      // Everything NOT outside and NOT already territory = enclosed → claim it
+      let claimed = 0;
+      let trappedMoths = 0;
+      for (let y = 0; y < gridH; y++) {
+        for (let x = 0; x < gridW; x++) {
+          if (!outside[y][x] && territory[y][x] === 0) {
+            territory[y][x] = gameTime;
+            claimed++;
+          }
+        }
+      }
+
+      // Trap moths inside claimed area
+      for (const moth of moths) {
+        if (!moth.alive) continue;
+        const mgx = Math.floor(moth.x / CELL), mgy = Math.floor(moth.y / CELL);
+        if (mgx >= 0 && mgx < gridW && mgy >= 0 && mgy < gridH && territory[mgy][mgx] > 0) {
+          moth.alive = false;
+          trappedMoths++;
+          spawnParticles(moth.x, moth.y, T.mothGold, 8);
+          playMothPing();
+        }
+      }
+
+      trail = [];
+      if (claimed > 0 || trappedMoths > 0) {
+        playClaim(claimed + trappedMoths * 2);
+        flashColor = T.territory; flashTimer = 0.15;
+      }
+      return claimed + trappedMoths * 3;
+    }
+
+    // --- INPUT ---
+    let swipeStart = null;
+    let lastSwipeDir = null;
+
+    function handleDown(e) {
+      e.preventDefault();
+      if (phase === 'start') {
+        initAudio(); startCrickets(); startHum();
+        phase = 'playing';
+        return;
+      }
+      if (phase === 'over') {
+        init();
+        initAudio(); startCrickets(); startHum();
+        phase = 'playing';
+        return;
+      }
+      const touch = e.touches ? e.touches[0] : e;
+      swipeStart = { x: touch.clientX, y: touch.clientY };
+    }
+
+    function handleMove(e) {
+      e.preventDefault();
+      if (!swipeStart || phase !== 'playing') return;
+      const touch = e.touches ? e.touches[0] : e;
+      const dx = touch.clientX - swipeStart.x;
+      const dy = touch.clientY - swipeStart.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 10) return;
+
+      // Determine direction (4-way)
+      if (Math.abs(dx) > Math.abs(dy)) {
+        player.dx = dx > 0 ? 1 : -1;
+        player.dy = 0;
+      } else {
+        player.dx = 0;
+        player.dy = dy > 0 ? 1 : -1;
+      }
+      swipeStart = { x: touch.clientX, y: touch.clientY };
+    }
+
+    function handleUp(e) {
+      e.preventDefault();
+      swipeStart = null;
+    }
+
+    canvas.addEventListener('pointerdown', handleDown);
+    canvas.addEventListener('pointermove', handleMove);
+    canvas.addEventListener('pointerup', handleUp);
+    canvas.addEventListener('pointercancel', handleUp);
+
+    // Keyboard
+    document.addEventListener('keydown', (e) => {
+      if (phase === 'start') { initAudio(); startCrickets(); startHum(); phase = 'playing'; return; }
+      if (phase === 'over') { init(); initAudio(); startCrickets(); startHum(); phase = 'playing'; return; }
+      if (e.key === 'ArrowUp' || e.key === 'w') { player.dx = 0; player.dy = -1; }
+      if (e.key === 'ArrowDown' || e.key === 's') { player.dx = 0; player.dy = 1; }
+      if (e.key === 'ArrowLeft' || e.key === 'a') { player.dx = -1; player.dy = 0; }
+      if (e.key === 'ArrowRight' || e.key === 'd') { player.dx = 1; player.dy = 0; }
+    });
+
+    // --- UPDATE ---
+    let lastTime = 0;
+
+    function update(dt) {
+      if (phase !== 'playing') return;
+      gameTime += dt;
+      decayMult *= Math.pow(DECAY_ACCEL, dt);
+
+      // Move player
+      player.x += player.dx * PLAYER_SPEED * dt;
+      player.y += player.dy * PLAYER_SPEED * dt;
+
+      // Wrap at screen edges
+      if (player.x < 0) player.x = 0;
+      if (player.x > W) player.x = W;
+      if (player.y < 0) player.y = 0;
+      if (player.y > H) player.y = H;
+
+      // Current grid cell
+      const gx = Math.floor(player.x / CELL);
+      const gy = Math.floor(player.y / CELL);
+      const wasInZone = player.inZone;
+      player.inZone = isTerritory(gx, gy);
+
+      // Trail logic
+      if (!player.inZone) {
+        outsideTimer += dt;
+        // Add to trail if new cell
+        if (!trail.some(t => t.gx === gx && t.gy === gy)) {
+          trail.push({ x: player.x, y: player.y, gx, gy });
+        }
+        // Heartbeat speeds up
+        const bpm = 60 + Math.min(outsideTimer * 30, 120);
+        if (!heartbeatInterval) startHeartbeat(bpm);
+        // Trail hum
+        setHumVolume(trail.length * 0.003);
+
+        // Self-collision: hit own trail = death
+        for (let i = 0; i < trail.length - 3; i++) {
+          if (trail[i].gx === gx && trail[i].gy === gy) {
+            die();
+            return;
+          }
+        }
+      } else {
+        // Returned to zone with a trail → claim
+        if (trail.length > 0) {
+          const bonus = claimLoop();
+          score += bonus;
+        }
+        outsideTimer = 0;
+        stopHeartbeat();
+        setHumVolume(0);
+      }
+
+      // Territory decay
+      const decayThreshold = TERRITORY_DECAY * decayMult;
+      for (let y = 0; y < gridH; y++) {
+        for (let x = 0; x < gridW; x++) {
+          if (territory[y][x] > 0 && gameTime - territory[y][x] > decayThreshold) {
+            territory[y][x] = 0;
+          }
+        }
+      }
+
+      // Score = lit cell count
+      score = countLitCells();
+
+      // Moth spawning
+      const d = Math.min(gameTime / 60, 1);
+      const maxMoths = 3 + Math.floor(d * 8);
+      if (moths.filter(m => m.alive).length < maxMoths && Math.random() < 0.02 + d * 0.03) {
+        spawnMoth();
+      }
+
+      // Update moths
+      for (const moth of moths) {
+        if (!moth.alive) continue;
+        moth.flicker += dt * 8;
+
+        // Attraction to trail
+        let targetX = moth.x + moth.vx;
+        let targetY = moth.y + moth.vy;
+        if (trail.length > 0 && !player.inZone) {
+          // Find nearest trail segment
+          let nearest = null, nearDist = Infinity;
+          for (const t of trail) {
+            const d2 = Math.hypot(moth.x - t.x, moth.y - t.y);
+            if (d2 < nearDist) { nearDist = d2; nearest = t; }
+          }
+          if (nearest && nearDist < MOTH_ATTRACT_RANGE + trail.length * 2) {
+            const ax = (nearest.x - moth.x) / Math.max(nearDist, 1) * moth.speed * 0.6;
+            const ay = (nearest.y - moth.y) / Math.max(nearDist, 1) * moth.speed * 0.6;
+            moth.vx += ax * dt;
+            moth.vy += ay * dt;
+          }
+        }
+
+        // Erratic drift
+        moth.vx += (Math.random() - 0.5) * 40 * dt;
+        moth.vy += (Math.random() - 0.5) * 40 * dt;
+
+        // Clamp speed
+        const mspd = Math.hypot(moth.vx, moth.vy);
+        if (mspd > moth.speed) {
+          moth.vx *= moth.speed / mspd;
+          moth.vy *= moth.speed / mspd;
+        }
+
+        moth.x += moth.vx * dt;
+        moth.y += moth.vy * dt;
+
+        // Moth crosses trail → player dies
+        if (!player.inZone && trail.length > 0) {
+          for (const t of trail) {
+            const d2 = Math.hypot(moth.x - t.x, moth.y - t.y);
+            if (d2 < TRAIL_MOTH_KILL) {
+              die();
+              return;
+            }
+          }
+        }
+
+        // Moth hits player directly → death
+        const pd = Math.hypot(moth.x - player.x, moth.y - player.y);
+        if (pd < PLAYER_R + 5 && !player.inZone) {
+          die();
+          return;
+        }
+      }
+      moths = moths.filter(m => m.alive);
+
+      // Particles
+      for (const p of particles) {
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.life -= dt;
+      }
+      particles = particles.filter(p => p.life > 0);
+
+      if (flashTimer > 0) flashTimer -= dt;
+    }
+
+    function die() {
+      phase = 'dying';
+      deathTimer = 0;
+      stopHeartbeat();
+      setHumVolume(0);
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('claim_best', bestScore);
+      }
+      playDeath();
+    }
+
+    function updateDying(dt) {
+      deathTimer += dt;
+      // Snuff trail segments one by one
+      if (trail.length > 0 && deathTimer > 0.1) {
+        const seg = trail.pop();
+        if (seg) spawnParticles(seg.x, seg.y, T.ember, 3);
+      }
+      for (const p of particles) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
+      particles = particles.filter(p => p.life > 0);
+      if (deathTimer > 2.0) phase = 'over';
+    }
+
+    // --- DRAW ---
+    function draw() {
+      // Full dark bg
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Territory glow
+      for (let y = 0; y < gridH; y++) {
+        for (let x = 0; x < gridW; x++) {
+          if (territory[y][x] <= 0) continue;
+          const age = gameTime - territory[y][x];
+          const maxAge = TERRITORY_DECAY * decayMult;
+          const fade = Math.max(0, 1 - age / maxAge);
+
+          if (fade > 0.7) {
+            ctx.fillStyle = T.territory;
+            ctx.globalAlpha = fade * 0.3;
+          } else if (fade > 0.3) {
+            ctx.fillStyle = '#d97706'; // amber
+            ctx.globalAlpha = fade * 0.25;
+          } else {
+            ctx.fillStyle = T.ember;
+            ctx.globalAlpha = fade * 0.2;
+          }
+          ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      // Territory glow (soft bloom on lit cells near player)
+      const pgx = Math.floor(player.x / CELL), pgy = Math.floor(player.y / CELL);
+      const glowR = Math.ceil(GLOW_RADIUS / CELL);
+      for (let dy = -glowR; dy <= glowR; dy++) {
+        for (let dx = -glowR; dx <= glowR; dx++) {
+          const gx = pgx + dx, gy = pgy + dy;
+          if (gx < 0 || gx >= gridW || gy < 0 || gy >= gridH) continue;
+          if (territory[gy][gx] <= 0) continue;
+          const dist = Math.hypot(dx, dy) * CELL;
+          if (dist > GLOW_RADIUS) continue;
+          const brightness = (1 - dist / GLOW_RADIUS) * 0.15;
+          ctx.fillStyle = T.territoryEdge;
+          ctx.globalAlpha = brightness;
+          ctx.fillRect(gx * CELL, gy * CELL, CELL, CELL);
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      // Visibility mask — darken everything far from player and territory
+      // Draw a radial gradient centered on player
+      const fogGrad = ctx.createRadialGradient(
+        player.x, player.y, GLOW_RADIUS * 0.5,
+        player.x, player.y, GLOW_RADIUS * 2
+      );
+      fogGrad.addColorStop(0, 'rgba(9,9,11,0)');
+      fogGrad.addColorStop(1, 'rgba(9,9,11,0.85)');
+      // Don't darken territory (it glows on its own) — but we can't selectively mask, so use a softer fog
+      ctx.fillStyle = fogGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Trail
+      if (trail.length > 1) {
+        ctx.strokeStyle = T.trail;
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 6; ctx.shadowColor = T.trail;
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(trail[0].x, trail[0].y);
+        for (let i = 1; i < trail.length; i++) {
+          ctx.lineTo(trail[i].x, trail[i].y);
+        }
+        ctx.lineTo(player.x, player.y);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      }
+
+      // Moths
+      for (const moth of moths) {
+        if (!moth.alive) continue;
+        const dist = Math.hypot(moth.x - player.x, moth.y - player.y);
+        const vis = dist < GLOW_RADIUS * 2 ? 1 : Math.max(0.08, 1 - (dist - GLOW_RADIUS * 2) / 200);
+        ctx.globalAlpha = vis * (0.4 + Math.sin(moth.flicker) * 0.3);
+        ctx.fillStyle = T.moth;
+        ctx.shadowBlur = 4; ctx.shadowColor = T.moth;
+        ctx.beginPath(); ctx.arc(moth.x, moth.y, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      ctx.globalAlpha = 1;
+
+      // Player firefly
+      if (phase !== 'over') {
+        ctx.fillStyle = T.firefly;
+        ctx.shadowBlur = 16; ctx.shadowColor = T.firefly;
+        ctx.beginPath(); ctx.arc(player.x, player.y, PLAYER_R, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Glow circle
+        const glowGrad = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, GLOW_RADIUS);
+        glowGrad.addColorStop(0, 'rgba(250,204,21,0.06)');
+        glowGrad.addColorStop(1, 'rgba(250,204,21,0)');
+        ctx.fillStyle = glowGrad;
+        ctx.fillRect(player.x - GLOW_RADIUS, player.y - GLOW_RADIUS, GLOW_RADIUS * 2, GLOW_RADIUS * 2);
+      }
+
+      // Particles
+      for (const p of particles) {
+        ctx.globalAlpha = p.life / p.maxLife;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Flash
+      if (flashTimer > 0) {
+        ctx.fillStyle = flashColor;
+        ctx.globalAlpha = flashTimer / 0.15 * 0.15;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+      }
+
+      // HUD
+      if (phase === 'playing' || phase === 'dying') {
+        const litPct = Math.round(countLitCells() / (gridW * gridH) * 100);
+        ctx.fillStyle = T.white;
+        ctx.font = '16px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(litPct + '%', 16, safeTop + 28);
+
+        // Trail length danger indicator
+        if (trail.length > 0) {
+          ctx.fillStyle = trail.length > 20 ? T.red : T.trail;
+          ctx.globalAlpha = 0.6;
+          ctx.font = '11px monospace';
+          ctx.fillText('trail: ' + trail.length, 16, safeTop + 44);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      // Start screen
+      if (phase === 'start') {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, W, H);
+
+        // Firefly glow
+        ctx.fillStyle = T.firefly;
+        ctx.shadowBlur = 24; ctx.shadowColor = T.firefly;
+        ctx.beginPath(); ctx.arc(W / 2, H * 0.3, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = T.firefly;
+        ctx.font = 'bold 32px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('CLAIM', W / 2, H * 0.38);
+        ctx.fillStyle = T.muted;
+        ctx.font = '13px monospace';
+        ctx.fillText('swipe to steer · loop to claim', W / 2, H * 0.38 + 26);
+        ctx.fillText('light the meadow · trap the moths', W / 2, H * 0.38 + 44);
+        ctx.fillStyle = T.white;
+        ctx.font = '15px monospace';
+        ctx.fillText('TAP TO START', W / 2, H * 0.55);
+        if (bestScore > 0) {
+          ctx.fillStyle = T.muted;
+          ctx.font = '12px monospace';
+          ctx.fillText('BEST: ' + bestScore + '%', W / 2, H * 0.55 + 25);
+        }
+      }
+
+      // Game over
+      if (phase === 'over') {
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = T.ember;
+        ctx.font = 'bold 20px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('LIGHTS OUT', W / 2, H * 0.35);
+        const litPct = Math.round(score / (gridW * gridH) * 100);
+        ctx.fillStyle = T.white;
+        ctx.font = 'bold 40px monospace';
+        ctx.fillText(litPct + '%', W / 2, H * 0.35 + 50);
+        if (litPct >= Math.round(bestScore / (gridW * gridH) * 100)) {
+          ctx.fillStyle = T.firefly;
+          ctx.font = '14px monospace';
+          ctx.fillText('NEW RECORD', W / 2, H * 0.35 + 72);
+        } else {
+          ctx.fillStyle = T.muted;
+          ctx.font = '12px monospace';
+          ctx.fillText('BEST: ' + bestScore + '%', W / 2, H * 0.35 + 72);
+        }
+        ctx.fillStyle = T.white;
+        ctx.font = '15px monospace';
+        ctx.fillText('TAP TO RETRY', W / 2, H * 0.6);
+      }
+    }
+
+    // --- LOOP ---
+    function gameLoop(timestamp) {
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+      lastTime = timestamp;
+      if (phase === 'dying') updateDying(dt);
+      else update(dt);
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    init();
+    requestAnimationFrame((t) => { lastTime = t; gameLoop(t); });
+  </script>
+</body>
+</html>
