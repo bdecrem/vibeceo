@@ -207,8 +207,8 @@ export async function GET(request: NextRequest) {
   let playerEntry = null;
   if (currentUserId || currentEntryId) {
     if (currentUserId) {
-      // Registered user - check if their best score is in top
-      const inList = leaderboard.some((e: { name: string; isRegistered: boolean }) => e.isRegistered);
+      // Registered user - check if THIS user's best score is already in the top list
+      const inList = leaderboard.some((e: { userId: number | null }) => e.userId === parseInt(currentUserId));
 
       if (!inList) {
         const { data: playerData } = await supabase.rpc("get_player_rank", {
