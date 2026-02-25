@@ -219,6 +219,22 @@ const page = await browser.newPage();
 await page.screenshot({ path: 'debug.png', fullPage: true });
 ```
 
+## Apple Developer Docs (MCP)
+
+An Apple Developer Documentation MCP server is available. Use it when working with Apple frameworks (SwiftUI, UIKit, SpriteKit, etc.).
+
+**Workflow:** `discover_technologies` → `choose_technology` → `search_symbols` → `get_documentation`
+
+| Tool | Purpose |
+|------|---------|
+| `discover_technologies` | Browse/filter available Apple frameworks |
+| `choose_technology` | Set the active framework (required before searching) |
+| `current_technology` | Check which framework is selected |
+| `search_symbols` | Fuzzy keyword search within the active framework (supports `*`, `?` wildcards) |
+| `get_documentation` | Retrieve full docs for a symbol |
+
+Searches handle camelCase/PascalCase automatically (e.g. `GridItem` → matches `grid`, `item`, `griditem`).
+
 ## Reference: SMS & Agent Docs
 
 For SMS bot and agent work, read docs in `sms-bot/documentation/`:
