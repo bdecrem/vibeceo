@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>COIL</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #09090b; overflow: hidden; touch-action: none; font-family: monospace; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    let W, H, safeTop = 0;
+    function resize() {
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      W = canvas.width; H = canvas.height;
+      safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)')) || 0;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // --- INDIE BITE THEME ---
+    const T = {
+      bg: '#09090b',
+      bolt: '#22d3ee',
+      gold: '#facc15',
+      red: '#ef4444',
+      white: '#ffffff',
+      muted: '#71717a',
+      purple: '#7c3aed',
+      surface: '#18181b',
+    };
+
+    // --- CONSTANTS ---
+    const BASE_SPEED = 120;        // px/s
+    const BOOST_SPEED = 240;       // px/s overdrive
+    const TURN_ANGLE = Math.PI / 3; // 60° arc per tap
+    const SEG_DIST = 6;           // px between trail segments
+    const TRAIL_LIFE = 2.0;       // seconds before trail fades
+    const CHARGE_RADIUS = 10;
+    const STORM_CELL_SPEED_BASE = 50;
+    const ARENA_SHRINK_RATE = 3;  // px/s
+    const SURGE_INTERVAL = 30;    // seconds
+    const SURGE_DURATION = 3;     // seconds
+    const SURGE_SHRINK_RATE = 20; // px/s during surge
+    const BOOST_BURN_RATE = 2;    // segments/second burned during boost
+    const HEAD_R = 5;
+    const CRACKLE_INTERVAL = 4;   // frames between crackle sounds
+
+    // --- AUDIO ---
+    let audioCtx;
+    function initAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    function unlockAudio() {
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('click', unlockAudio);
+    }
+    document.addEventListener('touchstart', unlockAudio);
+    document.addEventListener('click', unlockAudio);
+
+    // Low rumble — continuous, volume scales with arena pressure
+    let rumbleNode, rumbleGain;
+    function startRumble() {
+      if (!audioCtx || rumbleNode) return;
+      rumbleNode = audioCtx.createOscillator();
+      rumbleNode.type = 'sine'; rumbleNode.frequency.value = 60;
+      rumbleGain = audioCtx.createGain(); rumbleGain.gain.value = 0.03;
+      rumbleNode.connect(rumbleGain).connect(audioCtx.destination);
+      rumbleNode.start();
+    }
+    function updateRumble(pressure) {
+      if (rumbleGain) rumbleGain.gain.value = 0.03 + pressure * 0.07;
+    }
+
+    // Overdrive buzz
+    let buzzNode, buzzGain;
+    function startBuzz() {
+      if (!audioCtx || buzzNode) return;
+      buzzNode = audioCtx.createOscillator();
+      buzzNode.type = 'sawtooth'; buzzNode.frequency.value = 200;
+      buzzGain = audioCtx.createGain(); buzzGain.gain.value = 0;
+      buzzNode.connect(buzzGain).connect(audioCtx.destination);
+      buzzNode.start();
+    }
+    function setBuzzVolume(v) {
+      if (buzzGain) buzzGain.gain.setTargetAtTime(v, audioCtx.currentTime, 0.05);
+    }
+
+    function playCrackle() {
+      if (!audioCtx) return;
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.015, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.15;
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const g = audioCtx.createGain(); g.gain.value = 0.08;
+      src.connect(g).connect(audioCtx.destination); src.start();
+    }
+
+    function playZap() {
+      if (!audioCtx) return;
+      const o = audioCtx.createOscillator(); o.type = 'square';
+      o.frequency.setValueAtTime(800, audioCtx.currentTime);
+      o.frequency.linearRampToValueAtTime(2000, audioCtx.currentTime + 0.05);
+      const g = audioCtx.createGain(); g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.05);
+      o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function playCellDeath() {
+      if (!audioCtx) return;
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.08, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.max(0, 1 - i / d.length);
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const g = audioCtx.createGain(); g.gain.value = 0.2;
+      src.connect(g).connect(audioCtx.destination); src.start();
+    }
+
+    function playBoom() {
+      if (!audioCtx) return;
+      // Low sine
+      const o = audioCtx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(80, audioCtx.currentTime);
+      o.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.5);
+      const g = audioCtx.createGain(); g.gain.setValueAtTime(0.4, audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+      o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.5);
+      // Noise burst
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.3, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.max(0, 1 - i / d.length) * 0.5;
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const g2 = audioCtx.createGain(); g2.gain.value = 0.3;
+      src.connect(g2).connect(audioCtx.destination); src.start();
+    }
+
+    function playSurgeWarning() {
+      if (!audioCtx) return;
+      const o = audioCtx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(300, audioCtx.currentTime);
+      o.frequency.linearRampToValueAtTime(900, audioCtx.currentTime + 1);
+      const g = audioCtx.createGain(); g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
+      o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 1);
+    }
+
+    // --- STATE ---
+    let bolt, trail, charges, stormCells, particles;
+    let score, bestScore, gameTime, phase;
+    let arenaRadius, arenaCenter;
+    let turnDir, boosting, boostBurnAccum;
+    let frameCount, flashTimer, flashColor;
+    let surgeTimer, surgeActive, surgeWarned;
+    let deathTimer;
+
+    function init() {
+      const cx = W / 2, cy = H / 2;
+      arenaCenter = { x: cx, y: cy };
+      arenaRadius = Math.min(W, H) * 0.45;
+
+      bolt = {
+        x: cx, y: cy + arenaRadius * 0.3,
+        angle: -Math.PI / 2, // start moving up
+        length: 15, // number of trail segments "owned"
+      };
+      trail = [{ x: bolt.x, y: bolt.y, t: 0 }];
+      charges = [];
+      stormCells = [];
+      particles = [];
+      score = 0;
+      gameTime = 0;
+      phase = 'start';
+      turnDir = 1; // alternates: 1 = right, -1 = left
+      boosting = false;
+      boostBurnAccum = 0;
+      frameCount = 0;
+      flashTimer = 0; flashColor = '';
+      surgeTimer = 0; surgeActive = false; surgeWarned = false;
+      deathTimer = 0;
+      bestScore = parseInt(localStorage.getItem('coil_best') || '0');
+
+      spawnCharges(12);
+      spawnStormCell();
+    }
+
+    function spawnCharges(n) {
+      for (let i = 0; i < n; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * (arenaRadius - 30);
+        charges.push({
+          x: arenaCenter.x + Math.cos(angle) * dist,
+          y: arenaCenter.y + Math.sin(angle) * dist,
+          flicker: Math.random() * Math.PI * 2,
+          alive: true,
+        });
+      }
+    }
+
+    function spawnStormCell() {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = arenaRadius * 0.5 + Math.random() * arenaRadius * 0.3;
+      const moveAngle = Math.random() * Math.PI * 2;
+      const d = Math.min(gameTime / 60, 1);
+      stormCells.push({
+        x: arenaCenter.x + Math.cos(angle) * dist,
+        y: arenaCenter.y + Math.sin(angle) * dist,
+        angle: moveAngle,
+        speed: STORM_CELL_SPEED_BASE + d * 40,
+        trail: [],
+        alive: true,
+        turnTimer: 1 + Math.random() * 2,
+      });
+    }
+
+    function spawnParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const spd = 40 + Math.random() * 120;
+        particles.push({
+          x, y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+          life: 0.3 + Math.random() * 0.3, maxLife: 0.3 + Math.random() * 0.3,
+          color, size: 1 + Math.random() * 2,
+        });
+      }
+    }
+
+    // --- INPUT ---
+    let touching = false;
+    let holdTimer = 0;
+    const HOLD_THRESHOLD = 0.15; // seconds before boost kicks in
+
+    function handleDown(e) {
+      e.preventDefault();
+      if (phase === 'start') {
+        initAudio(); startRumble(); startBuzz();
+        phase = 'playing';
+        return;
+      }
+      if (phase === 'over') {
+        init();
+        initAudio(); startRumble(); startBuzz();
+        phase = 'playing';
+        return;
+      }
+      touching = true;
+      holdTimer = 0;
+      // Immediate tap = turn
+      bolt.angle += TURN_ANGLE * turnDir;
+      turnDir *= -1;
+    }
+
+    function handleUp(e) {
+      e.preventDefault();
+      touching = false;
+      holdTimer = 0;
+      boosting = false;
+      setBuzzVolume(0);
+    }
+
+    canvas.addEventListener('pointerdown', handleDown);
+    canvas.addEventListener('pointerup', handleUp);
+    canvas.addEventListener('pointercancel', handleUp);
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        handleDown(e);
+        touching = true;
+      }
+    });
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'Space') handleUp(e);
+    });
+
+    // --- UPDATE ---
+    let lastTime = 0;
+
+    function update(dt) {
+      if (phase !== 'playing') return;
+      gameTime += dt;
+      frameCount++;
+
+      // Hold detection → boost
+      if (touching) {
+        holdTimer += dt;
+        if (holdTimer > HOLD_THRESHOLD && bolt.length > 3) {
+          boosting = true;
+          setBuzzVolume(0.12);
+        }
+      }
+
+      // Move bolt
+      const speed = boosting ? BOOST_SPEED : BASE_SPEED;
+      bolt.x += Math.cos(bolt.angle) * speed * dt;
+      bolt.y += Math.sin(bolt.angle) * speed * dt;
+
+      // Crackle sound
+      if (frameCount % CRACKLE_INTERVAL === 0) playCrackle();
+
+      // Add trail segment
+      const lastSeg = trail[trail.length - 1];
+      const dx = bolt.x - lastSeg.x;
+      const dy = bolt.y - lastSeg.y;
+      if (dx * dx + dy * dy >= SEG_DIST * SEG_DIST) {
+        trail.push({ x: bolt.x, y: bolt.y, t: gameTime });
+      }
+
+      // Boost burns tail
+      if (boosting) {
+        boostBurnAccum += BOOST_BURN_RATE * dt;
+        while (boostBurnAccum >= 1 && bolt.length > 3) {
+          bolt.length--;
+          boostBurnAccum -= 1;
+          score = Math.max(0, score - 1);
+          // Spark from tail
+          if (trail.length > 2) {
+            const tailSeg = trail[Math.max(0, trail.length - bolt.length - 1)];
+            if (tailSeg) spawnParticles(tailSeg.x, tailSeg.y, T.gold, 2);
+          }
+        }
+      }
+
+      // Collect charges
+      for (const c of charges) {
+        if (!c.alive) continue;
+        const cdx = bolt.x - c.x, cdy = bolt.y - c.y;
+        if (cdx * cdx + cdy * cdy < (HEAD_R + CHARGE_RADIUS) * (HEAD_R + CHARGE_RADIUS)) {
+          c.alive = false;
+          score += 1;
+          bolt.length += 3;
+          playZap();
+          spawnParticles(c.x, c.y, T.white, 6);
+        }
+      }
+
+      // Remove dead charges, spawn more
+      charges = charges.filter(c => c.alive);
+      if (charges.length < 6 + Math.floor(gameTime / 10)) {
+        spawnCharges(3);
+      }
+
+      // Arena shrink
+      surgeTimer += dt;
+      if (!surgeWarned && surgeTimer > SURGE_INTERVAL - 1) {
+        surgeWarned = true;
+        playSurgeWarning();
+      }
+      if (surgeTimer >= SURGE_INTERVAL) {
+        surgeActive = true;
+        if (surgeTimer >= SURGE_INTERVAL + SURGE_DURATION) {
+          surgeTimer = 0;
+          surgeActive = false;
+          surgeWarned = false;
+        }
+      }
+      const shrink = surgeActive ? SURGE_SHRINK_RATE : ARENA_SHRINK_RATE;
+      arenaRadius = Math.max(60, arenaRadius - shrink * dt);
+      updateRumble(1 - arenaRadius / (Math.min(W, H) * 0.45));
+
+      // Arena boundary death
+      const distFromCenter = Math.hypot(bolt.x - arenaCenter.x, bolt.y - arenaCenter.y);
+      if (distFromCenter > arenaRadius) {
+        die();
+        return;
+      }
+
+      // Self-collision: check head against OLD trail (not recent segments)
+      const ownedStart = Math.max(0, trail.length - bolt.length);
+      for (let i = 0; i < ownedStart - 5; i++) {
+        const seg = trail[i];
+        if (gameTime - seg.t > TRAIL_LIFE) continue; // already faded
+        const sdx = bolt.x - seg.x, sdy = bolt.y - seg.y;
+        if (sdx * sdx + sdy * sdy < HEAD_R * HEAD_R * 4) {
+          die();
+          return;
+        }
+      }
+
+      // Storm cells
+      const d = Math.min(gameTime / 60, 1);
+      // Spawn rate
+      if (stormCells.filter(s => s.alive).length < 2 + Math.floor(d * 4)) {
+        spawnStormCell();
+      }
+
+      for (const cell of stormCells) {
+        if (!cell.alive) continue;
+
+        // Move
+        cell.turnTimer -= dt;
+        if (cell.turnTimer <= 0) {
+          cell.angle += (Math.random() - 0.5) * Math.PI * 0.5;
+          cell.turnTimer = 1 + Math.random() * 2;
+        }
+        cell.x += Math.cos(cell.angle) * cell.speed * dt;
+        cell.y += Math.sin(cell.angle) * cell.speed * dt;
+
+        // Bounce off arena
+        const cellDist = Math.hypot(cell.x - arenaCenter.x, cell.y - arenaCenter.y);
+        if (cellDist > arenaRadius - 10) {
+          cell.angle = Math.atan2(arenaCenter.y - cell.y, arenaCenter.x - cell.x) + (Math.random() - 0.5) * 0.5;
+        }
+
+        // Cell trail
+        const cellLast = cell.trail.length > 0 ? cell.trail[cell.trail.length - 1] : null;
+        if (!cellLast || Math.hypot(cell.x - cellLast.x, cell.y - cellLast.y) > SEG_DIST) {
+          cell.trail.push({ x: cell.x, y: cell.y, t: gameTime });
+        }
+        // Trim old trail
+        cell.trail = cell.trail.filter(s => gameTime - s.t < TRAIL_LIFE * 0.7);
+
+        // Head hits cell trail → player death
+        for (const seg of cell.trail) {
+          const sdx = bolt.x - seg.x, sdy = bolt.y - seg.y;
+          if (sdx * sdx + sdy * sdy < HEAD_R * HEAD_R * 4) {
+            die();
+            return;
+          }
+        }
+
+        // Cell hits player trail → cell shatters into charges
+        const playerTrailStart = Math.max(0, trail.length - bolt.length);
+        for (let i = playerTrailStart; i < trail.length; i++) {
+          const seg = trail[i];
+          const sdx = cell.x - seg.x, sdy = cell.y - seg.y;
+          if (sdx * sdx + sdy * sdy < 64) {
+            cell.alive = false;
+            playCellDeath();
+            spawnParticles(cell.x, cell.y, T.red, 10);
+            // Scatter into charges
+            for (let j = 0; j < 4; j++) {
+              const ca = Math.random() * Math.PI * 2;
+              const cr = 15 + Math.random() * 25;
+              charges.push({
+                x: cell.x + Math.cos(ca) * cr,
+                y: cell.y + Math.sin(ca) * cr,
+                flicker: Math.random() * Math.PI * 2,
+                alive: true,
+              });
+            }
+            break;
+          }
+        }
+      }
+      stormCells = stormCells.filter(s => s.alive);
+
+      // Particles
+      for (const p of particles) {
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.life -= dt;
+      }
+      particles = particles.filter(p => p.life > 0);
+
+      // Flash decay
+      if (flashTimer > 0) flashTimer -= dt;
+    }
+
+    function die() {
+      phase = 'over';
+      deathTimer = 0;
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('coil_best', bestScore);
+      }
+      playBoom();
+      setBuzzVolume(0);
+      spawnParticles(bolt.x, bolt.y, T.bolt, 35);
+      flashColor = T.white; flashTimer = 0.15;
+    }
+
+    // --- DRAW ---
+    function draw() {
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Cloud parallax bg (subtle noise circles)
+      ctx.globalAlpha = 0.03;
+      for (let i = 0; i < 8; i++) {
+        const cx = arenaCenter.x + Math.sin(gameTime * 0.3 + i * 1.7) * arenaRadius * 0.4;
+        const cy = arenaCenter.y + Math.cos(gameTime * 0.2 + i * 2.1) * arenaRadius * 0.3;
+        const r = 40 + i * 20;
+        ctx.fillStyle = T.purple;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Arena boundary
+      ctx.strokeStyle = surgeActive ? T.red : T.purple;
+      ctx.lineWidth = surgeActive ? 3 : 1.5;
+      ctx.globalAlpha = 0.4 + (surgeActive ? Math.sin(gameTime * 20) * 0.3 : 0);
+      ctx.beginPath();
+      ctx.arc(arenaCenter.x, arenaCenter.y, arenaRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Arena edge darkening
+      const edgeGrad = ctx.createRadialGradient(
+        arenaCenter.x, arenaCenter.y, arenaRadius * 0.6,
+        arenaCenter.x, arenaCenter.y, arenaRadius + 40
+      );
+      edgeGrad.addColorStop(0, 'rgba(0,0,0,0)');
+      edgeGrad.addColorStop(1, 'rgba(0,0,0,0.9)');
+      ctx.fillStyle = edgeGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Static charges
+      for (const c of charges) {
+        if (!c.alive) continue;
+        c.flicker += 0.3;
+        const alpha = 0.5 + Math.sin(c.flicker) * 0.4;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = T.white;
+        ctx.shadowBlur = 6; ctx.shadowColor = T.white;
+        ctx.beginPath(); ctx.arc(c.x, c.y, 3, 0, Math.PI * 2); ctx.fill();
+        // Cross sparkle
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = T.white;
+        ctx.beginPath();
+        ctx.moveTo(c.x - 5, c.y); ctx.lineTo(c.x + 5, c.y);
+        ctx.moveTo(c.x, c.y - 5); ctx.lineTo(c.x, c.y + 5);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+      ctx.globalAlpha = 1;
+
+      // Storm cell trails
+      for (const cell of stormCells) {
+        if (!cell.alive) continue;
+        ctx.lineWidth = 2;
+        for (let i = 1; i < cell.trail.length; i++) {
+          const age = gameTime - cell.trail[i].t;
+          const alpha = Math.max(0, 1 - age / (TRAIL_LIFE * 0.7)) * 0.4;
+          ctx.strokeStyle = T.red;
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          ctx.moveTo(cell.trail[i - 1].x, cell.trail[i - 1].y);
+          ctx.lineTo(cell.trail[i].x, cell.trail[i].y);
+          ctx.stroke();
+        }
+        // Cell head
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = T.red;
+        ctx.shadowBlur = 6; ctx.shadowColor = T.red;
+        ctx.beginPath(); ctx.arc(cell.x, cell.y, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      ctx.globalAlpha = 1;
+
+      // Player trail — zigzag lightning segments
+      const trailStart = Math.max(0, trail.length - bolt.length * 2);
+      ctx.lineWidth = 2;
+      for (let i = trailStart + 1; i < trail.length; i++) {
+        const age = gameTime - trail[i].t;
+        if (age > TRAIL_LIFE) continue;
+        const alpha = Math.max(0, 1 - age / TRAIL_LIFE);
+        const isOwned = i >= trail.length - bolt.length;
+        ctx.strokeStyle = boosting && isOwned ? T.gold : T.bolt;
+        ctx.globalAlpha = alpha * (isOwned ? 0.9 : 0.3);
+        ctx.shadowBlur = isOwned ? 8 : 0;
+        ctx.shadowColor = boosting ? T.gold : T.bolt;
+        // Zigzag offset
+        const jitter = isOwned ? ((i % 2) * 2 - 1) * 1.5 : 0;
+        ctx.beginPath();
+        ctx.moveTo(trail[i - 1].x + jitter, trail[i - 1].y);
+        ctx.lineTo(trail[i].x - jitter, trail[i].y);
+        ctx.stroke();
+      }
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+
+      // Bolt head
+      ctx.fillStyle = boosting ? T.gold : T.bolt;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = boosting ? T.gold : T.bolt;
+      ctx.beginPath(); ctx.arc(bolt.x, bolt.y, HEAD_R, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Particles
+      for (const p of particles) {
+        ctx.globalAlpha = p.life / p.maxLife;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Flash
+      if (flashTimer > 0) {
+        ctx.fillStyle = flashColor;
+        ctx.globalAlpha = flashTimer / 0.15 * 0.3;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+      }
+
+      // HUD
+      ctx.fillStyle = T.white;
+      ctx.font = '16px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(score, 16, safeTop + 28);
+      // Bolt length indicator
+      ctx.fillStyle = T.muted;
+      ctx.font = '11px monospace';
+      ctx.fillText('⚡' + bolt.length, 16, safeTop + 44);
+
+      // Surge warning
+      if (surgeActive) {
+        ctx.fillStyle = T.red;
+        ctx.globalAlpha = 0.5 + Math.sin(gameTime * 10) * 0.3;
+        ctx.font = 'bold 12px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('STORM SURGE', W / 2, safeTop + 28);
+        ctx.globalAlpha = 1;
+      }
+
+      // Start screen
+      if (phase === 'start') {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = T.bolt;
+        ctx.font = 'bold 32px monospace';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 12; ctx.shadowColor = T.bolt;
+        ctx.fillText('COIL', W / 2, H * 0.35);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = T.muted;
+        ctx.font = '13px monospace';
+        ctx.fillText('tap to arc · hold to boost', W / 2, H * 0.35 + 30);
+        ctx.fillText('catch sparks · avoid red bolts', W / 2, H * 0.35 + 48);
+        ctx.fillStyle = T.white;
+        ctx.font = '15px monospace';
+        ctx.fillText('TAP TO START', W / 2, H * 0.55);
+        if (bestScore > 0) {
+          ctx.fillStyle = T.muted;
+          ctx.font = '12px monospace';
+          ctx.fillText('BEST: ' + bestScore, W / 2, H * 0.55 + 25);
+        }
+      }
+
+      // Game over
+      if (phase === 'over') {
+        ctx.fillStyle = 'rgba(0,0,0,0.75)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = T.bolt;
+        ctx.font = 'bold 20px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('SHORT CIRCUIT', W / 2, H * 0.35);
+        ctx.fillStyle = T.white;
+        ctx.font = 'bold 40px monospace';
+        ctx.fillText(score, W / 2, H * 0.35 + 50);
+        if (score >= bestScore) {
+          ctx.fillStyle = T.gold;
+          ctx.font = '14px monospace';
+          ctx.fillText('NEW RECORD', W / 2, H * 0.35 + 72);
+        } else {
+          ctx.fillStyle = T.muted;
+          ctx.font = '12px monospace';
+          ctx.fillText('BEST: ' + bestScore, W / 2, H * 0.35 + 72);
+        }
+        ctx.fillStyle = T.white;
+        ctx.font = '15px monospace';
+        ctx.fillText('TAP TO RETRY', W / 2, H * 0.6);
+      }
+    }
+
+    // --- LOOP ---
+    function gameLoop(timestamp) {
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+      lastTime = timestamp;
+      update(dt);
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    init();
+    requestAnimationFrame((t) => { lastTime = t; gameLoop(t); });
+  </script>
+</body>
+</html>
