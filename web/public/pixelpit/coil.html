@@ -300,6 +300,10 @@
       if (touching) {
         holdTimer += dt;
         if (holdTimer > HOLD_THRESHOLD && bolt.length > 3) {
+          if (!boosting) {
+            // Flash gold for 2 frames BEFORE speed change (feedback-then-action)
+            flashColor = T.gold; flashTimer = 0.04;
+          }
           boosting = true;
           tapFired = true; // suppress the turn on release
           setBuzzVolume(0.12);
@@ -596,7 +600,8 @@
         const isOwned = i >= trail.length - bolt.length;
         ctx.strokeStyle = boosting && isOwned ? T.gold : T.bolt;
         ctx.globalAlpha = alpha * (isOwned ? 0.9 : 0.3);
-        ctx.shadowBlur = isOwned ? 8 : 0;
+        // Trail brightness scales with length — your power becomes visually menacing
+        ctx.shadowBlur = isOwned ? 4 + (bolt.length / 10) * 6 : 0;
         ctx.shadowColor = boosting ? T.gold : T.bolt;
         // Zigzag offset — dramatic lightning, not a wobbly line
         const baseJitter = isOwned ? ((i % 2) * 2 - 1) * 3.5 : ((i % 2) * 2 - 1) * 1;
