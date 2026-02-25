@@ -236,6 +236,7 @@
     // --- INPUT ---
     let touching = false;
     let holdTimer = 0;
+    let tapFired = false; // track if we already turned on this press
     const HOLD_THRESHOLD = 0.15; // seconds before boost kicks in
 
     function handleDown(e) {
@@ -253,15 +254,21 @@
       }
       touching = true;
       holdTimer = 0;
-      // Immediate tap = turn
-      bolt.angle += TURN_ANGLE * turnDir;
-      turnDir *= -1;
+      tapFired = false;
+      // Don't turn yet — wait for release (tap) or hold threshold (boost)
     }
 
     function handleUp(e) {
       e.preventDefault();
+      // Quick press = tap = turn (only if we didn't boost)
+      if (!tapFired && holdTimer < HOLD_THRESHOLD && phase === 'playing') {
+        const angle = TURN_ANGLE * (1 - Math.max(0, bolt.length - 10) * 0.008); // scale with length
+        bolt.angle += Math.max(angle, Math.PI / 6) * turnDir;
+        turnDir *= -1;
+      }
       touching = false;
       holdTimer = 0;
+      tapFired = false;
       boosting = false;
       setBuzzVolume(0);
     }
@@ -289,11 +296,12 @@
       gameTime += dt;
       frameCount++;
 
-      // Hold detection → boost
+      // Hold detection → boost (no turn on hold)
       if (touching) {
         holdTimer += dt;
         if (holdTimer > HOLD_THRESHOLD && bolt.length > 3) {
           boosting = true;
+          tapFired = true; // suppress the turn on release
           setBuzzVolume(0.12);
         }
       }
@@ -464,8 +472,20 @@
       if (flashTimer > 0) flashTimer -= dt;
     }
 
+    function updateDying(dt) {
+      deathTimer += dt;
+      // Particles still animate
+      for (const p of particles) {
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.life -= dt;
+      }
+      particles = particles.filter(p => p.life > 0);
+      if (flashTimer > 0) flashTimer -= dt;
+      if (deathTimer > 1.8) phase = 'over';
+    }
+
     function die() {
-      phase = 'over';
+      phase = 'dying';
       deathTimer = 0;
       if (score > bestScore) {
         bestScore = score;
@@ -474,7 +494,7 @@
       playBoom();
       setBuzzVolume(0);
       spawnParticles(bolt.x, bolt.y, T.bolt, 35);
-      flashColor = T.white; flashTimer = 0.15;
+      flashColor = T.white; flashTimer = 0.2;
     }
 
     // --- DRAW ---
@@ -482,12 +502,21 @@
       ctx.fillStyle = T.bg;
       ctx.fillRect(0, 0, W, H);
 
-      // Cloud parallax bg (subtle noise circles)
+      // Cloud parallax bg — roiling storm
       ctx.globalAlpha = 0.03;
       for (let i = 0; i < 8; i++) {
-        const cx = arenaCenter.x + Math.sin(gameTime * 0.3 + i * 1.7) * arenaRadius * 0.4;
-        const cy = arenaCenter.y + Math.cos(gameTime * 0.2 + i * 2.1) * arenaRadius * 0.3;
+        const cx = arenaCenter.x + Math.sin(gameTime * 0.9 + i * 1.7) * arenaRadius * 0.4;
+        const cy = arenaCenter.y + Math.cos(gameTime * 0.6 + i * 2.1) * arenaRadius * 0.3;
         const r = 40 + i * 20;
+        ctx.fillStyle = T.purple;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+      }
+      // Second layer, opposite drift
+      ctx.globalAlpha = 0.02;
+      for (let i = 0; i < 6; i++) {
+        const cx = arenaCenter.x + Math.cos(gameTime * 0.7 + i * 2.3) * arenaRadius * 0.5;
+        const cy = arenaCenter.y + Math.sin(gameTime * 0.5 + i * 1.9) * arenaRadius * 0.4;
+        const r = 30 + i * 25;
         ctx.fillStyle = T.purple;
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
       }
@@ -541,9 +570,11 @@
           const alpha = Math.max(0, 1 - age / (TRAIL_LIFE * 0.7)) * 0.4;
           ctx.strokeStyle = T.red;
           ctx.globalAlpha = alpha;
+          // Zigzag lightning (dimmer, less jitter than player)
+          const rj = ((i % 2) * 2 - 1) * 2;
           ctx.beginPath();
-          ctx.moveTo(cell.trail[i - 1].x, cell.trail[i - 1].y);
-          ctx.lineTo(cell.trail[i].x, cell.trail[i].y);
+          ctx.moveTo(cell.trail[i - 1].x + rj, cell.trail[i - 1].y);
+          ctx.lineTo(cell.trail[i].x - rj, cell.trail[i].y);
           ctx.stroke();
         }
         // Cell head
@@ -567,22 +598,26 @@
         ctx.globalAlpha = alpha * (isOwned ? 0.9 : 0.3);
         ctx.shadowBlur = isOwned ? 8 : 0;
         ctx.shadowColor = boosting ? T.gold : T.bolt;
-        // Zigzag offset
-        const jitter = isOwned ? ((i % 2) * 2 - 1) * 1.5 : 0;
+        // Zigzag offset — dramatic lightning, not a wobbly line
+        const baseJitter = isOwned ? ((i % 2) * 2 - 1) * 3.5 : ((i % 2) * 2 - 1) * 1;
+        const bigJitter = (i % 5 === 0 && isOwned) ? ((i % 10 < 5) ? 6 : -6) : 0;
+        const jx = baseJitter + bigJitter;
         ctx.beginPath();
-        ctx.moveTo(trail[i - 1].x + jitter, trail[i - 1].y);
-        ctx.lineTo(trail[i].x - jitter, trail[i].y);
+        ctx.moveTo(trail[i - 1].x + jx, trail[i - 1].y);
+        ctx.lineTo(trail[i].x - jx, trail[i].y);
         ctx.stroke();
       }
       ctx.shadowBlur = 0;
       ctx.globalAlpha = 1;
 
-      // Bolt head
-      ctx.fillStyle = boosting ? T.gold : T.bolt;
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = boosting ? T.gold : T.bolt;
-      ctx.beginPath(); ctx.arc(bolt.x, bolt.y, HEAD_R, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0;
+      // Bolt head (hide during death)
+      if (phase !== 'dying' && phase !== 'over') {
+        ctx.fillStyle = boosting ? T.gold : T.bolt;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = boosting ? T.gold : T.bolt;
+        ctx.beginPath(); ctx.arc(bolt.x, bolt.y, HEAD_R, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
 
       // Particles
       for (const p of particles) {
@@ -605,10 +640,14 @@
       ctx.font = '16px monospace';
       ctx.textAlign = 'left';
       ctx.fillText(score, 16, safeTop + 28);
-      // Bolt length indicator
-      ctx.fillStyle = T.muted;
-      ctx.font = '11px monospace';
-      ctx.fillText('⚡' + bolt.length, 16, safeTop + 44);
+      // Bolt length bar
+      const barW = 60, barH = 4, barX = 16, barY = safeTop + 34;
+      const maxLen = 80;
+      const pct = Math.min(bolt.length / maxLen, 1);
+      ctx.fillStyle = T.surface;
+      ctx.fillRect(barX, barY, barW, barH);
+      ctx.fillStyle = bolt.length < 5 ? T.red : boosting ? T.gold : T.bolt;
+      ctx.fillRect(barX, barY, barW * pct, barH);
 
       // Surge warning
       if (surgeActive) {
@@ -674,7 +713,8 @@
     function gameLoop(timestamp) {
       const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
       lastTime = timestamp;
-      update(dt);
+      if (phase === 'dying') updateDying(dt);
+      else update(dt);
       draw();
       requestAnimationFrame(gameLoop);
     }
