@@ -644,7 +644,8 @@
         ctx.globalAlpha = 1;
       }
 
-      // HUD
+      // HUD (hidden on start/over)
+      if (phase === 'playing' || phase === 'dying') {
       ctx.fillStyle = T.white;
       ctx.font = '16px monospace';
       ctx.textAlign = 'left';
@@ -659,7 +660,7 @@
       ctx.fillRect(barX, barY, barW * pct, barH);
 
       // Surge warning
-      if (surgeActive) {
+      if (surgeActive && (phase === 'playing' || phase === 'dying')) {
         ctx.fillStyle = T.red;
         ctx.globalAlpha = 0.5 + Math.sin(gameTime * 10) * 0.3;
         ctx.font = 'bold 12px monospace';
@@ -667,6 +668,7 @@
         ctx.fillText('STORM SURGE', W / 2, safeTop + 28);
         ctx.globalAlpha = 1;
       }
+      } // end HUD block
 
       // Start screen
       if (phase === 'start') {
