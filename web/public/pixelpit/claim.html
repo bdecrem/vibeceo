@@ -44,7 +44,7 @@
     const CELL = 12;             // grid cell size
     const PLAYER_SPEED = 100;    // px/s
     const PLAYER_R = 4;
-    const GLOW_RADIUS = 40;      // visibility radius around player
+    const GLOW_RADIUS = 50;      // visibility radius around player (tight — darkness is the game)
     const MOTH_SPEED_BASE = 35;
     const MOTH_ATTRACT_RANGE = 120;
     const TERRITORY_DECAY = 45;  // seconds before territory fades
@@ -167,6 +167,10 @@
     let deathTimer;
     let outsideTimer; // time spent outside zone
     let decayMult; // decay speed multiplier
+    let floodQueue; // [{gx, gy, delay}] — cells waiting to light up
+    let floodTimer; // current flood animation time
+    let floodActive; // is flood animation running?
+    let floodMoths; // moths to trap during flood
 
     function init() {
       gridW = Math.ceil(W / CELL);
@@ -205,6 +209,10 @@
       deathTimer = 0;
       outsideTimer = 0;
       decayMult = 1;
+      floodQueue = [];
+      floodTimer = 0;
+      floodActive = false;
+      floodMoths = [];
     }
 
     function spawnMoth() {
@@ -293,36 +301,49 @@
         }
       }
 
-      // Everything NOT outside and NOT already territory = enclosed → claim it
-      let claimed = 0;
-      let trappedMoths = 0;
+      // Build flood queue — BFS from closure point, sorted by distance
+      const closureGx = Math.floor(player.x / CELL);
+      const closureGy = Math.floor(player.y / CELL);
+      floodQueue = [];
+      floodMoths = [];
+      let toFlood = [];
+
       for (let y = 0; y < gridH; y++) {
         for (let x = 0; x < gridW; x++) {
           if (!outside[y][x] && territory[y][x] === 0) {
-            territory[y][x] = gameTime;
-            claimed++;
+            const dist = Math.hypot(x - closureGx, y - closureGy);
+            toFlood.push({ gx: x, gy: y, dist });
           }
         }
       }
+      // Sort by distance from closure point
+      toFlood.sort((a, b) => a.dist - b.dist);
 
-      // Trap moths inside claimed area
+      // Assign delay: ~200 cells/second = 0.005s per cell
+      const FLOOD_RATE = 0.005;
+      for (let i = 0; i < toFlood.length; i++) {
+        floodQueue.push({ gx: toFlood[i].gx, gy: toFlood[i].gy, delay: i * FLOOD_RATE });
+      }
+
+      // Queue moth traps (check which moths are inside the enclosed area)
       for (const moth of moths) {
         if (!moth.alive) continue;
         const mgx = Math.floor(moth.x / CELL), mgy = Math.floor(moth.y / CELL);
-        if (mgx >= 0 && mgx < gridW && mgy >= 0 && mgy < gridH && territory[mgy][mgx] > 0) {
-          moth.alive = false;
-          trappedMoths++;
-          spawnParticles(moth.x, moth.y, T.mothGold, 8);
-          playMothPing();
+        if (mgx >= 0 && mgx < gridW && mgy >= 0 && mgy < gridH && !outside[mgy][mgx]) {
+          const dist = Math.hypot(mgx - closureGx, mgy - closureGy);
+          floodMoths.push({ moth, delay: dist * FLOOD_RATE });
         }
       }
 
       trail = [];
-      if (claimed > 0 || trappedMoths > 0) {
-        playClaim(claimed + trappedMoths * 2);
+      floodTimer = 0;
+      floodActive = true;
+
+      if (toFlood.length > 0 || floodMoths.length > 0) {
+        playClaim(toFlood.length + floodMoths.length * 2);
         flashColor = T.territory; flashTimer = 0.15;
       }
-      return claimed + trappedMoths * 3;
+      return toFlood.length + floodMoths.length * 3;
     }
 
     // --- INPUT ---
@@ -439,6 +460,36 @@
         outsideTimer = 0;
         stopHeartbeat();
         setHumVolume(0);
+      }
+
+      // Flood fill animation
+      if (floodActive) {
+        floodTimer += dt;
+        let anyLeft = false;
+        for (const cell of floodQueue) {
+          if (cell.done) continue;
+          if (floodTimer >= cell.delay) {
+            territory[cell.gy][cell.gx] = gameTime;
+            cell.done = true;
+            // Small amber spark on each new cell
+            spawnParticles(cell.gx * CELL + CELL / 2, cell.gy * CELL + CELL / 2, T.territory, 1);
+          } else {
+            anyLeft = true;
+          }
+        }
+        // Trap moths as flood reaches them
+        for (const fm of floodMoths) {
+          if (fm.done) continue;
+          if (floodTimer >= fm.delay) {
+            fm.moth.alive = false;
+            fm.done = true;
+            spawnParticles(fm.moth.x, fm.moth.y, T.mothGold, 8);
+            playMothPing();
+          } else {
+            anyLeft = true;
+          }
+        }
+        if (!anyLeft) floodActive = false;
       }
 
       // Territory decay
@@ -606,7 +657,7 @@
         player.x, player.y, GLOW_RADIUS * 2
       );
       fogGrad.addColorStop(0, 'rgba(9,9,11,0)');
-      fogGrad.addColorStop(1, 'rgba(9,9,11,0.85)');
+      fogGrad.addColorStop(1, 'rgba(9,9,11,0.92)');
       // Don't darken territory (it glows on its own) — but we can't selectively mask, so use a softer fog
       ctx.fillStyle = fogGrad;
       ctx.fillRect(0, 0, W, H);
