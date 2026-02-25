@@ -208,7 +208,7 @@
       moths = [];
       particles = [];
       score = 0;
-      litCount = 0;
+      // litCount already set during territory init above
       bestScore = parseInt(localStorage.getItem('claim_best') || '0'); // stored as percentage
       gameTime = 0;
       phase = 'start';
@@ -259,15 +259,7 @@
       return trail.some(t => t.gx === gx && t.gy === gy);
     }
 
-    function countLitCells() {
-      let count = 0;
-      for (let y = 0; y < gridH; y++) {
-        for (let x = 0; x < gridW; x++) {
-          if (territory[y][x] > 0) count++;
-        }
-      }
-      return count;
-    }
+    // countLitCells removed — litCount tracked incrementally
 
     // Flood fill to claim enclosed area
     function claimLoop() {
@@ -434,11 +426,11 @@
       player.x += player.dx * PLAYER_SPEED * dt;
       player.y += player.dy * PLAYER_SPEED * dt;
 
-      // Wrap at screen edges
-      if (player.x < 0) player.x = 0;
-      if (player.x > W) player.x = W;
-      if (player.y < 0) player.y = 0;
-      if (player.y > H) player.y = H;
+      // Die at screen edges (no clamping — hitting the boundary is death)
+      if (player.x < 0 || player.x > W || player.y < 0 || player.y > H) {
+        die();
+        return;
+      }
 
       // Current grid cell
       const gx = Math.floor(player.x / CELL);
@@ -693,17 +685,35 @@
       }
       ctx.globalAlpha = 1;
 
-      // Trail
+      // Trail (with moth proximity warning)
       if (trail.length > 1) {
-        ctx.strokeStyle = T.trail;
-        ctx.lineWidth = 2;
-        ctx.shadowBlur = 6; ctx.shadowColor = T.trail;
-        ctx.globalAlpha = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(trail[0].x, trail[0].y);
-        for (let i = 1; i < trail.length; i++) {
-          ctx.lineTo(trail[i].x, trail[i].y);
+        // Find trail segments threatened by moths
+        const threatened = new Set();
+        for (const moth of moths) {
+          if (!moth.alive) continue;
+          for (let i = 0; i < trail.length; i++) {
+            if (Math.hypot(moth.x - trail[i].x, moth.y - trail[i].y) < 30) {
+              threatened.add(i);
+            }
+          }
         }
+
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 6;
+        for (let i = 1; i < trail.length; i++) {
+          const danger = threatened.has(i) || threatened.has(i - 1);
+          ctx.strokeStyle = danger ? T.red : T.trail;
+          ctx.shadowColor = danger ? T.red : T.trail;
+          ctx.globalAlpha = danger ? 0.6 + Math.sin(gameTime * 15) * 0.3 : 0.8;
+          ctx.beginPath();
+          ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
+          ctx.lineTo(trail[i].x, trail[i].y);
+          ctx.stroke();
+        }
+        // Last segment to player
+        ctx.strokeStyle = T.trail; ctx.shadowColor = T.trail; ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(trail[trail.length - 1].x, trail[trail.length - 1].y);
         ctx.lineTo(player.x, player.y);
         ctx.stroke();
         ctx.shadowBlur = 0;
