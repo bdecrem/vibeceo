@@ -296,14 +296,20 @@ export default function ClaimGame() {
 
     function spawnMoth(game: GameState) {
       const angle = Math.random() * Math.PI * 2;
-      const dist = Math.max(game.W, game.H) * 0.4 + Math.random() * 50;
-      const d = Math.min(game.gameTime / 60, 1);
+      // Difficulty ramp: d goes 0→1 over 90 seconds
+      const d = Math.min(game.gameTime / 90, 1);
+      // Early: spawn far away (5+ seconds of travel time). Late: spawn close (1-2 seconds away)
+      const maxDim = Math.max(game.W, game.H);
+      const baseDist = maxDim * 0.5;  // far at start
+      const minDist = maxDim * 0.12;  // close late game
+      const dist = baseDist - d * (baseDist - minDist) + Math.random() * 40;
+      // Early: slow moths. Late: fast moths
+      const speed = MOTH_SPEED_BASE * 0.5 + d * MOTH_SPEED_BASE * 1.2 + Math.random() * 15;
       game.moths.push({
         x: game.player.x + Math.cos(angle) * dist,
         y: game.player.y + Math.sin(angle) * dist,
         vx: (Math.random() - 0.5) * 20, vy: (Math.random() - 0.5) * 20,
-        speed: MOTH_SPEED_BASE + d * 30 + Math.random() * 15,
-        flicker: Math.random() * Math.PI * 2, alive: true,
+        speed, flicker: Math.random() * Math.PI * 2, alive: true,
       });
     }
 
@@ -557,11 +563,12 @@ export default function ClaimGame() {
 
       game.score = Math.round(game.litCount / (game.gridW * game.gridH) * 100);
 
-      // Moth spawning
+      // Moth spawning — ramps over 90 seconds
       if (!game.tutActive || game.tutStep >= 4) {
-        const d = Math.min(game.gameTime / 60, 1);
-        const maxMoths = game.tutActive ? 3 : 3 + Math.floor(d * 8);
-        if (game.moths.filter(m => m.alive).length < maxMoths && Math.random() < 0.02 + d * 0.03) {
+        const d = Math.min(game.gameTime / 90, 1);
+        const maxMoths = game.tutActive ? 3 : 2 + Math.floor(d * 10);
+        const spawnChance = 0.01 + d * 0.04; // rare early, frequent late
+        if (game.moths.filter(m => m.alive).length < maxMoths && Math.random() < spawnChance) {
           spawnMoth(game);
         }
       }
@@ -570,19 +577,25 @@ export default function ClaimGame() {
       for (const moth of game.moths) {
         if (!moth.alive) continue;
         moth.flicker += dt * 8;
+        // Difficulty ramp for moth aggression
+        const aggroD = Math.min(game.gameTime / 90, 1);
+        const attractStrength = 0.2 + aggroD * 0.8; // 0.2 early → 1.0 late
+        const attractRange = MOTH_ATTRACT_RANGE * (0.6 + aggroD * 0.8); // smaller range early, bigger late
         if (game.trail.length > 0 && !game.player.inZone) {
           let nearest: TrailCell | null = null, nearDist = Infinity;
           for (const t of game.trail) {
             const d2 = Math.hypot(moth.x - t.x, moth.y - t.y);
             if (d2 < nearDist) { nearDist = d2; nearest = t; }
           }
-          if (nearest && nearDist < MOTH_ATTRACT_RANGE + game.trail.length * 2) {
-            moth.vx += (nearest.x - moth.x) / Math.max(nearDist, 1) * moth.speed * 0.6 * dt;
-            moth.vy += (nearest.y - moth.y) / Math.max(nearDist, 1) * moth.speed * 0.6 * dt;
+          if (nearest && nearDist < attractRange + game.trail.length * 2) {
+            moth.vx += (nearest.x - moth.x) / Math.max(nearDist, 1) * moth.speed * attractStrength * dt;
+            moth.vy += (nearest.y - moth.y) / Math.max(nearDist, 1) * moth.speed * attractStrength * dt;
           }
         }
-        moth.vx += (Math.random() - 0.5) * 40 * dt;
-        moth.vy += (Math.random() - 0.5) * 40 * dt;
+        // Random wander: more erratic early (less threatening), more focused late
+        const wander = 50 - aggroD * 25;
+        moth.vx += (Math.random() - 0.5) * wander * dt;
+        moth.vy += (Math.random() - 0.5) * wander * dt;
         const mspd = Math.hypot(moth.vx, moth.vy);
         if (mspd > moth.speed) { moth.vx *= moth.speed / mspd; moth.vy *= moth.speed / mspd; }
         moth.x += moth.vx * dt; moth.y += moth.vy * dt;
