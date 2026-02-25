@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JELLYFISH DISCO</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#05050f;overflow:hidden;height:100vh;font-family:monospace}
+
+/* Ocean gradient that shifts */
+.ocean{position:fixed;inset:0;background:linear-gradient(180deg,#05050f 0%,#0a0a2e 30%,#0f1a3a 60%,#1a0a2e 100%);animation:oceanShift 10s ease-in-out infinite alternate}
+@keyframes oceanShift{to{background:linear-gradient(180deg,#0a0518 0%,#150a30 30%,#0a1a3a 60%,#05050f 100%)}}
+
+/* Light rays from above */
+.rays{position:fixed;top:-50%;left:50%;width:200%;height:100%;transform:translateX(-50%);
+  background:repeating-conic-gradient(from 0deg,transparent 0deg,rgba(100,200,255,0.02) 2deg,transparent 4deg);
+  animation:raysSpin 60s linear infinite;pointer-events:none}
+@keyframes raysSpin{to{transform:translateX(-50%) rotate(360deg)}}
+
+/* Jellyfish */
+.jelly{position:absolute;transform-origin:center top}
+.bell{width:var(--size);height:calc(var(--size)*0.7);border-radius:50% 50% 40% 40%;
+  background:radial-gradient(ellipse at 30% 30%,var(--glow),var(--color) 50%,transparent 80%);
+  opacity:0.8;animation:bellPulse var(--speed) ease-in-out infinite;
+  box-shadow:0 0 40px var(--glow),inset 0 -10px 30px rgba(0,0,0,0.3);
+  filter:blur(0.5px)}
+@keyframes bellPulse{0%,100%{transform:scaleX(1) scaleY(1)}50%{transform:scaleX(1.1) scaleY(0.85)}}
+
+.tentacles{position:relative;display:flex;justify-content:center;gap:2px;padding-top:2px}
+.t{width:2px;height:var(--tlen);background:linear-gradient(180deg,var(--color),transparent);
+  border-radius:0 0 2px 2px;animation:wave var(--speed) ease-in-out infinite;
+  animation-delay:var(--td);opacity:0.6;transform-origin:top}
+@keyframes wave{0%,100%{transform:skewX(-10deg) scaleY(1)}25%{transform:skewX(15deg) scaleY(1.1)}50%{transform:skewX(-5deg) scaleY(0.9)}75%{transform:skewX(10deg) scaleY(1.05)}}
+
+/* Whole jelly floats */
+.jelly{animation:jellyFloat var(--drift) ease-in-out infinite}
+@keyframes jellyFloat{0%,100%{transform:translateY(0) rotate(var(--rot))}50%{transform:translateY(-30px) rotate(calc(var(--rot)*-1))}}
+
+/* Bubbles */
+.bubble{position:fixed;border-radius:50%;border:1px solid rgba(150,220,255,0.3);
+  background:radial-gradient(circle at 30% 30%,rgba(200,240,255,0.15),transparent);
+  animation:rise var(--bd) linear infinite;animation-delay:var(--bdd);bottom:-20px;opacity:0}
+@keyframes rise{0%{opacity:0;transform:translateX(0) scale(0.5)}10%{opacity:0.6}90%{opacity:0.4}
+  100%{opacity:0;bottom:105vh;transform:translateX(calc(sin(var(--bdd))*40px)) scale(1)}}
+
+/* Plankton sparkles */
+.sparkle{position:fixed;width:2px;height:2px;border-radius:50%;background:#fff;
+  animation:sparkle var(--sd) ease-in-out infinite;animation-delay:var(--sdd);opacity:0}
+@keyframes sparkle{0%,100%{opacity:0;transform:scale(0)}50%{opacity:0.8;transform:scale(1.5)}}
+
+/* Floor caustics */
+.caustics{position:fixed;bottom:0;left:0;right:0;height:30vh;
+  background:repeating-radial-gradient(ellipse at 50% 100%,transparent 0%,rgba(50,150,200,0.03) 10%,transparent 20%);
+  animation:causticMove 8s ease-in-out infinite alternate;pointer-events:none}
+@keyframes causticMove{to{background-position:100px 0}}
+
+/* Title */
+.title{position:fixed;bottom:5%;left:50%;transform:translateX(-50%);
+  font-size:clamp(0.8rem,3vw,1.5rem);letter-spacing:1em;text-transform:uppercase;
+  color:rgba(150,200,255,0.4);z-index:10;
+  animation:titleGlow 4s ease-in-out infinite alternate}
+@keyframes titleGlow{to{color:rgba(200,150,255,0.6);text-shadow:0 0 30px rgba(200,150,255,0.3)}}
+
+/* Click ripple */
+.ripple{position:fixed;border-radius:50%;border:1px solid rgba(150,220,255,0.5);
+  pointer-events:none;animation:rippleOut 1s ease-out forwards}
+@keyframes rippleOut{to{width:200px;height:200px;opacity:0;margin:-100px 0 0 -100px}}
+</style>
+</head>
+<body>
+<div class="ocean"></div>
+<div class="rays"></div>
+<div class="caustics"></div>
+<div class="title">jellyfish disco</div>
+
+<script>
+const body=document.body;
+const palettes=[
+  {color:'rgba(200,50,255,0.5)',glow:'rgba(255,100,255,0.3)'},
+  {color:'rgba(50,150,255,0.5)',glow:'rgba(100,200,255,0.3)'},
+  {color:'rgba(255,100,50,0.4)',glow:'rgba(255,150,100,0.3)'},
+  {color:'rgba(50,255,200,0.5)',glow:'rgba(100,255,220,0.3)'},
+  {color:'rgba(255,200,50,0.4)',glow:'rgba(255,230,100,0.3)'},
+  {color:'rgba(255,50,100,0.5)',glow:'rgba(255,100,150,0.3)'},
+];
+
+function makeJelly(){
+  const j=document.createElement('div');j.className='jelly';
+  const p=palettes[Math.floor(Math.random()*palettes.length)];
+  const size=40+Math.random()*80;
+  const speed=2+Math.random()*3;
+  j.style.cssText=`left:${5+Math.random()*85}%;top:${10+Math.random()*70}%;--size:${size}px;--speed:${speed}s;--drift:${4+Math.random()*6}s;--rot:${Math.random()*6-3}deg`;
+  
+  const bell=document.createElement('div');bell.className='bell';
+  bell.style.setProperty('--color',p.color);
+  bell.style.setProperty('--glow',p.glow);
+  j.appendChild(bell);
+  
+  const tent=document.createElement('div');tent.className='tentacles';
+  const numT=5+Math.floor(Math.random()*8);
+  for(let i=0;i<numT;i++){
+    const t=document.createElement('div');t.className='t';
+    t.style.cssText=`--tlen:${size*0.5+Math.random()*size*0.8}px;--td:${i*0.1}s;--speed:${speed}s`;
+    t.style.setProperty('--color',p.color);
+    tent.appendChild(t);
+  }
+  j.appendChild(tent);
+  body.appendChild(j);
+}
+
+// Spawn jellies
+for(let i=0;i<12;i++) makeJelly();
+
+// Bubbles
+for(let i=0;i<25;i++){
+  const b=document.createElement('div');b.className='bubble';
+  const sz=4+Math.random()*12;
+  b.style.cssText=`left:${Math.random()*100}%;width:${sz}px;height:${sz}px;--bd:${6+Math.random()*10}s;--bdd:${-Math.random()*10}s`;
+  body.appendChild(b);
+}
+
+// Sparkles
+for(let i=0;i<40;i++){
+  const s=document.createElement('div');s.className='sparkle';
+  s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;--sd:${2+Math.random()*5}s;--sdd:${-Math.random()*5}s`;
+  body.appendChild(s);
+}
+
+// Click to spawn ripple + new jelly
+document.addEventListener('click',e=>{
+  const r=document.createElement('div');r.className='ripple';
+  r.style.cssText=`left:${e.clientX}px;top:${e.clientY}px;width:0;height:0`;
+  body.appendChild(r);setTimeout(()=>r.remove(),1000);
+  makeJelly();
+});
+
+// Gentle parallax on mouse
+document.addEventListener('mousemove',e=>{
+  const jellies=document.querySelectorAll('.jelly');
+  const mx=(e.clientX/innerWidth-0.5)*10;
+  const my=(e.clientY/innerHeight-0.5)*10;
+  jellies.forEach((j,i)=>{
+    const depth=(i%3+1)*0.3;
+    j.style.marginLeft=mx*depth+'px';
+    j.style.marginTop=my*depth+'px';
+  });
+});
+</script>
+</body>
+</html>

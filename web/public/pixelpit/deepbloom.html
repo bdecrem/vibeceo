@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEEP BLOOM</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0a; overflow: hidden; height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; }
+
+.scene { position: relative; width: 100vw; height: 100vh; }
+
+.ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  border-radius: 50%;
+  border: 2px solid;
+  transform: translate(-50%, -50%);
+  animation: breathe 6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0.8; }
+  33% { transform: translate(-50%, -50%) scale(1.15) rotate(120deg); opacity: 1; }
+  66% { transform: translate(-50%, -50%) scale(0.9) rotate(240deg); opacity: 0.6; }
+}
+
+.petal {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 4px;
+  border-radius: 50% 50% 0 0;
+  transform-origin: bottom center;
+  animation: petalGrow 8s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+}
+
+@keyframes petalGrow {
+  0% { height: 40px; opacity: 0.3; filter: blur(0px); }
+  50% { height: 140px; opacity: 1; filter: blur(1px); }
+  100% { height: 80px; opacity: 0.6; filter: blur(2px); }
+}
+
+.particle {
+  position: absolute;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  animation: float 10s linear infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes float {
+  0% { transform: translate(0, 0) scale(0); opacity: 0; }
+  10% { opacity: 1; transform: scale(1); }
+  90% { opacity: 0.5; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+}
+
+.nucleus {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 40px 15px rgba(255,255,255,0.3), 0 0 120px 40px rgba(200,100,255,0.2), 0 0 200px 80px rgba(100,200,255,0.1);
+  animation: corePulse 3s ease-in-out infinite;
+  z-index: 10;
+}
+
+@keyframes corePulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 40px 15px rgba(255,255,255,0.3), 0 0 120px 40px rgba(200,100,255,0.2); }
+  50% { transform: translate(-50%, -50%) scale(1.3); box-shadow: 0 0 60px 25px rgba(255,255,255,0.5), 0 0 160px 60px rgba(200,100,255,0.3), 0 0 250px 100px rgba(100,200,255,0.15); }
+}
+
+.wave {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+  animation: ripple 4s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes ripple {
+  0% { width: 20px; height: 20px; opacity: 0.8; }
+  100% { width: 100vmin; height: 100vmin; opacity: 0; }
+}
+
+.moth {
+  position: absolute;
+  width: 6px; height: 6px;
+  background: rgba(255,220,180,0.8);
+  border-radius: 50%;
+  box-shadow: 0 0 10px 3px rgba(255,220,180,0.4);
+  animation: orbit var(--speed) linear infinite;
+  offset-path: circle(var(--radius) at 50% 50%);
+}
+
+@keyframes orbit {
+  0% { offset-distance: var(--start); }
+  100% { offset-distance: calc(var(--start) + 100%); }
+}
+
+.credits {
+  position: fixed;
+  bottom: 3vh;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Georgia', serif;
+  font-size: 0.75rem;
+  color: rgba(200,150,255,0.3);
+  letter-spacing: 0.4em;
+  text-transform: lowercase;
+  z-index: 100;
+  animation: fadeWords 8s ease-in-out infinite;
+}
+
+@keyframes fadeWords {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.6; }
+}
+
+.bg-gradient {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: radial-gradient(ellipse at 50% 50%, rgba(30,0,50,0.4), transparent 70%);
+  animation: bgShift 12s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes bgShift {
+  0% { background: radial-gradient(ellipse at 50% 50%, rgba(30,0,50,0.4), transparent 70%); }
+  33% { background: radial-gradient(ellipse at 50% 50%, rgba(0,30,50,0.4), transparent 70%); }
+  66% { background: radial-gradient(ellipse at 50% 50%, rgba(50,0,30,0.4), transparent 70%); }
+  100% { background: radial-gradient(ellipse at 50% 50%, rgba(20,10,60,0.4), transparent 70%); }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-gradient"></div>
+<div class="scene" id="scene">
+  <div class="nucleus"></div>
+</div>
+<div class="credits">deep bloom — mave × night</div>
+
+<script>
+const scene = document.getElementById('scene');
+const palette = [
+  ['#ff006e','#ff4da6'],
+  ['#8338ec','#b380ff'],
+  ['#3a86ff','#70a9ff'],
+  ['#00ffcc','#66ffd9'],
+  ['#ffbe0b','#ffd666'],
+  ['#ff595e','#ff8a8d'],
+];
+
+// Rings
+for (let i = 0; i < 8; i++) {
+  const ring = document.createElement('div');
+  ring.className = 'ring';
+  const size = 80 + i * 55;
+  const [c1] = palette[i % palette.length];
+  ring.style.width = size + 'px';
+  ring.style.height = size + 'px';
+  ring.style.borderColor = c1 + '40';
+  ring.style.animationDelay = (i * 0.4) + 's';
+  ring.style.animationDuration = (5 + i * 0.5) + 's';
+  scene.appendChild(ring);
+}
+
+// Petals
+for (let i = 0; i < 36; i++) {
+  const petal = document.createElement('div');
+  petal.className = 'petal';
+  const [c1, c2] = palette[i % palette.length];
+  const angle = i * 10;
+  petal.style.background = `linear-gradient(to top, ${c1}, ${c2}00)`;
+  petal.style.transform = `translate(-50%, -100%) rotate(${angle}deg)`;
+  petal.style.animationDelay = (i * 0.15) + 's';
+  petal.style.animationDuration = (6 + Math.random() * 4) + 's';
+  scene.appendChild(petal);
+}
+
+// Particles
+function spawnParticle() {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const [c1] = palette[Math.floor(Math.random() * palette.length)];
+  p.style.background = c1;
+  p.style.boxShadow = `0 0 6px 2px ${c1}80`;
+  p.style.left = '50%';
+  p.style.top = '50%';
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 100 + Math.random() * 300;
+  p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+  p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+  p.style.animationDuration = (6 + Math.random() * 6) + 's';
+  p.style.animationDelay = Math.random() * 2 + 's';
+  scene.appendChild(p);
+  setTimeout(() => p.remove(), 14000);
+}
+setInterval(spawnParticle, 200);
+for (let i = 0; i < 30; i++) setTimeout(spawnParticle, i * 100);
+
+// Ripple waves
+function spawnWave() {
+  const w = document.createElement('div');
+  w.className = 'wave';
+  w.style.animationDuration = (3 + Math.random() * 3) + 's';
+  scene.appendChild(w);
+  setTimeout(() => w.remove(), 7000);
+}
+setInterval(spawnWave, 2500);
+
+// Moths orbiting the light
+for (let i = 0; i < 6; i++) {
+  const moth = document.createElement('div');
+  moth.className = 'moth';
+  moth.style.setProperty('--radius', (60 + i * 35) + 'px');
+  moth.style.setProperty('--speed', (3 + i * 0.8) + 's');
+  moth.style.setProperty('--start', (i * 15) + '%');
+  moth.style.animationDirection = i % 2 ? 'reverse' : 'normal';
+  scene.appendChild(moth);
+}
+
+// Click to burst
+document.body.addEventListener('click', (e) => {
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const [c1] = palette[Math.floor(Math.random() * palette.length)];
+    p.style.background = c1;
+    p.style.boxShadow = `0 0 8px 3px ${c1}80`;
+    p.style.width = (2 + Math.random() * 4) + 'px';
+    p.style.height = p.style.width;
+    p.style.left = e.clientX + 'px';
+    p.style.top = e.clientY + 'px';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 50 + Math.random() * 200;
+    p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    p.style.animationDuration = (2 + Math.random() * 3) + 's';
+    scene.appendChild(p);
+    setTimeout(() => p.remove(), 6000);
+  }
+});
+</script>
+</body>
+</html>

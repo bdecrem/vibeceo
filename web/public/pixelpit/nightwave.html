@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIGHTWAVE</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; height: 100vh; width: 100vw; cursor: crosshair; }
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  filter: blur(2px);
+  animation: drift 8s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  25% { transform: translate(30vw, -20vh) scale(1.4) rotate(90deg); }
+  50% { transform: translate(-10vw, 30vh) scale(0.8) rotate(180deg); }
+  75% { transform: translate(20vw, 10vh) scale(1.2) rotate(270deg); }
+  100% { transform: translate(-20vw, -10vh) scale(1) rotate(360deg); }
+}
+
+.grid {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) perspective(300px) rotateX(60deg);
+  width: 200vw;
+  height: 60vh;
+  background: 
+    linear-gradient(transparent 0%, rgba(0,255,200,0.08) 100%),
+    repeating-linear-gradient(90deg, rgba(0,255,200,0.15) 0px, transparent 1px, transparent 60px),
+    repeating-linear-gradient(0deg, rgba(0,255,200,0.1) 0px, transparent 1px, transparent 60px);
+  animation: gridScroll 3s linear infinite;
+  z-index: 1;
+}
+
+@keyframes gridScroll {
+  0% { background-position-y: 0; }
+  100% { background-position-y: 60px; }
+}
+
+.sun {
+  position: fixed;
+  bottom: 25vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ff006e, #ff6b00, #ffbe0b);
+  box-shadow: 0 0 120px 40px rgba(255,0,110,0.4), 0 0 300px 100px rgba(255,107,0,0.2);
+  z-index: 0;
+  animation: pulse 4s ease-in-out infinite alternate;
+}
+
+.sun::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  bottom: 0;
+  left: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 8px,
+    #000 8px,
+    #000 12px
+  );
+}
+
+@keyframes pulse {
+  0% { transform: translateX(-50%) scale(1); filter: brightness(1); }
+  100% { transform: translateX(-50%) scale(1.08); filter: brightness(1.3); }
+}
+
+.title {
+  position: fixed;
+  top: 8vh;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Courier New', monospace;
+  font-size: clamp(3rem, 10vw, 8rem);
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  background: linear-gradient(90deg, #00ffcc, #ff006e, #ffbe0b, #00ffcc);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+  z-index: 10;
+  text-shadow: none;
+  user-select: none;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0.03),
+    rgba(0,0,0,0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 100;
+}
+
+.mountain {
+  position: fixed;
+  bottom: 18vh;
+  z-index: 2;
+}
+
+.mountain.left {
+  left: -5vw;
+  width: 0;
+  height: 0;
+  border-left: 35vw solid transparent;
+  border-right: 35vw solid transparent;
+  border-bottom: 30vh solid #1a0a2e;
+}
+
+.mountain.right {
+  right: -10vw;
+  width: 0;
+  height: 0;
+  border-left: 40vw solid transparent;
+  border-right: 40vw solid transparent;
+  border-bottom: 25vh solid #120826;
+}
+
+.stars {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60vh;
+  z-index: 0;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #fff;
+  border-radius: 50%;
+  animation: twinkle 2s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.2; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.5); }
+}
+
+.shooter {
+  position: fixed;
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00ffcc, #fff);
+  z-index: 5;
+  animation: shoot 6s linear infinite;
+  opacity: 0;
+}
+
+@keyframes shoot {
+  0% { transform: translateX(-100px) translateY(0); opacity: 0; }
+  5% { opacity: 1; }
+  15% { transform: translateX(100vw) translateY(15vh); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+.tagline {
+  position: fixed;
+  bottom: 4vh;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Courier New', monospace;
+  font-size: clamp(0.7rem, 2vw, 1rem);
+  color: rgba(0,255,200,0.5);
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  z-index: 10;
+  animation: flicker 4s ease-in-out infinite;
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+  92% { opacity: 0.5; }
+  93% { opacity: 0.1; }
+  94% { opacity: 0.5; }
+}
+
+.vhs {
+  position: fixed;
+  top: 3vh;
+  right: 4vw;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: rgba(255,0,110,0.7);
+  z-index: 10;
+  animation: flicker 5s ease-in-out infinite;
+}
+</style>
+</head>
+<body>
+
+<div class="title">NIGHTWAVE</div>
+<div class="vhs">REC ●</div>
+
+<div class="sun"></div>
+<div class="mountain left"></div>
+<div class="mountain right"></div>
+<div class="grid"></div>
+<div class="scanlines"></div>
+
+<div class="stars" id="stars"></div>
+<div class="shooter" style="top:8vh; animation-delay:0s;"></div>
+<div class="shooter" style="top:15vh; animation-delay:3s;"></div>
+
+<div class="tagline">built by mave after dark</div>
+
+<script>
+// Stars
+const stars = document.getElementById('stars');
+for (let i = 0; i < 120; i++) {
+  const star = document.createElement('div');
+  star.className = 'star';
+  star.style.left = Math.random() * 100 + '%';
+  star.style.top = Math.random() * 100 + '%';
+  star.style.animationDelay = Math.random() * 2 + 's';
+  star.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+  stars.appendChild(star);
+}
+
+// Floating orbs on click
+document.body.addEventListener('click', (e) => {
+  const orb = document.createElement('div');
+  orb.className = 'orb';
+  const size = 30 + Math.random() * 120;
+  const colors = ['#ff006e', '#00ffcc', '#ffbe0b', '#8338ec', '#3a86ff'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  orb.style.width = size + 'px';
+  orb.style.height = size + 'px';
+  orb.style.left = (e.clientX - size/2) + 'px';
+  orb.style.top = (e.clientY - size/2) + 'px';
+  orb.style.background = `radial-gradient(circle, ${color}, transparent)`;
+  orb.style.animationDuration = (5 + Math.random() * 6) + 's';
+  orb.style.animationDelay = Math.random() + 's';
+  document.body.appendChild(orb);
+  setTimeout(() => orb.remove(), 14000);
+});
+
+// Auto-spawn some orbs
+for (let i = 0; i < 5; i++) {
+  setTimeout(() => {
+    document.body.dispatchEvent(new MouseEvent('click', {
+      clientX: Math.random() * window.innerWidth,
+      clientY: Math.random() * window.innerHeight
+    }));
+  }, i * 800);
+}
+</script>
+</body>
+</html>

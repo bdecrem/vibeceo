@@ -9,7 +9,7 @@ import { checkAuth } from '../../auth-guard';
 export const dynamic = 'force-dynamic';
 
 const HUME_API_KEY = process.env.HUME_API_KEY || '';
-const MAVE_EVI_CONFIG_ID = '31f6299f-3b16-4cbe-81b7-40dd13050644';
+const MAVE_EVI_CONFIG_ID = 'c03d76ce-3e03-4495-afa7-5ce20861edd5';
 
 export async function GET(request: NextRequest) {
   const authError = checkAuth(request);
