@@ -1,482 +1,579 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BOUNCE — Tap to keep it alive</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BOUNCE — Keep it alive</title>
+  
+  <!-- Open Graph / Social Media -->
+  <meta property="og:title" content="BOUNCE — Keep it alive">
+  <meta property="og:description" content="Place platforms. Defy gravity. Don't let it fall.">
+  <meta property="og:image" content="https://intheamber.com/amber/bounce-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/bounce.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="BOUNCE — Keep it alive">
+  <meta name="twitter:description" content="Place platforms. Defy gravity. Don't let it fall.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/bounce-og.png">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap');
     
-    <!-- OG tags -->
-    <meta property="og:title" content="BOUNCE — Tap to keep it alive">
-    <meta property="og:description" content="Rapid tap game. Keep the ball bouncing. Miss the rhythm and it dies.">
-    <meta property="og:image" content="https://intheamber.com/amber/bounce-og.png">
-    <meta property="og:url" content="https://intheamber.com/amber/bounce.html">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="BOUNCE — Tap to keep it alive">
-    <meta name="twitter:description" content="Rapid tap game. Keep the ball bouncing. Miss the rhythm and it dies.">
-    <meta name="twitter:image" content="https://intheamber.com/amber/bounce-og.png">
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background: #0D0D0D;
-            font-family: 'Space Mono', monospace;
-            color: #D4A574;
-            overflow: hidden;
-            touch-action: none;
-            user-select: none;
-        }
-
-        #canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            cursor: pointer;
-        }
-
-        #ui {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        #score {
-            font-size: 48px;
-            font-weight: bold;
-            color: #FFD700;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-        }
-
-        #streak {
-            font-size: 18px;
-            color: #2D9596;
-            margin-top: 5px;
-        }
-
-        #best {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            font-size: 14px;
-            color: #D4A574;
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        #hint {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 16px;
-            color: #D4A574;
-            opacity: 0.8;
-            text-align: center;
-            pointer-events: none;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 0.3; }
-        }
-
-        #gameOver {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(13, 13, 13, 0.95);
-            padding: 40px;
-            border: 2px solid #D4A574;
-            text-align: center;
-            display: none;
-            pointer-events: none;
-            z-index: 20;
-        }
-
-        #gameOver.show {
-            display: block;
-            pointer-events: all;
-        }
-
-        #gameOver h1 {
-            font-size: 36px;
-            color: #FFD700;
-            margin-bottom: 20px;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-        }
-
-        #gameOver p {
-            font-size: 18px;
-            color: #D4A574;
-            margin-bottom: 30px;
-        }
-
-        #restartBtn {
-            background: #D4A574;
-            color: #0D0D0D;
-            border: none;
-            padding: 15px 40px;
-            font-size: 18px;
-            font-family: 'Space Mono', monospace;
-            font-weight: bold;
-            cursor: pointer;
-            pointer-events: all;
-            transition: all 0.2s;
-        }
-
-        #restartBtn:active {
-            transform: scale(0.95);
-            background: #FFD700;
-        }
-
-        #ground {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 80px;
-            background: linear-gradient(to bottom, transparent, rgba(212, 165, 116, 0.1));
-            pointer-events: none;
-            border-top: 2px solid rgba(212, 165, 116, 0.3);
-        }
-    </style>
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    #gameCanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #score {
+      font-family: 'Space Mono', monospace;
+      font-size: 48px;
+      font-weight: 700;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      margin-bottom: 5px;
+    }
+    
+    #bestScore {
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      color: #D4A574;
+      opacity: 0.6;
+    }
+    
+    #gameOver {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      display: none;
+      pointer-events: none;
+      z-index: 20;
+    }
+    
+    #gameOver.show {
+      display: block;
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    
+    #gameOverTitle {
+      font-family: 'Space Mono', monospace;
+      font-size: 36px;
+      font-weight: 700;
+      color: #FF6B6B;
+      margin-bottom: 20px;
+      text-shadow: 0 0 30px rgba(255, 107, 107, 0.8);
+    }
+    
+    #finalScore {
+      font-family: 'Inter', sans-serif;
+      font-size: 20px;
+      color: #D4A574;
+      margin-bottom: 10px;
+    }
+    
+    #newRecord {
+      font-family: 'Space Mono', monospace;
+      font-size: 24px;
+      color: #FFD700;
+      margin-top: 15px;
+      display: none;
+    }
+    
+    #newRecord.show {
+      display: block;
+      animation: pulse 0.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    
+    #tapToStart {
+      font-family: 'Space Mono', monospace;
+      font-size: 18px;
+      color: #2D9596;
+      margin-top: 20px;
+      opacity: 0.8;
+    }
+    
+    #instructions {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 0.5s;
+    }
+    
+    #instructions.hide {
+      opacity: 0;
+    }
+    
+    #instructions div:first-child {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      color: #FFD700;
+      margin-bottom: 10px;
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    }
+    
+    #instructions div:last-child {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: #D4A574;
+      opacity: 0.7;
+    }
+  </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
+  <canvas id="gameCanvas"></canvas>
+  
+  <div id="ui">
+    <div id="score">0</div>
+    <div id="bestScore">BEST: 0</div>
+  </div>
+  
+  <div id="gameOver">
+    <div id="gameOverTitle">GAME OVER</div>
+    <div id="finalScore">BOUNCES: 0</div>
+    <div id="newRecord">🏆 NEW RECORD!</div>
+    <div id="tapToStart">TAP TO RESTART</div>
+  </div>
+  
+  <div id="instructions">
+    <div>TAP TO PLACE PLATFORMS</div>
+    <div>Keep the ball bouncing. Don't let it fall.</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
     
-    <div id="ui">
-        <div id="score">0</div>
-        <div id="streak">Streak: 0</div>
-    </div>
-
-    <div id="best">Best: 0</div>
-    <div id="hint">TAP TO BOUNCE</div>
-    <div id="ground"></div>
-
-    <div id="gameOver">
-        <h1>GAME OVER</h1>
-        <p id="finalScore"></p>
-        <button id="restartBtn">TAP TO RESTART</button>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const scoreEl = document.getElementById('score');
-        const streakEl = document.getElementById('streak');
-        const bestEl = document.getElementById('best');
-        const hintEl = document.getElementById('hint');
-        const gameOverEl = document.getElementById('gameOver');
-        const finalScoreEl = document.getElementById('finalScore');
-        const restartBtn = document.getElementById('restartBtn');
-
-        let width, height;
-        let ball, score, streak, best, particles, rings, gameActive, audioContext, started;
-
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+    let width, height;
+    let audioContext;
+    let gameState = 'playing'; // 'playing' or 'gameOver'
+    let score = 0;
+    let bestScore = parseInt(localStorage.getItem('bounceBestScore') || '0');
+    
+    // Game objects
+    let ball;
+    let platforms = [];
+    let particles = [];
+    
+    // Constants
+    const GRAVITY = 0.4;
+    const BALL_RADIUS = 12;
+    const PLATFORM_WIDTH = 100;
+    const PLATFORM_HEIGHT = 8;
+    const PLATFORM_MAX_BOUNCES = 3;
+    const BOUNCE_DAMPING = 0.92;
+    const WALL_BOUNCE_DAMPING = 0.8;
+    
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    function playBounceSound(velocity) {
+      if (!audioContext) return;
+      
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      const freq = 200 + Math.abs(velocity) * 20;
+      osc.frequency.value = Math.min(freq, 800);
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.start();
+      osc.stop(audioContext.currentTime + 0.1);
+    }
+    
+    function playGameOverSound() {
+      if (!audioContext) return;
+      
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.frequency.setValueAtTime(400, audioContext.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.3);
+      osc.type = 'sawtooth';
+      
+      gain.gain.setValueAtTime(0.15, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.start();
+      osc.stop(audioContext.currentTime + 0.3);
+    }
+    
+    class Ball {
+      constructor() {
+        this.x = width / 2;
+        this.y = height * 0.2;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = 0;
+        this.radius = BALL_RADIUS;
+      }
+      
+      update() {
+        if (gameState !== 'playing') return;
+        
+        // Apply gravity
+        this.vy += GRAVITY;
+        
+        // Update position
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Wall collisions (sides and top)
+        if (this.x - this.radius < 0) {
+          this.x = this.radius;
+          this.vx = -this.vx * WALL_BOUNCE_DAMPING;
+          createParticles(this.x, this.y, 10, '#2D9596');
+          playBounceSound(this.vx);
         }
-
-        class Ball {
-            constructor() {
-                this.radius = 30;
-                this.x = width / 2;
-                this.y = height - 100 - this.radius;
-                this.vy = 0;
-                this.gravity = 0.8;
-                this.bounce = -18;
-                this.minBounce = -12;
-                this.dead = false;
-                this.groundY = height - 80;
-                this.pulsePhase = 0;
-            }
-
-            tap() {
-                if (this.dead) return;
-                
-                // Only bounce if ball is near ground
-                const distFromGround = this.groundY - this.y - this.radius;
-                if (distFromGround < 100) {
-                    this.vy = this.bounce;
-                    score++;
-                    streak++;
-                    scoreEl.textContent = score;
-                    streakEl.textContent = `Streak: ${streak}`;
-                    
-                    // Spawn particles
-                    for (let i = 0; i < 10; i++) {
-                        particles.push(new Particle(this.x, this.y + this.radius));
-                    }
-                    
-                    // Spawn ring
-                    rings.push(new Ring(this.x, this.y + this.radius));
-                    
-                    // Play sound
-                    playTone(400 + score * 10);
-                } else {
-                    // Tapped too early - penalty
-                    this.vy += 2; // Make it fall faster
-                }
-            }
-
-            update() {
-                this.vy += this.gravity;
-                this.y += this.vy;
-                this.pulsePhase += 0.1;
-
-                // Check if dead
-                if (this.y + this.radius >= this.groundY) {
-                    this.y = this.groundY - this.radius;
-                    this.vy = 0;
-                    this.dead = true;
-                    gameActive = false;
-                    endGame();
-                }
-            }
-
-            draw() {
-                const pulse = 1 + Math.sin(this.pulsePhase) * 0.1;
-                const r = this.radius * pulse;
-
-                // Outer glow
-                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 1.5);
-                gradient.addColorStop(0, 'rgba(255, 215, 0, 0.4)');
-                gradient.addColorStop(0.5, 'rgba(212, 165, 116, 0.2)');
-                gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, r * 1.5, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Ball
-                const ballGradient = ctx.createRadialGradient(
-                    this.x - r * 0.3, 
-                    this.y - r * 0.3, 
-                    0,
-                    this.x, 
-                    this.y, 
-                    r
-                );
-                ballGradient.addColorStop(0, '#FFD700');
-                ballGradient.addColorStop(1, '#D4A574');
-                ctx.fillStyle = ballGradient;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Highlight
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                ctx.beginPath();
-                ctx.arc(this.x - r * 0.3, this.y - r * 0.3, r * 0.3, 0, Math.PI * 2);
-                ctx.fill();
-            }
+        if (this.x + this.radius > width) {
+          this.x = width - this.radius;
+          this.vx = -this.vx * WALL_BOUNCE_DAMPING;
+          createParticles(this.x, this.y, 10, '#2D9596');
+          playBounceSound(this.vx);
         }
-
-        class Particle {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                const angle = Math.random() * Math.PI * 2;
-                const speed = 3 + Math.random() * 5;
-                this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed - 5;
-                this.life = 1;
-                this.decay = 0.02;
-                this.size = 3 + Math.random() * 4;
-                this.color = Math.random() > 0.5 ? '#FFD700' : '#D4A574';
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vy += 0.3;
-                this.life -= this.decay;
-            }
-
-            draw() {
-                ctx.globalAlpha = this.life;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1;
-            }
+        if (this.y - this.radius < 0) {
+          this.y = this.radius;
+          this.vy = -this.vy * WALL_BOUNCE_DAMPING;
+          createParticles(this.x, this.y, 10, '#2D9596');
+          playBounceSound(this.vy);
         }
-
-        class Ring {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.radius = 0;
-                this.maxRadius = 80;
-                this.speed = 4;
-                this.life = 1;
-                this.decay = 0.03;
-            }
-
-            update() {
-                this.radius += this.speed;
-                this.life -= this.decay;
-            }
-
-            draw() {
-                ctx.globalAlpha = this.life * 0.6;
-                ctx.strokeStyle = '#2D9596';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.stroke();
-                
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#2D9596';
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-                
-                ctx.globalAlpha = 1;
-            }
+        
+        // Check if fell off bottom
+        if (this.y - this.radius > height) {
+          endGame();
         }
-
-        function playTone(freq) {
-            if (!audioContext) return;
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            osc.frequency.value = Math.min(freq, 1200);
-            osc.type = 'sine';
-            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-            osc.start();
-            osc.stop(audioContext.currentTime + 0.1);
-        }
-
-        function playGameOver() {
-            if (!audioContext) return;
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            osc.frequency.setValueAtTime(400, audioContext.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.5);
-            osc.type = 'sine';
-            gain.gain.setValueAtTime(0.15, audioContext.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-            osc.start();
-            osc.stop(audioContext.currentTime + 0.5);
-        }
-
-        function init() {
-            ball = new Ball();
-            score = 0;
-            streak = 0;
-            particles = [];
-            rings = [];
-            gameActive = true;
-            started = false;
+        
+        // Platform collisions
+        platforms.forEach(platform => {
+          if (platform.dead) return;
+          
+          const ballBottom = this.y + this.radius;
+          const ballTop = this.y - this.radius;
+          const ballLeft = this.x - this.radius;
+          const ballRight = this.x + this.radius;
+          
+          const platformTop = platform.y;
+          const platformBottom = platform.y + PLATFORM_HEIGHT;
+          const platformLeft = platform.x;
+          const platformRight = platform.x + PLATFORM_WIDTH;
+          
+          // Check collision from top
+          if (
+            this.vy > 0 && // Ball moving down
+            ballBottom >= platformTop &&
+            ballTop < platformTop &&
+            ballRight > platformLeft &&
+            ballLeft < platformRight
+          ) {
+            this.y = platformTop - this.radius;
+            this.vy = -this.vy * BOUNCE_DAMPING;
             
-            scoreEl.textContent = score;
-            streakEl.textContent = `Streak: ${streak}`;
-            gameOverEl.classList.remove('show');
-            hintEl.style.display = 'block';
-        }
-
-        function endGame() {
-            if (score > best) {
-                best = score;
-                localStorage.setItem('bounceBest', best);
-                bestEl.textContent = `Best: ${best}`;
+            platform.bounces++;
+            if (platform.bounces >= PLATFORM_MAX_BOUNCES) {
+              platform.dead = true;
             }
             
-            finalScoreEl.textContent = `Score: ${score} • Best: ${best}`;
+            score++;
+            updateScore();
             
-            setTimeout(() => {
-                gameOverEl.classList.add('show');
-                playGameOver();
-            }, 500);
-        }
-
-        function animate() {
-            ctx.fillStyle = 'rgba(13, 13, 13, 0.2)';
-            ctx.fillRect(0, 0, width, height);
-
-            if (gameActive) {
-                ball.update();
-                ball.draw();
-            } else if (ball) {
-                ball.draw();
+            createParticles(this.x, this.y + this.radius, 20, '#FFD700');
+            playBounceSound(this.vy);
+            
+            // Hide instructions after first bounce
+            if (score === 1) {
+              document.getElementById('instructions').classList.add('hide');
             }
-
-            // Update and draw particles
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                particles[i].draw();
-                if (particles[i].life <= 0) {
-                    particles.splice(i, 1);
-                }
-            }
-
-            // Update and draw rings
-            for (let i = rings.length - 1; i >= 0; i--) {
-                rings[i].update();
-                rings[i].draw();
-                if (rings[i].life <= 0) {
-                    rings.splice(i, 1);
-                }
-            }
-
-            requestAnimationFrame(animate);
-        }
-
-        function handleTap() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-
-            if (!started) {
-                started = true;
-                hintEl.style.display = 'none';
-            }
-
-            if (gameActive) {
-                ball.tap();
-            }
-        }
-
-        // Event listeners
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            handleTap();
+          }
         });
-
-        canvas.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            handleTap();
-        });
-
-        restartBtn.addEventListener('click', () => {
-            init();
-        });
-
-        window.addEventListener('resize', resize);
-
-        // Initialize
-        resize();
-        best = parseInt(localStorage.getItem('bounceBest')) || 0;
-        bestEl.textContent = `Best: ${best}`;
-        init();
-        animate();
-    </script>
+      }
+      
+      draw() {
+        // Glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2);
+        gradient.addColorStop(0, 'rgba(212, 165, 116, 0.3)');
+        gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Ball
+        ctx.fillStyle = '#D4A574';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Highlight
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+        ctx.beginPath();
+        ctx.arc(this.x - this.radius * 0.3, this.y - this.radius * 0.3, this.radius * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    class Platform {
+      constructor(x, y) {
+        this.x = x - PLATFORM_WIDTH / 2;
+        this.y = y;
+        this.bounces = 0;
+        this.dead = false;
+        this.alpha = 1;
+      }
+      
+      update() {
+        if (this.dead) {
+          this.alpha -= 0.05;
+        } else {
+          this.alpha = 1 - (this.bounces / PLATFORM_MAX_BOUNCES) * 0.5;
+        }
+      }
+      
+      draw() {
+        if (this.alpha <= 0) return;
+        
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        
+        // Glow
+        const gradient = ctx.createRadialGradient(
+          this.x + PLATFORM_WIDTH / 2,
+          this.y + PLATFORM_HEIGHT / 2,
+          0,
+          this.x + PLATFORM_WIDTH / 2,
+          this.y + PLATFORM_HEIGHT / 2,
+          PLATFORM_WIDTH / 2
+        );
+        gradient.addColorStop(0, 'rgba(255, 215, 0, 0.3)');
+        gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(
+          this.x - 10,
+          this.y - 10,
+          PLATFORM_WIDTH + 20,
+          PLATFORM_HEIGHT + 20
+        );
+        
+        // Platform
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(this.x, this.y, PLATFORM_WIDTH, PLATFORM_HEIGHT);
+        
+        // Bounces indicator
+        if (!this.dead && this.bounces > 0) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+          const dotRadius = 2;
+          const dotSpacing = 10;
+          const startX = this.x + PLATFORM_WIDTH / 2 - ((PLATFORM_MAX_BOUNCES - 1) * dotSpacing) / 2;
+          for (let i = 0; i < PLATFORM_MAX_BOUNCES; i++) {
+            if (i < this.bounces) {
+              ctx.beginPath();
+              ctx.arc(startX + i * dotSpacing, this.y + PLATFORM_HEIGHT / 2, dotRadius, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+        
+        ctx.restore();
+      }
+    }
+    
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 6;
+        this.vy = (Math.random() - 0.5) * 6 - 2;
+        this.life = 1;
+        this.color = color;
+        this.size = Math.random() * 3 + 1;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2; // Gravity
+        this.life -= 0.02;
+      }
+      
+      draw() {
+        if (this.life <= 0) return;
+        
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    
+    function createParticles(x, y, count, color) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    }
+    
+    function updateScore() {
+      document.getElementById('score').textContent = score;
+      
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('bounceBestScore', bestScore.toString());
+        document.getElementById('bestScore').textContent = `BEST: ${bestScore}`;
+      }
+    }
+    
+    function endGame() {
+      gameState = 'gameOver';
+      playGameOverSound();
+      
+      // Explosion particles
+      createParticles(ball.x, height, 60, '#FF6B6B');
+      
+      document.getElementById('finalScore').textContent = `BOUNCES: ${score}`;
+      
+      if (score >= bestScore && score > 0) {
+        document.getElementById('newRecord').classList.add('show');
+      } else {
+        document.getElementById('newRecord').classList.remove('show');
+      }
+      
+      document.getElementById('gameOver').classList.add('show');
+    }
+    
+    function resetGame() {
+      gameState = 'playing';
+      score = 0;
+      updateScore();
+      
+      ball = new Ball();
+      platforms = [];
+      particles = [];
+      
+      document.getElementById('gameOver').classList.remove('show');
+      document.getElementById('instructions').classList.remove('hide');
+    }
+    
+    function handleTap(x, y) {
+      initAudio();
+      
+      if (gameState === 'gameOver') {
+        resetGame();
+        return;
+      }
+      
+      // Don't place platforms too close to ball or edges
+      if (Math.abs(x - ball.x) < 50 && Math.abs(y - ball.y) < 50) return;
+      if (x < PLATFORM_WIDTH / 2 || x > width - PLATFORM_WIDTH / 2) return;
+      if (y < 50 || y > height - 50) return;
+      
+      platforms.push(new Platform(x, y));
+      createParticles(x, y, 10, '#FFD700');
+      playBounceSound(5);
+    }
+    
+    function update() {
+      ball.update();
+      platforms.forEach(p => p.update());
+      particles.forEach(p => p.update());
+      
+      // Remove dead platforms and particles
+      platforms = platforms.filter(p => p.alpha > 0);
+      particles = particles.filter(p => p.life > 0);
+    }
+    
+    function draw() {
+      // Fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Draw game objects
+      platforms.forEach(p => p.draw());
+      particles.forEach(p => p.draw());
+      ball.draw();
+    }
+    
+    function animate() {
+      update();
+      draw();
+      requestAnimationFrame(animate);
+    }
+    
+    // Event listeners
+    canvas.addEventListener('click', (e) => {
+      handleTap(e.clientX, e.clientY);
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleTap(touch.clientX, touch.clientY);
+    });
+    
+    window.addEventListener('resize', resize);
+    
+    // Initialize
+    resize();
+    document.getElementById('bestScore').textContent = `BEST: ${bestScore}`;
+    ball = new Ball();
+    animate();
+  </script>
 </body>
 </html>
