@@ -171,6 +171,7 @@
         x: cx, y: cy + arenaRadius * 0.3,
         angle: -Math.PI / 2, // start moving up
         length: 15, // number of trail segments "owned"
+        holdFlash: 0,
       };
       trail = [{ x: bolt.x, y: bolt.y, t: 0 }];
       charges = [];
@@ -262,8 +263,8 @@
       e.preventDefault();
       // Quick press = tap = turn (only if we didn't boost)
       if (!tapFired && holdTimer < HOLD_THRESHOLD && phase === 'playing') {
-        const angle = TURN_ANGLE * (1 - Math.max(0, bolt.length - 10) * 0.008); // scale with length
-        bolt.angle += Math.max(angle, Math.PI / 6) * turnDir;
+        const angle = (70 - Math.min(bolt.length * 0.8, 35)) * Math.PI / 180; // continuous scaling
+        bolt.angle += angle * turnDir;
         turnDir *= -1;
       }
       touching = false;
@@ -301,8 +302,8 @@
         holdTimer += dt;
         if (holdTimer > HOLD_THRESHOLD && bolt.length > 3) {
           if (!boosting) {
-            // Flash gold for 2 frames BEFORE speed change (feedback-then-action)
-            flashColor = T.gold; flashTimer = 0.04;
+            // Flash gold on bolt for 2 frames BEFORE speed change
+            bolt.holdFlash = 0.06;
           }
           boosting = true;
           tapFired = true; // suppress the turn on release
@@ -617,9 +618,12 @@
 
       // Bolt head (hide during death)
       if (phase !== 'dying' && phase !== 'over') {
-        ctx.fillStyle = boosting ? T.gold : T.bolt;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = boosting ? T.gold : T.bolt;
+        // Hold indicator: gold flash on bolt when crossing threshold
+        if (bolt.holdFlash > 0) bolt.holdFlash -= 1/60;
+        const headColor = bolt.holdFlash > 0 ? T.gold : boosting ? T.gold : T.bolt;
+        ctx.fillStyle = headColor;
+        ctx.shadowBlur = bolt.holdFlash > 0 ? 20 : 10;
+        ctx.shadowColor = headColor;
         ctx.beginPath(); ctx.arc(bolt.x, bolt.y, HEAD_R, 0, Math.PI * 2); ctx.fill();
         ctx.shadowBlur = 0;
       }
