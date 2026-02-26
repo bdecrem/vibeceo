@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MORNING HP — Your HP is critically low</title>
+  
+  <meta property="og:title" content="MORNING HP — Your HP is critically low">
+  <meta property="og:description" content="8-bit pixel art: hero brushing teeth with dangerously low HP bar">
+  <meta property="og:image" content="https://intheamber.com/amber/morning-hp-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/morning-hp.html">
+  <meta property="og:type" content="website">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MORNING HP — Your HP is critically low">
+  <meta name="twitter:description" content="8-bit pixel art: hero brushing teeth with dangerously low HP bar">
+  <meta name="twitter:image" content="https://intheamber.com/amber/morning-hp-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: monospace;
+      color: #D4A574;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    
+    #game-screen {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      aspect-ratio: 4 / 3;
+      background: #000;
+      border: 4px solid #D4A574;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+    }
+    
+    canvas {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      display: block;
+    }
+    
+    #subtitle {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #D4A574;
+      opacity: 0.7;
+      text-align: center;
+      padding: 0 20px;
+    }
+    
+    @media (max-width: 680px) {
+      #game-screen {
+        max-width: calc(100vw - 40px);
+        border-width: 2px;
+      }
+      
+      #subtitle {
+        font-size: 12px;
+        margin-top: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-screen">
+    <canvas id="canvas" width="160" height="120"></canvas>
+  </div>
+  <div id="subtitle">Every morning is a boss battle</div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Disable anti-aliasing for crisp pixels
+    ctx.imageSmoothingEnabled = false;
+    
+    // Color palette
+    const colors = {
+      black: '#000000',
+      charcoal: '#1a1a1a',
+      gray: '#666666',
+      lightGray: '#999999',
+      skin: '#f4c2a0',
+      hair: '#4a3728',
+      amber: '#D4A574',
+      gold: '#FFD700',
+      teal: '#2D9596',
+      red: '#ff0000',
+      darkRed: '#880000',
+      white: '#ffffff',
+      blue: '#4a90e2',
+      green: '#00ff00',
+      darkGreen: '#006600'
+    };
+    
+    let frame = 0;
+    
+    // Draw pixel
+    function pixel(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, 1, 1);
+    }
+    
+    // Draw rectangle
+    function rect(x, y, w, h, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w, h);
+    }
+    
+    // Draw text (pixel font)
+    function drawText(text, x, y, color, size = 1) {
+      ctx.fillStyle = color;
+      ctx.font = `${size * 5}px monospace`;
+      ctx.fillText(text, x, y);
+    }
+    
+    // Draw character sprite (hero brushing teeth)
+    function drawHero(x, y) {
+      // Head
+      rect(x + 4, y, 8, 8, colors.skin);
+      
+      // Hair
+      rect(x + 3, y, 10, 3, colors.hair);
+      
+      // Eyes (tired/half-closed)
+      pixel(x + 5, y + 4, colors.black);
+      pixel(x + 10, y + 4, colors.black);
+      pixel(x + 5, y + 5, colors.black);
+      pixel(x + 10, y + 5, colors.black);
+      
+      // Mouth (open, brushing)
+      rect(x + 7, y + 6, 2, 1, colors.black);
+      
+      // Body (shirt)
+      rect(x + 3, y + 8, 10, 8, colors.teal);
+      
+      // Arms
+      rect(x + 2, y + 9, 2, 6, colors.skin); // Left arm
+      rect(x + 12, y + 9, 2, 6, colors.skin); // Right arm
+      
+      // Toothbrush in right hand
+      // Handle
+      rect(x + 13, y + 11, 5, 1, colors.blue);
+      // Bristles
+      rect(x + 5, y + 6, 3, 1, colors.white);
+      rect(x + 18, y + 11, 2, 2, colors.white);
+      
+      // Legs
+      rect(x + 5, y + 16, 3, 8, colors.amber);
+      rect(x + 9, y + 16, 3, 8, colors.amber);
+    }
+    
+    // Draw bathroom background
+    function drawBathroom() {
+      // Floor
+      rect(0, 100, 160, 20, colors.lightGray);
+      
+      // Floor tiles pattern
+      for (let i = 0; i < 160; i += 8) {
+        for (let j = 100; j < 120; j += 8) {
+          if ((i + j) % 16 === 0) {
+            rect(i, j, 8, 8, colors.gray);
+          }
+        }
+      }
+      
+      // Wall
+      rect(0, 0, 160, 100, colors.charcoal);
+      
+      // Mirror (simple rectangle)
+      rect(50, 20, 60, 50, colors.blue);
+      rect(52, 22, 56, 46, colors.lightGray);
+      
+      // Sink counter
+      rect(40, 70, 80, 8, colors.gray);
+      
+      // Sink
+      rect(70, 74, 20, 6, colors.lightGray);
+    }
+    
+    // Draw HP bar
+    function drawHPBar() {
+      const x = 8;
+      const y = 8;
+      const width = 60;
+      const height = 8;
+      
+      // Label
+      drawText('HP', x, y + 6, colors.white);
+      
+      // Bar background
+      rect(x + 12, y, width, height, colors.darkRed);
+      
+      // Bar border
+      ctx.strokeStyle = colors.white;
+      ctx.strokeRect(x + 12, y, width, height);
+      
+      // Current HP (very low - 15%)
+      const currentHP = 0.15;
+      rect(x + 13, y + 1, Math.floor((width - 2) * currentHP), height - 2, colors.red);
+      
+      // Flashing effect when critically low
+      if (frame % 20 < 10) {
+        rect(x + 13, y + 1, Math.floor((width - 2) * currentHP), height - 2, colors.red);
+      } else {
+        rect(x + 13, y + 1, Math.floor((width - 2) * currentHP), height - 2, colors.darkRed);
+      }
+      
+      // HP text
+      drawText('09/60', x + 16, y + 6, colors.white);
+    }
+    
+    // Draw status effects
+    function drawStatus() {
+      const x = 8;
+      const y = 20;
+      
+      drawText('STATUS:', x, y, colors.amber);
+      drawText('GROGGY', x, y + 8, colors.red);
+      drawText('CAFFEINE: 0%', x, y + 16, colors.red);
+    }
+    
+    // Draw quest log
+    function drawQuest() {
+      const x = 8;
+      const y = 90;
+      
+      // Box background
+      rect(x - 2, y - 8, 144, 22, colors.charcoal);
+      ctx.strokeStyle = colors.amber;
+      ctx.strokeRect(x - 2, y - 8, 144, 22);
+      
+      drawText('DAILY QUEST:', x, y, colors.gold);
+      drawText('Survive Today', x, y + 8, colors.white);
+    }
+    
+    // Draw time display
+    function drawTime() {
+      const x = 100;
+      const y = 8;
+      
+      drawText('TIME:', x, y, colors.amber);
+      drawText('6:23 AM', x, y + 8, colors.white);
+    }
+    
+    // Particle system for exhaustion
+    const particles = [];
+    
+    function addParticle() {
+      particles.push({
+        x: 60 + Math.random() * 10,
+        y: 45,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: -0.5 - Math.random() * 0.5,
+        life: 30 + Math.random() * 20,
+        color: colors.gray
+      });
+    }
+    
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+    
+    function drawParticles() {
+      particles.forEach(p => {
+        const alpha = p.life / 50;
+        ctx.globalAlpha = alpha;
+        pixel(Math.floor(p.x), Math.floor(p.y), p.color);
+        ctx.globalAlpha = 1;
+      });
+    }
+    
+    // Main render loop
+    function render() {
+      // Clear
+      rect(0, 0, 160, 120, colors.black);
+      
+      // Draw scene
+      drawBathroom();
+      drawHero(60, 55);
+      
+      // Exhaustion particles (Z's floating up)
+      if (frame % 40 === 0) {
+        addParticle();
+      }
+      updateParticles();
+      drawParticles();
+      
+      // Draw Z's near head
+      if (frame % 60 < 30) {
+        drawText('z', 75, 52, colors.gray);
+      }
+      if ((frame + 15) % 60 < 30) {
+        drawText('z', 78, 48, colors.gray);
+      }
+      
+      // Draw UI
+      drawHPBar();
+      drawStatus();
+      drawTime();
+      drawQuest();
+      
+      frame++;
+      requestAnimationFrame(render);
+    }
+    
+    // Start
+    render();
+  </script>
+</body>
+</html>
