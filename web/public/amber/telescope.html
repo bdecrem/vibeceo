@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TELESCOPE — Amber</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="TELESCOPE — Amber">
+  <meta property="og:description" content="Move your telescope to reveal the hidden colors of distant stars">
+  <meta property="og:image" content="https://intheamber.com/amber/telescope-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/telescope.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TELESCOPE — Amber">
+  <meta name="twitter:description" content="Move your telescope to reveal the hidden colors of distant stars">
+  <meta name="twitter:image" content="https://intheamber.com/amber/telescope-og.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      color: #D4A574;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      cursor: crosshair;
+    }
+
+    .ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      color: #D4A574;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+
+    .stats {
+      font-size: 12px;
+      opacity: 0.7;
+      line-height: 1.6;
+    }
+
+    .instruction {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      color: #D4A574;
+      opacity: 0.5;
+      pointer-events: none;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .ui {
+        font-size: 12px;
+      }
+      .title {
+        font-size: 20px;
+      }
+      .instruction {
+        font-size: 12px;
+        bottom: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ui">
+    <div class="title">TELESCOPE</div>
+    <div class="stats">
+      <div>STARS IN VIEW: <span id="stars-visible">0</span></div>
+      <div>ENERGY: <span id="energy">0.71</span></div>
+      <div>VALENCE: <span id="valence">0.91</span></div>
+    </div>
+  </div>
+
+  <div class="instruction">
+    Move to explore · Distant stars hold hidden colors
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    // Telescope properties
+    const telescope = {
+      x: width / 2,
+      y: height / 2,
+      radius: 150,
+      targetX: width / 2,
+      targetY: height / 2
+    };
+
+    // Color palette for stars
+    const colors = [
+      '#FFD700', // gold
+      '#f59e0b', // amber
+      '#2D9596', // teal
+      '#3b82f6', // electric blue
+      '#ec4899', // hot pink
+      '#8b5cf6', // purple
+      '#f97316', // coral
+      '#60a5fa', // light blue
+    ];
+
+    // Create stars
+    const stars = [];
+    for (let i = 0; i < 250; i++) {
+      stars.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        size: Math.random() * 2 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        twinkle: Math.random() * Math.PI * 2,
+        twinkleSpeed: Math.random() * 0.02 + 0.01
+      });
+    }
+
+    // Audio context
+    let audioContext;
+    let oscillator;
+    let gainNode;
+    let audioStarted = false;
+
+    function initAudio() {
+      if (audioStarted) return;
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      oscillator = audioContext.createOscillator();
+      gainNode = audioContext.createGain();
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.value = 200;
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      gainNode.gain.value = 0;
+      
+      oscillator.start();
+      audioStarted = true;
+    }
+
+    // Mouse/touch tracking
+    function updateTelescopeTarget(e) {
+      const rect = canvas.getBoundingClientRect();
+      if (e.touches) {
+        telescope.targetX = e.touches[0].clientX - rect.left;
+        telescope.targetY = e.touches[0].clientY - rect.top;
+      } else {
+        telescope.targetX = e.clientX - rect.left;
+        telescope.targetY = e.clientY - rect.top;
+      }
+      initAudio();
+    }
+
+    canvas.addEventListener('mousemove', updateTelescopeTarget);
+    canvas.addEventListener('touchmove', updateTelescopeTarget);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      updateTelescopeTarget(e);
+    });
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    function isInTelescope(star) {
+      const dx = star.x - telescope.x;
+      const dy = star.y - telescope.y;
+      return Math.sqrt(dx * dx + dy * dy) < telescope.radius;
+    }
+
+    function animate() {
+      // Clear canvas
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, width, height);
+
+      // Smooth telescope movement
+      telescope.x += (telescope.targetX - telescope.x) * 0.1;
+      telescope.y += (telescope.targetY - telescope.y) * 0.1;
+
+      // Count visible stars
+      let visibleCount = 0;
+
+      // Draw stars outside telescope first (dim)
+      stars.forEach(star => {
+        star.twinkle += star.twinkleSpeed;
+        const inView = isInTelescope(star);
+        
+        if (!inView) {
+          const twinkleAlpha = Math.sin(star.twinkle) * 0.3 + 0.7;
+          ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * twinkleAlpha})`;
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.size * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // Draw telescope lens with gradient
+      const gradient = ctx.createRadialGradient(
+        telescope.x, telescope.y, 0,
+        telescope.x, telescope.y, telescope.radius
+      );
+      gradient.addColorStop(0, 'rgba(13, 13, 13, 0.2)');
+      gradient.addColorStop(0.7, 'rgba(13, 13, 13, 0.1)');
+      gradient.addColorStop(1, 'rgba(255, 215, 0, 0.3)');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(telescope.x, telescope.y, telescope.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw telescope rim
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+      ctx.beginPath();
+      ctx.arc(telescope.x, telescope.y, telescope.radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Draw stars inside telescope (vibrant and magnified)
+      stars.forEach(star => {
+        if (isInTelescope(star)) {
+          visibleCount++;
+          const twinkleAlpha = Math.sin(star.twinkle) * 0.2 + 0.8;
+          
+          // Draw glow
+          const glowGradient = ctx.createRadialGradient(
+            star.x, star.y, 0,
+            star.x, star.y, star.size * 4
+          );
+          glowGradient.addColorStop(0, star.color);
+          glowGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = glowGradient;
+          ctx.globalAlpha = twinkleAlpha * 0.6;
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.size * 4, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Draw core
+          ctx.fillStyle = star.color;
+          ctx.globalAlpha = twinkleAlpha;
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.size * 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      });
+
+      // Update UI
+      document.getElementById('stars-visible').textContent = visibleCount;
+
+      // Update audio based on visible stars
+      if (audioStarted && gainNode && oscillator) {
+        const targetVolume = Math.min(visibleCount / 100, 0.05);
+        const targetFreq = 200 + (visibleCount * 2);
+        gainNode.gain.linearRampToValueAtTime(targetVolume, audioContext.currentTime + 0.1);
+        oscillator.frequency.linearRampToValueAtTime(targetFreq, audioContext.currentTime + 0.1);
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
