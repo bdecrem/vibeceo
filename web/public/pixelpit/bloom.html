@@ -169,7 +169,6 @@
       screenShake = 0;
       flashTimer = 0;
       gameTime = 0;
-      setupLevel(1);
     }
 
     function setupLevel(lvl) {
@@ -421,7 +420,7 @@
       if (phase === 'playing' && seedsAlive <= 0 && shotsLeft <= 0) {
         if (wall.hp > 0) {
           phase = 'over';
-          if (score > bestScore) {
+          if (score >= bestScore) {
             bestScore = score;
             localStorage.setItem('bloom_best', bestScore);
           }
