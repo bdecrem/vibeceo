@@ -41,7 +41,7 @@ const projects: Project[] = [
     url: "https://claudio.la",
     image: null,
     shortDesc: "Native iOS client for OpenClaw",
-    fullDesc: "A native iOS client for OpenClaw, a self-hosted AI agent backend. Chat with your AI agents by text or voice. Purely a client: point it at your OpenClaw server URL and go. No accounts, no credentials stored on device, no data collection.",
+    fullDesc: "Native iOS client for OpenClaw, a self-hosted AI agent backend. Chat with your AI agents by text or voice. Just point it at your OpenClaw server URL and go. No accounts, no credentials stored on device, no data collection.",
     status: "wip",
     order: -3,
   },
