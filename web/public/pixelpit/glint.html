@@ -41,7 +41,7 @@
     };
 
     // --- CONSTANTS ---
-    const SHARD_R = 6;
+    const SHARD_R = 8;
     const SHARD_SPEED = 400;
     const HIT_FREEZE_MS = 40;
     const WALL_THICK = 12;
@@ -286,6 +286,7 @@
     let colorsCollected; // { red, blue, green }
     let gameTime;
     let shotsThisLevel;
+    let deathTimer;
 
     function init() {
       level = 0;
@@ -575,13 +576,9 @@
         for (const wall of walls) {
           if (reflectShard(wall)) {
             if (wall.color === 'absorber') {
-              // Death
-              shard.alive = false;
-              phase = 'over';
-              if (score >= bestScore) {
-                bestScore = score;
-                localStorage.setItem('glint_best', bestScore);
-              }
+              // Death — slow-mo before game over
+              phase = 'dying';
+              deathTimer = 0.3;
               spawnParticles(shard.x, shard.y, T.muted, 12);
               playAbsorb();
               screenShake = 0.1;
@@ -660,10 +657,32 @@
         }
       }
 
+      // Dying slow-mo
+      if (phase === 'dying') {
+        deathTimer -= dt;
+        // Lerp shard color toward gray (handled in draw)
+        if (deathTimer <= 0) {
+          shard.alive = false;
+          phase = 'over';
+          if (score >= bestScore) {
+            bestScore = score;
+            localStorage.setItem('glint_best', bestScore);
+          }
+        }
+        // Still update particles during dying
+        for (const p of particles) {
+          p.x += p.vx * dt * 0.3; p.y += p.vy * dt * 0.3;
+          p.life -= dt;
+        }
+        particles = particles.filter(p => p.life > 0);
+        if (screenShake > 0) screenShake -= dt * 2;
+        return;
+      }
+
       // Cleared timer
       if (phase === 'cleared') {
         celebTimer += dt;
-        if (celebTimer > 1.5) {
+        if (celebTimer > 2.2) {
           setupLevel(level + 1);
         }
       }
@@ -722,7 +741,7 @@
           const color = wall.color === 'red' ? T.red : wall.color === 'blue' ? T.blue : wall.color === 'green' ? T.green : T.muted;
           ctx.fillStyle = color;
           ctx.shadowColor = color;
-          ctx.shadowBlur = 8;
+          ctx.shadowBlur = 14;
           ctx.fillRect(wall.x, wall.y, wall.w, wall.h);
           ctx.shadowBlur = 0;
           ctx.strokeStyle = T.white;
@@ -737,13 +756,14 @@
       if (target) {
         // Rainbow shimmer
         const shimmer = gameTime * 2;
+        const pr = TARGET_R + Math.sin(gameTime * 4) * 2; // pulse
         const colors = [T.red, T.gold, T.green, '#22d3ee', T.blue, '#c084fc'];
         for (let i = 0; i < 6; i++) {
           const a = (shimmer + i * Math.PI / 3);
           ctx.fillStyle = colors[i];
           ctx.globalAlpha = 0.15;
           ctx.beginPath();
-          ctx.arc(target.x + Math.cos(a) * 4, target.y + Math.sin(a) * 4, TARGET_R - 2, 0, Math.PI * 2);
+          ctx.arc(target.x + Math.cos(a) * 4, target.y + Math.sin(a) * 4, pr - 2, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.globalAlpha = 1;
@@ -752,17 +772,17 @@
         ctx.strokeStyle = T.white;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(target.x, target.y, TARGET_R, 0, Math.PI * 2);
+        ctx.arc(target.x, target.y, pr, 0, Math.PI * 2);
         ctx.stroke();
 
         // Diamond shape inside
         ctx.fillStyle = T.white;
         ctx.globalAlpha = 0.2;
         ctx.beginPath();
-        ctx.moveTo(target.x, target.y - TARGET_R * 0.6);
-        ctx.lineTo(target.x + TARGET_R * 0.5, target.y);
-        ctx.lineTo(target.x, target.y + TARGET_R * 0.6);
-        ctx.lineTo(target.x - TARGET_R * 0.5, target.y);
+        ctx.moveTo(target.x, target.y - pr * 0.6);
+        ctx.lineTo(target.x + pr * 0.5, target.y);
+        ctx.lineTo(target.x, target.y + pr * 0.6);
+        ctx.lineTo(target.x - pr * 0.5, target.y);
         ctx.closePath();
         ctx.fill();
         ctx.globalAlpha = 1;
@@ -772,10 +792,10 @@
       if (trail.length > 1) {
         const color = getShardColor();
         for (let i = 1; i < trail.length; i++) {
-          const alpha = i / trail.length * 0.6;
+          const alpha = 0.3 + (i / trail.length) * 0.5;
           ctx.strokeStyle = color;
           ctx.globalAlpha = alpha;
-          ctx.lineWidth = 2;
+          ctx.lineWidth = 3;
           ctx.beginPath();
           ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
           ctx.lineTo(trail[i].x, trail[i].y);
@@ -785,8 +805,8 @@
       }
 
       // Shard
-      if (shard && shard.alive && phase !== 'start') {
-        const color = getShardColor();
+      if (shard && (shard.alive || phase === 'dying') && phase !== 'start') {
+        const color = phase === 'dying' ? T.muted : getShardColor();
         ctx.fillStyle = color;
         ctx.shadowColor = color;
         ctx.shadowBlur = 12;
@@ -807,8 +827,8 @@
       // Aim line (first bounce preview only)
       if (phase === 'aiming' && aiming) {
         const points = computeTrajectory(shard.x, shard.y, aimAngle, 1);
-        ctx.strokeStyle = T.white;
-        ctx.globalAlpha = 0.4;
+        ctx.strokeStyle = getShardColor();
+        ctx.globalAlpha = 0.5;
         ctx.lineWidth = 1;
         ctx.setLineDash([4, 6]);
         ctx.beginPath();
@@ -857,15 +877,29 @@
             ctx.beginPath(); ctx.arc(dx, dy, 5, 0, Math.PI * 2); ctx.fill();
             ctx.shadowBlur = 0;
           }
+          // Label
+          const labels = ['R', 'G', 'B'];
+          ctx.fillStyle = colorDots[i].c;
+          ctx.globalAlpha = colorDots[i].collected ? 0.8 : 0.2;
+          ctx.font = '9px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(labels[i], dx, dy + 14);
         }
         ctx.globalAlpha = 1;
 
-        // Bounce count
+        // Bounce count + shot + par
         if (phase === 'flying' || phase === 'cleared') {
           ctx.fillStyle = T.muted;
           ctx.font = '12px monospace';
           ctx.textAlign = 'center';
-          ctx.fillText(bounces + ' bounces', W / 2, safeTop + 40);
+          ctx.fillText(bounces + ' bounces  PAR ' + par, W / 2, safeTop + 46);
+        }
+        // Shot counter
+        if (phase !== 'start') {
+          ctx.fillStyle = T.muted;
+          ctx.font = '11px monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText('SHOT ' + shotsThisLevel, 12, safeTop + 40);
         }
       }
 
@@ -898,6 +932,36 @@
 
       // Start screen
       if (phase === 'start') {
+        // Large prism above title
+        const prismY = H * 0.22;
+        const prismR = 40;
+        const prColors = [T.red, T.gold, T.green, '#22d3ee', T.blue, '#c084fc'];
+        for (let i = 0; i < 6; i++) {
+          const a = gameTime * 2 + i * Math.PI / 3;
+          ctx.fillStyle = prColors[i];
+          ctx.globalAlpha = 0.15;
+          ctx.beginPath();
+          ctx.arc(W / 2 + Math.cos(a) * 6, prismY + Math.sin(a) * 6, prismR - 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = T.white;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(W / 2, prismY, prismR + Math.sin(gameTime * 4) * 2, 0, Math.PI * 2);
+        ctx.stroke();
+        // Diamond inside
+        ctx.fillStyle = T.white;
+        ctx.globalAlpha = 0.2;
+        ctx.beginPath();
+        ctx.moveTo(W / 2, prismY - prismR * 0.5);
+        ctx.lineTo(W / 2 + prismR * 0.4, prismY);
+        ctx.lineTo(W / 2, prismY + prismR * 0.5);
+        ctx.lineTo(W / 2 - prismR * 0.4, prismY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
         // Decorative light rays
         ctx.globalAlpha = 0.03;
         for (let i = 0; i < 8; i++) {
@@ -905,8 +969,8 @@
           ctx.strokeStyle = [T.red, T.blue, T.green, T.gold][i % 4];
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.moveTo(W / 2, H * 0.35);
-          ctx.lineTo(W / 2 + Math.cos(a) * 200, H * 0.35 + Math.sin(a) * 200);
+          ctx.moveTo(W / 2, prismY);
+          ctx.lineTo(W / 2 + Math.cos(a) * 200, prismY + Math.sin(a) * 200);
           ctx.stroke();
         }
         ctx.globalAlpha = 1;
@@ -914,22 +978,22 @@
         ctx.fillStyle = T.white;
         ctx.font = 'bold 32px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('GLINT', W / 2, H * 0.35);
+        ctx.fillText('GLINT', W / 2, H * 0.38);
 
         ctx.fillStyle = T.muted;
         ctx.font = '13px monospace';
-        ctx.fillText('aim the shard of light', W / 2, H * 0.35 + 26);
-        ctx.fillText('bounce off colored walls', W / 2, H * 0.35 + 44);
-        ctx.fillText('collect all colors → hit the prism', W / 2, H * 0.35 + 62);
+        ctx.fillText('aim the shard of light', W / 2, H * 0.38 + 26);
+        ctx.fillText('bounce off colored walls', W / 2, H * 0.38 + 44);
+        ctx.fillText('collect all colors → hit the prism', W / 2, H * 0.38 + 62);
 
         ctx.fillStyle = T.text;
         ctx.font = '15px monospace';
-        ctx.fillText('TAP TO START', W / 2, H * 0.55);
+        ctx.fillText('TAP TO START', W / 2, H * 0.58);
 
         if (bestScore > 0) {
           ctx.fillStyle = T.muted;
           ctx.font = '12px monospace';
-          ctx.fillText('BEST: ' + bestScore, W / 2, H * 0.55 + 25);
+          ctx.fillText('BEST: ' + bestScore, W / 2, H * 0.58 + 25);
         }
       }
 
