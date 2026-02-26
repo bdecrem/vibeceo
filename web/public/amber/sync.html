@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SYNC — Tap the beat</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="SYNC — Tap the beat">
+  <meta property="og:description" content="Feel the pulse. Hit the beat. Don't miss.">
+  <meta property="og:image" content="https://intheamber.com/amber/sync-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/sync.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SYNC — Tap the beat">
+  <meta name="twitter:description" content="Feel the pulse. Hit the beat. Don't miss.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/sync-og.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Space Mono', monospace;
+      background: #000;
+      color: #D4A574;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #game {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      cursor: pointer;
+    }
+
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 30px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .stat {
+      font-size: 18px;
+      font-weight: 700;
+      color: #FFD700;
+      text-shadow: 0 0 10px #FFD700;
+    }
+
+    #lives {
+      display: flex;
+      gap: 8px;
+      font-size: 24px;
+    }
+
+    #center-ui {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    #feedback {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .perfect { color: #FFD700; text-shadow: 0 0 20px #FFD700; }
+    .good { color: #D4A574; text-shadow: 0 0 15px #D4A574; }
+    .miss { color: #EF4444; text-shadow: 0 0 15px #EF4444; }
+
+    #instruction {
+      font-size: 18px;
+      color: #888;
+      margin-top: 80px;
+    }
+
+    #game-over {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    #game-over.show {
+      display: flex;
+    }
+
+    #game-over h1 {
+      font-size: 48px;
+      color: #D4A574;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px #D4A574;
+    }
+
+    #game-over .score {
+      font-size: 32px;
+      color: #FFD700;
+      margin-bottom: 30px;
+    }
+
+    #restart-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      padding: 15px 40px;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s;
+      pointer-events: auto;
+    }
+
+    #restart-btn:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+
+    #start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 20px;
+      text-align: center;
+    }
+
+    #start-screen.hide {
+      display: none;
+    }
+
+    #start-screen h1 {
+      font-size: 64px;
+      color: #FFD700;
+      margin-bottom: 15px;
+      text-shadow: 0 0 30px #FFD700;
+    }
+
+    #start-screen .subtitle {
+      font-size: 24px;
+      color: #D4A574;
+      margin-bottom: 50px;
+    }
+
+    #start-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 24px;
+      font-weight: 700;
+      padding: 20px 60px;
+      background: #FFD700;
+      color: #000;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    }
+
+    #start-btn:hover {
+      background: #D4A574;
+      transform: scale(1.05);
+    }
+
+    #how-to {
+      margin-top: 40px;
+      color: #888;
+      font-size: 16px;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      #ui { padding: 0 15px; }
+      .stat { font-size: 16px; }
+      #lives { font-size: 20px; }
+      #feedback { font-size: 24px; }
+      #instruction { font-size: 14px; }
+      #start-screen h1 { font-size: 48px; }
+      #start-screen .subtitle { font-size: 18px; }
+      #start-btn { font-size: 20px; padding: 15px 40px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="start-screen">
+  <h1>SYNC</h1>
+  <div class="subtitle">Tap the beat</div>
+  <button id="start-btn">START</button>
+  <div id="how-to">
+    Watch the circle pulse to the beat.<br>
+    Tap when it reaches maximum size.<br>
+    Perfect timing = 10 points.<br>
+    Miss 3 times = game over.
+  </div>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="ui">
+  <div>
+    <div class="stat">SCORE: <span id="score">0</span></div>
+    <div class="stat">COMBO: <span id="combo">0</span></div>
+  </div>
+  <div id="lives">
+    <span>❤️</span>
+    <span>❤️</span>
+    <span>❤️</span>
+  </div>
+</div>
+
+<div id="center-ui">
+  <div id="feedback"></div>
+  <div id="instruction">TAP WHEN THE CIRCLE IS LARGEST</div>
+</div>
+
+<div id="game-over">
+  <h1>GAME OVER</h1>
+  <div class="score">FINAL SCORE: <span id="final-score">0</span></div>
+  <div class="score">BEST: <span id="best-score">0</span></div>
+  <button id="restart-btn">PLAY AGAIN</button>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Audio context
+let audioCtx;
+let isPlaying = false;
+
+// Game state
+let score = 0;
+let combo = 0;
+let lives = 3;
+let beatCount = 0;
+let bestScore = parseInt(localStorage.getItem('syncBestScore') || '0');
+
+// Timing
+const baseBPM = 140;
+let currentBPM = baseBPM;
+let beatInterval = (60 / currentBPM) * 1000; // ms per beat
+let lastBeatTime = 0;
+let beatPhase = 0; // 0 to 1 through the beat
+
+// Pulse visual
+const centerX = canvas.width / 2;
+const centerY = canvas.height / 2;
+const minRadius = 60;
+const maxRadius = 100;
+
+// Particles
+const particles = [];
+
+// Timing windows (ms)
+const perfectWindow = 50;
+const goodWindow = 100;
+
+let hasStarted = false;
+let gameOver = false;
+
+// Start button
+document.getElementById('start-btn').addEventListener('click', () => {
+  document.getElementById('start-screen').classList.add('hide');
+  startGame();
+});
+
+// Restart button
+document.getElementById('restart-btn').addEventListener('click', () => {
+  document.getElementById('game-over').classList.remove('show');
+  resetGame();
+});
+
+function startGame() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  hasStarted = true;
+  isPlaying = true;
+  lastBeatTime = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+function resetGame() {
+  score = 0;
+  combo = 0;
+  lives = 3;
+  beatCount = 0;
+  currentBPM = baseBPM;
+  beatInterval = (60 / currentBPM) * 1000;
+  gameOver = false;
+  particles.length = 0;
+  updateUI();
+  isPlaying = true;
+  lastBeatTime = performance.now();
+}
+
+function updateUI() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('combo').textContent = combo;
+  
+  const heartSpans = document.querySelectorAll('#lives span');
+  heartSpans.forEach((span, i) => {
+    span.style.opacity = i < lives ? '1' : '0.2';
+  });
+}
+
+// Canvas interaction
+canvas.addEventListener('click', handleTap);
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  handleTap(e);
+});
+
+function handleTap(e) {
+  if (!hasStarted || gameOver) return;
+  
+  const now = performance.now();
+  const timeSinceBeat = now - lastBeatTime;
+  const timeUntilNextBeat = beatInterval - timeSinceBeat;
+  
+  // Check if tap is close to the peak (when beatPhase is near 1.0)
+  // We want to hit when the circle is at max size (beatPhase = 1.0)
+  // Use timeUntilNextBeat to determine closeness to peak
+  
+  const msFromPeak = timeUntilNextBeat;
+  
+  if (msFromPeak <= perfectWindow) {
+    // PERFECT
+    score += 10;
+    combo++;
+    showFeedback('PERFECT!', 'perfect');
+    playHitSound(880); // High ding
+    createBurst(canvas.width / 2, canvas.height / 2, '#FFD700', 30);
+  } else if (msFromPeak <= goodWindow) {
+    // GOOD
+    score += 5;
+    combo++;
+    showFeedback('GOOD', 'good');
+    playHitSound(660);
+    createBurst(canvas.width / 2, canvas.height / 2, '#D4A574', 20);
+  } else {
+    // MISS
+    combo = 0;
+    lives--;
+    showFeedback('MISS', 'miss');
+    playMissSound();
+    createBurst(canvas.width / 2, canvas.height / 2, '#EF4444', 15);
+    
+    if (lives <= 0) {
+      endGame();
+    }
+  }
+  
+  updateUI();
+}
+
+function showFeedback(text, className) {
+  const feedback = document.getElementById('feedback');
+  feedback.textContent = text;
+  feedback.className = className;
+  feedback.style.opacity = '1';
+  
+  setTimeout(() => {
+    feedback.style.opacity = '0';
+  }, 300);
+}
+
+function endGame() {
+  gameOver = true;
+  isPlaying = false;
+  
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('syncBestScore', bestScore);
+  }
+  
+  document.getElementById('final-score').textContent = score;
+  document.getElementById('best-score').textContent = bestScore;
+  document.getElementById('game-over').classList.add('show');
+}
+
+// Audio
+function playKick() {
+  if (!audioCtx) return;
+  
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.1);
+  
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+  
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function playHitSound(freq) {
+  if (!audioCtx) return;
+  
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+  
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.15);
+}
+
+function playMissSound() {
+  if (!audioCtx) return;
+  
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.2);
+  
+  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+  
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.2);
+}
+
+// Particles
+function createBurst(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count;
+    const speed = 3 + Math.random() * 3;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1,
+      color
+    });
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= 0.02;
+    
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+    }
+  }
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+// Game loop
+function gameLoop(timestamp) {
+  if (!isPlaying) return;
+  
+  // Clear with fade trail
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  const now = timestamp;
+  const timeSinceBeat = now - lastBeatTime;
+  
+  // Check if we need to trigger a new beat
+  if (timeSinceBeat >= beatInterval) {
+    lastBeatTime = now;
+    beatCount++;
+    playKick();
+    
+    // Increase tempo every 10 beats
+    if (beatCount % 10 === 0) {
+      currentBPM += 5;
+      beatInterval = (60 / currentBPM) * 1000;
+    }
+  }
+  
+  // Calculate beat phase (0 to 1)
+  beatPhase = timeSinceBeat / beatInterval;
+  
+  // Draw pulsing circle
+  // Use easeInOut for smoother pulse
+  const pulseScale = easeInOutQuad(beatPhase);
+  const currentRadius = minRadius + (maxRadius - minRadius) * pulseScale;
+  
+  // Target zone indicator (max size)
+  ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  // Pulsing circle
+  const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, currentRadius);
+  gradient.addColorStop(0, '#FFD700');
+  gradient.addColorStop(0.6, '#D4A574');
+  gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+  
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Glow effect when near peak
+  if (beatPhase > 0.8) {
+    const glowIntensity = (beatPhase - 0.8) / 0.2;
+    ctx.shadowColor = '#FFD700';
+    ctx.shadowBlur = 40 * glowIntensity;
+    ctx.strokeStyle = `rgba(255, 215, 0, ${glowIntensity})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+  
+  // Update and draw particles
+  updateParticles();
+  drawParticles();
+  
+  requestAnimationFrame(gameLoop);
+}
+
+function easeInOutQuad(t) {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+// Resize handler
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+// Initialize UI
+updateUI();
+document.getElementById('best-score').textContent = bestScore;
+</script>
+
+</body>
+</html>
