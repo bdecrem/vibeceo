@@ -46,7 +46,7 @@
 
     // --- CONSTANTS ---
     const STROKE_W = 6;
-    const GRAVITY = 1200; // px/s²
+    const GRAVITY = 400; // px/s² — gentle drop, predictable landing
     const DROP_DAMPING = 0.3; // bounce factor
     const LIGHTNING_DELAY = 1.5; // seconds after drop settles
     const LIGHTNING_SPEED = 800; // px/s arc travel
@@ -504,6 +504,34 @@
       return jagPoints;
     }
 
+    // --- GHOST PREVIEW: show where strokes will land ---
+    function computeGhostOffset(stroke) {
+      // Find the lowest landing point for this stroke
+      let minDrop = Infinity;
+      for (const pt of stroke.points) {
+        // Check platforms
+        for (const plat of platforms) {
+          if (pt.x >= plat.x && pt.x <= plat.x + plat.w && plat.y > pt.y) {
+            minDrop = Math.min(minDrop, plat.y - pt.y);
+          }
+        }
+        // Check insulators
+        for (const ins of insulators) {
+          if (pt.x >= ins.x && pt.x <= ins.x + ins.w && ins.y > pt.y) {
+            minDrop = Math.min(minDrop, ins.y - pt.y);
+          }
+        }
+      }
+      // Snap to lowest point in stroke
+      const lowestPt = Math.max(...stroke.points.map(p => p.y));
+      if (minDrop === Infinity) {
+        // Would fall off screen — show ghost at bottom
+        return H - 20 - lowestPt;
+      }
+      // Offset so lowest point touches the surface
+      return minDrop - (lowestPt - Math.min(...stroke.points.map(p => p.y)));
+    }
+
     // --- PARTICLES ---
     function spawnParticles(x, y, color, count, spdMult) {
       spdMult = spdMult || 1;
@@ -834,6 +862,29 @@
         }
         ctx.stroke();
         ctx.globalAlpha = 1;
+      }
+
+      // Ghost preview (show where strokes will land)
+      if (phase === 'drawing') {
+        for (const stroke of strokes) {
+          if (stroke.points.length < 2) continue;
+          const offset = computeGhostOffset(stroke);
+          if (offset < 2) continue; // already at landing pos
+          ctx.strokeStyle = T.copper;
+          ctx.lineWidth = STROKE_W;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.globalAlpha = 0.15;
+          ctx.setLineDash([4, 6]);
+          ctx.beginPath();
+          ctx.moveTo(stroke.points[0].x, stroke.points[0].y + offset);
+          for (let i = 1; i < stroke.points.length; i++) {
+            ctx.lineTo(stroke.points[i].x, stroke.points[i].y + offset);
+          }
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 1;
+        }
       }
 
       // Current stroke being drawn
