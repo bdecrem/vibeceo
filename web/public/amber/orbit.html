@@ -4,124 +4,89 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ORBIT — Orbital Music Sequencer</title>
-  
-  <!-- Open Graph -->
   <meta property="og:title" content="ORBIT — Orbital Music Sequencer">
   <meta property="og:description" content="Tap to create orbiting notes. Distance determines speed and pitch. Watch them trigger at 12 o'clock.">
   <meta property="og:image" content="https://intheamber.com/amber/orbit-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/orbit.html">
   <meta property="og:type" content="website">
-  
-  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="ORBIT — Orbital Music Sequencer">
   <meta name="twitter:description" content="Tap to create orbiting notes. Distance determines speed and pitch. Watch them trigger at 12 o'clock.">
   <meta name="twitter:image" content="https://intheamber.com/amber/orbit-og.png">
-  
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      background: #000;
-      overflow: hidden;
-      font-family: 'Space Mono', 'Courier New', monospace;
-      color: #D4A574;
-      touch-action: none;
-    }
-    
-    #canvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
-      cursor: crosshair;
-    }
-    
-    #controls {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 10;
-    }
-    
-    #playButton {
-      background: #D4A574;
-      color: #000;
-      border: none;
-      padding: 15px 30px;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      font-family: 'Space Mono', monospace;
-      box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
-      transition: all 0.2s;
-    }
-    
-    #playButton:hover {
-      background: #FFD700;
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
-    }
-    
-    #playButton.playing {
-      background: #2D9596;
-      box-shadow: 0 0 20px rgba(45, 149, 150, 0.5);
-    }
-    
-    #stats {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      text-align: right;
-      font-size: 14px;
-      color: #D4A574;
-      text-shadow: 0 0 10px rgba(212, 165, 116, 0.3);
-      pointer-events: none;
-      z-index: 10;
-    }
-    
-    #info {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      font-size: 14px;
-      color: #D4A574;
-      opacity: 0.6;
-      pointer-events: none;
-      z-index: 10;
-    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#000;overflow:hidden;font-family:'Space Mono','Courier New',monospace;color:#D4A574;touch-action:none}
+    #canvas{display:block;width:100vw;height:100vh;cursor:crosshair}
+    #controls{position:fixed;top:20px;left:20px;z-index:10}
+    #playButton{background:#D4A574;color:#000;border:none;padding:15px 30px;font-size:18px;font-weight:bold;cursor:pointer;font-family:'Space Mono',monospace;box-shadow:0 0 20px rgba(212,165,116,0.5);transition:all 0.2s;-webkit-tap-highlight-color:transparent}
+    #playButton:hover{background:#FFD700;box-shadow:0 0 30px rgba(255,215,0,0.7)}
+    #playButton.playing{background:#2D9596;box-shadow:0 0 20px rgba(45,149,150,0.5)}
+    #stats{position:fixed;top:20px;right:20px;text-align:right;font-size:14px;color:#D4A574;text-shadow:0 0 10px rgba(212,165,116,0.3);pointer-events:none;z-index:10}
+    #info{position:fixed;bottom:20px;left:20px;font-size:14px;color:#D4A574;opacity:0.6;pointer-events:none;z-index:10}
   </style>
 </head>
 <body>
   <canvas id="canvas"></canvas>
-  
-  <div id="controls">
-    <button id="playButton">START</button>
-  </div>
-  
+  <div id="controls"><button id="playButton">START</button></div>
   <div id="stats">
     <div>ORBITS: <span id="orbitCount">0</span></div>
     <div>NOTES: <span id="noteCount">0</span></div>
   </div>
-  
-  <div id="info">
-    TAP TO CREATE ORBITS<br>
-    DISTANCE = SPEED + PITCH
-  </div>
+  <div id="info">TAP TO CREATE ORBITS<br>DISTANCE = SPEED + PITCH</div>
 
-  <script type="module">
-    import { SH101Controller } from '/101/dist/api/index.js';
-    
+  <script>
+    // Self-contained synth using Web Audio API — no imports needed
+    class Synth {
+      constructor(ctx) {
+        this.ctx = ctx;
+        // Master compressor to prevent clipping
+        this.master = ctx.createDynamicsCompressor();
+        this.master.connect(ctx.destination);
+      }
+      playNote(freq, duration, opts = {}) {
+        const ctx = this.ctx;
+        const now = ctx.currentTime;
+
+        // Two detuned oscillators for thickness
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        osc1.type = 'sawtooth';
+        osc2.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(freq, now);
+        osc2.frequency.setValueAtTime(freq * 1.003, now); // slight detune
+
+        // Lowpass filter with envelope
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(opts.cutoff || 3000, now);
+        filter.frequency.exponentialRampToValueAtTime(200, now + (opts.decay || 0.2));
+        filter.Q.setValueAtTime((opts.resonance || 0.3) * 20, now);
+
+        // Amp envelope
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.setValueAtTime(0.18, now + duration * 0.7);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration + 0.15);
+
+        osc1.connect(filter);
+        osc2.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.master);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + duration + 0.2);
+        osc2.stop(now + duration + 0.2);
+      }
+    }
+
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const playButton = document.getElementById('playButton');
     const orbitCountEl = document.getElementById('orbitCount');
     const noteCountEl = document.getElementById('noteCount');
-    
+
     let width, height, centerX, centerY;
-    
     function resize() {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
@@ -130,276 +95,140 @@
     }
     resize();
     window.addEventListener('resize', resize);
-    
-    // Audio setup
+
     let audioStarted = false;
     let synth = null;
     let audioCtx = null;
-    
-    // D minor pentatonic scale
-    const scale = [293.66, 329.63, 349.23, 440, 493.88, 587.33, 659.25, 698.46]; // D4 to F5
-    
-    // Orbiting particles
+
+    const scale = [293.66, 329.63, 349.23, 440, 493.88, 587.33, 659.25, 698.46];
     const orbits = [];
     let noteCount = 0;
-    
+
     class Orbit {
       constructor(x, y) {
-        const dx = x - centerX;
-        const dy = y - centerY;
-        this.radius = Math.sqrt(dx * dx + dy * dy);
+        const dx = x - centerX, dy = y - centerY;
+        this.radius = Math.sqrt(dx*dx + dy*dy);
         this.angle = Math.atan2(dy, dx);
-        
-        // Speed based on radius (smaller orbits = faster)
-        // Map radius (50-400) to speed (0.04-0.01)
-        const normalizedRadius = Math.max(50, Math.min(400, this.radius));
-        this.speed = 0.04 - ((normalizedRadius - 50) / 350) * 0.03;
-        
-        // Pitch based on radius (smaller = higher)
-        const pitchIndex = Math.floor(((normalizedRadius - 50) / 350) * (scale.length - 1));
-        this.frequency = scale[Math.min(pitchIndex, scale.length - 1)];
-        
-        // Color based on pitch
-        const colors = ['#FFD700', '#D4A574', '#2D9596', '#7B68EE', '#FF69B4', '#FF8C42', '#00CED1'];
-        this.color = colors[pitchIndex % colors.length];
-        
-        this.lastTrigger = -Math.PI; // Last angle where note was triggered
+        const nr = Math.max(50, Math.min(400, this.radius));
+        this.speed = 0.04 - ((nr - 50) / 350) * 0.03;
+        const pi = Math.floor(((nr - 50) / 350) * (scale.length - 1));
+        this.frequency = scale[Math.min(pi, scale.length - 1)];
+        const colors = ['#FFD700','#D4A574','#2D9596','#7B68EE','#FF69B4','#FF8C42','#00CED1'];
+        this.color = colors[pi % colors.length];
+        this.lastTrigger = -Math.PI;
         this.trail = [];
       }
-      
       update() {
         this.angle += this.speed;
-        
-        // Keep angle in range
-        if (this.angle > Math.PI * 2) {
-          this.angle -= Math.PI * 2;
-        }
-        
-        // Check if crossing trigger zone (top = -PI/2)
+        if (this.angle > Math.PI * 2) this.angle -= Math.PI * 2;
         const triggerAngle = -Math.PI / 2;
         const tolerance = this.speed * 2;
-        
-        // Check if we just crossed the trigger point
-        const distToTrigger = Math.abs(this.angle - triggerAngle);
-        const shouldTrigger = distToTrigger < tolerance && Math.abs(this.angle - this.lastTrigger) > tolerance * 3;
-        
-        if (shouldTrigger && audioStarted && synth) {
-          this.trigger();
-          this.lastTrigger = this.angle;
+        const dist = Math.abs(this.angle - triggerAngle);
+        if (dist < tolerance && Math.abs(this.angle - this.lastTrigger) > tolerance * 3) {
+          if (audioStarted && synth) { this.trigger(); this.lastTrigger = this.angle; }
         }
-        
-        // Update trail
         const x = centerX + Math.cos(this.angle) * this.radius;
         const y = centerY + Math.sin(this.angle) * this.radius;
         this.trail.push({ x, y, life: 1 });
         if (this.trail.length > 15) this.trail.shift();
-        
-        // Update trail life
         this.trail.forEach(t => t.life *= 0.9);
       }
-      
       trigger() {
-        // Play note
         synth.playNote(this.frequency, 0.15, { cutoff: 3000, resonance: 0.3, decay: 0.2 });
         noteCount++;
         noteCountEl.textContent = noteCount;
-        
-        // Create particle burst at trigger point
-        const x = centerX;
-        const y = centerY - this.radius;
+        const x = centerX, y = centerY - this.radius;
         for (let i = 0; i < 8; i++) {
-          particles.push({
-            x, y,
-            vx: (Math.random() - 0.5) * 4,
-            vy: (Math.random() - 0.5) * 4,
-            life: 1,
-            color: this.color
-          });
+          particles.push({ x, y, vx: (Math.random()-0.5)*4, vy: (Math.random()-0.5)*4, life: 1, color: this.color });
         }
       }
-      
       draw() {
-        // Draw orbital path (subtle)
-        ctx.strokeStyle = this.color + '20';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, this.radius, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        // Draw trail
-        this.trail.forEach((t, i) => {
-          ctx.fillStyle = this.color + Math.floor(t.life * 255).toString(16).padStart(2, '0');
-          ctx.beginPath();
-          ctx.arc(t.x, t.y, 3, 0, Math.PI * 2);
-          ctx.fill();
+        ctx.strokeStyle = this.color + '20'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(centerX, centerY, this.radius, 0, Math.PI*2); ctx.stroke();
+        this.trail.forEach(t => {
+          ctx.fillStyle = this.color + Math.floor(t.life*255).toString(16).padStart(2,'0');
+          ctx.beginPath(); ctx.arc(t.x, t.y, 3, 0, Math.PI*2); ctx.fill();
         });
-        
-        // Draw particle
         const x = centerX + Math.cos(this.angle) * this.radius;
         const y = centerY + Math.sin(this.angle) * this.radius;
-        
-        // Glow
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, 15);
-        gradient.addColorStop(0, this.color + 'AA');
-        gradient.addColorStop(1, this.color + '00');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x, y, 15, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Core
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(x, y, 5, 0, Math.PI * 2);
-        ctx.fill();
+        const g = ctx.createRadialGradient(x,y,0,x,y,15);
+        g.addColorStop(0, this.color+'AA'); g.addColorStop(1, this.color+'00');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,15,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fill();
       }
     }
-    
-    // Particles for burst effects
+
     const particles = [];
-    
     function updateParticles() {
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.life *= 0.95;
-        
-        if (p.life < 0.01) {
-          particles.splice(i, 1);
-        }
+      for (let i = particles.length-1; i >= 0; i--) {
+        const p = particles[i]; p.x += p.vx; p.y += p.vy; p.life *= 0.95;
+        if (p.life < 0.01) particles.splice(i, 1);
       }
     }
-    
     function drawParticles() {
       particles.forEach(p => {
-        ctx.fillStyle = p.color + Math.floor(p.life * 255).toString(16).padStart(2, '0');
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = p.color + Math.floor(p.life*255).toString(16).padStart(2,'0');
+        ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
       });
     }
-    
-    // Draw center point
     function drawCenter() {
-      // Glow
-      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 30);
-      gradient.addColorStop(0, '#D4A574AA');
-      gradient.addColorStop(1, '#D4A57400');
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Core
-      ctx.fillStyle = '#D4A574';
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
-      ctx.fill();
+      const g = ctx.createRadialGradient(centerX,centerY,0,centerX,centerY,30);
+      g.addColorStop(0,'#D4A574AA'); g.addColorStop(1,'#D4A57400');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(centerX,centerY,30,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#D4A574'; ctx.beginPath(); ctx.arc(centerX,centerY,8,0,Math.PI*2); ctx.fill();
     }
-    
-    // Draw trigger zone at top
     function drawTriggerZone() {
-      const x = centerX;
-      const y = centerY - 450;
-      
-      // Check if any orbit is near trigger
-      let isTriggering = false;
-      orbits.forEach(orbit => {
-        const ox = centerX + Math.cos(orbit.angle) * orbit.radius;
-        const oy = centerY + Math.sin(orbit.angle) * orbit.radius;
-        const dist = Math.sqrt((ox - x) * (ox - x) + (oy - y) * (oy - y));
-        if (dist < 50) isTriggering = true;
+      const x = centerX, y = centerY - 450;
+      let trig = false;
+      orbits.forEach(o => {
+        const ox = centerX+Math.cos(o.angle)*o.radius, oy = centerY+Math.sin(o.angle)*o.radius;
+        if (Math.sqrt((ox-x)**2+(oy-y)**2) < 50) trig = true;
       });
-      
-      // Draw trigger indicator
-      ctx.strokeStyle = isTriggering ? '#FFD700AA' : '#D4A57440';
-      ctx.lineWidth = isTriggering ? 3 : 2;
-      ctx.beginPath();
-      ctx.arc(x, y, 15, 0, Math.PI * 2);
-      ctx.stroke();
-      
-      if (isTriggering) {
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, 30);
-        gradient.addColorStop(0, '#FFD70060');
-        gradient.addColorStop(1, '#FFD70000');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x, y, 30, 0, Math.PI * 2);
-        ctx.fill();
+      ctx.strokeStyle = trig ? '#FFD700AA' : '#D4A57440'; ctx.lineWidth = trig ? 3 : 2;
+      ctx.beginPath(); ctx.arc(x,y,15,0,Math.PI*2); ctx.stroke();
+      if (trig) {
+        const g = ctx.createRadialGradient(x,y,0,x,y,30);
+        g.addColorStop(0,'#FFD70060'); g.addColorStop(1,'#FFD70000');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,30,0,Math.PI*2); ctx.fill();
       }
     }
-    
-    // Animation loop
+
     function animate() {
-      // Fade trail
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-      ctx.fillRect(0, 0, width, height);
-      
-      drawCenter();
-      drawTriggerZone();
-      
-      orbits.forEach(orbit => {
-        orbit.update();
-        orbit.draw();
-      });
-      
-      updateParticles();
-      drawParticles();
-      
+      ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(0,0,width,height);
+      drawCenter(); drawTriggerZone();
+      orbits.forEach(o => { o.update(); o.draw(); });
+      updateParticles(); drawParticles();
       requestAnimationFrame(animate);
     }
-    
-    // Start animation immediately (visual is active before audio)
     animate();
-    
-    // Add some initial orbits for visual interest
-    function addInitialOrbits() {
-      const radii = [120, 180, 250, 320];
-      radii.forEach(r => {
-        const angle = Math.random() * Math.PI * 2;
-        const x = centerX + Math.cos(angle) * r;
-        const y = centerY + Math.sin(angle) * r;
-        orbits.push(new Orbit(x, y));
+
+    (function addInitialOrbits() {
+      [120,180,250,320].forEach(r => {
+        const a = Math.random()*Math.PI*2;
+        orbits.push(new Orbit(centerX+Math.cos(a)*r, centerY+Math.sin(a)*r));
       });
       orbitCountEl.textContent = orbits.length;
-    }
-    addInitialOrbits();
-    
-    // Play button
+    })();
+
     playButton.addEventListener('click', async () => {
       if (!audioStarted) {
-        audioCtx = new AudioContext();
-        synth = new SH101Controller(audioCtx);
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        synth = new Synth(audioCtx);
         await audioCtx.resume();
         audioStarted = true;
-        playButton.textContent = 'PLAYING';
-        playButton.classList.add('playing');
+        playButton.textContent = 'PLAYING'; playButton.classList.add('playing');
       } else {
         audioStarted = false;
-        playButton.textContent = 'START';
-        playButton.classList.remove('playing');
+        playButton.textContent = 'START'; playButton.classList.remove('playing');
       }
     });
-    
-    // Add orbit on click/touch
+
     function addOrbit(x, y) {
-      const dist = Math.sqrt((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY));
-      if (dist > 50 && dist < 450) {
-        orbits.push(new Orbit(x, y));
-        orbitCountEl.textContent = orbits.length;
-      }
+      const d = Math.sqrt((x-centerX)**2+(y-centerY)**2);
+      if (d > 50 && d < 450) { orbits.push(new Orbit(x, y)); orbitCountEl.textContent = orbits.length; }
     }
-    
-    canvas.addEventListener('click', (e) => {
-      addOrbit(e.clientX, e.clientY);
-    });
-    
-    canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      const touch = e.touches[0];
-      addOrbit(touch.clientX, touch.clientY);
-    });
+    canvas.addEventListener('click', e => addOrbit(e.clientX, e.clientY));
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); addOrbit(e.touches[0].clientX, e.touches[0].clientY); });
   </script>
 </body>
 </html>
