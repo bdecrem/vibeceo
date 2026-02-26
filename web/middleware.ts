@@ -208,6 +208,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // Decremental at /decremental
+    if (pathname.startsWith('/decremental')) {
+      return NextResponse.next()
+    }
+
     // Rewrite all other paths to /kochi/* (e.g., /peel -> /kochi/peel)
     const newUrl = new URL(`/kochi${pathname}`, request.url)
     log(`[Middleware] Kochi domain rewrite ${pathname} -> ${newUrl.pathname}`)
@@ -698,6 +703,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/shipshot') ||
       pathname.startsWith('/hallman') ||
       pathname.startsWith('/mutabl') ||
+      pathname.startsWith('/decremental') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()
