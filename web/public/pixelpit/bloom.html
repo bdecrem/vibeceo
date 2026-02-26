@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>BLOOM</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #f8fafc; overflow: hidden; touch-action: none; font-family: monospace; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    let W, H, safeTop = 0;
+    function resize() {
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      W = canvas.width; H = canvas.height;
+      safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)')) || 0;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // --- PLAYROOM THEME ---
+    const T = {
+      bg: '#f8fafc',
+      surface: '#ffffff',
+      border: '#000000',
+      seed: '#22c55e',
+      seedDark: '#15803d',
+      gate: '#facc15',
+      gateGlow: '#fde68a',
+      thorn: '#ef4444',
+      thornDark: '#991b1b',
+      wall: '#94a3b8',
+      wallDark: '#64748b',
+      wallCrack: '#475569',
+      root: '#92400e',
+      rootGlow: '#a3e635',
+      text: '#1e293b',
+      muted: '#94a3b8',
+      white: '#ffffff',
+    };
+
+    // --- CONSTANTS ---
+    const SEED_R = 4;
+    const SEED_SPEED = 200; // px/s forward
+    const WIND_WOBBLE = 15; // px amplitude of bobbing
+    const GATE_W = 60;
+    const GATE_H = 8;
+    const WALL_X_OFFSET = 60; // wall distance from right edge
+    const SLING_X = 40; // slingshot x position
+    const LAUNCH_SPEED = 300;
+    const ROOT_DURATION = 3; // levels before roots wither
+    const ROOT_BOOST = 1.5;
+
+    // --- AUDIO ---
+    let audioCtx;
+    function initAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    function unlockAudio() {
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('click', unlockAudio);
+    }
+    document.addEventListener('touchstart', unlockAudio);
+    document.addEventListener('click', unlockAudio);
+
+    function playThwip() {
+      if (!audioCtx) return;
+      const o = audioCtx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(200, audioCtx.currentTime);
+      o.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.06);
+      const g = audioCtx.createGain(); g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
+      o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.08);
+    }
+
+    function playSplit(mult) {
+      if (!audioCtx) return;
+      const freq = 400 + mult * 150;
+      const o = audioCtx.createOscillator(); o.type = 'triangle'; o.frequency.value = freq;
+      const g = audioCtx.createGain(); g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.06);
+      o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.06);
+    }
+
+    function playThornHit() {
+      if (!audioCtx) return;
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const g = audioCtx.createGain(); g.gain.value = 0.12;
+      src.connect(g).connect(audioCtx.destination); src.start();
+    }
+
+    function playWallHit() {
+      if (!audioCtx) return;
+      const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = 100;
+      const g = audioCtx.createGain(); g.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.04);
+      o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.04);
+    }
+
+    function playCrumble() {
+      if (!audioCtx) return;
+      // Deep noise
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.3, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) * 0.4;
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const g = audioCtx.createGain(); g.gain.value = 0.2;
+      src.connect(g).connect(audioCtx.destination); src.start();
+      // Low sine
+      const o = audioCtx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(80, audioCtx.currentTime);
+      o.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+      const g2 = audioCtx.createGain(); g2.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      g2.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+      o.connect(g2).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.3);
+      // Chime cascade
+      const notes = [523, 659, 784, 1047, 1319];
+      for (let i = 0; i < 5; i++) {
+        const t = audioCtx.currentTime + 0.1 + i * 0.05;
+        const c = audioCtx.createOscillator(); c.type = 'triangle'; c.frequency.value = notes[i];
+        const cg = audioCtx.createGain(); cg.gain.setValueAtTime(0.08, t);
+        cg.gain.linearRampToValueAtTime(0, t + 0.12);
+        c.connect(cg).connect(audioCtx.destination); c.start(t); c.stop(t + 0.12);
+      }
+    }
+
+    function playRootHum() {
+      if (!audioCtx) return;
+      const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = 180;
+      const g = audioCtx.createGain(); g.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
+      o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.15);
+    }
+
+    // --- STATE ---
+    let seeds, gates, wall, roots, particles;
+    let level, score, bestScore, seedsLaunched, seedsAlive;
+    let phase; // 'start', 'aiming', 'playing', 'cleared', 'over'
+    let aimAngle, aiming, aimStart;
+    let shotsLeft;
+    let screenShake, flashTimer;
+    let levelTimer, wallX;
+    let gameTime;
+
+    function init() {
+      seeds = [];
+      gates = [];
+      roots = [];
+      particles = [];
+      level = 0;
+      score = 0;
+      bestScore = parseInt(localStorage.getItem('bloom_best') || '0');
+      phase = 'start';
+      aimAngle = 0;
+      aiming = false;
+      aimStart = null;
+      screenShake = 0;
+      flashTimer = 0;
+      gameTime = 0;
+      setupLevel(1);
+    }
+
+    function setupLevel(lvl) {
+      level = lvl;
+      seeds = [];
+      gates = [];
+      particles = [];
+      seedsLaunched = 0;
+      seedsAlive = 0;
+
+      // Shots based on level
+      shotsLeft = Math.max(3, 6 - Math.floor(lvl / 5));
+
+      wallX = W - WALL_X_OFFSET;
+
+      // Wall HP scales with level
+      const baseHP = 8 + lvl * 4 + Math.floor(lvl / 3) * 5;
+      wall = { x: wallX, hp: baseHP, maxHP: baseHP, cracking: 0 };
+
+      // Generate gates
+      const gateZoneStart = SLING_X + 80;
+      const gateZoneEnd = wallX - 40;
+      const numColumns = 2 + Math.min(Math.floor(lvl / 3), 4);
+
+      for (let col = 0; col < numColumns; col++) {
+        const gx = gateZoneStart + (gateZoneEnd - gateZoneStart) * ((col + 0.5) / numColumns);
+        const numGates = 2 + Math.floor(Math.random() * 2);
+        const spacing = (H - 80) / (numGates + 1);
+
+        for (let row = 0; row < numGates; row++) {
+          const gy = 40 + spacing * (row + 1);
+          const isThorn = lvl >= 4 && Math.random() < Math.min(0.15 + lvl * 0.02, 0.4);
+
+          if (isThorn) {
+            gates.push({ x: gx, y: gy, type: 'thorn', mult: 0, moving: lvl >= 15 });
+          } else {
+            const maxMult = lvl < 4 ? 2 : lvl < 9 ? 3 : 4;
+            const mult = 2 + Math.floor(Math.random() * (maxMult - 1));
+            gates.push({ x: gx, y: gy, type: 'sun', mult, moving: lvl >= 15 });
+          }
+        }
+      }
+
+      // Wither old roots
+      roots = roots.filter(r => level - r.plantedLevel < ROOT_DURATION);
+
+      phase = 'aiming';
+    }
+
+    function spawnSeed(x, y, vx, vy) {
+      seeds.push({
+        x, y, vx, vy,
+        alive: true,
+        phase: Math.random() * Math.PI * 2, // for wobble
+        boosted: false,
+        splitImmunity: 0, // frames of immunity after split to avoid double-hit
+      });
+      seedsAlive++;
+    }
+
+    function spawnParticles(x, y, color, count, spdMult) {
+      spdMult = spdMult || 1;
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const spd = (20 + Math.random() * 60) * spdMult;
+        particles.push({
+          x, y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+          life: 0.2 + Math.random() * 0.3, maxLife: 0.2 + Math.random() * 0.3,
+          color, size: 1 + Math.random() * 3,
+        });
+      }
+    }
+
+    // --- INPUT ---
+    function handleDown(e) {
+      e.preventDefault();
+      if (phase === 'start') {
+        initAudio();
+        phase = 'aiming';
+        setupLevel(1);
+        return;
+      }
+      if (phase === 'over') {
+        init();
+        initAudio();
+        phase = 'aiming';
+        setupLevel(1);
+        return;
+      }
+      if (phase === 'cleared') return;
+      if (phase === 'aiming' && shotsLeft > 0) {
+        const touch = e.touches ? e.touches[0] : e;
+        aiming = true;
+        aimStart = { x: touch.clientX, y: touch.clientY };
+      }
+    }
+
+    function handleMove(e) {
+      e.preventDefault();
+      if (!aiming) return;
+      const touch = e.touches ? e.touches[0] : e;
+      const dx = touch.clientX - aimStart.x;
+      const dy = touch.clientY - aimStart.y;
+      aimAngle = Math.atan2(dy, dx);
+      // Clamp to forward-ish angles
+      aimAngle = Math.max(-Math.PI * 0.4, Math.min(Math.PI * 0.4, aimAngle));
+    }
+
+    function handleUp(e) {
+      e.preventDefault();
+      if (!aiming) return;
+      aiming = false;
+      if (phase === 'aiming' && shotsLeft > 0) {
+        // Launch!
+        const speed = LAUNCH_SPEED;
+        const vx = Math.cos(aimAngle) * speed + SEED_SPEED;
+        const vy = Math.sin(aimAngle) * speed;
+        spawnSeed(SLING_X + 10, H / 2, Math.abs(vx), vy);
+        shotsLeft--;
+        seedsLaunched++;
+        playThwip();
+        if (shotsLeft > 0) phase = 'aiming';
+        else phase = 'playing';
+      }
+    }
+
+    canvas.addEventListener('pointerdown', handleDown);
+    canvas.addEventListener('pointermove', handleMove);
+    canvas.addEventListener('pointerup', handleUp);
+    canvas.addEventListener('pointercancel', handleUp);
+
+    // Keyboard: space to launch straight
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        if (phase === 'start') { initAudio(); phase = 'aiming'; setupLevel(1); return; }
+        if (phase === 'over') { init(); initAudio(); phase = 'aiming'; setupLevel(1); return; }
+        if (phase === 'aiming' && shotsLeft > 0) {
+          spawnSeed(SLING_X + 10, H / 2, SEED_SPEED + LAUNCH_SPEED * 0.8, (Math.random() - 0.5) * 40);
+          shotsLeft--;
+          seedsLaunched++;
+          playThwip();
+          if (shotsLeft <= 0) phase = 'playing';
+        }
+      }
+    });
+
+    // --- UPDATE ---
+    let lastTime = 0;
+
+    function update(dt) {
+      if (phase === 'start' || phase === 'over') return;
+      gameTime += dt;
+
+      // Update seeds
+      for (const seed of seeds) {
+        if (!seed.alive) continue;
+        if (seed.splitImmunity > 0) seed.splitImmunity--;
+
+        // Wind wobble
+        seed.phase += dt * 4;
+        const wobble = Math.sin(seed.phase) * WIND_WOBBLE * dt;
+
+        seed.x += seed.vx * dt;
+        seed.y += seed.vy * dt + wobble;
+        seed.vy *= 0.98; // gentle drag on vertical
+
+        // Screen bounds (vertical)
+        if (seed.y < SEED_R) { seed.y = SEED_R; seed.vy = Math.abs(seed.vy) * 0.5; }
+        if (seed.y > H - SEED_R) { seed.y = H - SEED_R; seed.vy = -Math.abs(seed.vy) * 0.5; }
+
+        // Gate collision
+        for (const gate of gates) {
+          if (seed.splitImmunity > 0) continue;
+          const dx = Math.abs(seed.x - gate.x);
+          const dy = Math.abs(seed.y - gate.y);
+          if (dx < GATE_W / 2 + SEED_R && dy < GATE_H / 2 + SEED_R) {
+            if (gate.type === 'thorn') {
+              // Kill seed
+              seed.alive = false;
+              seedsAlive--;
+              spawnParticles(seed.x, seed.y, T.thorn, 6);
+              playThornHit();
+            } else {
+              // Split
+              seed.splitImmunity = 10;
+              for (let i = 1; i < gate.mult; i++) {
+                const newSeed = {
+                  x: seed.x + (Math.random() - 0.5) * 6,
+                  y: seed.y + (Math.random() - 0.5) * 12,
+                  vx: seed.vx * (0.9 + Math.random() * 0.2),
+                  vy: seed.vy + (Math.random() - 0.5) * 40,
+                  alive: true,
+                  phase: Math.random() * Math.PI * 2,
+                  boosted: seed.boosted,
+                  splitImmunity: 10,
+                };
+                seeds.push(newSeed);
+                seedsAlive++;
+              }
+              spawnParticles(gate.x, gate.y, T.gateGlow, 4);
+              playSplit(gate.mult);
+            }
+          }
+        }
+
+        // Root boost
+        for (const root of roots) {
+          const dx = Math.abs(seed.x - root.x);
+          const dy = Math.abs(seed.y - root.y);
+          if (dx < 20 && dy < 20 && !seed.boosted) {
+            seed.boosted = true;
+            seed.vx *= ROOT_BOOST;
+            spawnParticles(root.x, root.y, T.rootGlow, 3);
+            playRootHum();
+          }
+        }
+
+        // Wall collision
+        if (seed.x >= wall.x) {
+          seed.alive = false;
+          seedsAlive--;
+          wall.hp--;
+          wall.cracking = 0.1;
+          spawnParticles(wall.x, seed.y, T.wallDark, 2);
+          playWallHit();
+
+          // Plant root for next level
+          roots.push({ x: wall.x + 5 + Math.random() * 15, y: seed.y, plantedLevel: level });
+
+          if (wall.hp <= 0) {
+            // Wall destroyed!
+            phase = 'cleared';
+            levelTimer = 0;
+            score += level * 10;
+            screenShake = 0.2;
+            flashTimer = 0.1;
+            spawnParticles(wall.x, H / 2, T.wall, 25, 2);
+            playCrumble();
+          }
+        }
+
+        // Off screen right (past wall area)
+        if (seed.x > W + 20) {
+          seed.alive = false;
+          seedsAlive--;
+        }
+      }
+
+      // Check game over: no shots left and no seeds alive
+      if (phase === 'playing' && seedsAlive <= 0 && shotsLeft <= 0) {
+        if (wall.hp > 0) {
+          phase = 'over';
+          if (score > bestScore) {
+            bestScore = score;
+            localStorage.setItem('bloom_best', bestScore);
+          }
+        }
+      }
+
+      // Can still aim if shots remain
+      if (phase === 'playing' && shotsLeft > 0) {
+        phase = 'aiming';
+      }
+
+      // Cleared → next level
+      if (phase === 'cleared') {
+        levelTimer += dt;
+        if (levelTimer > 1.5) {
+          setupLevel(level + 1);
+        }
+      }
+
+      // Moving gates
+      for (const gate of gates) {
+        if (gate.moving) {
+          gate.y += Math.sin(gameTime * 1.5 + gate.x * 0.01) * 30 * dt;
+          gate.y = Math.max(30, Math.min(H - 30, gate.y));
+        }
+      }
+
+      // Screen shake decay
+      if (screenShake > 0) screenShake -= dt;
+      if (flashTimer > 0) flashTimer -= dt;
+
+      // Particles
+      for (const p of particles) {
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.vy += 100 * dt; // gravity on particles
+        p.life -= dt;
+      }
+      particles = particles.filter(p => p.life > 0);
+      seeds = seeds.filter(s => s.alive);
+    }
+
+    // --- DRAW ---
+    function draw() {
+      // Shake offset
+      const sx = screenShake > 0 ? (Math.random() - 0.5) * 4 : 0;
+      const sy = screenShake > 0 ? (Math.random() - 0.5) * 4 : 0;
+      ctx.save();
+      ctx.translate(sx, sy);
+
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(-10, -10, W + 20, H + 20);
+
+      // Roots (background)
+      for (const root of roots) {
+        const age = level - root.plantedLevel;
+        const alpha = Math.max(0, 1 - age / ROOT_DURATION) * 0.4;
+        ctx.fillStyle = T.root;
+        ctx.globalAlpha = alpha;
+        // Draw tendril
+        ctx.beginPath();
+        ctx.moveTo(root.x, root.y);
+        ctx.quadraticCurveTo(root.x - 8, root.y + 15, root.x - 3, root.y + 25);
+        ctx.lineWidth = 2; ctx.strokeStyle = T.root; ctx.stroke();
+        ctx.beginPath(); ctx.arc(root.x, root.y, 3, 0, Math.PI * 2); ctx.fill();
+        // Glow when active
+        if (alpha > 0.2) {
+          ctx.fillStyle = T.rootGlow;
+          ctx.globalAlpha = alpha * 0.2;
+          ctx.beginPath(); ctx.arc(root.x, root.y, 15, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      // Gates
+      for (const gate of gates) {
+        if (gate.type === 'sun') {
+          // Gold bar
+          ctx.fillStyle = T.gate;
+          ctx.strokeStyle = '#b45309';
+          ctx.lineWidth = 2;
+          const gx = gate.x - GATE_W / 2, gy = gate.y - GATE_H / 2;
+          ctx.fillRect(gx, gy, GATE_W, GATE_H);
+          ctx.strokeRect(gx, gy, GATE_W, GATE_H);
+          // Light rays
+          ctx.strokeStyle = T.gateGlow;
+          ctx.lineWidth = 1;
+          ctx.globalAlpha = 0.3;
+          for (let i = -2; i <= 2; i++) {
+            ctx.beginPath();
+            ctx.moveTo(gate.x + i * 12, gy - 4);
+            ctx.lineTo(gate.x + i * 12, gy - 10);
+            ctx.stroke();
+          }
+          ctx.globalAlpha = 1;
+          // Multiplier text
+          ctx.fillStyle = T.text;
+          ctx.font = 'bold 10px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('x' + gate.mult, gate.x, gate.y + 4);
+        } else {
+          // Thorn gate — red with spikes
+          ctx.fillStyle = T.thorn;
+          ctx.strokeStyle = T.thornDark;
+          ctx.lineWidth = 2;
+          const gx = gate.x - GATE_W / 2, gy = gate.y - GATE_H / 2;
+          ctx.fillRect(gx, gy, GATE_W, GATE_H);
+          ctx.strokeRect(gx, gy, GATE_W, GATE_H);
+          // Spikes
+          ctx.fillStyle = T.thornDark;
+          for (let i = 0; i < 5; i++) {
+            const sx = gx + 6 + i * 12;
+            ctx.beginPath();
+            ctx.moveTo(sx - 3, gy); ctx.lineTo(sx, gy - 6); ctx.lineTo(sx + 3, gy);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(sx - 3, gy + GATE_H); ctx.lineTo(sx, gy + GATE_H + 6); ctx.lineTo(sx + 3, gy + GATE_H);
+            ctx.fill();
+          }
+          ctx.fillStyle = T.white;
+          ctx.font = 'bold 10px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('x0', gate.x, gate.y + 4);
+        }
+      }
+
+      // Wall
+      if (wall && wall.hp > 0) {
+        const hpPct = wall.hp / wall.maxHP;
+        const wallW = 20;
+        ctx.fillStyle = hpPct > 0.5 ? T.wall : hpPct > 0.2 ? T.wallDark : T.wallCrack;
+        ctx.fillRect(wall.x, 0, wallW, H);
+        ctx.strokeStyle = T.border;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(wall.x, 0, wallW, H);
+
+        // Cracks
+        const crackCount = Math.floor((1 - hpPct) * 8);
+        ctx.strokeStyle = T.wallCrack;
+        ctx.lineWidth = 1;
+        for (let i = 0; i < crackCount; i++) {
+          const cy = (H / (crackCount + 1)) * (i + 1);
+          ctx.beginPath();
+          ctx.moveTo(wall.x, cy);
+          ctx.lineTo(wall.x + wallW * 0.5, cy + (Math.sin(i * 3) * 10));
+          ctx.lineTo(wall.x + wallW, cy + (Math.cos(i * 2) * 8));
+          ctx.stroke();
+        }
+
+        // HP text
+        ctx.fillStyle = T.white;
+        ctx.font = 'bold 12px monospace';
+        ctx.textAlign = 'center';
+        ctx.save();
+        ctx.translate(wall.x + wallW / 2, H / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(wall.hp + ' HP', 0, 4);
+        ctx.restore();
+
+        // Crack flash
+        if (wall.cracking > 0) {
+          ctx.fillStyle = T.white;
+          ctx.globalAlpha = wall.cracking;
+          ctx.fillRect(wall.x, 0, wallW, H);
+          ctx.globalAlpha = 1;
+          wall.cracking -= 0.005;
+        }
+      }
+
+      // Seeds
+      for (const seed of seeds) {
+        if (!seed.alive) continue;
+        ctx.fillStyle = seed.boosted ? T.rootGlow : T.seed;
+        ctx.strokeStyle = seed.boosted ? T.seedDark : T.seedDark;
+        ctx.lineWidth = 1;
+        // Squash/stretch based on velocity
+        const speed = Math.hypot(seed.vx, seed.vy);
+        const stretch = 1 + speed * 0.001;
+        const angle = Math.atan2(seed.vy, seed.vx);
+        ctx.save();
+        ctx.translate(seed.x, seed.y);
+        ctx.rotate(angle);
+        ctx.scale(stretch, 1 / stretch);
+        ctx.beginPath(); ctx.arc(0, 0, SEED_R, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // Leaf tail
+        ctx.fillStyle = T.seedDark;
+        ctx.beginPath();
+        ctx.moveTo(-SEED_R, 0);
+        ctx.quadraticCurveTo(-SEED_R - 4, -3, -SEED_R - 6, 0);
+        ctx.quadraticCurveTo(-SEED_R - 4, 3, -SEED_R, 0);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Particles
+      for (const p of particles) {
+        ctx.globalAlpha = p.life / p.maxLife;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Flash
+      if (flashTimer > 0) {
+        ctx.fillStyle = T.gate;
+        ctx.globalAlpha = flashTimer * 2;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+      }
+
+      // Slingshot
+      if (phase === 'aiming') {
+        ctx.fillStyle = T.seedDark;
+        ctx.beginPath(); ctx.arc(SLING_X, H / 2, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = T.border; ctx.lineWidth = 2; ctx.stroke();
+
+        // Aim line
+        if (aiming) {
+          ctx.strokeStyle = T.seed;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(SLING_X, H / 2);
+          const aimLen = 60;
+          ctx.lineTo(SLING_X + Math.cos(aimAngle) * aimLen, H / 2 + Math.sin(aimAngle) * aimLen);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+
+      // HUD
+      if (phase !== 'start') {
+        // Seed count
+        ctx.fillStyle = T.text;
+        ctx.font = 'bold 16px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(seeds.filter(s => s.alive).length + ' seeds', W / 2, safeTop + 24);
+
+        // Level
+        ctx.font = '12px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('LVL ' + level, 12, safeTop + 24);
+
+        // Score
+        ctx.textAlign = 'right';
+        ctx.fillText(score, W - 12, safeTop + 24);
+
+        // Shots remaining
+        if (shotsLeft > 0) {
+          ctx.fillStyle = T.seed;
+          for (let i = 0; i < shotsLeft; i++) {
+            ctx.beginPath(); ctx.arc(SLING_X + i * 14, H - 20, 4, 0, Math.PI * 2); ctx.fill();
+          }
+        }
+      }
+
+      // Level cleared overlay
+      if (phase === 'cleared') {
+        ctx.fillStyle = T.seed;
+        ctx.globalAlpha = 0.8;
+        ctx.font = 'bold 24px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('CLEARED!', W / 2, H / 2 - 10);
+        ctx.font = '14px monospace';
+        ctx.fillStyle = T.text;
+        ctx.globalAlpha = 0.6;
+        ctx.fillText('+' + (level * 10) + ' pts', W / 2, H / 2 + 15);
+        ctx.globalAlpha = 1;
+      }
+
+      // Start screen
+      if (phase === 'start') {
+        ctx.fillStyle = T.seed;
+        ctx.font = 'bold 32px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('BLOOM', W / 2, H * 0.35);
+        ctx.fillStyle = T.muted;
+        ctx.font = '13px monospace';
+        ctx.fillText('aim + launch seeds', W / 2, H * 0.35 + 26);
+        ctx.fillText('multiply through gates', W / 2, H * 0.35 + 44);
+        ctx.fillText('crack the wall', W / 2, H * 0.35 + 62);
+        ctx.fillStyle = T.text;
+        ctx.font = '15px monospace';
+        ctx.fillText('TAP TO START', W / 2, H * 0.55);
+        if (bestScore > 0) {
+          ctx.fillStyle = T.muted;
+          ctx.font = '12px monospace';
+          ctx.fillText('BEST: ' + bestScore, W / 2, H * 0.55 + 25);
+        }
+      }
+
+      // Game over
+      if (phase === 'over') {
+        ctx.fillStyle = 'rgba(248,250,252,0.85)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = T.thorn;
+        ctx.font = 'bold 20px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('WILTED', W / 2, H * 0.32);
+        ctx.fillStyle = T.text;
+        ctx.font = 'bold 40px monospace';
+        ctx.fillText(score, W / 2, H * 0.32 + 50);
+        ctx.font = '13px monospace';
+        ctx.fillStyle = T.muted;
+        ctx.fillText('Level ' + level, W / 2, H * 0.32 + 72);
+        if (score >= bestScore && score > 0) {
+          ctx.fillStyle = T.gate;
+          ctx.font = '14px monospace';
+          ctx.fillText('NEW RECORD', W / 2, H * 0.32 + 92);
+        } else {
+          ctx.fillStyle = T.muted;
+          ctx.font = '12px monospace';
+          ctx.fillText('BEST: ' + bestScore, W / 2, H * 0.32 + 92);
+        }
+        ctx.fillStyle = T.text;
+        ctx.font = '15px monospace';
+        ctx.fillText('TAP TO RETRY', W / 2, H * 0.6);
+      }
+
+      ctx.restore();
+    }
+
+    // --- LOOP ---
+    function gameLoop(timestamp) {
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+      lastTime = timestamp;
+      update(dt);
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    init();
+    requestAnimationFrame((t) => { lastTime = t; gameLoop(t); });
+  </script>
+</body>
+</html>
