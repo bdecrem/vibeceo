@@ -741,7 +741,7 @@ export default function ClaimGame() {
       ctx!.globalAlpha = 1;
 
       // Player firefly
-      if (game.phase !== 'over') {
+      if ((game.phase as string) !== 'over') {
         ctx!.fillStyle = T.firefly; ctx!.shadowBlur = 16; ctx!.shadowColor = T.firefly;
         ctx!.beginPath(); ctx!.arc(game.player.x, game.player.y, PLAYER_R, 0, Math.PI * 2); ctx!.fill();
         ctx!.shadowBlur = 0;
