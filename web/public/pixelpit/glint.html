@@ -66,7 +66,17 @@
     function playBounce(color) {
       if (!audioCtx) return;
       // Red=C4(261), Blue=E4(329), Green=G4(392)
-      const freq = color === 'red' ? 261.63 : color === 'blue' ? 329.63 : color === 'green' ? 392.00 : 440;
+      if (color === 'neutral') {
+        // Muted click for non-color bounces
+        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.02, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * (1 - j / d.length) * 0.4;
+        const src = audioCtx.createBufferSource(); src.buffer = buf;
+        const g = audioCtx.createGain(); g.gain.value = 0.08;
+        src.connect(g).connect(audioCtx.destination); src.start();
+        return;
+      }
+      const freq = color === 'red' ? 261.63 : color === 'blue' ? 329.63 : 392.00;
       const o = audioCtx.createOscillator(); o.type = 'triangle'; o.frequency.value = freq;
       const g = audioCtx.createGain(); g.gain.setValueAtTime(0.15, audioCtx.currentTime);
       g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
@@ -144,7 +154,7 @@
 
       if (lvl <= 10) {
         // Hand-tuned feel: increasing complexity
-        const numColorWalls = Math.min(3, 1 + Math.floor(lvl / 2));
+        const numColorWalls = 3; // always all 3 colors
         const numAbsorbers = lvl >= 5 ? Math.min(3, Math.floor((lvl - 4) / 2)) : 0;
         const hasMoving = lvl >= 7;
 
@@ -195,18 +205,16 @@
           });
         }
 
-        // Always ensure all 3 colors present from lvl 3+
-        if (lvl >= 3) {
-          for (const c of colors) {
-            if (!usedColors.includes(c)) {
-              walls.push({
-                x: ox + playW * (0.1 + Math.random() * 0.7),
-                y: oy + playH * (0.1 + Math.random() * 0.7),
-                w: Math.random() > 0.5 ? 60 + Math.random() * 30 : WALL_THICK,
-                h: Math.random() > 0.5 ? WALL_THICK : 60 + Math.random() * 30,
-                color: c,
-              });
-            }
+        // Ensure all 3 colors present (backup — numColorWalls is always 3 now)
+        for (const c of colors) {
+          if (!usedColors.includes(c)) {
+            walls.push({
+              x: ox + playW * (0.1 + Math.random() * 0.7),
+              y: oy + playH * (0.1 + Math.random() * 0.7),
+              w: Math.random() > 0.5 ? 60 + Math.random() * 30 : WALL_THICK,
+              h: Math.random() > 0.5 ? WALL_THICK : 60 + Math.random() * 30,
+              color: c,
+            });
           }
         }
       } else {
@@ -287,6 +295,7 @@
     let gameTime;
     let shotsThisLevel;
     let deathTimer;
+    let desatTimer;
 
     function init() {
       level = 0;
@@ -327,6 +336,7 @@
       freezeTimer = 0;
       flashTimer = 0;
       celebTimer = 0;
+      desatTimer = 0;
     }
 
     function resetShot() {
@@ -480,6 +490,14 @@
         return;
       }
       if (phase === 'cleared') return;
+      // Retry tap (bottom-left corner)
+      if (phase === 'aiming' || phase === 'flying') {
+        const touch = e.touches ? e.touches[0] : e;
+        if (touch.clientX < 90 && touch.clientY > H - 40) {
+          resetShot();
+          return;
+        }
+      }
       if (phase === 'aiming') {
         const touch = e.touches ? e.touches[0] : e;
         aiming = true;
@@ -566,10 +584,18 @@
         if (shard.y < safeTop + SHARD_R) { shard.y = safeTop + SHARD_R; shard.vy = Math.abs(shard.vy); edgeBounced = true; }
         if (shard.y > H - SHARD_R) { shard.y = H - SHARD_R; shard.vy = -Math.abs(shard.vy); edgeBounced = true; }
         if (edgeBounced) {
-          bounces++;
-          screenShake = 0.06;
-          spawnParticles(shard.x, shard.y, T.muted, 3);
-          playBounce('neutral');
+          // Edge bounces are FREE — don't count toward par
+          screenShake = 0.04;
+          spawnParticles(shard.x, shard.y, T.muted, 2);
+          // Muted click instead of musical note
+          if (audioCtx) {
+            const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.02, audioCtx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * (1 - j / d.length) * 0.5;
+            const src = audioCtx.createBufferSource(); src.buffer = buf;
+            const eg = audioCtx.createGain(); eg.gain.value = 0.06;
+            src.connect(eg).connect(audioCtx.destination); src.start();
+          }
         }
 
         // Wall collisions
@@ -643,6 +669,7 @@
               screenShake = 0.08;
               flashTimer = 0.1;
               flashColor = T.red;
+              desatTimer = 0.15;
               spawnParticles(target.x, target.y, T.muted, 6);
             }
           }
@@ -690,6 +717,7 @@
       // Screen shake decay
       if (screenShake > 0) screenShake -= dt * 2;
       if (flashTimer > 0) flashTimer -= dt;
+      if (desatTimer > 0) desatTimer -= dt;
 
       // Particles
       for (const p of particles) {
@@ -714,6 +742,14 @@
       if (flashTimer > 0) {
         ctx.fillStyle = flashColor;
         ctx.globalAlpha = flashTimer * 3;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+      }
+
+      // Desaturate overlay (wrong-color prism hit)
+      if (desatTimer > 0) {
+        ctx.fillStyle = '#333';
+        ctx.globalAlpha = desatTimer * 3;
         ctx.fillRect(0, 0, W, H);
         ctx.globalAlpha = 1;
       }
@@ -749,6 +785,12 @@
           ctx.lineWidth = 1;
           ctx.strokeRect(wall.x, wall.y, wall.w, wall.h);
           ctx.globalAlpha = 1;
+          // Letter label for accessibility
+          const label = wall.color === 'red' ? 'R' : wall.color === 'blue' ? 'B' : 'G';
+          ctx.fillStyle = T.white;
+          ctx.font = 'bold 10px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(label, wall.x + wall.w / 2, wall.y + wall.h / 2 + 4);
         }
       }
 
@@ -900,6 +942,16 @@
           ctx.font = '11px monospace';
           ctx.textAlign = 'left';
           ctx.fillText('SHOT ' + shotsThisLevel, 12, safeTop + 40);
+        }
+
+        // Retry button (bottom-left)
+        if (phase === 'aiming' || phase === 'flying') {
+          ctx.fillStyle = T.muted;
+          ctx.globalAlpha = 0.5;
+          ctx.font = '12px monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText('↺ RETRY', 12, H - 16);
+          ctx.globalAlpha = 1;
         }
       }
 
