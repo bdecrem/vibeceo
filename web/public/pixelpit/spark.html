@@ -45,8 +45,9 @@
     };
 
     // --- CONSTANTS ---
-    const STROKE_W = 6;
-    const GRAVITY = 400; // px/s² — gentle drop, predictable landing
+    const STROKE_W_MIN = 4;
+    const STROKE_W_MAX = 8;
+    const GRAVITY = 600; // px/s²
     const DROP_DAMPING = 0.3; // bounce factor
     const LIGHTNING_DELAY = 1.5; // seconds after drop settles
     const LIGHTNING_SPEED = 800; // px/s arc travel
@@ -85,8 +86,9 @@
       const freq = 200 - Math.min(mass * 0.5, 120);
       const o = audioCtx.createOscillator(); o.type = 'triangle'; o.frequency.value = freq;
       const g = audioCtx.createGain(); g.gain.setValueAtTime(0.15, audioCtx.currentTime);
-      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
-      o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.15);
+      g.gain.linearRampToValueAtTime(0.03, audioCtx.currentTime + 0.12);
+      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25);
+      o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.25);
       // Noise
       const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.04, audioCtx.sampleRate);
       const d = buf.getChannelData(0);
@@ -137,6 +139,30 @@
       const src = audioCtx.createBufferSource(); src.buffer = buf;
       const g = audioCtx.createGain(); g.gain.value = 0.1;
       src.connect(g).connect(audioCtx.destination); src.start();
+    }
+
+    function startChargingHum() {
+      if (!audioCtx) return;
+      chargeNode = audioCtx.createOscillator(); chargeNode.type = 'sine';
+      chargeNode.frequency.setValueAtTime(60, audioCtx.currentTime);
+      chargeNode.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + LIGHTNING_DELAY);
+      chargeGain = audioCtx.createGain();
+      chargeGain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+      chargeGain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + LIGHTNING_DELAY);
+      chargeNode.connect(chargeGain).connect(audioCtx.destination);
+      chargeNode.start(); chargeNode.stop(audioCtx.currentTime + LIGHTNING_DELAY + 0.1);
+    }
+
+    function startArcTone(duration) {
+      if (!audioCtx) return;
+      arcToneNode = audioCtx.createOscillator(); arcToneNode.type = 'sawtooth';
+      arcToneNode.frequency.setValueAtTime(200, audioCtx.currentTime);
+      arcToneNode.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + duration);
+      arcToneGain = audioCtx.createGain();
+      arcToneGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      arcToneGain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + duration);
+      arcToneNode.connect(arcToneGain).connect(audioCtx.destination);
+      arcToneNode.start(); arcToneNode.stop(audioCtx.currentTime + duration + 0.1);
     }
 
     // --- PERLIN-ISH NOISE for jagged lightning ---
@@ -241,6 +267,11 @@
     let attempts;
     let celebTimer;
     let drawSpeed; // for hum pitch
+    let zapsLeft; // 3 per level
+    let arcFadeTimer; // bright-to-dim sweep after success
+    let chargeNode, chargeGain; // charging hum during wait
+    let arcToneNode, arcToneGain; // rising tone during arc
+    let idleTimer; // auto-zap after 3s idle
 
     function init() {
       level = 0;
@@ -280,10 +311,12 @@
       celebTimer = 0;
       attempts = 0;
       drawSpeed = 0;
+      zapsLeft = 3;
+      arcFadeTimer = 0;
+      idleTimer = 0;
     }
 
     function retryLevel() {
-      attempts++;
       strokes = [];
       currentStroke = null;
       inkUsed = 0;
@@ -296,6 +329,8 @@
       arcProgress = 0;
       arcReachedTarget = false;
       drawSpeed = 0;
+      arcFadeTimer = 0;
+      idleTimer = 0;
     }
 
     // --- STROKE LENGTH ---
@@ -577,14 +612,7 @@
 
       // Zap button tap (launch lightning manually)
       if (phase === 'drawing' && tx > W - 70 && ty > H - 40) {
-        if (strokes.length > 0) {
-          phase = 'dropping';
-          dropTimer = 0;
-          for (const stroke of strokes) {
-            stroke.vy = 0;
-            stroke.settled = false;
-          }
-        }
+        triggerZap();
         return;
       }
 
@@ -593,7 +621,7 @@
         for (const ins of insulators) {
           if (pointInRect(tx, ty, ins)) return;
         }
-        currentStroke = [{ x: tx, y: ty }];
+        currentStroke = [{ x: tx, y: ty, w: STROKE_W_MAX }];
       }
     }
 
@@ -615,9 +643,12 @@
           if (segmentIntersectsRect(last.x, last.y, tx, ty, ins)) return;
         }
 
-        currentStroke.push({ x: tx, y: ty });
+        // Pressure sim: slow=thick, fast=thin
+        const strokeW = STROKE_W_MAX - Math.min(dist / 15, 1) * (STROKE_W_MAX - STROKE_W_MIN);
+        currentStroke.push({ x: tx, y: ty, w: strokeW });
         inkUsed += dist;
         drawSpeed = dist;
+        idleTimer = 0; // reset auto-zap
 
         // Draw hum (occasional, not every frame)
         if (currentStroke.length % 3 === 0) playDrawHum(dist);
@@ -651,9 +682,7 @@
         if (phase === 'over') { init(); initAudio(); setupLevel(1); return; }
         if (phase === 'failed') { retryLevel(); return; }
         if (phase === 'drawing' && strokes.length > 0) {
-          phase = 'dropping';
-          dropTimer = 0;
-          for (const stroke of strokes) { stroke.vy = 0; stroke.settled = false; }
+          triggerZap();
         }
       }
       if (e.code === 'KeyR' && phase === 'drawing') retryLevel();
@@ -662,19 +691,35 @@
     // --- UPDATE ---
     let lastTime = 0;
 
+    function triggerZap() {
+      if (strokes.length === 0) return;
+      phase = 'dropping';
+      dropTimer = 0;
+      idleTimer = 0;
+      for (const stroke of strokes) { stroke.vy = 0; stroke.settled = false; }
+    }
+
     function update(dt) {
       if (phase === 'start' || phase === 'over') { gameTime += dt; return; }
       gameTime += dt;
+
+      // Auto-zap timer (3s idle after last stroke)
+      if (phase === 'drawing' && strokes.length > 0 && !currentStroke) {
+        idleTimer += dt;
+        if (idleTimer >= 3.0) {
+          triggerZap();
+        }
+      }
 
       // Dropping phase
       if (phase === 'dropping') {
         dropTimer += dt;
         const allSettled = dropStrokes(dt);
         if (allSettled || dropTimer > 1.0) {
-          // Force settle
           for (const stroke of strokes) stroke.settled = true;
           phase = 'waiting';
           waitTimer = 0;
+          startChargingHum();
         }
       }
 
@@ -682,7 +727,6 @@
       if (phase === 'waiting') {
         waitTimer += dt;
         if (waitTimer >= LIGHTNING_DELAY) {
-          // Fire lightning
           const path = findElectricPath();
           if (path) {
             arcPath = buildArcPath(path);
@@ -690,10 +734,22 @@
             arcReachedTarget = false;
             phase = 'arcing';
             arcTimer = 0;
+            arcFadeTimer = 0;
             playCrack();
+            const totalLen = arcPathLength();
+            startArcTone(totalLen / LIGHTNING_SPEED);
           } else {
             // No path — fizzle
-            phase = 'failed';
+            zapsLeft--;
+            if (zapsLeft <= 0) {
+              phase = 'over';
+              if (score >= bestScore) {
+                bestScore = score;
+                localStorage.setItem('spark_best', bestScore);
+              }
+            } else {
+              phase = 'failed';
+            }
             spawnParticles(source.x, source.y, T.bolt, 8);
             playFizzle();
           }
@@ -703,16 +759,14 @@
       // Arcing phase
       if (phase === 'arcing') {
         arcTimer += dt;
-        // Arc travels along path
         const totalLen = arcPathLength();
         arcProgress = Math.min(1, arcTimer * LIGHTNING_SPEED / totalLen);
 
         if (arcProgress >= 1 && !arcReachedTarget) {
           arcReachedTarget = true;
-          // SUCCESS
           phase = 'cleared';
           celebTimer = 0;
-          // Score
+          arcFadeTimer = 0.3; // bright-to-dim sweep
           const stars = inkUsed <= parInk ? 3 : inkUsed <= inkLimit * 0.85 ? 2 : 1;
           const levelScore = level * 10 + stars * 5;
           score += levelScore;
@@ -725,6 +779,9 @@
           setTimeout(() => playSuccess(), 100);
         }
       }
+
+      // Arc fade
+      if (arcFadeTimer > 0) arcFadeTimer -= dt;
 
       // Cleared
       if (phase === 'cleared') {
@@ -784,20 +841,25 @@
         ctx.strokeRect(plat.x, plat.y, plat.w, plat.h);
       }
 
-      // Insulators
+      // Insulators (with diagonal hatching)
       for (const ins of insulators) {
-        ctx.fillStyle = 'rgba(34,211,238,0.08)';
+        ctx.fillStyle = 'rgba(34,211,238,0.15)';
         ctx.fillRect(ins.x, ins.y, ins.w, ins.h);
+        // Diagonal hatching
+        ctx.strokeStyle = T.insulator;
+        ctx.globalAlpha = 0.2;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        const step = 8;
+        for (let i = 0; i < ins.w + ins.h; i += step) {
+          ctx.moveTo(ins.x + Math.min(i, ins.w), ins.y + Math.max(0, i - ins.w));
+          ctx.lineTo(ins.x + Math.max(0, i - ins.h), ins.y + Math.min(i, ins.h));
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1;
         ctx.strokeStyle = T.insulator;
         ctx.lineWidth = INSULATOR_BORDER;
         ctx.strokeRect(ins.x, ins.y, ins.w, ins.h);
-        // Label
-        ctx.fillStyle = T.insulator;
-        ctx.font = '8px monospace';
-        ctx.textAlign = 'center';
-        ctx.globalAlpha = 0.6;
-        ctx.fillText('INS', ins.x + ins.w / 2, ins.y + ins.h / 2 + 3);
-        ctx.globalAlpha = 1;
       }
 
       // Source (lightning origin)
@@ -808,11 +870,15 @@
       ctx.arc(source.x, source.y, SOURCE_R, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
-      // Lightning bolt icon
-      ctx.fillStyle = T.white;
-      ctx.font = 'bold 12px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('⚡', source.x, source.y + 4);
+      // Lightning bolt icon (drawn zigzag, no emoji)
+      ctx.strokeStyle = T.white;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(source.x - 3, source.y - 7);
+      ctx.lineTo(source.x + 2, source.y - 1);
+      ctx.lineTo(source.x - 2, source.y + 1);
+      ctx.lineTo(source.x + 3, source.y + 7);
+      ctx.stroke();
 
       // Target (ground rod)
       const targetPulse = Math.sin(gameTime * 3) * 0.3 + 0.7;
@@ -823,44 +889,80 @@
       ctx.arc(targetPos.x, targetPos.y, TARGET_R, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
-      // Ground symbol
+      // Ground symbol (1.5x scale + glow)
       ctx.strokeStyle = T.white;
-      ctx.lineWidth = 2;
+      ctx.shadowColor = T.target;
+      ctx.shadowBlur = 6 * targetPulse;
+      ctx.lineWidth = 2.5;
       const gx = targetPos.x, gy = targetPos.y;
       ctx.beginPath();
-      ctx.moveTo(gx, gy - 5); ctx.lineTo(gx, gy + 2);
-      ctx.moveTo(gx - 6, gy + 2); ctx.lineTo(gx + 6, gy + 2);
-      ctx.moveTo(gx - 4, gy + 5); ctx.lineTo(gx + 4, gy + 5);
-      ctx.moveTo(gx - 2, gy + 8); ctx.lineTo(gx + 2, gy + 8);
+      ctx.moveTo(gx, gy - 8); ctx.lineTo(gx, gy + 3);
+      ctx.moveTo(gx - 9, gy + 3); ctx.lineTo(gx + 9, gy + 3);
+      ctx.moveTo(gx - 6, gy + 7); ctx.lineTo(gx + 6, gy + 7);
+      ctx.moveTo(gx - 3, gy + 11); ctx.lineTo(gx + 3, gy + 11);
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
-      // Drawn strokes (copper)
+      // Drawn strokes (copper, pressure-sensitive width)
       for (const stroke of strokes) {
         if (stroke.points.length < 2) continue;
         ctx.strokeStyle = T.copper;
-        ctx.lineWidth = STROKE_W;
         ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
         ctx.shadowColor = T.copperHi;
         ctx.shadowBlur = 4;
-        ctx.beginPath();
-        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
         for (let i = 1; i < stroke.points.length; i++) {
+          ctx.lineWidth = stroke.points[i].w || 6;
+          ctx.beginPath();
+          ctx.moveTo(stroke.points[i - 1].x, stroke.points[i - 1].y);
           ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+          ctx.stroke();
         }
-        ctx.stroke();
         ctx.shadowBlur = 0;
+      }
 
-        // Highlight edge
-        ctx.strokeStyle = T.copperHi;
-        ctx.lineWidth = 1;
-        ctx.globalAlpha = 0.4;
-        ctx.beginPath();
-        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
-        for (let i = 1; i < stroke.points.length; i++) {
-          ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+      // Connection feedback lines (cyan dotted between nearby stroke endpoints)
+      if (phase === 'drawing' || phase === 'dropping' || phase === 'waiting') {
+        const CONNECT_DIST = 25;
+        const endpoints = [];
+        // Source + target as connection points
+        endpoints.push({ x: source.x, y: source.y });
+        for (const stroke of strokes) {
+          if (stroke.points.length < 2) continue;
+          endpoints.push(stroke.points[0]);
+          endpoints.push(stroke.points[stroke.points.length - 1]);
         }
-        ctx.stroke();
+        endpoints.push({ x: targetPos.x, y: targetPos.y });
+        ctx.strokeStyle = T.bolt;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.25;
+        ctx.setLineDash([3, 5]);
+        for (let i = 0; i < endpoints.length; i++) {
+          for (let j = i + 1; j < endpoints.length; j++) {
+            const d = Math.hypot(endpoints[i].x - endpoints[j].x, endpoints[i].y - endpoints[j].y);
+            if (d <= CONNECT_DIST && d > 3) {
+              ctx.beginPath();
+              ctx.moveTo(endpoints[i].x, endpoints[i].y);
+              ctx.lineTo(endpoints[j].x, endpoints[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+      }
+
+      // Connectivity radius circles on stroke endpoints
+      if (phase === 'drawing') {
+        ctx.strokeStyle = T.bolt;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.08;
+        for (const stroke of strokes) {
+          if (stroke.points.length < 2) continue;
+          const first = stroke.points[0];
+          const last = stroke.points[stroke.points.length - 1];
+          ctx.beginPath(); ctx.arc(first.x, first.y, 25, 0, Math.PI * 2); ctx.stroke();
+          ctx.beginPath(); ctx.arc(last.x, last.y, 25, 0, Math.PI * 2); ctx.stroke();
+        }
         ctx.globalAlpha = 1;
       }
 
@@ -887,32 +989,33 @@
         }
       }
 
-      // Current stroke being drawn
+      // Current stroke being drawn (pressure-sensitive)
       if (currentStroke && currentStroke.length >= 2) {
         ctx.strokeStyle = T.copperHi;
-        ctx.lineWidth = STROKE_W;
         ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
         ctx.globalAlpha = 0.7;
-        ctx.beginPath();
-        ctx.moveTo(currentStroke[0].x, currentStroke[0].y);
         for (let i = 1; i < currentStroke.length; i++) {
+          ctx.lineWidth = currentStroke[i].w || 6;
+          ctx.beginPath();
+          ctx.moveTo(currentStroke[i - 1].x, currentStroke[i - 1].y);
           ctx.lineTo(currentStroke[i].x, currentStroke[i].y);
+          ctx.stroke();
         }
-        ctx.stroke();
         ctx.globalAlpha = 1;
       }
 
-      // Lightning arc
-      if (phase === 'arcing' && arcPath && arcPath.length >= 2) {
-        const drawTo = Math.floor(arcProgress * (arcPath.length - 1));
+      // Lightning arc (active or fading)
+      const showArc = (phase === 'arcing' || (phase === 'cleared' && arcFadeTimer > 0)) && arcPath && arcPath.length >= 2;
+      if (showArc) {
+        const drawTo = phase === 'arcing' ? Math.floor(arcProgress * (arcPath.length - 1)) : arcPath.length - 1;
+        const fadeAlpha = phase === 'cleared' ? arcFadeTimer / 0.3 : 1;
 
         // Glow
         ctx.strokeStyle = T.bolt;
         ctx.lineWidth = 4;
         ctx.shadowColor = T.bolt;
         ctx.shadowBlur = 16;
-        ctx.globalAlpha = 0.6;
+        ctx.globalAlpha = 0.6 * fadeAlpha;
         ctx.beginPath();
         ctx.moveTo(arcPath[0].x, arcPath[0].y);
         for (let i = 1; i <= drawTo; i++) {
@@ -924,7 +1027,7 @@
         // Core
         ctx.strokeStyle = T.boltEdge;
         ctx.lineWidth = 2;
-        ctx.globalAlpha = 0.9;
+        ctx.globalAlpha = 0.9 * fadeAlpha;
         ctx.beginPath();
         ctx.moveTo(arcPath[0].x, arcPath[0].y);
         for (let i = 1; i <= drawTo; i++) {
@@ -995,6 +1098,12 @@
         ctx.textAlign = 'center';
         ctx.fillText('INK', W / 2, meterY + meterH + 12);
 
+        // Zap counter
+        ctx.fillStyle = zapsLeft <= 1 ? T.red : T.muted;
+        ctx.font = '11px monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('ZAP ' + zapsLeft + '/3', W - 12, safeTop + 40);
+
         // Buttons (drawing phase)
         if (phase === 'drawing') {
           ctx.fillStyle = T.muted;
@@ -1003,7 +1112,7 @@
           ctx.textAlign = 'left';
           ctx.fillText('↺ RETRY', 12, H - 16);
           ctx.textAlign = 'right';
-          ctx.fillText('ZAP ⚡', W - 12, H - 16);
+          ctx.fillText('ZAP', W - 12, H - 16);
           ctx.globalAlpha = 1;
         }
       }
@@ -1045,7 +1154,8 @@
         ctx.fillText('NO PATH', W / 2, H / 2 - 10);
         ctx.fillStyle = T.muted;
         ctx.font = '13px monospace';
-        ctx.fillText('TAP TO RETRY', W / 2, H / 2 + 20);
+        ctx.fillText(zapsLeft + ' zap' + (zapsLeft !== 1 ? 's' : '') + ' left', W / 2, H / 2 + 15);
+        ctx.fillText('TAP TO RETRY', W / 2, H / 2 + 35);
       }
 
       // Game over (shouldn't normally happen — infinite retries, but just in case)
@@ -1078,21 +1188,47 @@
 
       // Start screen
       if (phase === 'start') {
-        // Lightning bolt decoration
-        ctx.strokeStyle = T.bolt;
-        ctx.lineWidth = 3;
+        // Mock source → copper path → frozen arc → target
+        const mockSrcY = H * 0.14, mockTgtY = H * 0.28;
+        // Source circle
+        ctx.fillStyle = T.bolt;
         ctx.shadowColor = T.bolt;
-        ctx.shadowBlur = 12;
-        ctx.globalAlpha = 0.5;
-        const bx = W / 2, by = H * 0.2;
+        ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.arc(W / 2, mockSrcY, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+        // Copper squiggle
+        ctx.strokeStyle = T.copper;
+        ctx.lineWidth = 5;
+        ctx.shadowColor = T.copperHi;
+        ctx.shadowBlur = 4;
         ctx.beginPath();
-        ctx.moveTo(bx - 8, by - 20);
-        ctx.lineTo(bx + 4, by - 2);
-        ctx.lineTo(bx - 4, by + 2);
-        ctx.lineTo(bx + 8, by + 20);
+        ctx.moveTo(W / 2, mockSrcY + 10);
+        ctx.quadraticCurveTo(W / 2 + 30, mockSrcY + 30, W / 2 - 10, mockSrcY + 50);
+        ctx.quadraticCurveTo(W / 2 - 30, mockSrcY + 65, W / 2 + 5, mockSrcY + 80);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        // Frozen arc along the path
+        ctx.strokeStyle = T.bolt;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = T.bolt;
+        ctx.shadowBlur = 10;
+        ctx.globalAlpha = 0.5 + Math.sin(gameTime * 3) * 0.2;
+        ctx.beginPath();
+        ctx.moveTo(W / 2, mockSrcY + 10);
+        ctx.lineTo(W / 2 + 12, mockSrcY + 25);
+        ctx.lineTo(W / 2 - 5, mockSrcY + 40);
+        ctx.lineTo(W / 2 + 15, mockSrcY + 55);
+        ctx.lineTo(W / 2 - 8, mockSrcY + 70);
+        ctx.lineTo(W / 2 + 5, mockSrcY + 80);
         ctx.stroke();
         ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
+        // Target circle
+        ctx.fillStyle = T.target;
+        ctx.shadowColor = T.target;
+        ctx.shadowBlur = 6;
+        ctx.beginPath(); ctx.arc(W / 2, mockSrcY + 90, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
 
         ctx.fillStyle = T.bolt;
         ctx.font = 'bold 32px monospace';
