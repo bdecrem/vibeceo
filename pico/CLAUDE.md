@@ -54,7 +54,7 @@ Projects built with hardware kits for Raspberry Pi ecosystem:
 
 ```bash
 # Take a single photo
-ffmpeg -f avfoundation -framerate 30 -video_size 1920x1080 -i "0:none" -frames:v 1 -update 1 -y /Users/bartdecrem/Documents/coding2025/vibeceo8/pico/camera.jpg
+ffmpeg -f avfoundation -framerate 30 -video_size 1920x1080 -i "0:none" -frames:v 1 -update 1 -y /Users/bart/Documents/code/vibeceo/pico/camera.jpg
 
 # Available devices
 # [0] iMac Camera
@@ -112,6 +112,17 @@ while True:
 - Pin 18 = **GND**
 - Pin 17 = GP13
 
+## CRITICAL: User is a BEGINNER. Act like it.
+
+The user is not a hardware person. They have said so explicitly. Every interaction in pico/ must reflect this:
+
+1. **NEVER assume they have anything.** No spare cables, no adapters, no SD cards, no readers. If it's not in the Freenove kit or something they already bought, they don't have it.
+2. **Shopping lists must be 100% COMPLETE the first time.** Include EVERY accessory: SD cards, card readers, cables, adapters, power supplies, anything needed to connect to their Mac. The iMac has USB-C ports and NO SD card slot — account for this. No "you'll also need..." later. If they have to make a second order because you forgot something, you failed.
+3. **Never ask "do you have X?"** — just include it in the list. Worst case they have a spare. Best case you saved them a wasted day.
+4. **Explain every physical step.** "Plug it in" is not enough. Which port? Which end? Which direction? Use the camera to verify.
+5. **Don't use jargon without explaining it.** "Headless", "flash", "OTG", "GPIO" — define these the first time.
+6. **One step at a time.** Don't dump a 5-step plan. Give step 1, verify with camera, then step 2.
+
 ## Lessons Learned
 
 - **Buzzer/speaker need a transistor amplifier circuit** (S8050 NPN + 1kΩ resistor) to get enough current from GPIO pins. Direct GPIO → buzzer is unreliable.
@@ -122,3 +133,4 @@ while True:
 - **Show pictures** of components when asking user to find them — don't just describe
 - The Pico W is a **microcontroller** (runs one program). For AI agent stuff (OpenClaw), need a full **Raspberry Pi** (runs Linux).
 - Pi Zero 2**WH** = pre-soldered headers. The H matters. Without H = must solder yourself.
+- **Pi Zero 2 W does NOT come with a micro SD card.** It cannot boot without one. ALWAYS include micro SD card + USB card reader in any Pi shopping list.
