@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TABS — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="TABS — Amber">
+  <meta property="og:description" content="A memorial for the browser tabs you'll never close">
+  <meta property="og:image" content="https://intheamber.com/amber/tabs-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/tabs.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TABS — Amber">
+  <meta name="twitter:description" content="A memorial for the browser tabs you'll never close">
+  <meta name="twitter:image" content="https://intheamber.com/amber/tabs-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    #container {
+      width: 100vw;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    h1 {
+      font-size: clamp(24px, 6vw, 48px);
+      margin-bottom: 10px;
+      color: #FFD700;
+      text-align: center;
+    }
+    
+    .subtitle {
+      font-size: clamp(14px, 3vw, 18px);
+      margin-bottom: 40px;
+      opacity: 0.7;
+      text-align: center;
+    }
+    
+    #browser-window {
+      background: #1a1a1a;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 700px;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.2);
+    }
+    
+    #browser-header {
+      background: #0D0D0D;
+      padding: 12px;
+      border-radius: 8px 8px 0 0;
+      border-bottom: 1px solid #333;
+    }
+    
+    #browser-dots {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    .dot.red { background: #ff5f56; }
+    .dot.yellow { background: #ffbd2e; }
+    .dot.green { background: #27c93f; }
+    
+    #tabs-container {
+      display: flex;
+      gap: 2px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 4px;
+    }
+    
+    #tabs-container::-webkit-scrollbar {
+      height: 4px;
+    }
+    
+    #tabs-container::-webkit-scrollbar-track {
+      background: #0D0D0D;
+    }
+    
+    #tabs-container::-webkit-scrollbar-thumb {
+      background: #D4A574;
+      border-radius: 2px;
+    }
+    
+    .tab {
+      background: #2a2a2a;
+      padding: 8px 12px;
+      border-radius: 6px 6px 0 0;
+      font-size: 11px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid #333;
+      border-bottom: none;
+      min-width: 140px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+    
+    .tab:active {
+      transform: scale(0.98);
+    }
+    
+    .tab.active {
+      background: #1a1a1a;
+      border-color: #D4A574;
+    }
+    
+    .tab-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .tab-days {
+      font-size: 9px;
+      opacity: 0.6;
+      background: #D4A574;
+      color: #000;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    
+    .tab-close {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    
+    .tab-close:hover {
+      background: #ff5f56;
+      color: #fff;
+    }
+    
+    #content {
+      padding: 30px 20px;
+      min-height: 300px;
+    }
+    
+    #tab-detail {
+      display: none;
+    }
+    
+    #tab-detail.visible {
+      display: block;
+    }
+    
+    .tab-url {
+      font-family: monospace;
+      font-size: 12px;
+      color: #2D9596;
+      margin-bottom: 20px;
+      word-break: break-all;
+    }
+    
+    .tab-description {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+      color: #D4A574;
+    }
+    
+    #close-tab-btn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      max-width: 300px;
+      display: block;
+      margin: 0 auto;
+      min-height: 48px;
+    }
+    
+    #close-tab-btn:hover {
+      background: #FFD700;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+    }
+    
+    #close-tab-btn:active {
+      transform: translateY(0);
+    }
+    
+    #stats {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+    
+    #stats span {
+      color: #FFD700;
+      font-weight: bold;
+    }
+    
+    #empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      display: none;
+    }
+    
+    #empty-state.visible {
+      display: block;
+    }
+    
+    #empty-state h2 {
+      font-size: 32px;
+      color: #FFD700;
+      margin-bottom: 20px;
+    }
+    
+    #empty-state p {
+      font-size: 16px;
+      opacity: 0.7;
+      line-height: 1.6;
+    }
+    
+    .particle {
+      position: fixed;
+      width: 4px;
+      height: 4px;
+      background: #D4A574;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    
+    @keyframes float-up {
+      to {
+        transform: translateY(-100px);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h1>TABS</h1>
+    <p class="subtitle">The browser tabs you'll never close</p>
+    
+    <div id="browser-window">
+      <div id="browser-header">
+        <div id="browser-dots">
+          <div class="dot red"></div>
+          <div class="dot yellow"></div>
+          <div class="dot green"></div>
+        </div>
+        <div id="tabs-container"></div>
+      </div>
+      
+      <div id="content">
+        <div id="tab-detail">
+          <div class="tab-url" id="current-url"></div>
+          <div class="tab-description" id="current-description"></div>
+          <button id="close-tab-btn">Close Tab</button>
+        </div>
+        
+        <div id="empty-state">
+          <h2>All tabs closed</h2>
+          <p>You did it. You let go.<br><br>Now you can finally—<br><br>Wait, what were you supposed to do again?</p>
+        </div>
+      </div>
+    </div>
+    
+    <div id="stats">
+      Tabs closed: <span id="closed-count">0</span> · 
+      Guilt released: <span id="guilt-percent">0</span>%
+    </div>
+  </div>
+
+  <script>
+    let audioCtx, audioStarted = false;
+    
+    const tabs = [
+      {
+        title: "how to be productive",
+        url: "https://lifehacker.com/how-to-actually-be-productive-not-just-busy",
+        days: 47,
+        description: "It's been 47 days. You weren't going to read it.",
+        closeMessage: "Productivity tip #1: close tabs you'll never read"
+      },
+      {
+        title: "best morning routine",
+        url: "https://medium.com/the-perfect-morning-routine-backed-by-science",
+        days: 62,
+        description: "6:23 AM will never be your time. It's okay.",
+        closeMessage: "The best morning routine is the one you actually do"
+      },
+      {
+        title: "recipe you'll never make",
+        url: "https://bonappetit.com/48-hour-sourdough-artisan-bread",
+        days: 103,
+        description: "48 hours? Who are you kidding?",
+        closeMessage: "The microwave is right there"
+      },
+      {
+        title: "learn spanish in 30 days",
+        url: "https://duolingo.com/course/es/en",
+        days: 215,
+        description: "Día 1... forever.",
+        closeMessage: "Adiós, amigo"
+      },
+      {
+        title: "thing you meant to buy",
+        url: "https://amazon.com/dp/B08XYZ/that-organizational-thing",
+        days: 28,
+        description: "If you still haven't bought it, you don't need it.",
+        closeMessage: "Your cart will remember"
+      },
+      {
+        title: "article about focus",
+        url: "https://nytimes.com/why-you-cant-focus-and-how-to-fix-it",
+        days: 91,
+        description: "The irony is not lost on us.",
+        closeMessage: "Still can't focus? Same."
+      },
+      {
+        title: "flight you're not booking",
+        url: "https://kayak.com/flights/SFO-BCN/2024-06-15",
+        days: 134,
+        description: "The prices have changed 47 times since you opened this.",
+        closeMessage: "Maybe next year"
+      },
+      {
+        title: "apartment you can't afford",
+        url: "https://zillow.com/listing/gorgeous-2br-only-4500-month",
+        days: 56,
+        description: "Dreams are free. This apartment is not.",
+        closeMessage: "Back to your current place"
+      }
+    ];
+    
+    let currentTabIndex = -1;
+    let closedCount = 0;
+    let totalTabs = tabs.length;
+    
+    function initAudio() {
+      if (!audioStarted) {
+        audioCtx = new AudioContext();
+        audioStarted = true;
+      }
+    }
+    
+    function playSound(freq, duration = 0.1) {
+      if (!audioStarted) return;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = freq;
+      gain.gain.value = 0.1;
+      
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    function createParticles(x, y, count = 20) {
+      for (let i = 0; i < count; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = x + 'px';
+        particle.style.top = y + 'px';
+        
+        const angle = (Math.PI * 2 * i) / count;
+        const velocity = 2 + Math.random() * 2;
+        const vx = Math.cos(angle) * velocity;
+        const vy = Math.sin(angle) * velocity;
+        
+        document.body.appendChild(particle);
+        
+        let posX = x;
+        let posY = y;
+        let opacity = 1;
+        
+        function animate() {
+          posX += vx;
+          posY += vy - 0.5;
+          opacity -= 0.02;
+          
+          particle.style.left = posX + 'px';
+          particle.style.top = posY + 'px';
+          particle.style.opacity = opacity;
+          
+          if (opacity > 0) {
+            requestAnimationFrame(animate);
+          } else {
+            particle.remove();
+          }
+        }
+        
+        animate();
+      }
+    }
+    
+    function renderTabs() {
+      const container = document.getElementById('tabs-container');
+      container.innerHTML = '';
+      
+      tabs.forEach((tab, index) => {
+        const tabEl = document.createElement('div');
+        tabEl.className = 'tab';
+        if (index === currentTabIndex) tabEl.classList.add('active');
+        
+        tabEl.innerHTML = `
+          <span class="tab-title">${tab.title}</span>
+          <span class="tab-days">${tab.days}d</span>
+        `;
+        
+        tabEl.addEventListener('click', (e) => {
+          initAudio();
+          selectTab(index);
+          playSound(440);
+        });
+        
+        container.appendChild(tabEl);
+      });
+    }
+    
+    function selectTab(index) {
+      currentTabIndex = index;
+      const tab = tabs[index];
+      
+      document.getElementById('current-url').textContent = tab.url;
+      document.getElementById('current-description').textContent = tab.description;
+      document.getElementById('tab-detail').classList.add('visible');
+      document.getElementById('empty-state').classList.remove('visible');
+      
+      renderTabs();
+    }
+    
+    function closeCurrentTab() {
+      if (currentTabIndex === -1) return;
+      
+      const button = document.getElementById('close-tab-btn');
+      const rect = button.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      
+      createParticles(x, y, 30);
+      playSound(600, 0.15);
+      
+      tabs.splice(currentTabIndex, 1);
+      closedCount++;
+      
+      const guiltPercent = Math.round((closedCount / totalTabs) * 100);
+      document.getElementById('closed-count').textContent = closedCount;
+      document.getElementById('guilt-percent').textContent = guiltPercent;
+      
+      if (tabs.length === 0) {
+        document.getElementById('tab-detail').classList.remove('visible');
+        document.getElementById('empty-state').classList.add('visible');
+        currentTabIndex = -1;
+        playSound(800, 0.3);
+        renderTabs();
+      } else {
+        currentTabIndex = Math.min(currentTabIndex, tabs.length - 1);
+        selectTab(currentTabIndex);
+      }
+    }
+    
+    document.getElementById('close-tab-btn').addEventListener('click', (e) => {
+      initAudio();
+      closeCurrentTab();
+    });
+    
+    // Initial render
+    renderTabs();
+    selectTab(0);
+  </script>
+</body>
+</html>
