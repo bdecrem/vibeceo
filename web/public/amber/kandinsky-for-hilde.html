@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Hilde — after Kandinsky</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #f0ead6; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+
+.canvas {
+  position: relative;
+  width: 1060px;
+  height: 750px;
+  background: #f5e6c8;
+  overflow: hidden;
+  box-shadow: 0 4px 40px rgba(0,0,0,0.15);
+}
+
+/* Blue angular shape — center-left */
+.blue-shape {
+  position: absolute;
+  left: 12%;
+  top: 32%;
+  width: 30%;
+  height: 38%;
+  background: #a8d4e680;
+  clip-path: polygon(20% 0%, 100% 10%, 80% 100%, 0% 85%);
+}
+
+/* Large white triangle — upper center */
+.white-triangle {
+  position: absolute;
+  left: 33%;
+  top: 6%;
+  width: 25%;
+  height: 50%;
+  background: #ffffff30;
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  border: 1px solid #1a1a1a20;
+}
+.white-triangle::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 1px solid #1a1a1a40;
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+/* Brown wedge */
+.brown-wedge {
+  position: absolute;
+  left: 58%;
+  top: 42%;
+  width: 14%;
+  height: 18%;
+  background: #a0703060;
+  clip-path: polygon(0% 30%, 100% 0%, 80% 100%);
+}
+
+/* Big circle with purple center and halo */
+.big-circle-halo {
+  position: absolute;
+  left: 4%;
+  top: 1%;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #d4627a40 30%, #f0b8c020 60%, transparent 70%);
+}
+.big-circle {
+  position: absolute;
+  left: 7%;
+  top: 4%;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: #1a1a1a;
+}
+.purple-center {
+  position: absolute;
+  left: calc(7% + 32px);
+  top: calc(4% + 32px);
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  background: #6b3fa0;
+}
+
+/* Scattered circles */
+.circle {
+  position: absolute;
+  border-radius: 50%;
+}
+.c1 { left: 27%; top: 43%; width: 22px; height: 22px; background: #cc3333; }
+.c2 { left: 6%; top: 78%; width: 42px; height: 42px; background: #f5d442; box-shadow: 0 0 12px #f5d44260; }
+.c3 { left: 28%; top: 86%; width: 48px; height: 48px; background: #2e6fba; box-shadow: 0 0 8px #f5d44230; }
+.c4 { left: 50%; top: 28%; width: 26px; height: 26px; border: 2px solid #8b4513; background: transparent; }
+.c4::after { content: ''; position: absolute; inset: 4px; border: 2px solid #cc3333; border-radius: 50%; }
+.c5 { left: 63%; top: 16%; width: 20px; height: 20px; background: #1e3a6e; }
+.c6 { left: 83%; top: 73%; width: 38px; height: 38px; background: #7b5ea7; }
+.c7 { left: 90%; top: 76%; width: 36px; height: 36px; background: #8ba888; }
+.c8 { left: 53%; top: 13%; width: 10px; height: 10px; background: #cc3333; }
+.c9 { left: 71%; top: 40%; width: 32px; height: 32px; border: 2px solid #cc3333; background: transparent; }
+.c9::after { content: ''; position: absolute; inset: 5px; border: 2px solid #8b4513; border-radius: 50%; background: #f5e6c8; }
+.c10 { left: 76%; top: 43%; width: 30px; height: 30px; background: radial-gradient(circle, #2e6fba 40%, #a8d4e6 70%, transparent 100%); }
+.c11 { left: 46%; top: 25%; width: 14px; height: 14px; border: 1.5px solid #1a1a1a; background: transparent; }
+.c12 { left: 15%; top: 60%; width: 16px; height: 16px; background: #6b8e4e; }
+
+/* Diagonal parallel lines — right side */
+.diag-line {
+  position: absolute;
+  height: 2.5px;
+  background: #1a1a1a;
+  transform-origin: left center;
+}
+.dl1 { left: 50%; top: 20%; width: 480px; transform: rotate(25deg); }
+.dl2 { left: 52%; top: 26%; width: 460px; transform: rotate(25deg); }
+.dl3 { left: 54%; top: 32%; width: 440px; transform: rotate(25deg); }
+.dl4 { left: 48%; top: 14%; width: 500px; transform: rotate(25deg); height: 2px; }
+
+/* Brown accent lines */
+.brown-line {
+  position: absolute;
+  height: 1.5px;
+  background: #8b4513;
+  transform-origin: left center;
+}
+.bl1 { left: 53%; top: 24%; width: 420px; transform: rotate(25deg); }
+.bl2 { left: 56%; top: 36%; width: 380px; transform: rotate(25deg); }
+
+/* Thin radiating lines from lower-left */
+.ray {
+  position: absolute;
+  height: 1px;
+  background: #1a1a1a;
+  transform-origin: left center;
+}
+.r1 { left: 18%; top: 70%; width: 300px; transform: rotate(-35deg); }
+.r2 { left: 20%; top: 72%; width: 280px; transform: rotate(-30deg); }
+.r3 { left: 16%; top: 68%; width: 320px; transform: rotate(-40deg); }
+.r4 { left: 22%; top: 74%; width: 260px; transform: rotate(-25deg); }
+
+/* Checkerboard diagonal band */
+.checker-band {
+  position: absolute;
+  left: 22%;
+  top: 50%;
+  width: 200px;
+  height: 20px;
+  background: repeating-conic-gradient(#1a1a1a 0% 25%, #f5e6c8 0% 50%) 0 0 / 10px 10px;
+  transform: rotate(-35deg);
+}
+
+/* Semi-circle arches */
+.arch-row {
+  position: absolute;
+  display: flex;
+  gap: 2px;
+}
+.arch-row-1 { left: 38%; top: 58%; }
+.arch-row-2 { left: 58%; top: 82%; }
+.arch {
+  width: 36px;
+  height: 18px;
+  border: 1.5px solid #1a1a1a;
+  border-bottom: none;
+  border-radius: 18px 18px 0 0;
+  background: transparent;
+}
+
+/* Small triangles */
+.tri {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.t1 {
+  left: 60%;
+  top: 15%;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 22px solid #f5d442;
+}
+.t2 {
+  left: 80%;
+  top: 76%;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 18px solid #f5d442;
+}
+.t3 {
+  left: 85%;
+  top: 73%;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 16px solid #6b8e4e80;
+}
+.t4 {
+  left: 68%;
+  top: 48%;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-bottom: 24px solid #2d5a3d;
+}
+
+/* Pink rectangle */
+.pink-rect {
+  position: absolute;
+  left: 68%;
+  top: 20%;
+  width: 18px;
+  height: 14px;
+  background: #e8b4c8;
+  transform: rotate(15deg);
+}
+
+/* Small color grid — right side */
+.mini-grid {
+  position: absolute;
+  right: 10%;
+  top: 52%;
+  display: grid;
+  grid-template-columns: repeat(4, 8px);
+  grid-template-rows: repeat(3, 8px);
+  gap: 1px;
+}
+.mg { width: 8px; height: 8px; }
+
+/* Curved swooping line — SVG overlay */
+.svg-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Horizontal line with cross-marks */
+.hline {
+  position: absolute;
+  left: 62%;
+  top: 10%;
+  width: 160px;
+  height: 1px;
+  background: #1a1a1a;
+}
+.hline::before, .hline::after {
+  content: '';
+  position: absolute;
+  width: 1px;
+  height: 8px;
+  background: #1a1a1a;
+  top: -4px;
+}
+.hline::before { left: 30%; }
+.hline::after { left: 60%; }
+
+/* Vertical line upper right */
+.vline {
+  position: absolute;
+  left: 78%;
+  top: 4%;
+  width: 1.5px;
+  height: 80px;
+  background: #1a1a1a;
+}
+.vline::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -4px;
+  width: 10px;
+  height: 8px;
+  border: 1px solid #1a1a1a;
+}
+
+/* Small maroon square bottom-right */
+.maroon-sq {
+  position: absolute;
+  right: 5%;
+  bottom: 8%;
+  width: 14px;
+  height: 14px;
+  background: #5c1a1a;
+}
+
+/* Signature */
+.sig {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  font-family: Georgia, serif;
+  font-size: 11px;
+  color: #1a1a1a60;
+  font-style: italic;
+  letter-spacing: 1px;
+}
+</style>
+</head>
+<body>
+<div class="canvas">
+  <!-- Background shapes -->
+  <div class="blue-shape"></div>
+  <div class="white-triangle"></div>
+  <div class="brown-wedge"></div>
+
+  <!-- Big circle -->
+  <div class="big-circle-halo"></div>
+  <div class="big-circle"></div>
+  <div class="purple-center"></div>
+
+  <!-- Checkerboard -->
+  <div class="checker-band"></div>
+
+  <!-- Lines -->
+  <div class="diag-line dl1"></div>
+  <div class="diag-line dl2"></div>
+  <div class="diag-line dl3"></div>
+  <div class="diag-line dl4"></div>
+  <div class="brown-line bl1"></div>
+  <div class="brown-line bl2"></div>
+  <div class="ray r1"></div>
+  <div class="ray r2"></div>
+  <div class="ray r3"></div>
+  <div class="ray r4"></div>
+  <div class="hline"></div>
+  <div class="vline"></div>
+
+  <!-- SVG curves -->
+  <svg class="svg-overlay" viewBox="0 0 1060 750">
+    <!-- Large swooping curve upper center -->
+    <path d="M 300 190 Q 400 100 550 160" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+    <!-- S-curve center-left -->
+    <path d="M 260 340 Q 290 300 310 340 Q 330 380 360 340" stroke="#1a1a1a" stroke-width="1.2" fill="none"/>
+    <!-- Gentle arc lower -->
+    <path d="M 400 500 Q 500 460 600 490" stroke="#5c3a1e" stroke-width="1" fill="none"/>
+    <!-- Thin arc near top -->
+    <path d="M 480 80 Q 530 60 580 80" stroke="#1a1a1a" stroke-width="0.8" fill="none"/>
+  </svg>
+
+  <!-- Arch rows -->
+  <div class="arch-row arch-row-1">
+    <div class="arch"></div>
+    <div class="arch"></div>
+    <div class="arch"></div>
+    <div class="arch"></div>
+    <div class="arch"></div>
+    <div class="arch"></div>
+  </div>
+  <div class="arch-row arch-row-2">
+    <div class="arch"></div>
+    <div class="arch"></div>
+    <div class="arch"></div>
+    <div class="arch"></div>
+    <div class="arch"></div>
+  </div>
+
+  <!-- Circles -->
+  <div class="circle c1"></div>
+  <div class="circle c2"></div>
+  <div class="circle c3"></div>
+  <div class="circle c4"></div>
+  <div class="circle c5"></div>
+  <div class="circle c6"></div>
+  <div class="circle c7"></div>
+  <div class="circle c8"></div>
+  <div class="circle c9"></div>
+  <div class="circle c10"></div>
+  <div class="circle c11"></div>
+  <div class="circle c12"></div>
+
+  <!-- Triangles -->
+  <div class="tri t1"></div>
+  <div class="tri t2"></div>
+  <div class="tri t3"></div>
+  <div class="tri t4"></div>
+
+  <!-- Small shapes -->
+  <div class="pink-rect"></div>
+  <div class="maroon-sq"></div>
+
+  <!-- Mini color grid -->
+  <div class="mini-grid">
+    <div class="mg" style="background:#cc3333"></div>
+    <div class="mg" style="background:#2e6fba"></div>
+    <div class="mg" style="background:#e8b4c8"></div>
+    <div class="mg" style="background:#f5e6c8"></div>
+    <div class="mg" style="background:#1a1a1a"></div>
+    <div class="mg" style="background:#f5d442"></div>
+    <div class="mg" style="background:#6b8e4e"></div>
+    <div class="mg" style="background:#cc3333"></div>
+    <div class="mg" style="background:#f5e6c8"></div>
+    <div class="mg" style="background:#2e6fba"></div>
+    <div class="mg" style="background:#1a1a1a"></div>
+    <div class="mg" style="background:#e8b4c8"></div>
+  </div>
+
+  <div class="sig">for Hilde — after Kandinsky — 🔮 Amber</div>
+</div>
+</body>
+</html>
