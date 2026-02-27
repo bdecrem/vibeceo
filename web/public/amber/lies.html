@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LIES — Five more minutes (you won't)</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="LIES — Five more minutes (you won't)">
+  <meta property="og:description" content="The morning lies we tell ourselves, one snooze at a time.">
+  <meta property="og:image" content="https://intheamber.com/amber/lies-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/lies.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LIES — Five more minutes (you won't)">
+  <meta name="twitter:description" content="The morning lies we tell ourselves, one snooze at a time.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/lies-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    
+    #container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+    }
+    
+    #ascii-box {
+      font-size: 18px;
+      line-height: 1.4;
+      white-space: pre;
+      text-align: center;
+      transition: opacity 0.2s ease;
+    }
+    
+    #ascii-box.pulse {
+      animation: pulse 0.3s ease;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .time {
+      color: #FFD700;
+      font-weight: bold;
+    }
+    
+    .lie {
+      color: #D4A574;
+      font-style: italic;
+    }
+    
+    .late {
+      color: #ff4444;
+      font-weight: bold;
+    }
+    
+    #stats {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #D4A574;
+      opacity: 0.6;
+      text-align: center;
+    }
+    
+    #instruction {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #2D9596;
+      opacity: 0.8;
+      animation: fade 2s ease-in-out infinite;
+    }
+    
+    @keyframes fade {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
+    
+    @media (max-width: 600px) {
+      #ascii-box {
+        font-size: 14px;
+      }
+    }
+    
+    @media (max-width: 400px) {
+      #ascii-box {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="instruction">TAP TO LIE AGAIN</div>
+  
+  <div id="container">
+    <div id="ascii-box"></div>
+  </div>
+  
+  <div id="stats">
+    <div>LIES TOLD: <span id="lies-count">0</span></div>
+    <div>MINUTES WASTED: <span id="minutes-wasted">0</span></div>
+  </div>
+  
+  <script>
+    const stages = [
+      {
+        time: '6:00 AM',
+        lie: '"just 5 more minutes"',
+        isLate: false
+      },
+      {
+        time: '6:05 AM',
+        lie: '"okay NOW I\'ll get up"',
+        isLate: false
+      },
+      {
+        time: '6:10 AM',
+        lie: '"this is the last time"',
+        isLate: false
+      },
+      {
+        time: '6:15 AM',
+        lie: '"I mean it this time"',
+        isLate: false
+      },
+      {
+        time: '6:20 AM',
+        lie: '"just one more..."',
+        isLate: false
+      },
+      {
+        time: '6:25 AM',
+        lie: '"...okay maybe two more"',
+        isLate: false
+      },
+      {
+        time: '6:30 AM',
+        lie: '"WHY IS IT 6:30"',
+        isLate: true
+      },
+      {
+        time: '6:35 AM',
+        lie: '"I can still make it"',
+        isLate: true
+      },
+      {
+        time: '6:40 AM',
+        lie: '"(you can\'t)"',
+        isLate: true
+      },
+      {
+        time: '6:45 AM',
+        lie: '"TOO LATE"',
+        isLate: true
+      }
+    ];
+    
+    let currentStage = 0;
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playSound(freq = 400, duration = 100) {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.frequency.value = freq;
+      gain.gain.value = 0.1;
+      
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+      osc.stop(audioContext.currentTime + duration / 1000);
+    }
+    
+    function renderStage() {
+      const stage = stages[currentStage];
+      const box = document.getElementById('ascii-box');
+      const liesCount = document.getElementById('lies-count');
+      const minutesWasted = document.getElementById('minutes-wasted');
+      
+      const timeClass = stage.isLate ? 'late' : 'time';
+      
+      const art = `
+╔════════════════════════╗
+║                        ║
+║    ${stage.time.padEnd(18)} ║
+║                        ║
+║    ${stage.lie.padEnd(18)} ║
+║                        ║
+╚════════════════════════╝`;
+      
+      box.innerHTML = art.replace(stage.time, `<span class="${timeClass}">${stage.time}</span>`)
+                        .replace(stage.lie, `<span class="lie">${stage.lie}</span>`);
+      
+      box.classList.add('pulse');
+      setTimeout(() => box.classList.remove('pulse'), 300);
+      
+      liesCount.textContent = currentStage + 1;
+      minutesWasted.textContent = (currentStage + 1) * 5;
+    }
+    
+    function nextStage() {
+      if (currentStage < stages.length - 1) {
+        currentStage++;
+        const freq = stage.isLate ? 300 : 400 + (currentStage * 30);
+        playSound(freq, 100);
+      } else {
+        // Reset
+        currentStage = 0;
+        playSound(200, 200);
+      }
+      renderStage();
+    }
+    
+    // Initial render
+    renderStage();
+    
+    // Click/tap handler
+    document.body.addEventListener('click', nextStage);
+    document.body.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      nextStage();
+    });
+    
+    // Get current stage reference for audio
+    function getCurrentStage() {
+      return stages[currentStage];
+    }
+  </script>
+</body>
+</html>
