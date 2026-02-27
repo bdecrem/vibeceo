@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Birthday Hilde 🌸</title>
+<style>
+* { margin: 0; padding: 0; }
+body { background: #0a0a0f; overflow: hidden; }
+canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const C = document.getElementById('c');
+const ctx = C.getContext('2d');
+let W, H;
+function resize() { W = C.width = innerWidth; H = C.height = innerHeight; }
+resize();
+addEventListener('resize', resize);
+
+const flowers = [];
+const particles = [];
+const vines = [];
+
+// Color palettes for flowers
+const palettes = [
+  ['#ff6b9d', '#ff3d7f', '#ff1a5e', '#ff0044'],
+  ['#7eb8ff', '#4d9fff', '#1a86ff', '#0066cc'],
+  ['#ffb86b', '#ff9f3d', '#ff861a', '#ff6600'],
+  ['#c47bff', '#a64dff', '#881aff', '#6600cc'],
+  ['#7bffb8', '#4dff9f', '#1aff86', '#00ff66'],
+  ['#ff7bb8', '#ff4da6', '#ff1a93', '#ff0080'],
+  ['#ffe47b', '#ffd94d', '#ffce1a', '#ffc300'],
+  ['#7bffe4', '#4dffd9', '#1affce', '#00ffc3'],
+];
+
+// Generate vines
+for (let i = 0; i < 15; i++) {
+  const x = Math.random() * W;
+  const pts = [];
+  let py = H + 20;
+  let px = x;
+  while (py > -20) {
+    px += (Math.random() - 0.5) * 30;
+    py -= 15 + Math.random() * 25;
+    pts.push({ x: px, y: py });
+  }
+  vines.push({ points: pts, offset: Math.random() * Math.PI * 2 });
+}
+
+class Flower {
+  constructor(x, y, type) {
+    this.x = x;
+    this.y = y;
+    this.type = type; // 0=dahlia, 1=circle, 2=starburst, 3=soft
+    this.palette = palettes[Math.floor(Math.random() * palettes.length)];
+    this.size = 30 + Math.random() * 60;
+    this.phase = Math.random() * Math.PI * 2;
+    this.speed = 0.3 + Math.random() * 0.5;
+    this.stemH = 40 + Math.random() * 120;
+    this.leaves = Math.random() > 0.4 ? Math.floor(1 + Math.random() * 3) : 0;
+    this.leafPositions = [];
+    for (let i = 0; i < this.leaves; i++) {
+      this.leafPositions.push({
+        t: 0.2 + Math.random() * 0.6,
+        side: Math.random() > 0.5 ? 1 : -1,
+        size: 6 + Math.random() * 10
+      });
+    }
+    this.glowIntensity = 0.3 + Math.random() * 0.5;
+    this.rotation = Math.random() * Math.PI * 2;
+    this.rotSpeed = (Math.random() - 0.5) * 0.005;
+  }
+
+  draw(t) {
+    const pulse = 1 + Math.sin(t * this.speed + this.phase) * 0.08;
+    const s = this.size * pulse;
+    const glow = this.glowIntensity + Math.sin(t * this.speed * 1.3 + this.phase) * 0.15;
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    // Stem
+    const stemSway = Math.sin(t * 0.4 + this.phase) * 5;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(stemSway, this.stemH * 0.5, stemSway * 0.5, this.stemH);
+    ctx.strokeStyle = `rgba(60, 180, 90, 0.6)`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Leaves
+    for (const leaf of this.leafPositions) {
+      const lx = stemSway * leaf.t;
+      const ly = this.stemH * leaf.t;
+      ctx.save();
+      ctx.translate(lx, ly);
+      ctx.rotate(leaf.side * 0.6 + Math.sin(t * 0.5 + this.phase) * 0.1);
+      ctx.beginPath();
+      ctx.ellipse(leaf.side * leaf.size * 0.7, 0, leaf.size, leaf.size * 0.35, 0, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(50, 160, 80, 0.5)`;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.translate(0, 0);
+    this.rotation += this.rotSpeed;
+
+    // Outer glow
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 1.5);
+    gradient.addColorStop(0, this.palette[0] + '40');
+    gradient.addColorStop(0.5, this.palette[1] + '20');
+    gradient.addColorStop(1, 'transparent');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(0, 0, s * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (this.type === 0) this.drawDahlia(s, t, glow);
+    else if (this.type === 1) this.drawCircles(s, t, glow);
+    else if (this.type === 2) this.drawStarburst(s, t, glow);
+    else this.drawSoft(s, t, glow);
+
+    // Center glow
+    const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 0.25);
+    cg.addColorStop(0, `rgba(255,255,255,${glow * 0.8})`);
+    cg.addColorStop(0.5, this.palette[0] + '60');
+    cg.addColorStop(1, 'transparent');
+    ctx.fillStyle = cg;
+    ctx.beginPath();
+    ctx.arc(0, 0, s * 0.25, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  drawDahlia(s, t, glow) {
+    const petals = 12 + Math.floor(Math.random() * 0.01);
+    for (let layer = 3; layer >= 0; layer--) {
+      const ls = s * (0.4 + layer * 0.2);
+      for (let i = 0; i < petals; i++) {
+        const a = (i / petals) * Math.PI * 2 + this.rotation + layer * 0.15;
+        ctx.save();
+        ctx.rotate(a);
+        ctx.beginPath();
+        ctx.ellipse(ls * 0.5, 0, ls * 0.5, ls * 0.15, 0, 0, Math.PI * 2);
+        ctx.fillStyle = this.palette[layer] + (Math.floor(glow * 180)).toString(16).padStart(2, '0');
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
+  drawCircles(s, t, glow) {
+    for (let i = 5; i >= 0; i--) {
+      const r = s * (i / 5);
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      const alpha = glow * (0.15 + (5 - i) * 0.05);
+      ctx.fillStyle = this.palette[i % 4] + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+      ctx.fill();
+    }
+  }
+
+  drawStarburst(s, t, glow) {
+    const rays = 16;
+    for (let i = 0; i < rays; i++) {
+      const a = (i / rays) * Math.PI * 2 + this.rotation;
+      const len = s * (0.6 + Math.sin(t * 2 + i * 0.5 + this.phase) * 0.3);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(a) * len, Math.sin(a) * len);
+      ctx.strokeStyle = this.palette[i % 4] + Math.floor(glow * 200).toString(16).padStart(2, '0');
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Dot at end
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * len, Math.sin(a) * len, 3, 0, Math.PI * 2);
+      ctx.fillStyle = this.palette[i % 4] + 'cc';
+      ctx.fill();
+    }
+  }
+
+  drawSoft(s, t, glow) {
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + this.rotation + Math.sin(t * 0.3) * 0.1;
+      const dist = s * 0.3;
+      const pg = ctx.createRadialGradient(
+        Math.cos(a) * dist, Math.sin(a) * dist, 0,
+        Math.cos(a) * dist, Math.sin(a) * dist, s * 0.5
+      );
+      pg.addColorStop(0, this.palette[i % 4] + Math.floor(glow * 150).toString(16).padStart(2, '0'));
+      pg.addColorStop(1, 'transparent');
+      ctx.fillStyle = pg;
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * dist, Math.sin(a) * dist, s * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+// Create flowers
+for (let i = 0; i < 14; i++) {
+  const x = 40 + Math.random() * (W - 80);
+  const y = 40 + Math.random() * (H - 200);
+  flowers.push(new Flower(x, y, Math.floor(Math.random() * 4)));
+}
+
+// Sparkle particles
+class Sparkle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.size = 1 + Math.random() * 3;
+    this.life = Math.random();
+    this.speed = 0.003 + Math.random() * 0.008;
+    this.color = palettes[Math.floor(Math.random() * palettes.length)][0];
+  }
+  update() {
+    this.life += this.speed;
+    if (this.life > 1) this.reset();
+  }
+  draw() {
+    const alpha = Math.sin(this.life * Math.PI);
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * alpha, 0, Math.PI * 2);
+    ctx.fillStyle = this.color + Math.floor(alpha * 200).toString(16).padStart(2, '0');
+    ctx.fill();
+  }
+}
+
+for (let i = 0; i < 80; i++) particles.push(new Sparkle());
+
+function drawVines(t) {
+  for (const vine of vines) {
+    ctx.beginPath();
+    const pts = vine.points;
+    if (pts.length < 2) continue;
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      const sway = Math.sin(t * 0.3 + vine.offset + i * 0.3) * 3;
+      ctx.lineTo(pts[i].x + sway, pts[i].y);
+    }
+    ctx.strokeStyle = 'rgba(30, 60, 40, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+}
+
+function drawText(t) {
+  const y = H - 40;
+  ctx.save();
+  ctx.font = '600 14px "SF Mono", "Fira Code", monospace';
+  ctx.textAlign = 'center';
+  ctx.letterSpacing = '4px';
+  
+  const text1 = 'GLASS GARDEN FOR HILDE';
+  const text2 = 'HAPPY BIRTHDAY — WITH LOVE FROM BART';
+  
+  const alpha = 0.4 + Math.sin(t * 0.5) * 0.15;
+  ctx.fillStyle = `rgba(200, 200, 220, ${alpha})`;
+  ctx.fillText(text1, W / 2, y);
+  ctx.fillStyle = `rgba(180, 180, 200, ${alpha * 0.8})`;
+  ctx.font = '400 11px "SF Mono", "Fira Code", monospace';
+  ctx.fillText(text2, W / 2, y + 22);
+  ctx.restore();
+}
+
+let lastTap = 0;
+function addFlowerAt(x, y) {
+  flowers.push(new Flower(x, y, Math.floor(Math.random() * 4)));
+  for (let i = 0; i < 8; i++) particles.push(new Sparkle());
+}
+
+C.addEventListener('click', (e) => {
+  addFlowerAt(e.clientX, e.clientY);
+});
+C.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  for (const touch of e.touches) {
+    addFlowerAt(touch.clientX, touch.clientY);
+  }
+});
+
+function animate(t) {
+  t *= 0.001;
+  ctx.fillStyle = 'rgba(10, 10, 15, 0.15)';
+  ctx.fillRect(0, 0, W, H);
+
+  drawVines(t);
+
+  for (const f of flowers) f.draw(t);
+  for (const p of particles) {
+    p.update();
+    p.draw();
+  }
+
+  drawText(t);
+  requestAnimationFrame(animate);
+}
+
+// Initial clear
+ctx.fillStyle = '#0a0a0f';
+ctx.fillRect(0, 0, W, H);
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

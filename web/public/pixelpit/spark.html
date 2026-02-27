@@ -273,6 +273,143 @@
     let arcToneNode, arcToneGain; // rising tone during arc
     let idleTimer; // auto-zap after 3s idle
 
+    // --- TUTORIAL STATE ---
+    let tutActive = false;
+    let tutStep = 0;
+    let tutSuccess = false;
+    let tutSuccessTimer = 0;
+    let tutCleared = false;
+
+    const TUT_STEPS = [
+      {
+        name: 'DRAW',
+        instruction: 'DRAW A COPPER PATH',
+        setup() {
+          strokes = []; currentStroke = null; inkUsed = 0; particles = [];
+          zapsLeft = 3; idleTimer = 0;
+          // Source top-center, target bottom-center, close together
+          source = { x: W / 2, y: safeTop + 80 };
+          targetPos = { x: W / 2, y: H - 80 };
+          insulators = [];
+          platforms = [{ x: 0, y: H + 10, w: W, h: 20 }];
+          inkLimit = 500; parInk = 300;
+          tutCleared = false;
+          phase = 'drawing';
+        },
+        check() { return tutCleared; }
+      },
+      {
+        name: 'DROP & ZAP',
+        instruction: 'DRAW, THEN TAP ZAP ⚡',
+        setup() {
+          strokes = []; currentStroke = null; inkUsed = 0; particles = [];
+          zapsLeft = 3; idleTimer = 0;
+          source = { x: W * 0.3, y: safeTop + 80 };
+          targetPos = { x: W * 0.3, y: H - 80 };
+          insulators = [];
+          platforms = [{ x: 0, y: H + 10, w: W, h: 20 }];
+          inkLimit = 500; parInk = 300;
+          tutCleared = false;
+          phase = 'drawing';
+        },
+        check() { return tutCleared; }
+      },
+      {
+        name: 'ROUTE AROUND',
+        instruction: 'AVOID THE INSULATOR',
+        setup() {
+          strokes = []; currentStroke = null; inkUsed = 0; particles = [];
+          zapsLeft = 3; idleTimer = 0;
+          source = { x: W / 2, y: safeTop + 80 };
+          targetPos = { x: W / 2, y: H - 80 };
+          // Insulator blocking direct path
+          insulators = [{ x: W / 2 - 40, y: H * 0.45, w: 80, h: 12 }];
+          platforms = [{ x: 0, y: H + 10, w: W, h: 20 }];
+          inkLimit = 500; parInk = 250;
+          tutCleared = false;
+          phase = 'drawing';
+        },
+        check() { return tutCleared; }
+      },
+      {
+        name: 'INK MATTERS',
+        instruction: 'USE LESS INK FOR ★★★',
+        setup() {
+          strokes = []; currentStroke = null; inkUsed = 0; particles = [];
+          zapsLeft = 3; idleTimer = 0;
+          source = { x: W * 0.35, y: safeTop + 80 };
+          targetPos = { x: W * 0.65, y: H - 80 };
+          insulators = [];
+          platforms = [{ x: 0, y: H + 10, w: W, h: 20 }];
+          inkLimit = 250; parInk = 150;
+          tutCleared = false;
+          phase = 'drawing';
+        },
+        check() { return tutCleared; }
+      },
+      {
+        name: 'PLAN THE DROP',
+        instruction: 'LAND ON THE PLATFORM',
+        setup() {
+          strokes = []; currentStroke = null; inkUsed = 0; particles = [];
+          zapsLeft = 3; idleTimer = 0;
+          source = { x: W * 0.3, y: safeTop + 60 };
+          targetPos = { x: W * 0.7, y: H - 60 };
+          insulators = [];
+          // Platform mid-level that stroke must land on to bridge the gap
+          platforms = [
+            { x: W * 0.4, y: H * 0.5, w: 80, h: 8 },
+            { x: 0, y: H + 10, w: W, h: 20 },
+          ];
+          inkLimit = 400; parInk = 200;
+          tutCleared = false;
+          phase = 'drawing';
+        },
+        check() { return tutCleared; }
+      },
+    ];
+
+    function startTutorial() {
+      tutActive = true;
+      tutStep = 0;
+      tutSuccess = false;
+      tutSuccessTimer = 0;
+      level = 0; score = 0;
+      gameTime = 0;
+      screenShake = 0; flashTimer = 0;
+      arcFadeTimer = 0;
+      dropTimer = 0; waitTimer = 0; arcTimer = 0;
+      arcPath = null; arcProgress = 0; arcReachedTarget = false;
+      celebTimer = 0; attempts = 0;
+      phase = 'drawing';
+      TUT_STEPS[0].setup();
+    }
+
+    function advanceTutorial() {
+      tutStep++;
+      tutSuccess = false;
+      tutSuccessTimer = 0;
+      if (tutStep >= TUT_STEPS.length) {
+        tutActive = false;
+        init();
+        initAudio();
+        setupLevel(1);
+        return;
+      }
+      TUT_STEPS[tutStep].setup();
+    }
+
+    function skipTutorial() {
+      tutActive = false;
+      init();
+      initAudio();
+      setupLevel(1);
+    }
+
+    function tutRetry() {
+      TUT_STEPS[tutStep].setup();
+    }
+
     function init() {
       level = 0;
       score = 0;
@@ -582,24 +719,42 @@
     }
 
     // --- INPUT ---
+    function isTutorialTap(tx, ty) {
+      return tx > W/2 - 70 && tx < W/2 + 70 && ty > H * 0.62 && ty < H * 0.62 + 30;
+    }
+    function isSkipTap(tx, ty) {
+      return tx > W - 80 && ty < safeTop + 50;
+    }
+
     function handleDown(e) {
       e.preventDefault();
       const touch = e.touches ? e.touches[0] : e;
       const tx = touch.clientX, ty = touch.clientY;
 
       if (phase === 'start') {
+        if (isTutorialTap(tx, ty)) {
+          initAudio();
+          startTutorial();
+          return;
+        }
         initAudio();
         setupLevel(1);
         return;
       }
       if (phase === 'over') {
+        if (tutActive) { tutRetry(); return; }
         init();
         initAudio();
         setupLevel(1);
         return;
       }
       if (phase === 'failed') {
+        if (tutActive) { tutRetry(); return; }
         retryLevel();
+        return;
+      }
+      if (tutActive && isSkipTap(tx, ty)) {
+        skipTutorial();
         return;
       }
       if (phase === 'cleared') return;
@@ -703,11 +858,13 @@
       if (phase === 'start' || phase === 'over') { gameTime += dt; return; }
       gameTime += dt;
 
-      // Auto-zap timer (3s idle after last stroke)
+      // Auto-zap timer (3s idle after last stroke, disabled during tutorial step 2)
       if (phase === 'drawing' && strokes.length > 0 && !currentStroke) {
-        idleTimer += dt;
-        if (idleTimer >= 3.0) {
-          triggerZap();
+        if (!(tutActive && tutStep === 1)) { // step 1 = "DROP & ZAP" — player must learn ZAP button
+          idleTimer += dt;
+          if (idleTimer >= 3.0) {
+            triggerZap();
+          }
         }
       }
 
@@ -742,10 +899,15 @@
             // No path — fizzle
             zapsLeft--;
             if (zapsLeft <= 0) {
-              phase = 'over';
-              if (score >= bestScore) {
-                bestScore = score;
-                localStorage.setItem('spark_best', bestScore);
+              if (tutActive) {
+                // Tutorial: reset step instead of game over
+                tutRetry();
+              } else {
+                phase = 'over';
+                if (score >= bestScore) {
+                  bestScore = score;
+                  localStorage.setItem('spark_best', bestScore);
+                }
               }
             } else {
               phase = 'failed';
@@ -764,6 +926,7 @@
 
         if (arcProgress >= 1 && !arcReachedTarget) {
           arcReachedTarget = true;
+          if (tutActive) tutCleared = true;
           phase = 'cleared';
           celebTimer = 0;
           arcFadeTimer = 0.3; // bright-to-dim sweep
@@ -787,7 +950,16 @@
       if (phase === 'cleared') {
         celebTimer += dt;
         if (celebTimer > 2.2) {
-          setupLevel(level + 1);
+          if (tutActive) {
+            if (!tutSuccess) {
+              tutSuccess = true;
+              tutSuccessTimer = 1.2;
+            }
+            tutSuccessTimer -= dt;
+            if (tutSuccessTimer <= 0) advanceTutorial();
+          } else {
+            setupLevel(level + 1);
+          }
         }
       }
 
@@ -1186,6 +1358,39 @@
         ctx.fillText('TAP TO RETRY', W / 2, H * 0.6);
       }
 
+      // Tutorial HUD
+      if (tutActive && phase !== 'start') {
+        const step = TUT_STEPS[tutStep];
+        ctx.fillStyle = T.bolt;
+        ctx.font = 'bold 14px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(step.name, W / 2, safeTop + 58);
+        ctx.fillStyle = T.muted;
+        ctx.font = '12px monospace';
+        ctx.fillText(step.instruction, W / 2, safeTop + 74);
+        // Progress dots
+        for (let i = 0; i < TUT_STEPS.length; i++) {
+          const dotX = W / 2 + (i - 2) * 16;
+          const dotY = H - 40;
+          ctx.fillStyle = i < tutStep ? T.bolt : i === tutStep ? T.white : T.muted;
+          ctx.beginPath(); ctx.arc(dotX, dotY, i === tutStep ? 4 : 3, 0, Math.PI * 2); ctx.fill();
+        }
+        // Skip button
+        ctx.fillStyle = T.muted;
+        ctx.font = '11px monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('SKIP ▸', W - 16, safeTop + 24);
+        // Success overlay
+        if (tutSuccess) {
+          ctx.fillStyle = T.bolt;
+          ctx.font = 'bold 24px monospace';
+          ctx.textAlign = 'center';
+          ctx.shadowBlur = 12; ctx.shadowColor = T.bolt;
+          ctx.fillText('NICE!', W / 2, H * 0.4);
+          ctx.shadowBlur = 0;
+        }
+      }
+
       // Start screen
       if (phase === 'start') {
         // Mock source → copper path → frozen arc → target
@@ -1250,6 +1455,12 @@
           ctx.font = '12px monospace';
           ctx.fillText('BEST: ' + bestScore, W / 2, H * 0.55 + 25);
         }
+        // Tutorial button
+        ctx.fillStyle = T.bolt;
+        ctx.font = '13px monospace';
+        ctx.globalAlpha = 0.7;
+        ctx.fillText('TUTORIAL', W / 2, H * 0.62);
+        ctx.globalAlpha = 1;
       }
 
       ctx.restore();
