@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REPEAT — Watch. Remember. Tap.</title>
+  
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="REPEAT — Watch. Remember. Tap.">
+  <meta property="og:description" content="A memory game by Amber. Watch the pattern. Tap it back. Don't mess up.">
+  <meta property="og:image" content="https://intheamber.com/amber/repeat-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/repeat.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="REPEAT — Watch. Remember. Tap.">
+  <meta name="twitter:description" content="A memory game by Amber. Watch the pattern. Tap it back. Don't mess up.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/repeat-og.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: pointer;
+    }
+
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #status {
+      font-size: 24px;
+      font-weight: 700;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      margin-bottom: 10px;
+    }
+
+    #score {
+      font-size: 16px;
+      color: #D4A574;
+    }
+
+    #gameOver {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 20;
+    }
+
+    #gameOver.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #gameOver h1 {
+      font-size: 48px;
+      color: #FFD700;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+      margin-bottom: 20px;
+    }
+
+    #gameOver p {
+      font-size: 20px;
+      color: #D4A574;
+      margin-bottom: 10px;
+    }
+
+    #gameOver button {
+      margin-top: 30px;
+      padding: 15px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: all 0.2s;
+    }
+
+    #gameOver button:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 600px) {
+      #status {
+        font-size: 18px;
+      }
+      #score {
+        font-size: 14px;
+      }
+      #gameOver h1 {
+        font-size: 36px;
+      }
+      #gameOver p {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="status">TAP TO START</div>
+    <div id="score">BEST: <span id="bestScore">0</span></div>
+  </div>
+
+  <div id="gameOver">
+    <h1>GAME OVER</h1>
+    <p>PATTERN LENGTH: <span id="finalScore">0</span></p>
+    <p>BEST: <span id="bestScoreFinal">0</span></p>
+    <button id="retry">TRY AGAIN</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusEl = document.getElementById('status');
+    const bestScoreEl = document.getElementById('bestScore');
+    const gameOverEl = document.getElementById('gameOver');
+    const finalScoreEl = document.getElementById('finalScore');
+    const bestScoreFinalEl = document.getElementById('bestScoreFinal');
+    const retryBtn = document.getElementById('retry');
+
+    let W, H;
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Audio setup
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioStarted = false;
+
+    function playTone(freq, duration = 0.2) {
+      if (!audioStarted) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playError() {
+      if (!audioStarted) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+      osc.type = 'sawtooth';
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    // Particles
+    const particles = [];
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 6;
+        this.vy = (Math.random() - 0.5) * 6;
+        this.life = 1;
+        this.color = color;
+        this.size = Math.random() * 3 + 2;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2; // gravity
+        this.life -= 0.02;
+      }
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+      }
+    }
+
+    // Game state
+    const circles = [
+      { x: 0.3, y: 0.4, color: '#D4A574', freq: 440, name: 'amber' },  // A4
+      { x: 0.7, y: 0.4, color: '#FFD700', freq: 554, name: 'gold' },   // C#5
+      { x: 0.3, y: 0.7, color: '#2D9596', freq: 659, name: 'teal' },   // E5
+      { x: 0.7, y: 0.7, color: '#7B68EE', freq: 784, name: 'violet' }  // G5
+    ];
+
+    let gameState = 'waiting'; // waiting, showing, playing, gameover
+    let pattern = [];
+    let playerInput = [];
+    let currentStep = 0;
+    let showStep = 0;
+    let bestScore = parseInt(localStorage.getItem('repeatBestScore') || '0');
+    bestScoreEl.textContent = bestScore;
+
+    const radius = Math.min(W, H) * 0.12;
+
+    function startGame() {
+      if (!audioStarted) {
+        audioCtx.resume();
+        audioStarted = true;
+      }
+      gameState = 'showing';
+      pattern = [];
+      playerInput = [];
+      currentStep = 0;
+      gameOverEl.classList.remove('show');
+      addToPattern();
+    }
+
+    function addToPattern() {
+      const newCircle = Math.floor(Math.random() * circles.length);
+      pattern.push(newCircle);
+      showPattern();
+    }
+
+    function showPattern() {
+      showStep = 0;
+      playerInput = [];
+      currentStep = 0;
+      statusEl.textContent = 'WATCH...';
+      gameState = 'showing';
+      showNextStep();
+    }
+
+    function showNextStep() {
+      if (showStep >= pattern.length) {
+        gameState = 'playing';
+        statusEl.textContent = 'YOUR TURN';
+        return;
+      }
+
+      const idx = pattern[showStep];
+      const circle = circles[idx];
+      
+      // Light up circle
+      circle.lit = true;
+      playTone(circle.freq, 0.3);
+      
+      setTimeout(() => {
+        circle.lit = false;
+        showStep++;
+        setTimeout(() => showNextStep(), 300);
+      }, 500);
+    }
+
+    function handleTap(x, y) {
+      if (gameState === 'waiting') {
+        startGame();
+        return;
+      }
+
+      if (gameState !== 'playing') return;
+
+      // Check which circle was tapped
+      for (let i = 0; i < circles.length; i++) {
+        const c = circles[i];
+        const cx = c.x * W;
+        const cy = c.y * H;
+        const dist = Math.hypot(x - cx, y - cy);
+
+        if (dist < radius) {
+          handleCircleTap(i, cx, cy);
+          return;
+        }
+      }
+    }
+
+    function handleCircleTap(idx, x, y) {
+      const circle = circles[idx];
+      
+      // Check if correct
+      if (idx === pattern[currentStep]) {
+        // Correct!
+        playTone(circle.freq, 0.2);
+        circle.lit = true;
+        setTimeout(() => circle.lit = false, 200);
+
+        // Particles
+        for (let i = 0; i < 20; i++) {
+          particles.push(new Particle(x, y, circle.color));
+        }
+
+        playerInput.push(idx);
+        currentStep++;
+
+        // Check if pattern complete
+        if (currentStep >= pattern.length) {
+          // Pattern complete! Next round
+          setTimeout(() => {
+            statusEl.textContent = `LEVEL ${pattern.length + 1}`;
+            setTimeout(() => addToPattern(), 800);
+          }, 500);
+        }
+      } else {
+        // Wrong!
+        playError();
+        gameOver();
+      }
+    }
+
+    function gameOver() {
+      gameState = 'gameover';
+      const score = pattern.length - 1;
+      finalScoreEl.textContent = score;
+      
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('repeatBestScore', bestScore);
+        bestScoreEl.textContent = bestScore;
+      }
+      
+      bestScoreFinalEl.textContent = bestScore;
+      gameOverEl.classList.add('show');
+      statusEl.textContent = 'GAME OVER';
+    }
+
+    retryBtn.addEventListener('click', () => {
+      startGame();
+    });
+
+    // Input handling
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      handleTap(x, y);
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      handleTap(x, y);
+    });
+
+    // Animation loop
+    function animate() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, W, H);
+
+      // Update particles
+      ctx.globalAlpha = 1;
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      // Draw circles
+      for (const circle of circles) {
+        const x = circle.x * W;
+        const y = circle.y * H;
+
+        // Outer glow when lit
+        if (circle.lit) {
+          const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius * 1.5);
+          gradient.addColorStop(0, circle.color + '80');
+          gradient.addColorStop(1, circle.color + '00');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(x - radius * 1.5, y - radius * 1.5, radius * 3, radius * 3);
+        }
+
+        // Circle
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = circle.lit ? circle.color : circle.color + '40';
+        ctx.fill();
+
+        // Glow when lit
+        if (circle.lit) {
+          ctx.shadowBlur = 40;
+          ctx.shadowColor = circle.color;
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = circle.color;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
