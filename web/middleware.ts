@@ -188,7 +188,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
-    // Hallman lives at /hallman
+    // Hilde birthday page
+    if (pathname.startsWith('/hilde')) {
+      return NextResponse.next()
+    }
+
+// Hallman lives at /hallman
     if (pathname.startsWith('/hallman')) {
       return NextResponse.next()
     }
