@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Glass Garden — Amber</title>
-<meta property="og:title" content="Glass Garden">
-<meta property="og:description" content="Touch to grow. A living garden of light.">
+<title>Happy Birthday Hilde 🌸</title>
+<meta property="og:title" content="Happy Birthday Hilde 🌸">
+<meta property="og:description" content="A garden of light, grown just for you.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
 <style>
@@ -34,6 +34,95 @@
     pointer-events: none;
   }
 
+  /* Birthday intro overlay */
+  .intro {
+    position: fixed;
+    inset: 0;
+    background: #0c0a14;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    animation: introFade 6s ease-in forwards;
+    pointer-events: none;
+  }
+
+  @keyframes introFade {
+    0%, 70% { opacity: 1; }
+    100% { opacity: 0; visibility: hidden; }
+  }
+
+  .intro-name {
+    font-size: clamp(36px, 8vw, 72px);
+    font-style: italic;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, #ff6b9d, #a29bfe, #55efc4, #ffeaa7, #ff9ff3);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s ease-in-out infinite;
+    opacity: 0;
+    animation: nameIn 2s ease-out 0.5s forwards, shimmer 3s ease-in-out infinite;
+  }
+
+  @keyframes nameIn {
+    0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .intro-happy {
+    font-size: clamp(14px, 3vw, 22px);
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 12px;
+    opacity: 0;
+    animation: fadeUp 1.5s ease-out 0.2s forwards;
+  }
+
+  .intro-sub {
+    font-size: clamp(12px, 2vw, 16px);
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.2);
+    margin-top: 20px;
+    font-style: italic;
+    opacity: 0;
+    animation: fadeUp 1.5s ease-out 1.5s forwards;
+  }
+
+  @keyframes fadeUp {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .intro-stars {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .intro-star {
+    position: absolute;
+    width: 3px; height: 3px;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes twinkle {
+    0% { opacity: 0.1; transform: scale(0.8); }
+    100% { opacity: 0.8; transform: scale(1.2); }
+  }
+
   .hint {
     position: fixed;
     top: 50%;
@@ -44,23 +133,49 @@
     color: rgba(255,255,255,0.15);
     z-index: 10;
     pointer-events: none;
-    animation: fadeHint 4s ease-out forwards;
+    opacity: 0;
+    animation: fadeHint 4s ease-out 6.5s forwards;
     font-style: italic;
   }
 
   @keyframes fadeHint {
-    0% { opacity: 1; }
+    0% { opacity: 0; }
+    10% { opacity: 1; }
     70% { opacity: 1; }
     100% { opacity: 0; }
   }
 </style>
 </head>
 <body>
+
+<!-- Birthday intro -->
+<div class="intro" id="intro">
+  <div class="intro-stars" id="introStars"></div>
+  <div class="intro-happy">Happy Birthday</div>
+  <div class="intro-name">Hilde 🌸</div>
+  <div class="intro-sub">this garden grows for you</div>
+</div>
+
 <canvas id="c"></canvas>
 <div class="hint">touch anywhere to plant</div>
-<div class="title">glass garden — 🔮 amber</div>
+<div class="title">glass garden for hilde — with love from bart & 🔮 amber</div>
 
 <script>
+// Intro stars
+const introStars = document.getElementById('introStars');
+for (let i = 0; i < 40; i++) {
+  const s = document.createElement('div');
+  s.className = 'intro-star';
+  s.style.left = Math.random() * 100 + '%';
+  s.style.top = Math.random() * 100 + '%';
+  s.style.animationDelay = Math.random() * 2 + 's';
+  s.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+  introStars.appendChild(s);
+}
+
+// Remove intro from DOM after animation
+setTimeout(() => document.getElementById('intro')?.remove(), 7000);
+
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 let W, H;
@@ -120,7 +235,6 @@ class Flower {
     ctx.save();
     ctx.translate(this.x + sway * 0.3, this.y);
 
-    // Stem
     if (stemG > 0) {
       const sh = this.stemHeight * stemG;
       ctx.beginPath();
@@ -130,7 +244,6 @@ class Flower {
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Leaves
       for (let l = 0; l < this.leaves; l++) {
         const ly = -sh * (0.3 + l * 0.25);
         const lx = this.stemCurve * stemG * (0.3 + l * 0.25) + sway * 0.5;
@@ -146,7 +259,6 @@ class Flower {
       }
     }
 
-    // Flower head
     if (flowerG > 0) {
       const fx = sway;
       const fy = -this.stemHeight * stemG;
@@ -157,7 +269,6 @@ class Flower {
       const r = this.radius * flowerG;
 
       if (this.type === 0) {
-        // Glass petals
         for (let i = 0; i < this.petals; i++) {
           const angle = (Math.PI * 2 * i) / this.petals;
           ctx.save();
@@ -173,7 +284,6 @@ class Flower {
           ctx.restore();
         }
       } else if (this.type === 1) {
-        // Concentric rings
         for (let i = 4; i >= 0; i--) {
           const rr = r * (i + 1) / 5;
           ctx.beginPath();
@@ -185,7 +295,6 @@ class Flower {
           ctx.stroke();
         }
       } else if (this.type === 2) {
-        // Star burst
         for (let i = 0; i < this.petals; i++) {
           const angle = (Math.PI * 2 * i) / this.petals;
           ctx.beginPath();
@@ -200,7 +309,6 @@ class Flower {
           ctx.fill();
         }
       } else {
-        // Layered dahlia
         for (let layer = 3; layer >= 0; layer--) {
           const lr = r * (0.4 + layer * 0.2);
           const lp = this.petals + layer * 2;
@@ -217,7 +325,6 @@ class Flower {
         }
       }
 
-      // Center glow
       const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.3);
       cg.addColorStop(0, 'rgba(255,255,255,0.4)');
       cg.addColorStop(1, 'transparent');
@@ -231,11 +338,8 @@ class Flower {
   }
 }
 
-// Floating particles
 class Particle {
-  constructor() {
-    this.reset();
-  }
+  constructor() { this.reset(); }
   reset() {
     this.x = Math.random() * W;
     this.y = Math.random() * H;
@@ -261,9 +365,7 @@ class Particle {
 const flowers = [];
 const particles = Array.from({length: 60}, () => new Particle());
 
-// Plant on click/touch
 function plant(x, y) {
-  // Plant a small cluster
   const count = 1 + Math.floor(Math.random() * 3);
   for (let i = 0; i < count; i++) {
     const ox = (Math.random() - 0.5) * 40;
@@ -278,7 +380,7 @@ canvas.addEventListener('touchstart', e => {
   for (const t of e.touches) plant(t.clientX, t.clientY);
 }, {passive: false});
 
-// Seed a few flowers
+// Seed initial flowers
 for (let i = 0; i < 5; i++) {
   const f = new Flower(W * 0.15 + Math.random() * W * 0.7, H * 0.5 + Math.random() * H * 0.35);
   f.growth = 0.8 + Math.random() * 0.2;
@@ -288,10 +390,8 @@ for (let i = 0; i < 5; i++) {
 function animate() {
   ctx.fillStyle = 'rgba(12, 10, 20, 0.08)';
   ctx.fillRect(0, 0, W, H);
-
   particles.forEach(p => { p.update(); p.draw(); });
   flowers.forEach(f => { f.update(); f.draw(); });
-
   requestAnimationFrame(animate);
 }
 
