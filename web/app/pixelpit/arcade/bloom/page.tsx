@@ -676,19 +676,17 @@ export default function BloomGame() {
         }
       }
 
-      // HUD
-      if (game.phase !== 'start') {
-        ctx!.fillStyle = T.text; ctx!.font = 'bold 16px monospace'; ctx!.textAlign = 'center';
-        ctx!.fillText(game.seeds.filter(s => s.alive).length + ' seeds', game.W / 2, game.safeTop + 24);
-        ctx!.font = '12px monospace'; ctx!.textAlign = 'left';
-        ctx!.fillText('LVL ' + game.level, 12, game.safeTop + 24);
-        ctx!.textAlign = 'right';
-        ctx!.fillText(String(game.score), game.W - 12, game.safeTop + 24);
-        if (game.shotsLeft > 0) {
-          ctx!.fillStyle = T.seed;
-          for (let i = 0; i < game.shotsLeft; i++) {
-            ctx!.beginPath(); ctx!.arc(SLING_X + i * 14, game.H - 20, 4, 0, Math.PI * 2); ctx!.fill();
-          }
+      // HUD (start/over already returned above)
+      ctx!.fillStyle = T.text; ctx!.font = 'bold 16px monospace'; ctx!.textAlign = 'center';
+      ctx!.fillText(game.seeds.filter(s => s.alive).length + ' seeds', game.W / 2, game.safeTop + 24);
+      ctx!.font = '12px monospace'; ctx!.textAlign = 'left';
+      ctx!.fillText('LVL ' + game.level, 12, game.safeTop + 24);
+      ctx!.textAlign = 'right';
+      ctx!.fillText(String(game.score), game.W - 12, game.safeTop + 24);
+      if (game.shotsLeft > 0) {
+        ctx!.fillStyle = T.seed;
+        for (let i = 0; i < game.shotsLeft; i++) {
+          ctx!.beginPath(); ctx!.arc(SLING_X + i * 14, game.H - 20, 4, 0, Math.PI * 2); ctx!.fill();
         }
       }
 
@@ -711,7 +709,7 @@ export default function BloomGame() {
       }
 
       // Tutorial HUD
-      if (game.tutActive && game.phase !== 'start') {
+      if (game.tutActive) {
         const step = TUT_STEPS[game.tutStep];
         ctx!.fillStyle = T.seed; ctx!.font = 'bold 14px monospace'; ctx!.textAlign = 'center';
         ctx!.fillText(step.name, game.W / 2, game.safeTop + 44);

@@ -643,7 +643,7 @@ export default function GlintGame() {
       }
 
       // Shard
-      if (game.shard && (game.shard.alive || (game.phase as string) === 'dying') && game.phase !== 'start') {
+      if (game.shard && (game.shard.alive || (game.phase as string) === 'dying')) {
         const color = (game.phase as string) === 'dying' ? T.muted : getShardColor(game);
         ctx!.fillStyle = color; ctx!.shadowColor = color; ctx!.shadowBlur = 12;
         ctx!.beginPath(); ctx!.arc(game.shard.x, game.shard.y, SHARD_R, 0, Math.PI * 2); ctx!.fill();
@@ -671,7 +671,7 @@ export default function GlintGame() {
       ctx!.globalAlpha = 1;
 
       // HUD
-      if (!game.tutActive && game.phase !== 'start') {
+      if (!game.tutActive) {
         ctx!.fillStyle = T.text; ctx!.font = 'bold 16px monospace'; ctx!.textAlign = 'left';
         ctx!.fillText('LVL ' + game.level, 12, game.safeTop + 24);
         ctx!.textAlign = 'right';
@@ -705,10 +705,8 @@ export default function GlintGame() {
           ctx!.fillStyle = T.muted; ctx!.font = '12px monospace'; ctx!.textAlign = 'center';
           ctx!.fillText(game.bounces + ' bounces  PAR ' + game.par, game.W / 2, game.safeTop + 46);
         }
-        if (game.phase !== 'start') {
-          ctx!.fillStyle = T.muted; ctx!.font = '11px monospace'; ctx!.textAlign = 'left';
-          ctx!.fillText('SHOT ' + game.shotsThisLevel, 12, game.safeTop + 40);
-        }
+        ctx!.fillStyle = T.muted; ctx!.font = '11px monospace'; ctx!.textAlign = 'left';
+        ctx!.fillText('SHOT ' + game.shotsThisLevel, 12, game.safeTop + 40);
         if (game.phase === 'aiming' || game.phase === 'flying') {
           ctx!.fillStyle = T.muted; ctx!.globalAlpha = 0.5; ctx!.font = '12px monospace'; ctx!.textAlign = 'left';
           ctx!.fillText('\u21BA RETRY', 12, game.H - 16); ctx!.globalAlpha = 1;
@@ -733,7 +731,7 @@ export default function GlintGame() {
       }
 
       // Tutorial HUD
-      if (game.tutActive && game.phase !== 'start') {
+      if (game.tutActive) {
         const step = TUT_STEPS[game.tutStep];
         if (step) {
           ctx!.fillStyle = T.white; ctx!.font = 'bold 14px monospace'; ctx!.textAlign = 'center';
