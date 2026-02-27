@@ -489,6 +489,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // Static pages in public/ that shouldn't be rewritten
+    if (pathname.startsWith('/hilde')) {
+      return NextResponse.next()
+    }
+
     // All other paths → /pixelpit/*
     const newUrl = new URL(`/pixelpit${pathname}`, request.url)
     log(`[Middleware] Pixelpit domain rewrite ${pathname} -> ${newUrl.pathname}`)
