@@ -22,6 +22,7 @@ export function middleware(request: NextRequest) {
   const isPixelpitDomain = host === 'pixelpit.gg' || host === 'www.pixelpit.gg'
   const isShipShotDomain = host === 'shipshot.io' || host === 'www.shipshot.io'
   const isMutablDomain = host === 'mutabl.co' || host === 'www.mutabl.co'
+  const isDecrementalDomain = host === 'decremental.com' || host === 'www.decremental.com'
 
   // Handle token-tank domain (mirror kochi pattern)
   if (isTokenTankDomain) {
@@ -557,6 +558,36 @@ export function middleware(request: NextRequest) {
     // All other paths → /mutabl/*  (e.g., /todoit → /mutabl/todoit)
     const newUrl = new URL(`/mutabl${pathname}`, request.url)
     log(`[Middleware] Mutabl domain rewrite ${pathname} -> ${newUrl.pathname}`)
+    return NextResponse.rewrite(newUrl)
+  }
+
+  // Handle decremental.com domain
+  if (isDecrementalDomain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    // Root → /decremental
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/decremental', request.url)
+      log(`[Middleware] Decremental domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    // Don't double-rewrite paths already under /decremental
+    if (pathname.startsWith('/decremental')) {
+      return NextResponse.next()
+    }
+
+    // All other paths → /decremental/*
+    const newUrl = new URL(`/decremental${pathname}`, request.url)
+    log(`[Middleware] Decremental domain rewrite ${pathname} -> ${newUrl.pathname}`)
     return NextResponse.rewrite(newUrl)
   }
 

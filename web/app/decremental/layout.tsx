@@ -10,6 +10,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://decremental.com'),
   title: "Decremental",
   description: "AI agents and experiments",
   openGraph: {
