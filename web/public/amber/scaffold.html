@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCAFFOLD — The beauty of skeletal structure</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="SCAFFOLD">
+  <meta property="og:description" content="The beauty of skeletal structure. Frameworks building themselves in gold and light.">
+  <meta property="og:image" content="https://intheamber.com/amber/scaffold-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/scaffold.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SCAFFOLD">
+  <meta name="twitter:description" content="The beauty of skeletal structure. Frameworks building themselves in gold and light.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/scaffold-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      touch-action: none;
+    }
+    
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    #info {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: #FFD700;
+      font-size: 12px;
+      opacity: 0.6;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #title {
+      position: fixed;
+      top: 30px;
+      left: 30px;
+      color: #FFD700;
+      font-size: 18px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      opacity: 0.8;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    @media (max-width: 768px) {
+      #info {
+        font-size: 10px;
+        bottom: 15px;
+        left: 15px;
+      }
+      
+      #title {
+        font-size: 14px;
+        top: 20px;
+        left: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="title">SCAFFOLD</div>
+  <canvas id="canvas"></canvas>
+  <div id="info">Frameworks Building · Tap to Seed</div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const info = document.getElementById('info');
+    
+    let width, height, centerX, centerY;
+    
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      centerX = width / 2;
+      centerY = height / 2;
+    }
+    
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Colors
+    const GOLD = '#FFD700';
+    const TEAL = '#2D9596';
+    const CORAL = '#f97316';
+    const WHITE = '#ffffff';
+    const ELECTRIC_BLUE = '#3b82f6';
+    
+    // Structures
+    let structures = [];
+    let particles = [];
+    let structureCount = 0;
+    
+    class Node {
+      constructor(x, y, isRoot = false) {
+        this.x = x;
+        this.y = y;
+        this.connections = [];
+        this.isRoot = isRoot;
+        this.age = 0;
+        this.maxAge = isRoot ? 500 : 300;
+        this.pulsePhase = Math.random() * Math.PI * 2;
+      }
+      
+      update() {
+        this.age++;
+        this.pulsePhase += 0.05;
+      }
+      
+      draw() {
+        const alpha = Math.min(1, this.age / 30) * (1 - Math.max(0, (this.age - this.maxAge + 50) / 50));
+        const pulse = Math.sin(this.pulsePhase) * 0.3 + 0.7;
+        
+        // Node glow
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = TEAL;
+        
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, (this.isRoot ? 5 : 3) * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = TEAL;
+        ctx.globalAlpha = alpha;
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      }
+      
+      isDead() {
+        return this.age > this.maxAge;
+      }
+    }
+    
+    class Structure {
+      constructor(x, y) {
+        this.nodes = [new Node(x, y, true)];
+        this.growthTimer = 0;
+        this.growthRate = 8;
+        this.maxNodes = 20 + Math.floor(Math.random() * 15);
+        this.color = [GOLD, WHITE, ELECTRIC_BLUE][Math.floor(Math.random() * 3)];
+      }
+      
+      update() {
+        this.nodes.forEach(node => node.update());
+        
+        // Remove dead nodes
+        this.nodes = this.nodes.filter(node => !node.isDead());
+        
+        // Grow new nodes
+        this.growthTimer++;
+        if (this.growthTimer > this.growthRate && this.nodes.length < this.maxNodes) {
+          this.grow();
+          this.growthTimer = 0;
+        }
+      }
+      
+      grow() {
+        if (this.nodes.length === 0) return;
+        
+        // Pick a random existing node to grow from
+        const parent = this.nodes[Math.floor(Math.random() * Math.min(this.nodes.length, 8))];
+        
+        // Calculate growth direction (prefer outward from root)
+        const root = this.nodes[0];
+        const dx = parent.x - root.x;
+        const dy = parent.y - root.y;
+        const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.5;
+        const distance = 30 + Math.random() * 40;
+        
+        const newX = parent.x + Math.cos(angle) * distance;
+        const newY = parent.y + Math.sin(angle) * distance;
+        
+        // Bounds check
+        if (newX < 50 || newX > width - 50 || newY < 50 || newY > height - 50) {
+          return;
+        }
+        
+        const newNode = new Node(newX, newY);
+        parent.connections.push(newNode);
+        this.nodes.push(newNode);
+        
+        // Spawn particles at construction point
+        for (let i = 0; i < 5; i++) {
+          particles.push(new Particle(newX, newY, CORAL));
+        }
+      }
+      
+      draw() {
+        // Draw connections first
+        this.nodes.forEach(node => {
+          node.connections.forEach(child => {
+            const alpha = Math.min(1, Math.min(node.age, child.age) / 30) * 
+                          (1 - Math.max(0, (Math.min(node.age, child.age) - 250) / 50));
+            
+            ctx.beginPath();
+            ctx.moveTo(node.x, node.y);
+            ctx.lineTo(child.x, child.y);
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = alpha * 0.8;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = this.color;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+          });
+        });
+        
+        // Draw nodes
+        this.nodes.forEach(node => node.draw());
+      }
+      
+      isDead() {
+        return this.nodes.length === 0;
+      }
+    }
+    
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 2;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.life = 30;
+        this.maxLife = 30;
+        this.color = color;
+        this.size = 2 + Math.random() * 2;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+      }
+      
+      draw() {
+        const alpha = this.life / this.maxLife;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = alpha;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      
+      isDead() {
+        return this.life <= 0;
+      }
+    }
+    
+    // Spawn initial structures
+    function spawnStructure(x, y) {
+      structures.push(new Structure(x, y));
+      structureCount++;
+    }
+    
+    // Auto-spawn at start
+    setTimeout(() => {
+      spawnStructure(centerX, centerY);
+    }, 500);
+    
+    // Random spawning
+    function randomSpawn() {
+      if (structures.length < 4) {
+        const x = 100 + Math.random() * (width - 200);
+        const y = 100 + Math.random() * (height - 200);
+        spawnStructure(x, y);
+      }
+      
+      setTimeout(randomSpawn, 3000 + Math.random() * 5000);
+    }
+    
+    setTimeout(randomSpawn, 4000);
+    
+    // Interaction
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      spawnStructure(x, y);
+      
+      // Burst effect
+      for (let i = 0; i < 12; i++) {
+        particles.push(new Particle(x, y, GOLD));
+      }
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      spawnStructure(x, y);
+      
+      // Burst effect
+      for (let i = 0; i < 12; i++) {
+        particles.push(new Particle(x, y, GOLD));
+      }
+    });
+    
+    // Animation loop
+    function animate() {
+      // Fade trail effect
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.15)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Update and draw structures
+      structures.forEach(structure => {
+        structure.update();
+        structure.draw();
+      });
+      
+      // Remove dead structures
+      structures = structures.filter(s => !s.isDead());
+      
+      // Update and draw particles
+      particles.forEach(particle => {
+        particle.update();
+        particle.draw();
+      });
+      
+      // Remove dead particles
+      particles = particles.filter(p => !p.isDead());
+      
+      // Update info
+      info.textContent = `Frameworks Building · ${structureCount} Seeded`;
+      
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+  </script>
+</body>
+</html>
