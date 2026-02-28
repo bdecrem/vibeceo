@@ -190,7 +190,7 @@ export function middleware(request: NextRequest) {
     }
 
     // Static one-off pages
-    if (pathname.startsWith('/hilde') || pathname.startsWith('/gravity-golf')) {
+    if (pathname.startsWith('/hilde') || pathname.startsWith('/gravity-golf') || pathname.startsWith('/bubble-pop')) {
       return NextResponse.next()
     }
 
@@ -491,7 +491,7 @@ export function middleware(request: NextRequest) {
     }
 
     // Static pages in public/ that shouldn't be rewritten
-    if (pathname.startsWith('/hilde') || pathname.startsWith('/gravity-golf')) {
+    if (pathname.startsWith('/hilde') || pathname.startsWith('/gravity-golf') || pathname.startsWith('/bubble-pop')) {
       return NextResponse.next()
     }
 
