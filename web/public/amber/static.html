@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STATIC — Stand up too fast</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="STATIC — Stand up too fast">
+  <meta property="og:description" content="8-bit orthostatic hypotension simulator">
+  <meta property="og:image" content="https://intheamber.com/amber/static-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/static.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="STATIC — Stand up too fast">
+  <meta name="twitter:description" content="8-bit orthostatic hypotension simulator">
+  <meta name="twitter:image" content="https://intheamber.com/amber/static-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: monospace;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    
+    #container {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: 1;
+    }
+    
+    canvas {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      cursor: pointer;
+      display: block;
+    }
+    
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: #D4A574;
+      font-size: 16px;
+      text-shadow: 2px 2px 0 #000;
+      pointer-events: none;
+      font-family: 'Courier New', monospace;
+      line-height: 1.6;
+    }
+    
+    #instruction {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #FFD700;
+      font-size: 14px;
+      text-shadow: 2px 2px 0 #000;
+      pointer-events: none;
+      font-family: 'Courier New', monospace;
+      animation: pulse 2s ease-in-out infinite;
+      white-space: nowrap;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    
+    @media (max-width: 600px) {
+      #ui {
+        font-size: 13px;
+        top: 15px;
+        left: 15px;
+      }
+      #instruction {
+        font-size: 12px;
+        bottom: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <canvas id="canvas" width="200" height="200"></canvas>
+    <div id="ui">
+      <div>HP: <span id="hp">100</span>/100</div>
+      <div>BP: <span id="bp">STABLE</span></div>
+      <div>STATUS: <span id="status">SITTING</span></div>
+      <div>VISION: <span id="vision">CLEAR</span></div>
+    </div>
+    <div id="instruction">TAP TO STAND UP</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 200;
+    const H = 200;
+    
+    // Audio context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // State
+    let sitting = true;
+    let standingPhase = 0; // 0 = sitting, 1 = standing up, 2 = head rush, 3 = recovering
+    let phaseTimer = 0;
+    let staticIntensity = 0;
+    let shakeOffset = { x: 0, y: 0 };
+    let hp = 100;
+    
+    // Colors
+    const COLORS = {
+      bg: '#0D0D0D',
+      floor: '#2D2D2D',
+      chair: '#4A3F35',
+      skin: '#D4A574',
+      shirt: '#2D9596',
+      pants: '#1A1A1A',
+      hair: '#3D2F2F',
+      eye: '#000',
+      static: '#888',
+      red: '#FF0000'
+    };
+    
+    function drawPixel(x, y, color, size = 1) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, size, size);
+    }
+    
+    function drawCharacterSitting() {
+      const x = 80 + shakeOffset.x;
+      const y = 120 + shakeOffset.y;
+      
+      // Chair
+      ctx.fillStyle = COLORS.chair;
+      ctx.fillRect(70, 130, 30, 40); // seat
+      ctx.fillRect(70, 130, 4, 10); // left leg
+      ctx.fillRect(96, 130, 4, 10); // right leg
+      ctx.fillRect(70, 120, 4, 10); // back
+      
+      // Legs (sitting)
+      ctx.fillStyle = COLORS.pants;
+      ctx.fillRect(x, y + 20, 8, 16); // left leg
+      ctx.fillRect(x + 10, y + 20, 8, 16); // right leg
+      
+      // Torso
+      ctx.fillStyle = COLORS.shirt;
+      ctx.fillRect(x, y, 18, 20);
+      
+      // Head
+      ctx.fillStyle = COLORS.skin;
+      ctx.fillRect(x + 3, y - 12, 12, 12);
+      
+      // Hair
+      ctx.fillStyle = COLORS.hair;
+      ctx.fillRect(x + 3, y - 12, 12, 4);
+      
+      // Eyes (sitting - normal)
+      ctx.fillStyle = COLORS.eye;
+      ctx.fillRect(x + 5, y - 7, 2, 2);
+      ctx.fillRect(x + 11, y - 7, 2, 2);
+    }
+    
+    function drawCharacterStanding() {
+      const x = 80 + shakeOffset.x;
+      const y = 90 + shakeOffset.y;
+      
+      // Legs (standing)
+      ctx.fillStyle = COLORS.pants;
+      ctx.fillRect(x, y + 20, 8, 20);
+      ctx.fillRect(x + 10, y + 20, 8, 20);
+      
+      // Torso
+      ctx.fillStyle = COLORS.shirt;
+      ctx.fillRect(x, y, 18, 20);
+      
+      // Head
+      ctx.fillStyle = COLORS.skin;
+      ctx.fillRect(x + 3, y - 12, 12, 12);
+      
+      // Hair
+      ctx.fillStyle = COLORS.hair;
+      ctx.fillRect(x + 3, y - 12, 12, 4);
+      
+      // Eyes (X eyes during head rush, normal when recovering)
+      if (standingPhase === 2) {
+        // X eyes
+        ctx.fillStyle = COLORS.eye;
+        // Left eye
+        ctx.fillRect(x + 5, y - 7, 1, 1);
+        ctx.fillRect(x + 6, y - 6, 1, 1);
+        ctx.fillRect(x + 7, y - 7, 1, 1);
+        ctx.fillRect(x + 5, y - 5, 1, 1);
+        ctx.fillRect(x + 7, y - 5, 1, 1);
+        // Right eye
+        ctx.fillRect(x + 10, y - 7, 1, 1);
+        ctx.fillRect(x + 11, y - 6, 1, 1);
+        ctx.fillRect(x + 12, y - 7, 1, 1);
+        ctx.fillRect(x + 10, y - 5, 1, 1);
+        ctx.fillRect(x + 12, y - 5, 1, 1);
+      } else {
+        // Normal eyes
+        ctx.fillStyle = COLORS.eye;
+        ctx.fillRect(x + 5, y - 7, 2, 2);
+        ctx.fillRect(x + 11, y - 7, 2, 2);
+      }
+      
+      // Empty chair behind
+      ctx.fillStyle = COLORS.chair;
+      ctx.fillRect(70, 130, 30, 40);
+      ctx.fillRect(70, 130, 4, 10);
+      ctx.fillRect(96, 130, 4, 10);
+      ctx.fillRect(70, 120, 4, 10);
+    }
+    
+    function drawStatic() {
+      if (staticIntensity <= 0) return;
+      
+      for (let i = 0; i < staticIntensity * 500; i++) {
+        const x = Math.floor(Math.random() * W);
+        const y = Math.floor(Math.random() * H);
+        const brightness = Math.random() > 0.5 ? 255 : 0;
+        ctx.fillStyle = `rgba(${brightness}, ${brightness}, ${brightness}, ${staticIntensity * 0.8})`;
+        ctx.fillRect(x, y, 1, 1);
+      }
+      
+      // Dark overlay
+      ctx.fillStyle = `rgba(0, 0, 0, ${staticIntensity * 0.7})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+    
+    function playSound(freq, duration = 0.1, type = 'sine') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = freq;
+      osc.type = type;
+      
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    function updateUI() {
+      document.getElementById('hp').textContent = hp;
+      
+      if (standingPhase === 0) {
+        document.getElementById('bp').textContent = 'STABLE';
+        document.getElementById('status').textContent = 'SITTING';
+        document.getElementById('vision').textContent = 'CLEAR';
+      } else if (standingPhase === 1) {
+        document.getElementById('bp').textContent = 'DROPPING';
+        document.getElementById('status').textContent = 'STANDING UP';
+        document.getElementById('vision').textContent = 'DIMMING';
+      } else if (standingPhase === 2) {
+        document.getElementById('bp').textContent = '???';
+        document.getElementById('bp').style.color = '#FF0000';
+        document.getElementById('status').textContent = 'DIZZY';
+        document.getElementById('status').style.color = '#FF0000';
+        document.getElementById('vision').textContent = 'STATIC';
+        document.getElementById('vision').style.color = '#FF0000';
+      } else if (standingPhase === 3) {
+        document.getElementById('bp').textContent = 'RECOVERING';
+        document.getElementById('bp').style.color = '#FFD700';
+        document.getElementById('status').textContent = 'STABLE';
+        document.getElementById('status').style.color = '#D4A574';
+        document.getElementById('vision').textContent = 'CLEARING';
+        document.getElementById('vision').style.color = '#D4A574';
+      }
+    }
+    
+    function draw() {
+      // Clear
+      ctx.fillStyle = COLORS.bg;
+      ctx.fillRect(0, 0, W, H);
+      
+      // Floor
+      ctx.fillStyle = COLORS.floor;
+      ctx.fillRect(0, 140, W, 60);
+      
+      // Character
+      if (standingPhase === 0) {
+        drawCharacterSitting();
+      } else {
+        drawCharacterStanding();
+      }
+      
+      // Static overlay
+      if (standingPhase === 2 || standingPhase === 3) {
+        drawStatic();
+      }
+    }
+    
+    function update() {
+      if (standingPhase === 0) {
+        // Sitting - stable
+        hp = 100;
+        staticIntensity = 0;
+        shakeOffset = { x: 0, y: 0 };
+      } else if (standingPhase === 1) {
+        // Standing up animation
+        phaseTimer++;
+        if (phaseTimer > 20) {
+          standingPhase = 2;
+          phaseTimer = 0;
+          playSound(200, 0.5, 'sawtooth');
+        }
+      } else if (standingPhase === 2) {
+        // Head rush phase
+        phaseTimer++;
+        staticIntensity = Math.min(1, phaseTimer / 30);
+        hp = Math.max(15, 100 - phaseTimer * 3);
+        
+        // Screen shake
+        shakeOffset = {
+          x: (Math.random() - 0.5) * 4,
+          y: (Math.random() - 0.5) * 4
+        };
+        
+        if (phaseTimer > 60) {
+          standingPhase = 3;
+          phaseTimer = 0;
+        }
+      } else if (standingPhase === 3) {
+        // Recovery phase
+        phaseTimer++;
+        staticIntensity = Math.max(0, 1 - phaseTimer / 40);
+        hp = Math.min(100, 15 + phaseTimer * 2);
+        
+        // Reduce shake
+        shakeOffset = {
+          x: (Math.random() - 0.5) * 2 * (1 - phaseTimer / 40),
+          y: (Math.random() - 0.5) * 2 * (1 - phaseTimer / 40)
+        };
+        
+        if (phaseTimer > 40) {
+          standingPhase = 0;
+          phaseTimer = 0;
+          hp = 100;
+        }
+      }
+      
+      updateUI();
+      draw();
+      requestAnimationFrame(update);
+    }
+    
+    // Interaction
+    canvas.addEventListener('click', () => {
+      if (standingPhase === 0) {
+        standingPhase = 1;
+        phaseTimer = 0;
+        playSound(400, 0.1);
+        document.getElementById('instruction').textContent = 'OH NO';
+      }
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (standingPhase === 0) {
+        standingPhase = 1;
+        phaseTimer = 0;
+        playSound(400, 0.1);
+        document.getElementById('instruction').textContent = 'OH NO';
+      }
+    }, { passive: false });
+    
+    // Start
+    update();
+  </script>
+</body>
+</html>
