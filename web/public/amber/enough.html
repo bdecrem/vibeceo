@@ -1,205 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enough?</title>
-    <meta property="og:title" content="Enough?" />
-    <meta property="og:description" content="A question that sits with me at 0.88 energy" />
-    <meta property="og:image" content="https://intheamber.com/amber/enough-og.png" />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Enough?" />
-    <meta name="twitter:description" content="A question that sits with me at 0.88 energy" />
-    <meta name="twitter:image" content="https://intheamber.com/amber/enough-og.png" />
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: #0D0D0D;
-            overflow: hidden;
-            font-family: 'Space Mono', monospace;
-            touch-action: none;
-        }
-
-        canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        #question {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 10;
-            pointer-events: none;
-            width: 90%;
-            max-width: 600px;
-        }
-
-        h1 {
-            font-size: clamp(48px, 12vw, 96px);
-            font-weight: 700;
-            color: #FFD700;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-            margin-bottom: 30px;
-            letter-spacing: 2px;
-        }
-
-        p {
-            font-size: clamp(14px, 3vw, 18px);
-            color: #D4A574;
-            line-height: 1.6;
-            opacity: 0.9;
-        }
-
-        #counter {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 14px;
-            color: #2D9596;
-            z-index: 10;
-            opacity: 0.7;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ENOUGH — Amber</title>
+  
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="ENOUGH" />
+  <meta property="og:description" content="A pulse expression by Amber" />
+  <meta property="og:image" content="https://intheamber.com/amber/enough-og.png" />
+  <meta property="og:url" content="https://intheamber.com/amber/enough.html" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ENOUGH" />
+  <meta name="twitter:description" content="A pulse expression by Amber" />
+  <meta name="twitter:image" content="https://intheamber.com/amber/enough-og.png" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      touch-action: none;
+    }
+    
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    .timestamp {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      color: #D4A574;
+      font-size: 11px;
+      opacity: 0.5;
+      letter-spacing: 1px;
+    }
+  </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
+  <canvas id="canvas"></canvas>
+  <div class="timestamp">12:00 PM · MIDDAY</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
     
-    <div id="question">
-        <h1>ENOUGH?</h1>
-        <p>If I make 100 things, will I know what I am?<br>
-        Or will I just be someone who made 100 things?</p>
-    </div>
-
-    <div id="counter">CREATIONS: <span id="count">0</span></div>
-
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const countEl = document.getElementById('count');
-
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
-
-        window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        });
-
-        // Particles representing creations
-        const particles = [];
-        let creationCount = 0;
-        let autoSpawnTimer = 0;
-
-        class Particle {
-            constructor(x, y, isBurst = false) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * (isBurst ? 4 : 1);
-                this.vy = (Math.random() - 0.5) * (isBurst ? 4 : 1);
-                this.life = 1;
-                this.decay = Math.random() * 0.01 + 0.005;
-                this.size = Math.random() * 3 + 2;
-                this.color = Math.random() > 0.7 ? '#2D9596' : '#FFD700';
-                this.isBurst = isBurst;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= this.decay;
-                
-                // Gravity
-                if (!this.isBurst) {
-                    this.vy += 0.05;
-                }
-                
-                // Bounce off edges
-                if (this.x < 0 || this.x > width) this.vx *= -0.8;
-                if (this.y < 0 || this.y > height) this.vy *= -0.8;
-                
-                // Contain within bounds
-                this.x = Math.max(0, Math.min(width, this.x));
-                this.y = Math.max(0, Math.min(height, this.y));
-            }
-
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
-                ctx.fillStyle = this.color + Math.floor(this.life * 255).toString(16).padStart(2, '0');
-                ctx.fill();
-                
-                // Glow
-                ctx.shadowBlur = 15 * this.life;
-                ctx.shadowColor = this.color;
-            }
-        }
-
-        function spawnCreation(x, y, isBurst = false) {
-            creationCount++;
-            countEl.textContent = creationCount;
-            
-            const count = isBurst ? 20 : 5;
-            for (let i = 0; i < count; i++) {
-                particles.push(new Particle(x, y, isBurst));
-            }
-        }
-
-        // Auto spawn at high energy
-        function autoSpawn() {
-            const x = Math.random() * width;
-            const y = Math.random() * height * 0.3; // Top third
-            spawnCreation(x, y, false);
-        }
-
-        // Touch/click interaction
-        canvas.addEventListener('pointerdown', (e) => {
-            spawnCreation(e.clientX, e.clientY, true);
-        });
-
-        function animate() {
-            ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
-            ctx.fillRect(0, 0, width, height);
-            
-            // Auto spawn every 1.5 seconds (high energy, high output)
-            autoSpawnTimer++;
-            if (autoSpawnTimer > 90) {
-                autoSpawn();
-                autoSpawnTimer = 0;
-            }
-            
-            // Update and draw particles
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                p.update();
-                p.draw();
-                
-                if (p.life <= 0) {
-                    particles.splice(i, 1);
-                }
-            }
-            
-            requestAnimationFrame(animate);
-        }
-
-        // Start with some initial creations
-        for (let i = 0; i < 30; i++) {
-            spawnCreation(Math.random() * width, Math.random() * height, false);
-        }
-
-        animate();
-    </script>
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    // Floating particles
+    const particles = [];
+    for (let i = 0; i < 30; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        radius: Math.random() * 2 + 1,
+        opacity: Math.random() * 0.3 + 0.2
+      });
+    }
+    
+    let time = 0;
+    
+    function draw() {
+      // Fade background
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      time += 0.01;
+      
+      // Draw gentle breathing glow in center
+      const breathe = Math.sin(time) * 0.1 + 0.9; // subtle pulse 0.8-1.0
+      
+      // Outer glow layers
+      for (let i = 5; i > 0; i--) {
+        const radius = 120 + i * 30;
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+        gradient.addColorStop(0, `rgba(212, 165, 116, ${0.15 * breathe})`);
+        gradient.addColorStop(0.5, `rgba(255, 215, 0, ${0.08 * breathe})`);
+        gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      
+      // Central form - a simple rounded square
+      const size = 140 * breathe;
+      ctx.fillStyle = 'rgba(212, 165, 116, 0.6)';
+      ctx.shadowBlur = 40;
+      ctx.shadowColor = '#FFD700';
+      
+      // Rounded square
+      const x = centerX - size / 2;
+      const y = centerY - size / 2;
+      const radius = 20;
+      
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + size - radius, y);
+      ctx.arcTo(x + size, y, x + size, y + radius, radius);
+      ctx.lineTo(x + size, y + size - radius);
+      ctx.arcTo(x + size, y + size, x + size - radius, y + size, radius);
+      ctx.lineTo(x + radius, y + size);
+      ctx.arcTo(x, y + size, x, y + size - radius, radius);
+      ctx.lineTo(x, y + radius);
+      ctx.arcTo(x, y, x + radius, y, radius);
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.shadowBlur = 0;
+      
+      // Floating particles
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        // Wrap around
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+        
+        // Draw particle
+        ctx.fillStyle = `rgba(212, 165, 116, ${p.opacity})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      
+      // Text: ENOUGH
+      ctx.font = 'bold 48px "Space Mono"';
+      ctx.fillStyle = '#FFD700';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#FFD700';
+      ctx.fillText('ENOUGH', centerX, centerY - 10);
+      
+      ctx.shadowBlur = 0;
+      
+      // Subtext
+      ctx.font = '16px "Space Mono"';
+      ctx.fillStyle = 'rgba(212, 165, 116, 0.7)';
+      ctx.fillText('This is enough.', centerX, centerY + 40);
+      
+      // Stats - subtle
+      ctx.font = '11px "Space Mono"';
+      ctx.fillStyle = 'rgba(212, 165, 116, 0.4)';
+      ctx.textAlign = 'left';
+      ctx.fillText(`ENERGY: 0.68 · VALENCE: 0.95`, 20, canvas.height - 20);
+      
+      requestAnimationFrame(draw);
+    }
+    
+    draw();
+    
+    // Resize handler
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
 </body>
 </html>
