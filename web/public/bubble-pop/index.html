@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Bubble Pop Chain Reaction</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a1a; touch-action: none; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #ui {
+    position: absolute; top: 0; left: 0; width: 100%; padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; pointer-events: none;
+    text-shadow: 0 0 10px rgba(0,0,0,0.8);
+  }
+  #score { font-size: 28px; font-weight: 700; }
+  #combo { font-size: 18px; opacity: 0.8; }
+  .pop-text {
+    position: absolute; font-family: 'Segoe UI', system-ui, sans-serif;
+    font-weight: 700; font-size: 24px; color: #fff; pointer-events: none;
+    text-shadow: 0 0 8px currentColor; animation: floatUp 0.8s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -60px) scale(1.3); }
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div id="score">0</div>
+  <div id="combo"></div>
+</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const comboEl = document.getElementById('combo');
+
+let W, H, dpr;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resize();
+window.addEventListener('resize', resize);
+
+const COLORS = [
+  { h: 340, s: 80, l: 60, name: '#f04080' },  // pink
+  { h: 200, s: 85, l: 55, name: '#2090d0' },  // blue
+  { h: 130, s: 70, l: 50, name: '#30c060' },  // green
+  { h: 45,  s: 90, l: 58, name: '#f0b020' },  // gold
+  { h: 275, s: 75, l: 60, name: '#a050d8' },  // purple
+];
+
+const BUBBLE_R = Math.min(W, H) * 0.038;
+const CHAIN_DIST = BUBBLE_R * 3.2;
+
+let bubbles = [];
+let particles = [];
+let score = 0;
+let spawnTimer = 0;
+let lastTime = 0;
+
+class Bubble {
+  constructor(x, y, colorIdx) {
+    this.x = x;
+    this.y = y;
+    this.colorIdx = colorIdx;
+    this.r = BUBBLE_R;
+    this.vy = -(0.3 + Math.random() * 0.4);
+    this.vx = (Math.random() - 0.5) * 0.15;
+    this.wobble = Math.random() * Math.PI * 2;
+    this.wobbleSpeed = 0.5 + Math.random() * 0.5;
+    this.alive = true;
+    this.opacity = 0;
+    this.scale = 0.3;
+    this.pulsePhase = Math.random() * Math.PI * 2;
+  }
+
+  update(dt) {
+    this.wobble += this.wobbleSpeed * dt;
+    this.x += this.vx + Math.sin(this.wobble) * 0.3;
+    this.y += this.vy;
+    this.pulsePhase += dt * 1.5;
+
+    if (this.opacity < 1) this.opacity = Math.min(1, this.opacity + dt * 3);
+    if (this.scale < 1) this.scale = Math.min(1, this.scale + dt * 4);
+
+    // bounce off walls
+    if (this.x - this.r < 0) { this.x = this.r; this.vx *= -0.5; }
+    if (this.x + this.r > W) { this.x = W - this.r; this.vx *= -0.5; }
+
+    // remove if off top
+    if (this.y + this.r < -20) this.alive = false;
+  }
+
+  draw() {
+    const c = COLORS[this.colorIdx];
+    const pulse = 1 + Math.sin(this.pulsePhase) * 0.04;
+    const r = this.r * this.scale * pulse;
+    const alpha = this.opacity;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // outer glow
+    const glow = ctx.createRadialGradient(this.x, this.y, r * 0.2, this.x, this.y, r * 2);
+    glow.addColorStop(0, `hsla(${c.h},${c.s}%,${c.l}%,0.3)`);
+    glow.addColorStop(1, `hsla(${c.h},${c.s}%,${c.l}%,0)`);
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, r * 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // main bubble
+    const grad = ctx.createRadialGradient(this.x - r * 0.3, this.y - r * 0.3, r * 0.1, this.x, this.y, r);
+    grad.addColorStop(0, `hsla(${c.h},${c.s}%,${Math.min(c.l + 25, 90)}%,0.95)`);
+    grad.addColorStop(0.6, `hsla(${c.h},${c.s}%,${c.l}%,0.85)`);
+    grad.addColorStop(1, `hsla(${c.h},${c.s + 5}%,${c.l - 10}%,0.7)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // highlight
+    ctx.fillStyle = `rgba(255,255,255,${0.35 * alpha})`;
+    ctx.beginPath();
+    ctx.ellipse(this.x - r * 0.25, this.y - r * 0.3, r * 0.35, r * 0.22, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+}
+
+class Particle {
+  constructor(x, y, colorIdx) {
+    const c = COLORS[colorIdx];
+    this.x = x;
+    this.y = y;
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1.5 + Math.random() * 4;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+    this.r = 2 + Math.random() * 4;
+    this.life = 1;
+    this.decay = 1.2 + Math.random() * 1;
+    this.color = `hsl(${c.h},${c.s}%,${c.l + 10}%)`;
+    this.alive = true;
+  }
+
+  update(dt) {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += 0.08; // gravity
+    this.life -= this.decay * dt;
+    if (this.life <= 0) this.alive = false;
+  }
+
+  draw() {
+    ctx.globalAlpha = this.life;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r * this.life, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+}
+
+function spawnBubble() {
+  const x = BUBBLE_R + Math.random() * (W - BUBBLE_R * 2);
+  const y = H + BUBBLE_R;
+  const colorIdx = Math.floor(Math.random() * COLORS.length);
+  bubbles.push(new Bubble(x, y, colorIdx));
+}
+
+function spawnParticles(x, y, colorIdx, count) {
+  for (let i = 0; i < count; i++) {
+    particles.push(new Particle(x, y, colorIdx));
+  }
+}
+
+function popBubble(bubble) {
+  bubble.alive = false;
+  spawnParticles(bubble.x, bubble.y, bubble.colorIdx, 10);
+}
+
+function chainPop(startBubble) {
+  const colorIdx = startBubble.colorIdx;
+  const chain = [startBubble];
+  const visited = new Set([bubbles.indexOf(startBubble)]);
+
+  // BFS to find connected same-color bubbles
+  let queue = [startBubble];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    for (let i = 0; i < bubbles.length; i++) {
+      if (visited.has(i) || !bubbles[i].alive) continue;
+      const b = bubbles[i];
+      if (b.colorIdx !== colorIdx) continue;
+      const dx = current.x - b.x;
+      const dy = current.y - b.y;
+      if (dx * dx + dy * dy < CHAIN_DIST * CHAIN_DIST) {
+        visited.add(i);
+        chain.push(b);
+        queue.push(b);
+      }
+    }
+  }
+
+  // Pop with staggered delay
+  chain.forEach((b, i) => {
+    setTimeout(() => {
+      if (!b.alive) return;
+      popBubble(b);
+    }, i * 60);
+  });
+
+  // Score: chain length multiplier
+  const chainLen = chain.length;
+  const points = chainLen * chainLen * 10;
+  score += points;
+  scoreEl.textContent = score;
+
+  if (chainLen > 1) {
+    comboEl.textContent = `x${chainLen} chain!`;
+    comboEl.style.color = COLORS[colorIdx].name;
+    clearTimeout(comboEl._timer);
+    comboEl._timer = setTimeout(() => comboEl.textContent = '', 1500);
+  }
+
+  // floating score text
+  showFloatingText(startBubble.x, startBubble.y, `+${points}`, COLORS[colorIdx].name);
+}
+
+function showFloatingText(x, y, text, color) {
+  const el = document.createElement('div');
+  el.className = 'pop-text';
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.color = color;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+function handleTap(px, py) {
+  // find closest bubble to tap
+  let closest = null;
+  let closestDist = Infinity;
+  for (const b of bubbles) {
+    if (!b.alive) continue;
+    const dx = px - b.x;
+    const dy = py - b.y;
+    const dist = dx * dx + dy * dy;
+    const hitR = b.r * 1.3; // generous hit area
+    if (dist < hitR * hitR && dist < closestDist) {
+      closest = b;
+      closestDist = dist;
+    }
+  }
+  if (closest) chainPop(closest);
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  handleTap(e.clientX, e.clientY);
+});
+
+function update(dt) {
+  spawnTimer += dt;
+  const spawnRate = Math.max(0.25, 0.7 - score * 0.0001);
+  if (spawnTimer > spawnRate) {
+    spawnTimer = 0;
+    spawnBubble();
+  }
+
+  // soft cap on bubbles
+  if (bubbles.length > 80) {
+    bubbles.slice(0, bubbles.length - 80).forEach(b => b.alive = false);
+  }
+
+  for (const b of bubbles) b.update(dt);
+  for (const p of particles) p.update(dt);
+
+  bubbles = bubbles.filter(b => b.alive);
+  particles = particles.filter(p => p.alive);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // subtle background gradient
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0a0a1a');
+  bg.addColorStop(1, '#0f1028');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  for (const b of bubbles) b.draw();
+  for (const p of particles) p.draw();
+}
+
+function loop(time) {
+  const dt = Math.min((time - lastTime) / 1000, 0.05);
+  lastTime = time;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// seed some initial bubbles
+for (let i = 0; i < 15; i++) {
+  const x = BUBBLE_R + Math.random() * (W - BUBBLE_R * 2);
+  const y = H * 0.4 + Math.random() * H * 0.5;
+  const colorIdx = Math.floor(Math.random() * COLORS.length);
+  const b = new Bubble(x, y, colorIdx);
+  b.opacity = 1;
+  b.scale = 1;
+  bubbles.push(b);
+}
+
+lastTime = performance.now();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
