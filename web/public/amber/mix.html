@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MIX — Mix colors to match the target</title>
+  
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="MIX — Mix colors to match the target">
+  <meta property="og:description" content="Tap RGB buttons to blend your perfect match. How close can you get?">
+  <meta property="og:image" content="https://intheamber.com/amber/mix-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/mix.html">
+  <meta property="og:type" content="website">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MIX — Mix colors to match the target">
+  <meta name="twitter:description" content="Tap RGB buttons to blend your perfect match. How close can you get?">
+  <meta name="twitter:image" content="https://intheamber.com/amber/mix-og.png">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+    }
+    
+    #gameCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    
+    .container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+    
+    .label {
+      font-size: 14px;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      opacity: 0.7;
+    }
+    
+    .color-circle {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      margin: 0 auto 30px;
+border: 3px solid rgba(212, 165, 116, 0.3);
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.2);
+    }
+    
+    #targetCircle {
+      margin-bottom: 15px;
+    }
+    
+    #mixCircle {
+      margin-bottom: 40px;
+      position: relative;
+    }
+    
+    .rgb-display {
+      font-size: 11px;
+      opacity: 0.5;
+      margin-top: 8px;
+      letter-spacing: 1px;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    
+    button {
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 18px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.1s;
+      letter-spacing: 1px;
+      min-width: 80px;
+      touch-action: manipulation;
+    }
+    
+    button:active {
+      transform: scale(0.95);
+    }
+    
+    .color-btn {
+      color: white;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+    }
+    
+    .color-btn:active {
+      box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+      transform: translateY(2px);
+    }
+    
+    #redBtn {
+      background: #FF4444;
+    }
+    
+    #greenBtn {
+      background: #44FF44;
+    }
+    
+    #blueBtn {
+      background: #4444FF;
+    }
+    
+    .action-btns {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    
+    #checkBtn {
+      background: #FFD700;
+      color: #000;
+      font-size: 18px;
+      padding: 20px 40px;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+    
+    #checkBtn:hover {
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    }
+    
+    #resetBtn {
+      background: #2D9596;
+      color: #fff;
+    }
+    
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      font-size: 14px;
+      opacity: 0.8;
+      margin-bottom: 20px;
+    }
+    
+    .stat-value {
+      color: #FFD700;
+      font-weight: 700;
+      font-size: 18px;
+    }
+    
+    #feedback {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      font-weight: 700;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 100;
+      transition: opacity 0.3s;
+    }
+    
+    #feedback.show {
+      opacity: 1;
+    }
+    
+    .instruction {
+      font-size: 12px;
+      opacity: 0.5;
+      margin-top: 20px;
+      line-height: 1.6;
+    }
+    
+    @media (max-width: 500px) {
+      .color-circle {
+        width: 120px;
+        height: 120px;
+      }
+      
+      button {
+        font-size: 14px;
+        padding: 16px 20px;
+        min-width: 70px;
+      }
+      
+      #checkBtn {
+        font-size: 16px;
+        padding: 18px 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  
+  <div class="container">
+    <div class="label">TARGET</div>
+    <div id="targetCircle" class="color-circle"></div>
+    <div class="rgb-display" id="targetRGB">RGB(0, 0, 0)</div>
+    
+    <div class="label" style="margin-top: 40px;">YOUR MIX</div>
+    <div id="mixCircle" class="color-circle"></div>
+    <div class="rgb-display" id="mixRGB">RGB(0, 0, 0)</div>
+    
+    <div class="controls">
+      <button id="redBtn" class="color-btn">+R</button>
+      <button id="greenBtn" class="color-btn">+G</button>
+      <button id="blueBtn" class="color-btn">+B</button>
+    </div>
+    
+    <div class="action-btns">
+      <button id="resetBtn">RESET</button>
+      <button id="checkBtn">CHECK</button>
+    </div>
+    
+    <div class="stats">
+      <div>
+        <div>SCORE</div>
+        <div class="stat-value" id="score">0</div>
+      </div>
+      <div>
+        <div>MATCHES</div>
+        <div class="stat-value" id="matches">0</div>
+      </div>
+      <div>
+        <div>AVG</div>
+        <div class="stat-value" id="avg">0%</div>
+      </div>
+    </div>
+    
+    <div class="instruction">
+      Tap color buttons to mix.<br>
+      Get as close as you can to the target.
+    </div>
+  </div>
+  
+  <div id="feedback"></div>
+
+  <script>
+    // Canvas setup
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Game state
+    let targetColor = { r: 0, g: 0, b: 0 };
+    let mixColor = { r: 0, g: 0, b: 0 };
+    let score = 0;
+    let matches = 0;
+    let particles = [];
+    
+    // Audio context
+    let audioCtx = null;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    // Generate random target color
+    function newTarget() {
+      targetColor = {
+        r: Math.floor(Math.random() * 256),
+        g: Math.floor(Math.random() * 256),
+        b: Math.floor(Math.random() * 256)
+      };
+      updateTargetDisplay();
+    }
+    
+    // Update displays
+    function updateTargetDisplay() {
+      const circle = document.getElementById('targetCircle');
+      circle.style.background = `rgb(${targetColor.r}, ${targetColor.g}, ${targetColor.b})`;
+      document.getElementById('targetRGB').textContent = 
+        `RGB(${targetColor.r}, ${targetColor.g}, ${targetColor.b})`;
+    }
+    
+    function updateMixDisplay() {
+      const circle = document.getElementById('mixCircle');
+      circle.style.background = `rgb(${mixColor.r}, ${mixColor.g}, ${mixColor.b})`;
+      document.getElementById('mixRGB').textContent = 
+        `RGB(${mixColor.r}, ${mixColor.g}, ${mixColor.b})`;
+    }
+    
+    function updateStats() {
+      document.getElementById('score').textContent = score;
+      document.getElementById('matches').textContent = matches;
+      const avg = matches > 0 ? Math.round(score / matches) : 0;
+      document.getElementById('avg').textContent = avg + '%';
+    }
+    
+    // Add color
+    function addColor(channel, amount) {
+      initAudio();
+      mixColor[channel] = Math.min(255, mixColor[channel] + amount);
+      updateMixDisplay();
+      playColorTone(channel);
+      createAddParticles(channel);
+    }
+    
+    // Calculate color distance and accuracy
+    function checkMatch() {
+      initAudio();
+      
+      const distance = Math.sqrt(
+        Math.pow(targetColor.r - mixColor.r, 2) +
+        Math.pow(targetColor.g - mixColor.g, 2) +
+        Math.pow(targetColor.b - mixColor.b, 2)
+      );
+      
+      // Max possible distance in RGB space
+      const maxDistance = Math.sqrt(3 * 255 * 255);
+      const accuracy = Math.round((1 - distance / maxDistance) * 100);
+      
+      score += accuracy;
+      matches++;
+      updateStats();
+      
+      showFeedback(accuracy);
+      createMatchParticles(accuracy);
+      playMatchSound(accuracy);
+      
+      // Next target after delay
+      setTimeout(() => {
+        newTarget();
+        mixColor = { r: 0, g: 0, b: 0 };
+        updateMixDisplay();
+      }, 2000);
+    }
+    
+    // Reset mix
+    function resetMix() {
+      initAudio();
+      mixColor = { r: 0, g: 0, b: 0 };
+      updateMixDisplay();
+      playResetSound();
+    }
+    
+    // Feedback display
+    function showFeedback(accuracy) {
+      const feedback = document.getElementById('feedback');
+      
+      let message = '';
+      if (accuracy >= 95) message = 'PERFECT!';
+      else if (accuracy >= 85) message = 'EXCELLENT!';
+      else if (accuracy >= 75) message = 'GREAT!';
+      else if (accuracy >= 60) message = 'GOOD!';
+      else if (accuracy >= 40) message = 'CLOSE!';
+      else message = 'TRY AGAIN!';
+      
+      feedback.textContent = `${message} ${accuracy}%`;
+      feedback.classList.add('show');
+      
+      setTimeout(() => {
+        feedback.classList.remove('show');
+      }, 1800);
+    }
+    
+    // Particles
+    function createAddParticles(channel) {
+      const colors = {
+        r: '#FF4444',
+        g: '#44FF44',
+        b: '#4444FF'
+      };
+      
+      const rect = document.getElementById('mixCircle').getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      
+      for (let i = 0; i < 8; i++) {
+        particles.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4 - 2,
+          life: 1,
+          color: colors[channel],
+          size: Math.random() * 4 + 2
+        });
+      }
+    }
+    
+    function createMatchParticles(accuracy) {
+      const count = Math.floor(accuracy / 5) + 10; // More particles for better matches
+      const colors = ['#FFD700', '#D4A574', '#2D9596'];
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count;
+        const speed = 3 + Math.random() * 3;
+        particles.push({
+          x: centerX,
+          y: centerY,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: Math.random() * 6 + 3
+        });
+      }
+    }
+    
+    // Audio
+    function playColorTone(channel) {
+      if (!audioCtx) return;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      const freqs = { r: 440, g: 554, b: 659 }; // A4, C#5, E5
+      osc.frequency.value = freqs[channel];
+      
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    }
+    
+    function playMatchSound(accuracy) {
+      if (!audioCtx) return;
+      
+      // Chord based on accuracy
+      const baseFreq = 440 + (accuracy * 2); // Higher pitch for better matches
+      const freqs = [baseFreq, baseFreq * 1.25, baseFreq * 1.5];
+      
+      freqs.forEach((freq, i) => {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+          
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.3);
+        }, i * 50);
+      });
+    }
+    
+    function playResetSound() {
+      if (!audioCtx) return;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.1);
+      
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
+    }
+    
+    // Animation loop
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2; // Gravity
+        p.life -= 0.02;
+        
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+        
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(animate);
+    }
+    
+    // Event listeners
+    document.getElementById('redBtn').addEventListener('click', () => addColor('r', 25));
+    document.getElementById('greenBtn').addEventListener('click', () => addColor('g', 25));
+    document.getElementById('blueBtn').addEventListener('click', () => addColor('b', 25));
+    document.getElementById('checkBtn').addEventListener('click', checkMatch);
+    document.getElementById('resetBtn').addEventListener('click', resetMix);
+    
+    // Window resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+    
+    // Initialize
+    newTarget();
+    updateMixDisplay();
+    animate();
+  </script>
+</body>
+</html>
