@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Gravity Golf</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a1a; overflow: hidden; touch-action: none; user-select: none; font-family: 'Segoe UI', sans-serif; }
+canvas { display: block; }
+#ui {
+  position: absolute; top: 0; left: 0; width: 100%; pointer-events: none;
+  display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 24px;
+}
+#ui div { color: #fff; font-size: 18px; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+#overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(10,10,26,0.85); z-index: 10;
+}
+#overlay h1 { color: #0ff; font-size: 48px; margin-bottom: 8px; text-shadow: 0 0 30px #0ff; }
+#overlay h2 { color: #f0f; font-size: 28px; margin-bottom: 24px; text-shadow: 0 0 20px #f0f; }
+#overlay p { color: #aac; font-size: 16px; margin-bottom: 32px; max-width: 400px; text-align: center; line-height: 1.5; }
+#overlay button {
+  background: none; border: 2px solid #0ff; color: #0ff; padding: 12px 40px;
+  font-size: 20px; cursor: pointer; border-radius: 6px; pointer-events: all;
+  text-shadow: 0 0 10px #0ff; transition: all 0.2s;
+}
+#overlay button:hover { background: rgba(0,255,255,0.15); box-shadow: 0 0 20px rgba(0,255,255,0.3); }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div id="levelInfo">Level 1</div>
+  <div id="shotInfo">Shots: 0</div>
+</div>
+<div id="overlay">
+  <h1>Gravity Golf</h1>
+  <h2>Bend space. Sink the putt.</h2>
+  <p>Click to place your ball, then drag to aim and launch. Gravity wells will bend your shot. Get the ball in the hole!</p>
+  <button id="startBtn">Play</button>
+</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('overlay');
+const startBtn = document.getElementById('startBtn');
+const levelInfoEl = document.getElementById('levelInfo');
+const shotInfoEl = document.getElementById('shotInfo');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- Game State ---
+const STATE = { MENU: 0, PLACING: 1, AIMING: 2, FLYING: 3, SCORED: 4, LEVEL_COMPLETE: 5, GAME_OVER: 6 };
+let state = STATE.MENU;
+let currentLevel = 0;
+let shots = 0;
+let totalShots = 0;
+let ball = null;
+let aimStart = null;
+let aimEnd = null;
+let particles = [];
+let trailParticles = [];
+let stars = [];
+let hole = null;
+let gravityWells = [];
+let levelScores = [];
+
+// Generate stars
+for (let i = 0; i < 200; i++) {
+  stars.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.5 + 0.3, b: Math.random() * 0.5 + 0.5 });
+}
+
+// --- Levels ---
+const levels = [
+  {
+    name: "Gentle Curve",
+    hole: { x: 0.75, y: 0.35 },
+    wells: [
+      { x: 0.5, y: 0.5, mass: 8000, color: '#ff6600' }
+    ],
+    par: 2
+  },
+  {
+    name: "Twin Stars",
+    hole: { x: 0.82, y: 0.2 },
+    wells: [
+      { x: 0.4, y: 0.35, mass: 6000, color: '#ff00ff' },
+      { x: 0.6, y: 0.65, mass: 6000, color: '#00ffcc' }
+    ],
+    par: 3
+  },
+  {
+    name: "The Gauntlet",
+    hole: { x: 0.85, y: 0.5 },
+    wells: [
+      { x: 0.3, y: 0.3, mass: 5000, color: '#ff3366' },
+      { x: 0.5, y: 0.7, mass: 7000, color: '#6633ff' },
+      { x: 0.7, y: 0.35, mass: 5500, color: '#ffcc00' }
+    ],
+    par: 3
+  }
+];
+
+function loadLevel(idx) {
+  const lv = levels[idx];
+  hole = { x: lv.hole.x * W, y: lv.hole.y * H, r: 18 };
+  gravityWells = lv.wells.map(w => ({
+    x: w.x * W, y: w.y * H, mass: w.mass, color: w.color, pulsePhase: Math.random() * Math.PI * 2
+  }));
+  ball = null;
+  shots = 0;
+  particles = [];
+  trailParticles = [];
+  state = STATE.PLACING;
+  levelInfoEl.textContent = `Level ${idx + 1}: ${lv.name}`;
+  shotInfoEl.textContent = 'Shots: 0';
+}
+
+// --- Input ---
+let pointerDown = false;
+let pointerPos = { x: 0, y: 0 };
+
+function getPos(e) {
+  const t = e.touches ? e.touches[0] || e.changedTouches[0] : e;
+  return { x: t.clientX, y: t.clientY };
+}
+
+function onDown(e) {
+  e.preventDefault();
+  const p = getPos(e);
+  pointerDown = true;
+  pointerPos = p;
+
+  if (state === STATE.PLACING) {
+    // Check not too close to a well or hole
+    let tooClose = false;
+    for (const w of gravityWells) {
+      if (dist(p.x, p.y, w.x, w.y) < 60) tooClose = true;
+    }
+    if (dist(p.x, p.y, hole.x, hole.y) < 60) tooClose = true;
+    if (!tooClose) {
+      ball = { x: p.x, y: p.y, vx: 0, vy: 0, r: 8, alive: true };
+      aimStart = { x: p.x, y: p.y };
+      aimEnd = { x: p.x, y: p.y };
+      state = STATE.AIMING;
+    }
+  } else if (state === STATE.SCORED) {
+    if (currentLevel < levels.length - 1) {
+      currentLevel++;
+      loadLevel(currentLevel);
+    } else {
+      showGameOver();
+    }
+  }
+}
+
+function onMove(e) {
+  e.preventDefault();
+  const p = getPos(e);
+  pointerPos = p;
+  if (state === STATE.AIMING && pointerDown) {
+    aimEnd = { x: p.x, y: p.y };
+  }
+}
+
+function onUp(e) {
+  e.preventDefault();
+  if (state === STATE.AIMING && ball) {
+    const dx = aimStart.x - aimEnd.x;
+    const dy = aimStart.y - aimEnd.y;
+    const power = Math.min(Math.sqrt(dx * dx + dy * dy), 300);
+    const angle = Math.atan2(dy, dx);
+    const speed = power * 0.03;
+    ball.vx = Math.cos(angle) * speed;
+    ball.vy = Math.sin(angle) * speed;
+    shots++;
+    totalShots++;
+    shotInfoEl.textContent = `Shots: ${shots}`;
+    state = STATE.FLYING;
+    spawnBurst(ball.x, ball.y, '#0ff', 12);
+  }
+  pointerDown = false;
+}
+
+canvas.addEventListener('mousedown', onDown);
+canvas.addEventListener('mousemove', onMove);
+canvas.addEventListener('mouseup', onUp);
+canvas.addEventListener('touchstart', onDown, { passive: false });
+canvas.addEventListener('touchmove', onMove, { passive: false });
+canvas.addEventListener('touchend', onUp, { passive: false });
+
+startBtn.addEventListener('click', () => {
+  overlay.classList.add('hidden');
+  currentLevel = 0;
+  totalShots = 0;
+  levelScores = [];
+  loadLevel(0);
+});
+
+function dist(x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// --- Particles ---
+function spawnBurst(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const sp = Math.random() * 3 + 1;
+    particles.push({
+      x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+      life: 1, decay: 0.02 + Math.random() * 0.02, color, r: Math.random() * 3 + 1
+    });
+  }
+}
+
+function spawnTrail(x, y, color) {
+  trailParticles.push({
+    x, y, life: 1, decay: 0.025, color, r: Math.random() * 2.5 + 1.5
+  });
+}
+
+// --- Physics ---
+function updateBall(dt) {
+  if (!ball || !ball.alive) return;
+
+  // Gravity from wells
+  for (const w of gravityWells) {
+    const dx = w.x - ball.x;
+    const dy = w.y - ball.y;
+    const d = Math.max(dist(ball.x, ball.y, w.x, w.y), 30);
+    const force = w.mass / (d * d);
+    ball.vx += (dx / d) * force * dt;
+    ball.vy += (dy / d) * force * dt;
+
+    // Absorbed by well
+    if (d < 20) {
+      ball.alive = false;
+      spawnBurst(ball.x, ball.y, '#ff4444', 25);
+      setTimeout(() => {
+        ball = null;
+        state = STATE.PLACING;
+      }, 400);
+      return;
+    }
+  }
+
+  ball.x += ball.vx * dt * 60;
+  ball.y += ball.vy * dt * 60;
+
+  // Trail
+  spawnTrail(ball.x, ball.y, '#0ff');
+
+  // Check hole
+  if (dist(ball.x, ball.y, hole.x, hole.y) < hole.r + ball.r * 0.5) {
+    const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+    if (speed < 12) {
+      ball.alive = false;
+      spawnBurst(hole.x, hole.y, '#0f0', 30);
+      spawnBurst(hole.x, hole.y, '#ff0', 20);
+      levelScores.push(shots);
+      state = STATE.SCORED;
+      return;
+    }
+  }
+
+  // Out of bounds — reset
+  const margin = 100;
+  if (ball.x < -margin || ball.x > W + margin || ball.y < -margin || ball.y > H + margin) {
+    ball.alive = false;
+    ball = null;
+    state = STATE.PLACING;
+  }
+}
+
+// --- Drawing ---
+let time = 0;
+
+function drawStars() {
+  for (const s of stars) {
+    const flicker = 0.7 + 0.3 * Math.sin(time * 2 + s.x * 100);
+    ctx.globalAlpha = s.b * flicker;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawGravityWells() {
+  for (const w of gravityWells) {
+    w.pulsePhase += 0.03;
+    const pulse = 0.8 + 0.2 * Math.sin(w.pulsePhase);
+    const baseR = Math.sqrt(w.mass) * 0.4;
+
+    // Glow rings
+    for (let i = 3; i >= 0; i--) {
+      const r = baseR + i * 15 * pulse;
+      const alpha = 0.08 * (4 - i) / 4;
+      ctx.beginPath();
+      ctx.arc(w.x, w.y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = w.color;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Core
+    const grad = ctx.createRadialGradient(w.x, w.y, 0, w.x, w.y, baseR * 0.5);
+    grad.addColorStop(0, w.color);
+    grad.addColorStop(1, 'transparent');
+    ctx.globalAlpha = 0.6 * pulse;
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(w.x, w.y, baseR * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Center dot
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(w.x, w.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawHole() {
+  const pulse = 1 + 0.15 * Math.sin(time * 4);
+  // Outer glow
+  const grad = ctx.createRadialGradient(hole.x, hole.y, 0, hole.x, hole.y, hole.r * 3 * pulse);
+  grad.addColorStop(0, 'rgba(0,255,100,0.3)');
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(hole.x, hole.y, hole.r * 3 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Hole ring
+  ctx.strokeStyle = '#0f0';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#0f0';
+  ctx.shadowBlur = 15;
+  ctx.beginPath();
+  ctx.arc(hole.x, hole.y, hole.r, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Flag
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#aaa';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(hole.x, hole.y);
+  ctx.lineTo(hole.x, hole.y - 30);
+  ctx.stroke();
+  ctx.fillStyle = '#f44';
+  ctx.beginPath();
+  ctx.moveTo(hole.x, hole.y - 30);
+  ctx.lineTo(hole.x + 15, hole.y - 24);
+  ctx.lineTo(hole.x, hole.y - 18);
+  ctx.fill();
+}
+
+function drawBall() {
+  if (!ball || !ball.alive) return;
+  ctx.shadowColor = '#0ff';
+  ctx.shadowBlur = 15;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Inner glow
+  const g = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 0, ball.x, ball.y, ball.r);
+  g.addColorStop(0, 'rgba(200,255,255,0.8)');
+  g.addColorStop(1, 'rgba(0,255,255,0.1)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawAim() {
+  if (state !== STATE.AIMING || !aimStart || !aimEnd) return;
+  const dx = aimStart.x - aimEnd.x;
+  const dy = aimStart.y - aimEnd.y;
+  const power = Math.min(Math.sqrt(dx * dx + dy * dy), 300);
+  const angle = Math.atan2(dy, dx);
+
+  // Power line
+  ctx.strokeStyle = `rgba(0,255,255,${0.4 + 0.4 * (power / 300)})`;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 6]);
+  ctx.beginPath();
+  ctx.moveTo(ball.x, ball.y);
+  ctx.lineTo(ball.x + Math.cos(angle) * power * 0.8, ball.y + Math.sin(angle) * power * 0.8);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Arrow tip
+  const tipX = ball.x + Math.cos(angle) * power * 0.8;
+  const tipY = ball.y + Math.sin(angle) * power * 0.8;
+  const arrowSize = 10;
+  ctx.fillStyle = '#0ff';
+  ctx.beginPath();
+  ctx.moveTo(tipX, tipY);
+  ctx.lineTo(tipX - Math.cos(angle - 0.4) * arrowSize, tipY - Math.sin(angle - 0.4) * arrowSize);
+  ctx.lineTo(tipX - Math.cos(angle + 0.4) * arrowSize, tipY - Math.sin(angle + 0.4) * arrowSize);
+  ctx.fill();
+
+  // Power bar
+  const barW = 120, barH = 8;
+  const barX = ball.x - barW / 2, barY = ball.y + 25;
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(barX, barY, barW, barH);
+  const ratio = power / 300;
+  const barColor = ratio < 0.5 ? '#0f0' : ratio < 0.8 ? '#ff0' : '#f44';
+  ctx.fillStyle = barColor;
+  ctx.fillRect(barX, barY, barW * ratio, barH);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(barX, barY, barW, barH);
+}
+
+function drawParticles() {
+  for (const p of trailParticles) {
+    ctx.globalAlpha = p.life * 0.5;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  for (const p of particles) {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawScoredUI() {
+  if (state !== STATE.SCORED) return;
+  const lv = levels[currentLevel];
+  const diff = shots - lv.par;
+  let label = 'Par';
+  if (diff < 0) label = diff === -1 ? 'Birdie!' : 'Eagle!';
+  else if (diff === 1) label = 'Bogey';
+  else if (diff > 1) label = `+${diff}`;
+  else label = 'Par!';
+
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(W / 2 - 150, H / 2 - 60, 300, 120);
+  ctx.strokeStyle = '#0f0';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(W / 2 - 150, H / 2 - 60, 300, 120);
+
+  ctx.fillStyle = '#0f0';
+  ctx.font = 'bold 28px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Hole Complete!', W / 2, H / 2 - 20);
+  ctx.fillStyle = '#fff';
+  ctx.font = '20px "Segoe UI", sans-serif';
+  ctx.fillText(`${shots} shot${shots !== 1 ? 's' : ''} — ${label}`, W / 2, H / 2 + 15);
+  ctx.fillStyle = '#aaa';
+  ctx.font = '14px "Segoe UI", sans-serif';
+  ctx.fillText(currentLevel < levels.length - 1 ? 'Tap to continue' : 'Tap for results', W / 2, H / 2 + 45);
+}
+
+function showGameOver() {
+  state = STATE.GAME_OVER;
+  overlay.classList.remove('hidden');
+  const h1 = overlay.querySelector('h1');
+  const h2 = overlay.querySelector('h2');
+  const p = overlay.querySelector('p');
+  h1.textContent = 'Course Complete!';
+  h2.textContent = `Total: ${totalShots} shots`;
+
+  let details = '';
+  for (let i = 0; i < levels.length; i++) {
+    const s = levelScores[i] || 0;
+    const par = levels[i].par;
+    const diff = s - par;
+    const tag = diff < 0 ? ` (${diff})` : diff === 0 ? ' (Par)' : ` (+${diff})`;
+    details += `Level ${i + 1}: ${s} shot${s !== 1 ? 's' : ''}${tag}\n`;
+  }
+  const totalPar = levels.reduce((a, l) => a + l.par, 0);
+  const totalDiff = totalShots - totalPar;
+  const totalTag = totalDiff < 0 ? `${totalDiff} under par` : totalDiff === 0 ? 'Even par' : `${totalDiff} over par`;
+  p.textContent = `${details}\n${totalTag} — Nice round!`;
+  p.style.whiteSpace = 'pre-line';
+
+  startBtn.textContent = 'Play Again';
+}
+
+function drawPlacingHint() {
+  if (state !== STATE.PLACING) return;
+  ctx.fillStyle = 'rgba(0,255,255,0.4)';
+  ctx.font = '16px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Click to place your ball', W / 2, H - 40);
+}
+
+// --- Main Loop ---
+let lastTime = 0;
+function loop(timestamp) {
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+  time += dt;
+
+  // Update
+  if (state === STATE.FLYING) {
+    // Sub-step physics for stability
+    const steps = 4;
+    const subDt = dt / steps;
+    for (let i = 0; i < steps; i++) {
+      updateBall(subDt);
+    }
+  }
+
+  // Update particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+  for (let i = trailParticles.length - 1; i >= 0; i--) {
+    const p = trailParticles[i];
+    p.life -= p.decay;
+    if (p.life <= 0) trailParticles.splice(i, 1);
+  }
+
+  // Draw
+  ctx.clearRect(0, 0, W, H);
+
+  // BG gradient
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0a0a2e');
+  bg.addColorStop(1, '#0a0a1a');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawStars();
+
+  if (state !== STATE.MENU && state !== STATE.GAME_OVER) {
+    // Grid lines (subtle)
+    ctx.strokeStyle = 'rgba(50,50,100,0.15)';
+    ctx.lineWidth = 1;
+    const gridSize = 60;
+    for (let x = 0; x < W; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    drawParticles();
+    drawGravityWells();
+    drawHole();
+    drawBall();
+    drawAim();
+    drawScoredUI();
+    drawPlacingHint();
+  }
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

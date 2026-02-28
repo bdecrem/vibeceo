@@ -189,8 +189,8 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
-    // Hilde birthday page
-    if (pathname.startsWith('/hilde')) {
+    // Static one-off pages
+    if (pathname.startsWith('/hilde') || pathname.startsWith('/gravity-golf')) {
       return NextResponse.next()
     }
 
@@ -491,7 +491,7 @@ export function middleware(request: NextRequest) {
     }
 
     // Static pages in public/ that shouldn't be rewritten
-    if (pathname.startsWith('/hilde')) {
+    if (pathname.startsWith('/hilde') || pathname.startsWith('/gravity-golf')) {
       return NextResponse.next()
     }
 
