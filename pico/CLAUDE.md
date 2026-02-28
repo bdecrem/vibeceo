@@ -123,6 +123,50 @@ The user is not a hardware person. They have said so explicitly. Every interacti
 5. **Don't use jargon without explaining it.** "Headless", "flash", "OTG", "GPIO" — define these the first time.
 6. **One step at a time.** Don't dump a 5-step plan. Give step 1, verify with camera, then step 2.
 
+## Tapo C560WS — WiFi Security Camera
+
+### What It Is
+TP-Link Tapo C560WS outdoor WiFi camera. Streams video over RTSP on the local network. Can grab snapshots or video from any machine on the same WiFi.
+
+### Connection Details
+- **IP:** `192.168.7.23`
+- **RTSP Port:** 554
+- **Stream URLs:**
+  - High quality: `rtsp://USERNAME:PASSWORD@192.168.7.23:554/stream1`
+  - Low quality: `rtsp://USERNAME:PASSWORD@192.168.7.23:554/stream2`
+- **Credentials:** Stored in Tapo app under camera → ⚙️ → Advanced Settings → Camera Account
+  - Username contains `@` — must be URL-encoded as `%40` in RTSP URLs
+
+### Grab a Snapshot (ffmpeg)
+
+```bash
+ffmpeg -rtsp_transport tcp \
+  -i "rtsp://USERNAME%40DOMAIN:PASSWORD@192.168.7.23:554/stream1" \
+  -frames:v 1 -update 1 -y pico/tapo_snapshot.jpg
+```
+
+### Grab a Video Clip (e.g. 10 seconds)
+
+```bash
+ffmpeg -rtsp_transport tcp \
+  -i "rtsp://USERNAME%40DOMAIN:PASSWORD@192.168.7.23:554/stream1" \
+  -t 10 -c copy -y pico/tapo_clip.mp4
+```
+
+### Use from AI Agent (OpenClaw, Amber, etc.)
+
+Any agent that can shell out to ffmpeg can see through this camera:
+1. Grab a snapshot (ffmpeg command above)
+2. Read the image file (Claude Code's Read tool shows images)
+3. Reason about what's in the frame
+
+This works for: "is anyone at the door?", "what's the weather look like?", "is the package still there?", timelapse, motion detection, etc.
+
+### Troubleshooting
+- **Port 554 closed?** → Camera Account may not be enabled. Open Tapo app → camera → ⚙️ → Advanced Settings → Camera Account → enable/create it.
+- **Connection timeout?** → Camera IP may have changed. Check Tapo app → camera → ⚙️ → Device Info for current IP.
+- **`@` in username?** → Must URL-encode as `%40` in RTSP URLs or ffmpeg will fail to parse.
+
 ## Lessons Learned
 
 - **Buzzer/speaker need a transistor amplifier circuit** (S8050 NPN + 1kΩ resistor) to get enough current from GPIO pins. Direct GPIO → buzzer is unreliable.
