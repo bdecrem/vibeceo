@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>BULLSEYE — Pixelpit Arcade</title>
+<title>BULLSEYE — Amber</title>
 <meta name="description" content="Tap when the ring hits the target. How precise are you?">
-<meta property="og:title" content="BULLSEYE — Pixelpit Arcade">
+<meta property="og:title" content="BULLSEYE">
 <meta property="og:description" content="Tap when the ring hits the target.">
 <meta property="og:image" content="https://intheamber.com/amber/og/bullseye.png">
 <meta property="og:url" content="https://intheamber.com/amber/bullseye.html">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@intheamber">
-<meta name="twitter:title" content="BULLSEYE — Pixelpit Arcade">
+<meta name="twitter:title" content="BULLSEYE">
 <meta name="twitter:description" content="Tap when the ring hits the target.">
 <meta name="twitter:image" content="https://intheamber.com/amber/og/bullseye.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
@@ -24,124 +24,31 @@ canvas{display:block;width:100%;height:100%}
 #combo{color:#2D9596;font-size:16px;margin-top:4px;opacity:0;transition:opacity .3s}
 #feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:48px;font-weight:bold;pointer-events:none;z-index:20;opacity:0}
 #start{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:30;background:#0a0a0a}
-#start h1{color:#FFD700;font-size:48px;margin-bottom:4px}
-#start .branding{color:#2D9596;font-size:12px;letter-spacing:4px;margin-bottom:24px;opacity:.7}
+#start h1{color:#FFD700;font-size:48px;margin-bottom:8px}
 #start p{color:#2D9596;font-size:16px;margin-bottom:40px}
 #start button{background:none;border:2px solid #FFD700;color:#FFD700;font-size:20px;padding:16px 48px;border-radius:50px;font-family:inherit;cursor:pointer;min-height:56px;min-width:200px}
 #start button:active{background:#FFD700;color:#0a0a0a}
 #gameover{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:30;background:rgba(10,10,10,.95)}
 #gameover h2{color:#ec4899;font-size:36px;margin-bottom:8px}
 #gameover .final{color:#FFD700;font-size:64px;font-weight:bold;margin-bottom:4px}
-#gameover .best{color:#2D9596;font-size:18px;margin-bottom:16px}
-#gameover .xp-info{color:#00ff88;font-size:16px;margin-bottom:8px;opacity:0;transition:opacity .3s}
-#gameover .level-info{color:#2D9596;font-size:14px;margin-bottom:24px;opacity:0;transition:opacity .3s}
-#nickname-row{margin-bottom:24px;display:none;align-items:center;justify-content:center;gap:8px}
-#nickname-row input{background:rgba(255,255,255,.08);border:1px solid #2D9596;color:#fff;font-family:inherit;font-size:16px;padding:10px 16px;border-radius:25px;width:160px;text-align:center;outline:none}
-#nickname-row input::placeholder{color:rgba(255,255,255,.3)}
-#nickname-row input:focus{border-color:#FFD700}
-#nickname-row button{background:#FFD700;border:none;color:#0a0a0a;font-family:inherit;font-size:14px;font-weight:bold;padding:10px 20px;border-radius:25px;cursor:pointer;min-height:42px}
-.go-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
-.go-btns button{background:none;border:2px solid #FFD700;color:#FFD700;font-size:16px;padding:12px 28px;border-radius:50px;font-family:inherit;cursor:pointer;min-height:48px}
-.go-btns button:active{background:#FFD700;color:#0a0a0a}
-.go-btns button.secondary{border-color:#2D9596;color:#2D9596}
-.go-btns button.secondary:active{background:#2D9596;color:#0a0a0a}
-#gameover .branding-bottom{color:#2D9596;font-size:11px;letter-spacing:3px;opacity:.5;margin-top:16px}
-/* Leaderboard overlay */
-#leaderboard-overlay{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;z-index:40;background:rgba(10,10,10,.97);overflow-y:auto;padding:40px 20px}
-#leaderboard-overlay h2{color:#FFD700;font-size:28px;margin-bottom:4px}
-#leaderboard-overlay .lb-sub{color:#2D9596;font-size:12px;letter-spacing:3px;margin-bottom:24px}
-#lb-list{width:100%;max-width:360px}
-.lb-entry{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
-.lb-entry.me{background:rgba(255,215,0,.06);margin:0 -12px;padding:10px 12px;border-radius:8px}
-.lb-rank{color:#2D9596;font-size:14px;width:32px;text-align:center;flex-shrink:0}
-.lb-rank.gold{color:#FFD700}
-.lb-rank.silver{color:#c0c0c0}
-.lb-rank.bronze{color:#cd7f32}
-.lb-name{color:#fff;font-size:15px;flex:1;margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lb-score{color:#FFD700;font-size:15px;font-weight:bold;margin-left:12px}
-#lb-back{background:none;border:2px solid #2D9596;color:#2D9596;font-size:16px;padding:12px 36px;border-radius:50px;font-family:inherit;cursor:pointer;margin-top:24px;min-height:48px}
-#lb-back:active{background:#2D9596;color:#0a0a0a}
-/* Group tabs */
-#lb-tabs{display:flex;gap:8px;margin-bottom:20px}
-#lb-tabs button{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);font-family:inherit;font-size:13px;padding:6px 16px;border-radius:20px;cursor:pointer}
-#lb-tabs button.active{border-color:#FFD700;color:#FFD700}
-/* Toast */
-#toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#FFD700;color:#0a0a0a;font-family:inherit;font-size:14px;font-weight:bold;padding:10px 24px;border-radius:25px;opacity:0;transition:opacity .3s;z-index:50;pointer-events:none}
+#gameover .best{color:#2D9596;font-size:18px;margin-bottom:32px}
+#gameover button{background:none;border:2px solid #FFD700;color:#FFD700;font-size:20px;padding:16px 48px;border-radius:50px;font-family:inherit;cursor:pointer;min-height:56px}
 </style>
 </head>
 <body>
 <div id="ui"><div id="score">0</div><div id="combo"></div></div>
 <div id="feedback"></div>
-<div id="start">
-<h1>🎯 BULLSEYE</h1>
-<div class="branding">PIXELPIT ARCADE</div>
-<p>tap when the ring hits the circle</p>
-<button id="playBtn">PLAY</button>
-</div>
-<div id="gameover">
-<h2>GAME OVER</h2>
-<div class="final" id="finalScore">0</div>
-<div class="best" id="bestScore">best: 0</div>
-<div class="xp-info" id="xpInfo"></div>
-<div class="level-info" id="levelInfo"></div>
-<div id="nickname-row"><input id="nickname-input" placeholder="@handle" maxlength="20" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="nickname-submit">GO</button></div>
-<div class="go-btns">
-<button id="retryBtn">AGAIN</button>
-<button id="lbBtn" class="secondary">BOARD</button>
-<button id="shareBtn" class="secondary">SHARE</button>
-</div>
-<div class="branding-bottom">PIXELPIT ARCADE</div>
-</div>
-<div id="leaderboard-overlay">
-<h2>🎯 BULLSEYE</h2>
-<div class="lb-sub">LEADERBOARD</div>
-<div id="lb-tabs"></div>
-<div id="lb-list"></div>
-<button id="lb-back">BACK</button>
-</div>
-<div id="toast"></div>
+<div id="start"><h1>🎯 BULLSEYE</h1><p>tap when the ring hits the circle</p><button id="playBtn">PLAY</button></div>
+<div id="gameover"><h2>GAME OVER</h2><div class="final" id="finalScore">0</div><div class="best" id="bestScore">best: 0</div><button id="retryBtn">AGAIN</button></div>
 <canvas id="c"></canvas>
-<script src="/pixelpit/social.js"></script>
 <script>
-const GAME_ID='bullseye';
-const MAX_SCORE=2000;
-const GAME_URL=window.location.origin+'/amber/bullseye.html';
-
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
 let W,H,dpr;
 function resize(){dpr=window.devicePixelRatio||1;W=window.innerWidth;H=window.innerHeight;canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
 resize();window.addEventListener('resize',resize);
 
 let audioCtx,score=0,combo=0,lives=3,targets=[],particles=[],gameRunning=false,best=+(localStorage.getItem('bullseye-best')||0);
-let socialReady=false,currentUser=null,lastEntryId=null,lastProgression=null,currentLbTab='global',currentGroupCode=null;
 
-// --- Social init ---
-function initSocial(){
-if(!window.PixelpitSocial)return;
-socialReady=true;
-currentUser=window.PixelpitSocial.getUser()||null;
-
-// Handle ?logout
-const params=new URLSearchParams(window.location.search);
-if(params.has('logout')){
-window.PixelpitSocial.logout();
-params.delete('logout');
-const u=params.toString()?window.location.pathname+'?'+params.toString():window.location.pathname;
-window.history.replaceState({},'',u);
-window.location.reload();
-return;
-}
-// Handle ?pg= group code
-const gc=window.PixelpitSocial.getGroupCodeFromUrl();
-if(gc)window.PixelpitSocial.storeGroupCode(gc);
-// Handle ?ref= for magic streaks
-if(window.PixelpitSocial.getRefFromUrl)window.PixelpitSocial.getRefFromUrl();
-}
-// Try init immediately and also on load
-if(window.PixelpitSocial)initSocial();
-else window.addEventListener('load',()=>{setTimeout(initSocial,200)});
-
-// --- Audio ---
 function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
 function playSound(freq,type,dur,vol=.3){
 if(!audioCtx)return;
@@ -159,14 +66,13 @@ else if(quality==='ok'){playSound(440,'triangle',.1,.2)}
 }
 function missSound(){playSound(150,'sawtooth',.2,.2);playSound(120,'sawtooth',.3,.15)}
 
-// --- Game classes ---
 class Target{
 constructor(){
 this.x=60+Math.random()*(W-120);
 this.y=80+Math.random()*(H-160);
-this.r=30+Math.random()*15;
-this.ringR=this.r*4;
-this.speed=1.2+score*0.015;
+this.r=30+Math.random()*15;// target circle radius
+this.ringR=this.r*4;// ring starts big
+this.speed=1.2+score*0.015;// gets faster
 this.alive=true;
 this.hit=false;
 this.opacity=1;
@@ -180,9 +86,11 @@ if(this.ringR<0){this.alive=false;lives--;missSound();showFeedback('MISS','#ec48
 draw(){
 if(!this.alive&&!this.hit)return;
 let a=this.hit?this.opacity:1;
+// target circle
 ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
 ctx.fillStyle=`rgba(255,215,0,${a*0.15})`;ctx.fill();
 ctx.strokeStyle=`rgba(255,215,0,${a*0.6})`;ctx.lineWidth=2;ctx.stroke();
+// shrinking ring
 if(!this.hit){
 ctx.beginPath();ctx.arc(this.x,this.y,this.ringR,0,Math.PI*2);
 let diff=Math.abs(this.ringR-this.r);
@@ -232,49 +140,6 @@ const c=document.getElementById('combo');
 if(combo>1){c.textContent=combo+'x COMBO';c.style.opacity=1}else{c.style.opacity=0}
 }
 
-// --- Toast ---
-let toastTimer=0;
-function showToast(msg){
-const el=document.getElementById('toast');
-el.textContent=msg;el.style.opacity=1;
-clearTimeout(toastTimer);
-toastTimer=setTimeout(()=>{el.style.opacity=0},2000);
-}
-
-// --- Score submission ---
-async function submitScore(nickname){
-if(!socialReady||!window.PixelpitSocial)return;
-const finalScore=Math.floor(score);
-try{
-const groupCode=window.PixelpitSocial.getStoredGroupCode?window.PixelpitSocial.getStoredGroupCode():null;
-const result=await window.PixelpitSocial.submitScore(GAME_ID,finalScore,{
-nickname:nickname,
-maxScore:MAX_SCORE,
-groupCode:groupCode||undefined
-});
-if(result&&result.success){
-if(result.entry&&result.entry.id)lastEntryId=result.entry.id;
-if(result.progression){
-lastProgression=result.progression;
-showProgression(result.progression);
-}
-}
-}catch(e){console.warn('Score submit failed',e)}
-}
-
-function showProgression(p){
-const xpEl=document.getElementById('xpInfo');
-const lvlEl=document.getElementById('levelInfo');
-xpEl.textContent='+'+p.xpEarned+' XP'+(p.leveledUp?' 🎉 LEVEL UP!':'');
-xpEl.style.opacity=1;
-let lvlText='Level '+p.level;
-if(p.streak>1)lvlText+=' · '+p.multiplier+'x streak';
-lvlText+=' · '+p.levelProgress+'/'+p.levelNeeded;
-lvlEl.textContent=lvlText;
-lvlEl.style.opacity=1;
-}
-
-// --- Game flow ---
 let spawnTimer=0,spawnInterval=90;
 function update(){
 if(!gameRunning)return;
@@ -292,6 +157,7 @@ if(lives<=0)endGame();
 }
 function draw(){
 ctx.clearRect(0,0,W,H);
+// lives
 for(let i=0;i<3;i++){
 ctx.fillStyle=i<lives?'#ec4899':'rgba(236,72,153,.2)';
 ctx.beginPath();ctx.arc(W-30-i*28,30,8,0,Math.PI*2);ctx.fill();
@@ -305,155 +171,21 @@ function startGame(){
 initAudio();
 document.getElementById('start').style.display='none';
 document.getElementById('gameover').style.display='none';
-document.getElementById('leaderboard-overlay').style.display='none';
 score=0;combo=0;lives=3;targets=[];particles=[];spawnTimer=60;spawnInterval=90;
-lastEntryId=null;lastProgression=null;
-document.getElementById('xpInfo').style.opacity=0;
-document.getElementById('levelInfo').style.opacity=0;
 updateUI();gameRunning=true;
 }
-
 function endGame(){
 gameRunning=false;
-const finalScore=Math.floor(score);
-if(finalScore>best){best=finalScore;localStorage.setItem('bullseye-best',best)}
-document.getElementById('finalScore').textContent=finalScore;
+if(score>best){best=Math.floor(score);localStorage.setItem('bullseye-best',best)}
+document.getElementById('finalScore').textContent=Math.floor(score);
 document.getElementById('bestScore').textContent='best: '+best;
 document.getElementById('gameover').style.display='flex';
-
-// Analytics (fire-and-forget)
-if(finalScore>=1){
-fetch('/api/pixelpit/stats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({game:GAME_ID})}).catch(()=>{});
 }
 
-// Auto-submit or show nickname input
-const savedName=localStorage.getItem('pixelpit_guest_name');
-const user=socialReady&&window.PixelpitSocial?window.PixelpitSocial.getUser():null;
-if(user||savedName){
-const handle=user?user.handle:savedName;
-document.getElementById('nickname-row').style.display='none';
-submitScore(handle);
-}else if(socialReady){
-const row=document.getElementById('nickname-row');
-row.style.display='flex';
-document.getElementById('nickname-input').value='';
-document.getElementById('nickname-input').focus();
-}
-}
-
-// Nickname submit
-document.getElementById('nickname-submit').addEventListener('click',()=>{
-const input=document.getElementById('nickname-input');
-const name=input.value.trim().replace(/^@/,'');
-if(!name)return;
-localStorage.setItem('pixelpit_guest_name',name);
-document.getElementById('nickname-row').style.display='none';
-submitScore(name);
-showToast('Score submitted!');
-});
-document.getElementById('nickname-input').addEventListener('keydown',e=>{
-if(e.key==='Enter')document.getElementById('nickname-submit').click();
-});
-
-// --- Leaderboard ---
-async function showLeaderboard(tab){
-if(!socialReady||!window.PixelpitSocial)return;
-currentLbTab=tab||'global';
-const overlay=document.getElementById('leaderboard-overlay');
-const list=document.getElementById('lb-list');
-const tabs=document.getElementById('lb-tabs');
-overlay.style.display='flex';
-list.innerHTML='<div style="color:#2D9596;text-align:center;padding:20px">Loading...</div>';
-
-// Build tabs
-tabs.innerHTML='';
-const globalBtn=document.createElement('button');
-globalBtn.textContent='GLOBAL';
-globalBtn.className=currentLbTab==='global'?'active':'';
-globalBtn.onclick=()=>showLeaderboard('global');
-tabs.appendChild(globalBtn);
-
-// Check for groups
-try{
-const user=window.PixelpitSocial.getUser();
-if(user){
-const groups=await window.PixelpitSocial.getGroups();
-if(groups&&groups.length){
-groups.forEach(g=>{
-const btn=document.createElement('button');
-btn.textContent=g.name.length>12?g.name.slice(0,12)+'…':g.name;
-btn.className=currentLbTab===g.code?'active':'';
-btn.onclick=()=>{currentGroupCode=g.code;showLeaderboard(g.code)};
-tabs.appendChild(btn);
-});
-}
-}
-}catch(e){}
-
-try{
-let data;
-if(currentLbTab==='global'){
-data=await window.PixelpitSocial.getLeaderboard(GAME_ID,10,lastEntryId?{entryId:lastEntryId}:{});
-}else{
-data=await window.PixelpitSocial.getGroupLeaderboard(GAME_ID,currentLbTab,10);
-}
-renderLB(list,data);
-}catch(e){
-list.innerHTML='<div style="color:#ec4899;text-align:center;padding:20px">Could not load leaderboard</div>';
-}
-}
-
-function renderLB(container,data){
-container.innerHTML='';
-const entries=(data&&data.entries)?data.entries:(Array.isArray(data)?data:[]);
-if(!entries.length){
-container.innerHTML='<div style="color:#2D9596;text-align:center;padding:20px">No scores yet. Be first!</div>';
-return;
-}
-entries.forEach((e,i)=>{
-const row=document.createElement('div');
-row.className='lb-entry'+(e.id&&e.id===lastEntryId?' me':'');
-const rank=i+1;
-const rankEl=document.createElement('div');
-rankEl.className='lb-rank'+(rank===1?' gold':rank===2?' silver':rank===3?' bronze':'');
-rankEl.textContent=rank<=3?['🥇','🥈','🥉'][rank-1]:rank;
-const nameEl=document.createElement('div');
-nameEl.className='lb-name';
-nameEl.textContent=e.nickname||e.handle||'???';
-const scoreEl=document.createElement('div');
-scoreEl.className='lb-score';
-scoreEl.textContent=e.score!=null?e.score.toLocaleString():'';
-row.appendChild(rankEl);
-row.appendChild(nameEl);
-row.appendChild(scoreEl);
-container.appendChild(row);
-});
-}
-
-document.getElementById('lbBtn').addEventListener('click',()=>showLeaderboard('global'));
-document.getElementById('lb-back').addEventListener('click',()=>{
-document.getElementById('leaderboard-overlay').style.display='none';
-});
-
-// --- Share ---
-document.getElementById('shareBtn').addEventListener('click',()=>{
-const finalScore=Math.floor(score);
-const text='I scored '+finalScore+' on BULLSEYE! 🎯 Can you beat me?';
-const url=GAME_URL;
-if(socialReady&&window.PixelpitSocial&&window.PixelpitSocial.getUser()){
-const shareUrl=window.PixelpitSocial.buildShareUrl?window.PixelpitSocial.buildShareUrl(url):url;
-window.PixelpitSocial.share(shareUrl,text);
-}else if(navigator.share){
-navigator.share({title:'BULLSEYE',text:text,url:url}).catch(()=>{});
-}else{
-navigator.clipboard.writeText(text+' '+url).then(()=>showToast('Copied!')).catch(()=>{});
-}
-});
-
-// --- Tap handling ---
 function handleTap(x,y){
 if(!gameRunning)return;
 let hit=false;
+// tap closest to ring match first
 targets.sort((a,b)=>Math.abs(a.ringR-a.r)-Math.abs(b.ringR-b.r));
 for(let t of targets){if(!t.hit&&t.checkTap(x,y)){hit=true;break}}
 if(!hit){combo=0;updateUI()}
