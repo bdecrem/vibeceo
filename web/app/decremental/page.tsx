@@ -51,9 +51,9 @@ const projects: Project[] = [
     url: "https://shipshot.io",
     image: null,
     shortDesc: "Your daily startup idea vending machine",
-    fullDesc: "Your daily startup idea vending machine: five agents ideate, design, and ship a playable prototype on Discord every day.",
+    fullDesc: "Your daily startup idea vending machine.",
     status: "wip",
-    order: -1,
+    order: 1,
   },
   {
     name: "Mutabl",
@@ -94,7 +94,7 @@ const projects: Project[] = [
     shortDesc: "Claude Code for music",
     fullDesc: <>CLI and agentic, like Claude Code—but for music production. Not a &quot;make me a song&quot; button. A tool for producers: outputs MIDI, .wav, stems, full tracks. Includes <a href="https://kochi.to/jb200" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>web synths</a>. You stay in control, it handles the grunt work. v 0.1</>,
     status: "wip",
-    order: 1,
+    order: -1,
     artifacts: [{ label: "screenshot", url: "/images/jambot-screencap.png" }],
   },
   {
@@ -608,7 +608,7 @@ export default function KochitoLabsAscii() {
           className={`${poppins.className} w-full max-w-3xl text-sm leading-relaxed mb-8 px-1`}
           style={{ color: "#555" }}
         >
-          Tools and prototypes <a href="https://linkedin.com/in/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>we</a> built with AI over 8 months, all running on the <a href="https://github.com/bdecrem/vibeceo/blob/main/PLATFORM-OVERVIEW.md" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>KL plotfarm</a>: agentic search over 300k AI research papers on Neo4j, an agent that posts reflections and games on Twitter and trades stocks (up $7 on $500 after the first few days), Claude Code for music, and more. Named after our favorite <a href="https://www.maruwuseicha.us" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>yuzu</a>.
+          Tools, prototypes, and incomplete thoughts we built with AI over 9 months, some open source, mostly in one <a href="https://github.com/bdecrem/vibeceo" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>mono-slop-repo</a>: a clean iOS client for OpenClaw, Claude Code for music, an AI sidekick that posts on Twitter and trades stocks, apps you evolve by asking for new features, a responsible AI incubator concept, and more.
         </p>
 
         {/* Terminal window */}
