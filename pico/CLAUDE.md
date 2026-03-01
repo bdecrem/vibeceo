@@ -15,18 +15,19 @@ Projects built with hardware kits for Raspberry Pi ecosystem:
 - **Parts list image:** `pico/freenove-kit/Picture/PartsList.jpg`
 - **Wiring diagrams:** `pico/wiring_*.png`, `pico/passive_wiring_*.png`
 
-### 2. OpenClawGotchi (ON ORDER)
+### 2. OpenClawGotchi (RUNNING)
 - **Board:** Raspberry Pi Zero 2 WH (pre-soldered headers)
 - **Display:** Waveshare 2.13" E-Ink HAT V4 (plugs directly onto Pi, no wires)
 - **What:** AI Tamagotchi — OpenClaw agent with E-Ink face, 25+ moods
+- **OS:** Raspberry Pi OS Lite (64-bit, Bookworm)
+- **Hostname:** `openclawgotchi` / `openclawgotchi.local`
+- **IP:** `192.168.7.150` (DHCP, may change)
+- **MAC:** `5a:fc:72:73:84:4c`
+- **SSH:** `sshpass -p 'jkl;' ssh pi@openclawgotchi.local`
 - **Reference:** [OpenClawGotchi GitHub](https://github.com/turmyshevd/openclawgotchi)
 - **Guides:**
   - [Turn your Raspberry Pi into an AI agent with OpenClaw](https://www.raspberrypi.com/news/turn-your-raspberry-pi-into-an-ai-agent-with-openclaw/)
   - [Adafruit OpenClaw on Raspberry Pi](https://learn.adafruit.com/openclaw-on-raspberry-pi/overview)
-- **Amazon orders:**
-  - [Pi Zero 2 WH Kit](https://www.amazon.com/Raspberry-Official-Pre-Soldered-Quad-core-Bluetooth/dp/B0DRRDJKDV)
-  - [Waveshare 2.13" E-Ink Display HAT V4](https://www.amazon.com/waveshare-2-13inch-HAT-Compatible-Resolution/dp/B071S8HT76)
-- Also needs: micro SD card (8GB+)
 
 ## Pico W Current Setup
 
@@ -142,3 +143,9 @@ Credentials stored in `sms-bot/.env.local` (gitignored):
 - The Pico W is a **microcontroller** (runs one program). For AI agent stuff (OpenClaw), need a full **Raspberry Pi** (runs Linux).
 - Pi Zero 2**WH** = pre-soldered headers. The H matters. Without H = must solder yourself.
 - **Pi Zero 2 W does NOT come with a micro SD card.** It cannot boot without one. ALWAYS include micro SD card + USB card reader in any Pi shopping list.
+- **ALWAYS use Raspberry Pi Imager for flashing Pi OS.** Do NOT try to manually configure SSH/WiFi on boot partition — Bookworm uses NetworkManager on the ext4 rootfs, which macOS cannot write to. The Imager handles all customizations (SSH, WiFi, user, hostname) internally during the flash. `brew install --cask raspberry-pi-imager`
+- **macOS cannot read/write ext4.** The rootfs partition on a Pi SD card is ext4. Boot partition (FAT32) is readable, but most Bookworm config lives on rootfs. Don't waste time with boot-partition-only hacks.
+- **Boot partition `ssh` file alone does NOT reliably enable SSH on Bookworm.** It worked on older Pi OS versions but Bookworm's firstboot process handles it differently. Use the Imager's customization settings instead.
+- **Pi Zero 2 W has TWO micro-USB ports:** middle = USB (data+power), edge = PWR (power only). For USB gadget mode or data, use the MIDDLE port.
+- **Solid green LED = booted and idle.** Blinking = still booting or activity. No light = no power or boot failure.
+- **`openclawgotchi.local` works via mDNS** once the Pi has booted with avahi-daemon. Use this instead of IP addresses.
