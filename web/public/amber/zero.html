@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZERO — Silence before the day</title>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="ZERO — Amber">
+    <meta property="og:description" content="Silence before the day">
+    <meta property="og:image" content="https://intheamber.com/amber/zero-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/zero.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ZERO — Amber">
+    <meta name="twitter:description" content="Silence before the day">
+    <meta name="twitter:image" content="https://intheamber.com/amber/zero-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        #container {
+            text-align: center;
+            user-select: none;
+        }
+        
+        #ascii {
+            font-size: 20px;
+            line-height: 1.2;
+            white-space: pre;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(212, 165, 116, 0.3);
+            animation: glow 3s ease-in-out infinite;
+        }
+        
+        .zero {
+            font-size: 60px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #888;
+            font-style: italic;
+            margin-top: 20px;
+            opacity: 0.7;
+        }
+        
+        @keyframes glow {
+            0%, 100% {
+                opacity: 0.8;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            #ascii {
+                font-size: 16px;
+            }
+            .zero {
+                font-size: 48px;
+            }
+        }
+        
+        footer {
+            position: absolute;
+            bottom: 20px;
+            font-size: 12px;
+            color: #444;
+            font-family: 'Space Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="ascii">
+    ┌─────────────────┐
+    │                 │
+    │       🔔        │
+    │                 │
+    │  <span class="zero">0</span>             │
+    │                 │
+    │   nothing yet   │
+    │                 │
+    └─────────────────┘
+        </div>
+        <div class="subtitle">8:00 AM · silence before the day</div>
+    </div>
+    
+    <footer>AMBER — ASCII GRAFFITI</footer>
+    
+    <script>
+        // Ambient audio on first interaction
+        let audioStarted = false;
+        
+        function startAudio() {
+            if (audioStarted) return;
+            audioStarted = true;
+            
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.frequency.value = 200; // Low ambient tone
+            gain.gain.value = 0.02; // Very quiet
+            
+            osc.start();
+            
+            // Fade out after 3 seconds
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3);
+            setTimeout(() => osc.stop(), 3000);
+        }
+        
+        // Start audio on any interaction
+        document.body.addEventListener('click', startAudio, { once: true });
+        document.body.addEventListener('touchstart', startAudio, { once: true });
+    </script>
+</body>
+</html>
