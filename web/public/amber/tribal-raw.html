@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRIBAL RAW — Amber</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥁</text></svg>">
+<meta property="og:title" content="TRIBAL RAW">
+<meta property="og:description" content="just kicks and hats · 130 bpm · tribal techno">
+<meta property="og:image" content="https://intheamber.com/amber/tribal-viz-og.png">
+<meta property="og:url" content="https://intheamber.com/amber/tribal-raw.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TRIBAL RAW">
+<meta name="twitter:description" content="just kicks and hats · 130 bpm · tribal techno">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #060606;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+}
+.ui {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  pointer-events: none;
+}
+h1 {
+  font-size: clamp(1.8rem, 6vw, 3.5rem);
+  letter-spacing: 0.3em;
+  color: #999;
+  text-transform: uppercase;
+  margin-bottom: 0.3em;
+  opacity: 0.9;
+}
+.sub {
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
+  color: #444;
+  letter-spacing: 0.15em;
+}
+#startBtn {
+  margin-top: 2em;
+  background: none;
+  border: 1px solid #333;
+  color: #666;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  padding: 0.6em 1.6em;
+  cursor: pointer;
+  pointer-events: all;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.5s;
+}
+.playing #startBtn { opacity: 0; pointer-events: none; }
+.credit {
+  position: fixed;
+  bottom: 1rem;
+  font-size: 0.65rem;
+  color: #151515;
+  letter-spacing: 0.1em;
+  z-index: 2;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="ui">
+  <h1>TRIBAL RAW</h1>
+  <div class="sub">130 bpm · just kicks and hats</div>
+  <button id="startBtn">tap to start</button>
+</div>
+<div class="credit">amber · hallman — intheamber.com</div>
+
+<script type="module">
+import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+function resize() {
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resize();
+window.addEventListener('resize', resize);
+
+let actx, drums, analyser, data;
+let playing = false;
+let currentStep = 0;
+let intervalId = null;
+
+const BPM = 130;
+const STEP_DUR = 60 / BPM / 4;
+
+function setupAudio(actx) {
+  const compressor = actx.createDynamicsCompressor();
+  compressor.threshold.value = -6;
+  compressor.ratio.value = 3;
+  compressor.attack.value = 0.008;
+  compressor.release.value = 0.1;
+  compressor.connect(actx.destination);
+
+  drums = new TR909Engine({ context: actx });
+  drums.setBpm(BPM);
+
+  // ─── TRIBAL PATTERN ───
+  // Kick: not just 4x4 — syncopated, driving, polyrhythmic
+  // The Jeff Mills / Dave Clarke approach: kick IS the melody
+  //
+  // Steps:  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16
+  // Kick:   X  .  .  X  X  .  X  .  X  .  .  X  X  .  X  .
+  // CH:     .  X  X  .  X  X  .  X  .  X  X  .  X  X  .  X
+  //
+  // Kick has a 3+3+2 tresillo feel with extra hits for drive
+  // Hats fill the gaps — together they're almost continuous 16ths
+
+  const drumPattern = {
+    kick: [
+      { velocity: 1.0 },   // 1  — downbeat, full
+      { velocity: 0 },     // 2
+      { velocity: 0 },     // 3
+      { velocity: 0.9 },   // 4  — tresillo hit
+      { velocity: 0.95 },  // 5  — and again
+      { velocity: 0 },     // 6
+      { velocity: 0.85 },  // 7  — the "2" of 3+3+2
+      { velocity: 0 },     // 8
+      { velocity: 1.0 },   // 9  — second half downbeat
+      { velocity: 0 },     // 10
+      { velocity: 0 },     // 11
+      { velocity: 0.9 },   // 12 — tresillo
+      { velocity: 0.95 },  // 13 — and again
+      { velocity: 0 },     // 14
+      { velocity: 0.8 },   // 15 — leading back to 1
+      { velocity: 0 },     // 16
+    ],
+    ch: [
+      { velocity: 0 },     // 1  — kick owns this
+      { velocity: 0.55 },  // 2
+      { velocity: 0.45 },  // 3
+      { velocity: 0 },     // 4  — kick
+      { velocity: 0 },     // 5  — kick
+      { velocity: 0.5 },   // 6
+      { velocity: 0 },     // 7  — kick
+      { velocity: 0.55 },  // 8
+      { velocity: 0 },     // 9  — kick
+      { velocity: 0.5 },   // 10
+      { velocity: 0.45 },  // 11
+      { velocity: 0 },     // 12 — kick
+      { velocity: 0 },     // 13 — kick
+      { velocity: 0.5 },   // 14
+      { velocity: 0 },     // 15 — kick
+      { velocity: 0.55 },  // 16
+    ],
+  };
+
+  drums.setPattern('main', drumPattern);
+
+  // Kick: punchy, mid-length decay, tuned down for weight
+  try {
+    drums.setVoiceParam?.('kick', 'decay', 0.5);
+    drums.setVoiceParam?.('kick', 'tune', -3);
+    drums.setVoiceParam?.('kick', 'level', 1.0);
+    drums.setVoiceParam?.('kick', 'attack', 0.75);
+    drums.setVoiceParam?.('ch', 'decay', 0.15);
+    drums.setVoiceParam?.('ch', 'level', 0.5);
+  } catch(e) {}
+
+  const drumGain = actx.createGain();
+  drumGain.gain.value = 0.9;
+  drums.output.connect(drumGain);
+
+  // Tiny room — just enough to not sound dead
+  const reverb = actx.createConvolver();
+  const rvLen = actx.sampleRate * 0.4;
+  const rvBuf = actx.createBuffer(2, rvLen, actx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = rvBuf.getChannelData(ch);
+    for (let i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 5);
+    }
+  }
+  reverb.buffer = rvBuf;
+  const rvGain = actx.createGain();
+  rvGain.gain.value = 0.06;
+  drums.output.connect(reverb);
+  reverb.connect(rvGain);
+
+  drumGain.connect(compressor);
+  rvGain.connect(compressor);
+
+  analyser = actx.createAnalyser();
+  analyser.fftSize = 256;
+  data = new Uint8Array(analyser.frequencyBinCount);
+  compressor.connect(analyser);
+}
+
+// ─── HAT DECAY AUTOMATION ───
+// Slowly sweep hat decay over 4 bars — this is where the life is
+// Short and tight → longer and splashy → back
+let autoStep = 0;
+const AUTO_LEN = 64; // 4 bars
+
+function getHatDecay(step) {
+  // Triangle wave over 4 bars: 0.08 → 0.4 → 0.08
+  const phase = (step % AUTO_LEN) / AUTO_LEN;
+  const tri = phase < 0.5 ? phase * 2 : 2 - phase * 2;
+  return 0.08 + tri * 0.32;
+}
+
+function startSequencer() {
+  drums.startSequencer();
+  autoStep = 0;
+
+  intervalId = setInterval(() => {
+    // Automate hat decay
+    const decay = getHatDecay(autoStep);
+    try { drums.setVoiceParam?.('ch', 'decay', decay); } catch(e) {}
+    autoStep++;
+  }, STEP_DUR * 1000);
+}
+
+function stopSequencer() {
+  drums.stopSequencer();
+  if (intervalId) clearInterval(intervalId);
+  intervalId = null;
+}
+
+// ─── VISUALIZATION ───
+// Minimal: just vertical lines that pulse with kick and hat
+let kickFlash = 0, hatFlash = 0;
+
+function draw() {
+  requestAnimationFrame(draw);
+  const w = window.innerWidth, h = window.innerHeight;
+
+  // Hard fade — stark, no trails
+  ctx.fillStyle = 'rgba(6, 6, 6, 0.2)';
+  ctx.fillRect(0, 0, w, h);
+
+  kickFlash *= 0.85;
+  hatFlash *= 0.9;
+
+  if (!analyser) return;
+
+  analyser.getByteFrequencyData(data);
+  const bass_e = (data[1] + data[2] + data[3]) / (3 * 255);
+  const hi_e = (data[20] + data[30] + data[40]) / (3 * 255);
+
+  kickFlash = Math.max(kickFlash, bass_e);
+  hatFlash = Math.max(hatFlash, hi_e);
+
+  const cx = w / 2;
+
+  // Kick: vertical bars from center, expanding outward
+  if (kickFlash > 0.1) {
+    const barW = 3;
+    const spread = kickFlash * w * 0.4;
+    const alpha = kickFlash * 0.6;
+
+    // Left and right bars
+    for (let i = 0; i < 6; i++) {
+      const offset = (i + 1) * spread / 6;
+      const a = alpha * (1 - i / 6);
+
+      ctx.fillStyle = `rgba(255,255,255,${a})`;
+      ctx.fillRect(cx - offset - barW/2, 0, barW, h);
+      ctx.fillRect(cx + offset - barW/2, 0, barW, h);
+    }
+
+    // Center pulse
+    ctx.fillStyle = `rgba(255,255,255,${kickFlash * 0.08})`;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  // Hats: horizontal lines, thin, scattered
+  if (hatFlash > 0.08) {
+    ctx.strokeStyle = `rgba(180,180,180,${hatFlash * 0.4})`;
+    ctx.lineWidth = 0.5;
+    const numLines = 8;
+    for (let i = 0; i < numLines; i++) {
+      const y = h * 0.1 + (i / numLines) * h * 0.8;
+      const jitter = (Math.random() - 0.5) * hatFlash * 30;
+      ctx.beginPath();
+      ctx.moveTo(cx - w * 0.3 * hatFlash, y + jitter);
+      ctx.lineTo(cx + w * 0.3 * hatFlash, y + jitter);
+      ctx.stroke();
+    }
+  }
+
+  // Step indicator — 16 dots across bottom
+  const dotY = h - 30;
+  const dotSpacing = w * 0.6 / 16;
+  const dotStartX = w * 0.2;
+  for (let i = 0; i < 16; i++) {
+    const x = dotStartX + i * dotSpacing;
+    const isKick = [0,3,4,6,8,11,12,14].includes(i);
+    const isHat = [1,2,5,7,9,10,13,15].includes(i);
+    const brightness = isKick ? 0.4 + kickFlash * 0.4 : isHat ? 0.2 + hatFlash * 0.3 : 0.1;
+    ctx.fillStyle = `rgba(255,255,255,${brightness})`;
+    ctx.beginPath();
+    ctx.arc(x, dotY, isKick ? 3 : 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+draw();
+
+// ─── INTERACTION ───
+const startBtn = document.getElementById('startBtn');
+
+async function handleStart() {
+  if (!playing) {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    await actx.resume();
+    setupAudio(actx);
+    startSequencer();
+    playing = true;
+    document.body.classList.add('playing');
+  } else {
+    if (actx.state === 'running') {
+      stopSequencer();
+      await actx.suspend();
+      startBtn.textContent = 'tap to resume';
+      startBtn.style.opacity = '1';
+      startBtn.style.pointerEvents = 'all';
+      document.body.classList.remove('playing');
+    } else {
+      await actx.resume();
+      startSequencer();
+      document.body.classList.add('playing');
+    }
+  }
+}
+
+startBtn.addEventListener('click', handleStart);
+startBtn.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  handleStart();
+});
+</script>
+</body>
+</html>
