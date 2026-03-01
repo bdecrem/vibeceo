@@ -252,44 +252,83 @@
     const particles = [];
 
     // Audio synthesis
+    // Pre-rendered chime buffers (iOS-compatible — no live oscillators)
+    const chimeBuffers = new Map();
+    const CHIME_DURATION = 2.5;
+
+    function preRenderChime(frequency) {
+      const sr = audioCtx.sampleRate;
+      const length = Math.floor(sr * CHIME_DURATION);
+      const buffer = audioCtx.createBuffer(1, length, sr);
+      const data = buffer.getChannelData(0);
+
+      // Karplus-Strong synthesis for metallic chime/bell sound
+      const delayLength = Math.round(sr / frequency);
+      const delayLine = new Float32Array(delayLength);
+
+      // Seed with deterministic noise
+      let seed = Math.round(frequency * 100);
+      for (let i = 0; i < delayLength; i++) {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        delayLine[i] = ((seed / 0x7fffffff) * 2 - 1) * 0.8;
+      }
+
+      // Bell-like inharmonic partial ratios
+      const partials = [2.76, 5.4, 8.93];
+      const partialAmps = [0.5, 0.25, 0.12];
+
+      let readPos = 0;
+      const feedback = 0.996;
+      const brightness = 0.4;
+
+      for (let i = 0; i < length; i++) {
+        const t = i / sr;
+
+        // Karplus-Strong core
+        const pos1 = readPos;
+        const pos2 = (readPos + 1) % delayLength;
+        const sample = delayLine[pos1] * (1 - brightness) + delayLine[pos2] * brightness;
+        delayLine[pos1] = sample * feedback;
+        readPos = (readPos + 1) % delayLength;
+
+        // Metallic shimmer from inharmonic partials
+        let partialSum = 0;
+        for (let p = 0; p < partials.length; p++) {
+          partialSum += Math.sin(2 * Math.PI * frequency * partials[p] * t) * partialAmps[p] * Math.exp(-t * (3 + p * 2));
+        }
+
+        const env = Math.exp(-t * 1.8);
+        data[i] = Math.tanh((sample + partialSum * 0.15) * env * 0.45) * 0.7;
+      }
+
+      return buffer;
+    }
+
+    function initAudioBuffers() {
+      for (const freq of scale) {
+        chimeBuffers.set(freq, preRenderChime(freq));
+      }
+    }
+
     function playChime(frequency) {
       if (!audioCtx) return;
-      
-      const now = audioCtx.currentTime;
-      
-      // Carrier oscillator
-      const carrier = audioCtx.createOscillator();
-      carrier.frequency.value = frequency;
-      carrier.type = 'sine';
-      
-      // Modulator for metallic sound
-      const modulator = audioCtx.createOscillator();
-      modulator.frequency.value = frequency * 3.5;
-      
-      const modGain = audioCtx.createGain();
-      modGain.gain.value = 50;
-      
-      modulator.connect(modGain);
-      modGain.connect(carrier.frequency);
-      
-      // Envelope
-      const gain = audioCtx.createGain();
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 2);
-      
-      // Filter for warmth
+      const buffer = chimeBuffers.get(frequency);
+      if (!buffer) return;
+
+      const source = audioCtx.createBufferSource();
+      source.buffer = buffer;
+
       const filter = audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.value = 2000;
-      
-      carrier.connect(filter);
+      filter.frequency.value = 3000;
+
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0.8;
+
+      source.connect(filter);
       filter.connect(gain);
       gain.connect(audioCtx.destination);
-      
-      carrier.start(now);
-      modulator.start(now);
-      carrier.stop(now + 2);
-      modulator.stop(now + 2);
+      source.start(0);
     }
 
     // Wind force
@@ -346,12 +385,16 @@
       requestAnimationFrame(animate);
     }
 
-    // Start
-    document.getElementById('startBtn').addEventListener('click', () => {
+    // Start — AudioContext created + resumed inside user gesture (required for iOS)
+    document.getElementById('startBtn').addEventListener('click', async () => {
       if (started) return;
       started = true;
       
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+      
+      // Pre-render all chime sounds into buffers
+      initAudioBuffers();
       
       document.getElementById('startBtn').style.display = 'none';
       animate();
@@ -372,6 +415,9 @@
     canvas.addEventListener('touchstart', (e) => {
       if (!started) return;
       e.preventDefault();
+      
+      // Resume audio on every touch (iOS can suspend between interactions)
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
       
       windForce = (Math.random() - 0.5) * 100;
       
