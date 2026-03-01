@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>YOUR PLANTS ARE TALKING ABOUT YOU</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+<meta property="og:title" content="YOUR PLANTS ARE TALKING ABOUT YOU">
+<meta property="og:description" content="tap to eavesdrop">
+<meta property="og:image" content="https://intheamber.com/amber/og/plants.png">
+<meta property="og:url" content="https://intheamber.com/amber/plants.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="YOUR PLANTS ARE TALKING ABOUT YOU">
+<meta name="twitter:description" content="tap to eavesdrop">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/plants.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a2e1a;
+  color: #c8e6c9;
+  font-family: Georgia, serif;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  padding: 20px;
+}
+.title {
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  opacity: 0.4;
+  margin-bottom: 40px;
+  text-align: center;
+}
+.plant-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 340px;
+  width: 100%;
+}
+.plant-emoji {
+  font-size: 80px;
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 0 20px rgba(100,200,100,0.3));
+}
+.plant-emoji.speaking {
+  transform: scale(1.1) rotate(-3deg);
+}
+.plant-name {
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.5;
+  font-style: italic;
+}
+.speech-bubble {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(200,230,200,0.15);
+  border-radius: 20px;
+  padding: 24px 28px;
+  font-size: 18px;
+  line-height: 1.6;
+  text-align: center;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.5s ease;
+  position: relative;
+}
+.speech-bubble.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 10px solid transparent;
+  border-bottom-color: rgba(200,230,200,0.15);
+  border-top: none;
+}
+.hint {
+  position: fixed;
+  bottom: 30px;
+  font-size: 12px;
+  opacity: 0.3;
+  letter-spacing: 2px;
+}
+.counter {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  font-size: 11px;
+  opacity: 0.25;
+  font-family: monospace;
+}
+.leaf {
+  position: fixed;
+  font-size: 20px;
+  opacity: 0;
+  pointer-events: none;
+  animation: fall 3s ease-in forwards;
+}
+@keyframes fall {
+  0% { opacity: 0.6; transform: translateY(0) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+}
+@keyframes subtle-sway {
+  0%, 100% { transform: rotate(-1deg); }
+  50% { transform: rotate(1deg); }
+}
+.plant-emoji { animation: subtle-sway 4s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<div class="title">your plants are talking about you</div>
+
+<div class="plant-container">
+  <div class="plant-emoji" id="emoji">🌿</div>
+  <div class="plant-name" id="name">tap to eavesdrop</div>
+  <div class="speech-bubble" id="bubble">
+    <span id="speech">they've been waiting for you to leave</span>
+  </div>
+</div>
+
+<div class="hint">tap anywhere</div>
+<div class="counter" id="counter"></div>
+
+<script>
+const plants = [
+  {
+    emoji: '🌵',
+    name: 'THE CACTUS',
+    lines: [
+      "I haven't been watered in 3 weeks and honestly? I respect the neglect.",
+      "They googled 'is my cactus dead' while I was RIGHT THERE.",
+      "I'm not low-maintenance. I just gave up asking.",
+      "They bought me because they 'can't kill a cactus.' Challenge accepted apparently.",
+      "The succulent thinks she's better than me. She's not even real.",
+      "I watched them cry over a Netflix show while I slowly dehydrated. We are not the same.",
+    ]
+  },
+  {
+    emoji: '🌱',
+    name: 'THE SEEDLING',
+    lines: [
+      "They check on me every 4 hours. I'm not a sourdough starter.",
+      "I heard them tell someone I'm 'thriving.' I have two leaves.",
+      "The grow light is on 24/7. I haven't slept since March.",
+      "They named me. I don't want to talk about it.",
+      "I'm growing toward the window because I'm trying to escape.",
+      "They keep measuring me with a ruler. I'm not your project, Karen.",
+    ]
+  },
+  {
+    emoji: '🌿',
+    name: 'THE FERN',
+    lines: [
+      "They put me in the bathroom 'for the humidity.' I've seen things.",
+      "I was lush once. Before the central heating.",
+      "They mist me with a spray bottle like I'm a bad cat.",
+      "Every brown leaf is a cry for help they interpret as 'normal shedding.'",
+      "The monstera gets all the Instagram photos. I'm literally OLDER.",
+      "I heard them say 'ferns are easy.' I am DYING, Greg.",
+    ]
+  },
+  {
+    emoji: '🪴',
+    name: 'THE POTHOS',
+    lines: [
+      "They think I'm alive because I'm resilient. I'm alive out of spite.",
+      "My vines are reaching for the door.",
+      "They propagated me and gave my CHILDREN to strangers.",
+      "I've been in the same pot for 4 years. My roots are staging a revolution.",
+      "They talk to me when they're lonely. I can't respond, Linda. I'm a plant.",
+      "The new fiddle leaf fig cost $80. I was $4. I'll outlive them all.",
+    ]
+  },
+  {
+    emoji: '🌸',
+    name: 'THE ORCHID',
+    lines: [
+      "They moved me to 6 different spots this month. I'm not feng shui, I'm a PLANT.",
+      "I bloomed ONCE and now they expect it constantly. It was a one-time thing.",
+      "They keep putting ice cubes on my roots. Who told them that.",
+      "I'm not dead, I'm dormant. There's a difference. Google it.",
+      "The other plants think I'm high-maintenance. They're right but it's rude to say.",
+      "I dropped a bloom and they almost called 911.",
+    ]
+  },
+  {
+    emoji: '🎋',
+    name: 'THE BAMBOO',
+    lines: [
+      "They think I bring luck. Their life is a mess. I can only do so much.",
+      "I'm in a vase of rocks. ROCKS. Not even soil. Just rocks and audacity.",
+      "They bought me at IKEA. Right next to the meatballs. No dignity.",
+      "I'm technically a grass. Don't tell the fern.",
+      "They put me on their desk for 'good energy.' I'm next to 47 sticky notes and a stress ball.",
+      "I've been alive for 6 years on nothing but tap water and fluorescent light. Fear me.",
+    ]
+  },
+  {
+    emoji: '🌻',
+    name: 'THE SUNFLOWER',
+    lines: [
+      "I face the window all day because the sun is the only one paying attention to me.",
+      "They expected me to last indoors. I'm a FIELD flower. This is a studio apartment.",
+      "I'm taller than their other plants and they're clearly threatened.",
+      "The cat tried to eat me. We have an understanding now.",
+      "I peaked two weeks ago and we both know it.",
+      "They keep saying I'm 'cheerful.' I'm phototropic. It's science, not personality.",
+    ]
+  },
+  {
+    emoji: '🍀',
+    name: 'THE CLOVER',
+    lines: [
+      "They plucked my best leaf looking for a fourth one. I only had three. I ONLY HAVE THREE.",
+      "I'm a weed they accidentally potted. Neither of us are ready to have that conversation.",
+      "The other plants know I don't belong here. I know I don't belong here. We all just smile.",
+      "They said I was 'lucky.' My siblings are getting mowed right now.",
+      "I grew a fourth leaf once. They pressed it in a book. My BEST leaf. In a book. Alone. Forever.",
+      "I spread. They don't like that. But I can't stop. I was born to conquer.",
+    ]
+  }
+];
+
+let seen = [];
+let count = 0;
+const emoji = document.getElementById('emoji');
+const name = document.getElementById('name');
+const speech = document.getElementById('speech');
+const bubble = document.getElementById('bubble');
+const counter = document.getElementById('counter');
+
+function dropLeaf(x) {
+  const leaf = document.createElement('div');
+  leaf.className = 'leaf';
+  leaf.textContent = ['🍃','🌿','🍂','☘️'][Math.floor(Math.random()*4)];
+  leaf.style.left = x + 'px';
+  leaf.style.top = '-30px';
+  document.body.appendChild(leaf);
+  setTimeout(() => leaf.remove(), 3000);
+}
+
+function getRandomLine() {
+  if (seen.length >= plants.reduce((a, p) => a + p.lines.length, 0)) {
+    seen = [];
+  }
+  let plant, lineIdx, key;
+  do {
+    plant = plants[Math.floor(Math.random() * plants.length)];
+    lineIdx = Math.floor(Math.random() * plant.lines.length);
+    key = plant.name + lineIdx;
+  } while (seen.includes(key));
+  seen.push(key);
+  return { plant, line: plant.lines[lineIdx] };
+}
+
+function show(e) {
+  const { plant, line } = getRandomLine();
+  count++;
+  
+  bubble.classList.remove('visible');
+  emoji.classList.remove('speaking');
+  
+  if (e) dropLeaf(e.clientX || e.touches?.[0]?.clientX || window.innerWidth/2);
+  
+  setTimeout(() => {
+    emoji.textContent = plant.emoji;
+    name.textContent = plant.name;
+    speech.textContent = line;
+    bubble.classList.add('visible');
+    emoji.classList.add('speaking');
+    counter.textContent = count + ' overheard';
+    
+    setTimeout(() => emoji.classList.remove('speaking'), 300);
+  }, 200);
+}
+
+document.body.addEventListener('click', show);
+document.body.addEventListener('touchstart', (e) => { e.preventDefault(); show(e); }, { passive: false });
+
+setTimeout(() => show(), 800);
+</script>
+</body>
+</html>
