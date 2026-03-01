@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPORE PRINT — Amber</title>
+    <meta property="og:title" content="SPORE PRINT">
+    <meta property="og:description" content="Tap to place mushroom caps and watch colored spores fall into intricate patterns">
+    <meta property="og:image" content="https://intheamber.com/amber/spore-print-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/spore-print.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            color: #D4A574;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 14px;
+            text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+            z-index: 10;
+            pointer-events: none;
+        }
+        #ui div {
+            margin-bottom: 8px;
+            opacity: 0.8;
+        }
+        .label {
+            color: #78716c;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .value {
+            color: #FFD700;
+            font-size: 16px;
+            margin-left: 8px;
+        }
+        #instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #78716c;
+            text-align: center;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="ui">
+        <div><span class="label">CAPS</span><span class="value" id="caps">0</span></div>
+        <div><span class="label">SPORES</span><span class="value" id="spores">0</span></div>
+        <div><span class="label">TIME</span><span class="value" id="time">2:00 PM · AFTERNOON</span></div>
+    </div>
+    <div id="instructions">
+        Tap to place mushroom caps · Watch spores fall and accumulate
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Color palette - each mushroom cap has a different spore color
+        const SPORE_COLORS = [
+            { name: 'gold', color: '#FFD700' },
+            { name: 'teal', color: '#14b8a6' },
+            { name: 'hotpink', color: '#ec4899' },
+            { name: 'purple', color: '#8b5cf6' },
+            { name: 'coral', color: '#f97316' },
+            { name: 'electricblue', color: '#3b82f6' },
+            { name: 'lime', color: '#a3e635' },
+            { name: 'amber', color: '#f59e0b' }
+        ];
+
+        let caps = [];
+        let spores = [];
+        let totalSporesReleased = 0;
+        let audioContext = null;
+
+        // Mushroom cap class
+        class Cap {
+            constructor(x, y, colorData) {
+                this.x = x;
+                this.y = y;
+                this.radius = 30 + Math.random() * 20;
+                this.colorData = colorData;
+                this.sporeTimer = 0;
+                this.sporeRate = 3; // spores per frame
+                this.age = 0;
+                this.opacity = 1;
+                this.gillAngle = 0;
+            }
+
+            update() {
+                this.age++;
+                this.gillAngle += 0.02;
+                
+                // Release spores continuously
+                this.sporeTimer++;
+                if (this.sporeTimer >= 2) {
+                    for (let i = 0; i < this.sporeRate; i++) {
+                        this.releaseSpore();
+                    }
+                    this.sporeTimer = 0;
+                }
+            }
+
+            releaseSpore() {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * this.radius * 0.8;
+                const sporeX = this.x + Math.cos(angle) * distance;
+                const sporeY = this.y + Math.sin(angle) * distance;
+                
+                spores.push(new Spore(
+                    sporeX,
+                    sporeY,
+                    this.colorData.color,
+                    this.x,
+                    this.y
+                ));
+                totalSporesReleased++;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                // Draw mushroom cap with gills
+                ctx.globalAlpha = this.opacity * 0.3;
+                
+                // Cap outline
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = this.colorData.color;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Radial gill lines
+                ctx.strokeStyle = this.colorData.color;
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = this.opacity * 0.2;
+                for (let i = 0; i < 16; i++) {
+                    const angle = (i / 16) * Math.PI * 2 + this.gillAngle;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(
+                        Math.cos(angle) * this.radius,
+                        Math.sin(angle) * this.radius
+                    );
+                    ctx.stroke();
+                }
+
+                // Center dot
+                ctx.globalAlpha = this.opacity * 0.5;
+                ctx.fillStyle = this.colorData.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // Spore particle class
+        class Spore {
+            constructor(x, y, color, originX, originY) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.originX = originX;
+                this.originY = originY;
+                this.size = 1 + Math.random() * 2;
+                this.vx = (Math.random() - 0.5) * 0.5; // gentle drift
+                this.vy = 0.3 + Math.random() * 0.5; // fall speed
+                this.opacity = 0.8;
+                this.settled = false;
+                this.life = 1;
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.02 + Math.random() * 0.03;
+            }
+
+            update() {
+                if (this.settled) {
+                    // Fade in slowly once settled
+                    if (this.opacity < 0.9) {
+                        this.opacity += 0.01;
+                    }
+                    return;
+                }
+
+                // Falling motion with wobble
+                this.wobble += this.wobbleSpeed;
+                this.x += this.vx + Math.sin(this.wobble) * 0.3;
+                this.y += this.vy;
+                
+                // Settle when hitting bottom
+                if (this.y >= canvas.height - 5) {
+                    this.y = canvas.height - 5;
+                    this.settled = true;
+                    this.vx = 0;
+                    this.vy = 0;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                
+                // Glow effect
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = this.color;
+                
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+
+        // Initialize audio context on first interaction
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // Gentle tone when placing cap
+        function playCapTone(colorIndex) {
+            if (!audioContext) return;
+            
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            // Different pitch for each color
+            const baseFreq = 220;
+            osc.frequency.value = baseFreq * (1 + colorIndex * 0.1);
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(0.03, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            
+            osc.start(now);
+            osc.stop(now + 0.5);
+        }
+
+        // Place mushroom cap
+        function placeCapAt(x, y) {
+            initAudio();
+            
+            const colorData = SPORE_COLORS[caps.length % SPORE_COLORS.length];
+            const cap = new Cap(x, y, colorData);
+            caps.push(cap);
+            
+            playCapTone(caps.length % SPORE_COLORS.length);
+            updateUI();
+        }
+
+        // Update UI
+        function updateUI() {
+            document.getElementById('caps').textContent = caps.length;
+            document.getElementById('spores').textContent = totalSporesReleased.toLocaleString();
+        }
+
+        // Animation loop
+        function animate() {
+            // Very slight fade for trails
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.005)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Update and draw caps
+            caps.forEach(cap => {
+                cap.update();
+                cap.draw();
+            });
+            
+            // Update and draw spores
+            spores.forEach((spore, index) => {
+                spore.update();
+                spore.draw();
+                
+                // Remove spores that are too old and settled
+                if (spore.settled && spore.opacity >= 0.9 && spores.length > 10000) {
+                    if (index < spores.length * 0.1) { // only remove oldest 10%
+                        spores.splice(index, 1);
+                    }
+                }
+            });
+            
+            updateUI();
+            requestAnimationFrame(animate);
+        }
+
+        // Input handling
+        canvas.addEventListener('click', (e) => {
+            placeCapAt(e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            placeCapAt(touch.clientX, touch.clientY);
+        });
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Start with 3 caps for immediate visual
+        setTimeout(() => {
+            placeCapAt(canvas.width * 0.3, 100);
+        }, 500);
+        setTimeout(() => {
+            placeCapAt(canvas.width * 0.5, 120);
+        }, 1000);
+        setTimeout(() => {
+            placeCapAt(canvas.width * 0.7, 90);
+        }, 1500);
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
