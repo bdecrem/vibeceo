@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRIBAL PULSE — Amber</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪘</text></svg>">
+<meta property="og:title" content="TRIBAL PULSE">
+<meta property="og:description" content="afro house · 122 bpm · polyrhythmic percussion · G minor">
+<meta property="og:image" content="https://intheamber.com/amber/tribal-pulse-og.png">
+<meta property="og:url" content="https://intheamber.com/amber/tribal-pulse.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@intheamber">
+<meta name="twitter:title" content="TRIBAL PULSE">
+<meta name="twitter:description" content="afro house · polyrhythmic percussion · drum circle in the machine">
+<meta name="twitter:image" content="https://intheamber.com/amber/tribal-pulse-og.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0d0906;
+  color: #e0d0c0;
+  font-family: 'Courier New', monospace;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+}
+.ui {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  pointer-events: none;
+}
+h1 {
+  font-size: clamp(1.8rem, 6vw, 3.5rem);
+  letter-spacing: 0.3em;
+  color: #c4956a;
+  text-transform: uppercase;
+  margin-bottom: 0.3em;
+  opacity: 0.9;
+}
+.sub {
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
+  color: #6b5444;
+  letter-spacing: 0.15em;
+}
+#startBtn {
+  margin-top: 2em;
+  background: none;
+  border: 1px solid #4a3828;
+  color: #8b6f55;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  padding: 0.6em 1.6em;
+  cursor: pointer;
+  pointer-events: all;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.5s;
+}
+.playing #startBtn { opacity: 0; pointer-events: none; }
+.credit {
+  position: fixed;
+  bottom: 1rem;
+  font-size: 0.65rem;
+  color: #1a1510;
+  letter-spacing: 0.1em;
+  z-index: 2;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="ui">
+  <h1>TRIBAL PULSE</h1>
+  <div class="sub">122 bpm · afro house · G minor</div>
+  <button id="startBtn">tap to start</button>
+</div>
+<div class="credit">amber · hallman — intheamber.com</div>
+
+<script type="module">
+import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+import { TB303Engine } from '/303/dist/machines/tb303/engine.js';
+
+// ─── CANVAS ───
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+function resize() {
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ─── GLOBALS ───
+let actx, drums, bass, analyser, data;
+let playing = false;
+let currentStep = 0;
+let intervalId = null;
+// Percussion synths (Web Audio)
+let djembeNodes, shakerNode, talkingDrumNodes;
+
+const BPM = 122;
+const STEP_DUR = 60 / BPM / 4;
+
+// ─── DJEMBE SYNTH (Web Audio) ───
+// Three timbres: bass (low), tone (mid), slap (high)
+function createDjembe(actx, output) {
+  function hit(time, type, vel) {
+    // Djembe synthesis: short noise burst + pitched resonance
+    const gain = actx.createGain();
+    const freqs = { bass: 80, tone: 180, slap: 350 };
+    const decays = { bass: 0.18, tone: 0.12, slap: 0.06 };
+    const noiseAmts = { bass: 0.15, tone: 0.2, slap: 0.5 };
+
+    const freq = freqs[type];
+    const decay = decays[type];
+    const noiseAmt = noiseAmts[type];
+
+    // Pitched body
+    const osc = actx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq * 1.5, time);
+    osc.frequency.exponentialRampToValueAtTime(freq, time + 0.01);
+
+    const oscGain = actx.createGain();
+    oscGain.gain.setValueAtTime(vel * 0.4 * (1 - noiseAmt), time);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, time + decay);
+
+    // Noise transient (skin slap)
+    const noiseBuf = actx.createBuffer(1, actx.sampleRate * 0.05, actx.sampleRate);
+    const nd = noiseBuf.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    const noise = actx.createBufferSource();
+    noise.buffer = noiseBuf;
+
+    const noiseFilt = actx.createBiquadFilter();
+    noiseFilt.type = 'bandpass';
+    noiseFilt.frequency.value = freq * 3;
+    noiseFilt.Q.value = 1.5;
+
+    const noiseGain = actx.createGain();
+    noiseGain.gain.setValueAtTime(vel * 0.4 * noiseAmt, time);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, time + decay * 0.5);
+
+    osc.connect(oscGain);
+    oscGain.connect(gain);
+    noise.connect(noiseFilt);
+    noiseFilt.connect(noiseGain);
+    noiseGain.connect(gain);
+    gain.gain.value = 1.0;
+    gain.connect(output);
+
+    osc.start(time);
+    osc.stop(time + decay + 0.01);
+    noise.start(time);
+    noise.stop(time + decay + 0.01);
+  }
+  return { hit };
+}
+
+// ─── SHAKER SYNTH ───
+function createShaker(actx, output) {
+  function hit(time, vel) {
+    const bufLen = Math.floor(actx.sampleRate * 0.03);
+    const buf = actx.createBuffer(1, bufLen, actx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+    const src = actx.createBufferSource();
+    src.buffer = buf;
+
+    const hpf = actx.createBiquadFilter();
+    hpf.type = 'highpass';
+    hpf.frequency.value = 6000;
+
+    const gain = actx.createGain();
+    gain.gain.setValueAtTime(vel * 0.2, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+
+    src.connect(hpf);
+    hpf.connect(gain);
+    gain.connect(output);
+    src.start(time);
+    src.stop(time + 0.05);
+  }
+  return { hit };
+}
+
+// ─── TALKING DRUM SYNTH ───
+function createTalkingDrum(actx, output) {
+  function hit(time, freq, vel) {
+    const osc = actx.createOscillator();
+    osc.type = 'triangle';
+    // Pitch bend down — talking drum characteristic
+    osc.frequency.setValueAtTime(freq * 1.3, time);
+    osc.frequency.exponentialRampToValueAtTime(freq, time + 0.04);
+
+    const gain = actx.createGain();
+    gain.gain.setValueAtTime(vel * 0.25, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+
+    // Bandpass for resonant body
+    const bp = actx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = freq;
+    bp.Q.value = 3;
+
+    osc.connect(bp);
+    bp.connect(gain);
+    gain.connect(output);
+    osc.start(time);
+    osc.stop(time + 0.15);
+  }
+  return { hit };
+}
+
+// ─── SETUP AUDIO ───
+function setupAudio(actx) {
+  const compressor = actx.createDynamicsCompressor();
+  compressor.threshold.value = -8;
+  compressor.ratio.value = 2.0;
+  compressor.attack.value = 0.015;
+  compressor.release.value = 0.12;
+  compressor.connect(actx.destination);
+
+  // ─── TR-909 DRUMS ───
+  drums = new TR909Engine({ context: actx });
+  drums.setBpm(BPM);
+
+  // Afro house: soft 4x4 kick, gentle clap on 2&4, sparse hats
+  const drumPattern = {
+    kick: Array.from({length: 16}, (_, i) =>
+      ({ velocity: [0,4,8,12].includes(i) ? 0.85 : 0 })),
+    clap: Array.from({length: 16}, (_, i) =>
+      ({ velocity: [4,12].includes(i) ? 0.35 : 0 })),
+    ch: Array.from({length: 16}, (_, i) =>
+      ({ velocity: [2,6,10,14].includes(i) ? 0.25 : 0 })),
+    oh: Array.from({length: 16}, (_, i) =>
+      ({ velocity: [6,14].includes(i) ? 0.15 : 0 })),
+    rimshot: Array.from({length: 16}, (_, i) =>
+      ({ velocity: [1,7,11].includes(i) ? 0.2 : 0 })),
+  };
+
+  drums.setPattern('main', drumPattern);
+
+  try {
+    drums.setVoiceParam?.('kick', 'decay', 0.4);
+    drums.setVoiceParam?.('kick', 'tune', -1);
+    drums.setVoiceParam?.('kick', 'level', 0.85);
+    drums.setVoiceParam?.('clap', 'decay', 0.4);
+    drums.setVoiceParam?.('clap', 'level', 0.35);
+    drums.setVoiceParam?.('ch', 'decay', 0.12);
+    drums.setVoiceParam?.('ch', 'level', 0.25);
+    drums.setVoiceParam?.('oh', 'decay', 0.25);
+    drums.setVoiceParam?.('oh', 'level', 0.15);
+    drums.setVoiceParam?.('rimshot', 'decay', 0.1);
+    drums.setVoiceParam?.('rimshot', 'level', 0.2);
+  } catch(e) {}
+
+  const drumGain = actx.createGain();
+  drumGain.gain.value = 0.75;
+  drums.output.connect(drumGain);
+
+  // Short room reverb on drums
+  const drumReverb = actx.createConvolver();
+  const drBufLen = actx.sampleRate * 0.8;
+  const drBuf = actx.createBuffer(2, drBufLen, actx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = drBuf.getChannelData(ch);
+    for (let i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 4);
+    }
+  }
+  drumReverb.buffer = drBuf;
+  const drumReverbGain = actx.createGain();
+  drumReverbGain.gain.value = 0.08;
+  drums.output.connect(drumReverb);
+  drumReverb.connect(drumReverbGain);
+
+  drumGain.connect(compressor);
+  drumReverbGain.connect(compressor);
+
+  // ─── PERCUSSION BUS ───
+  const percBus = actx.createGain();
+  percBus.gain.value = 0.7;
+
+  // Panning for percussion — drum circle feel
+  const djembePan = actx.createStereoPanner();
+  djembePan.pan.value = -0.2;
+  const shakerPan = actx.createStereoPanner();
+  shakerPan.pan.value = 0.25;
+  const tdPan = actx.createStereoPanner();
+  tdPan.pan.value = 0.15;
+
+  djembePan.connect(percBus);
+  shakerPan.connect(percBus);
+  tdPan.connect(percBus);
+
+  // Percussion reverb — slightly longer, more spatial
+  const percReverb = actx.createConvolver();
+  const prBufLen = actx.sampleRate * 1.2;
+  const prBuf = actx.createBuffer(2, prBufLen, actx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = prBuf.getChannelData(ch);
+    for (let i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+    }
+  }
+  percReverb.buffer = prBuf;
+  const percReverbGain = actx.createGain();
+  percReverbGain.gain.value = 0.15;
+  percBus.connect(percReverb);
+  percReverb.connect(percReverbGain);
+
+  percBus.connect(compressor);
+  percReverbGain.connect(compressor);
+
+  // Create percussion synths
+  djembeNodes = createDjembe(actx, djembePan);
+  shakerNode = createShaker(actx, shakerPan);
+  talkingDrumNodes = createTalkingDrum(actx, tdPan);
+
+  // ─── TB-303 BASS ───
+  bass = new TB303Engine({ context: actx });
+  bass.setBpm(BPM);
+
+  // Afro house: melodic, warm, pentatonic in G minor
+  // G1=49Hz, Bb1=58Hz, C2=65Hz, D2=73Hz, F2=87Hz
+  const bassPattern = [
+    { note: 'G1', gate: true, accent: false, slide: false },
+    { note: 'G1', gate: false, accent: false, slide: false },
+    { note: 'G1', gate: false, accent: false, slide: false },
+    { note: 'Bb1', gate: true, accent: false, slide: true },
+    { note: 'C2', gate: true, accent: false, slide: false },
+    { note: 'C2', gate: false, accent: false, slide: false },
+    { note: 'D2', gate: true, accent: false, slide: true },
+    { note: 'C2', gate: true, accent: false, slide: false },
+    { note: 'G1', gate: true, accent: false, slide: false },
+    { note: 'G1', gate: false, accent: false, slide: false },
+    { note: 'F2', gate: true, accent: false, slide: true },
+    { note: 'D2', gate: true, accent: false, slide: false },
+    { note: 'C2', gate: true, accent: false, slide: false },
+    { note: 'C2', gate: false, accent: false, slide: false },
+    { note: 'Bb1', gate: true, accent: false, slide: true },
+    { note: 'G1', gate: true, accent: false, slide: false },
+  ];
+
+  bass.setPattern(bassPattern);
+
+  // Library: cutoff 0.35, resonance 0.15, envMod 0.2 — warm with presence
+  bass.setParameter('cutoff', 0.35);
+  bass.setParameter('resonance', 0.15);
+  bass.setParameter('envMod', 0.2);
+  bass.setParameter('decay', 0.6);
+  bass.setParameter('accent', 0.3);
+  bass.setWaveform('sawtooth');
+
+  const bassGain = actx.createGain();
+  bassGain.gain.value = 0.5;
+  bass.output.connect(bassGain);
+  bassGain.connect(compressor);
+
+  // ─── ANALYSER ───
+  analyser = actx.createAnalyser();
+  analyser.fftSize = 512;
+  data = new Uint8Array(analyser.frequencyBinCount);
+  compressor.connect(analyser);
+}
+
+// ─── PERCUSSION PATTERNS from library.json ───
+// djembe: [0,3,4,7,8,10,12,15] — tresillo fragments + downbeat locks
+// Types: bass on downbeats, tones on offbeats, slaps on accents
+const djembePattern = [
+  { step: 0, type: 'bass', vel: 0.55 },
+  { step: 3, type: 'slap', vel: 0.45 },
+  { step: 4, type: 'tone', vel: 0.5 },
+  { step: 7, type: 'slap', vel: 0.4 },
+  { step: 8, type: 'bass', vel: 0.5 },
+  { step: 10, type: 'tone', vel: 0.4 },
+  { step: 12, type: 'tone', vel: 0.5 },
+  { step: 15, type: 'slap', vel: 0.35 },
+];
+
+// shaker: [0,2,4,6,8,10,12,14] — 8th notes with velocity variation
+const shakerPattern = [
+  { step: 0, vel: 0.35 },
+  { step: 2, vel: 0.2 },
+  { step: 4, vel: 0.3 },
+  { step: 6, vel: 0.18 },
+  { step: 8, vel: 0.32 },
+  { step: 10, vel: 0.2 },
+  { step: 12, vel: 0.28 },
+  { step: 14, vel: 0.18 },
+];
+
+// talking drum: [2,5,9,13] — offset from kick and djembe
+// Pitches in G minor pentatonic region
+const talkingDrumPattern = [
+  { step: 2, freq: 250, vel: 0.3 },
+  { step: 5, freq: 300, vel: 0.25 },
+  { step: 9, freq: 220, vel: 0.3 },
+  { step: 13, freq: 280, vel: 0.2 },
+];
+
+// ─── SEQUENCER ───
+function startSequencer() {
+  drums.startSequencer();
+  bass.startSequencer();
+
+  currentStep = 0;
+  intervalId = setInterval(() => {
+    const step = currentStep % 16;
+    const now = actx.currentTime;
+
+    // Humanize: ±5ms timing offset
+    const humanize = () => (Math.random() - 0.5) * 0.01;
+
+    // Djembe
+    for (const d of djembePattern) {
+      if (d.step === step) {
+        // ±10% velocity variation for organic feel
+        const v = d.vel * (0.9 + Math.random() * 0.2);
+        djembeNodes.hit(now + humanize(), d.type, v);
+      }
+    }
+
+    // Shaker
+    for (const s of shakerPattern) {
+      if (s.step === step) {
+        const v = s.vel * (0.85 + Math.random() * 0.3);
+        shakerNode.hit(now + Math.abs(humanize()), v);
+      }
+    }
+
+    // Talking drum
+    for (const t of talkingDrumPattern) {
+      if (t.step === step) {
+        // ±5 cent pitch variation
+        const f = t.freq * (0.98 + Math.random() * 0.04);
+        talkingDrumNodes.hit(now + humanize(), f, t.vel);
+      }
+    }
+
+    currentStep++;
+  }, STEP_DUR * 1000);
+}
+
+function stopSequencer() {
+  drums.stopSequencer();
+  bass.stopSequencer();
+  if (intervalId) clearInterval(intervalId);
+  intervalId = null;
+}
+
+// ─── VISUALIZATION ───
+// Warm concentric circles — drum circle energy, earth tones
+let kickPulse = 0, percPulse = 0;
+
+function draw() {
+  requestAnimationFrame(draw);
+  const w = window.innerWidth, h = window.innerHeight;
+
+  // Warm fade trails
+  ctx.fillStyle = 'rgba(13, 9, 6, 0.12)';
+  ctx.fillRect(0, 0, w, h);
+
+  kickPulse *= 0.88;
+  percPulse *= 0.92;
+
+  if (!analyser) {
+    // Idle: warm ember glow
+    const t = Date.now() * 0.0004;
+    const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, h * 0.3);
+    grad.addColorStop(0, `rgba(196,149,106,${0.03 + Math.sin(t) * 0.01})`);
+    grad.addColorStop(1, 'rgba(196,149,106,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+    return;
+  }
+
+  analyser.getByteFrequencyData(data);
+
+  // Energy bands
+  const bass_e = (data[1] + data[2] + data[3]) / (3 * 255);
+  const mid_e = (data[8] + data[12] + data[18]) / (3 * 255);
+  const hi_e = (data[30] + data[40] + data[50]) / (3 * 255);
+
+  kickPulse = Math.max(kickPulse, bass_e * 1.2);
+  percPulse = Math.max(percPulse, mid_e);
+
+  const cx = w / 2, cy = h / 2;
+  const t = Date.now() * 0.001;
+
+  // Concentric rings — like ripples from a drum hit
+  const numRings = 10;
+  for (let i = 0; i < numRings; i++) {
+    const phase = i / numRings;
+    const baseRadius = 30 + i * (Math.min(w,h) * 0.04);
+    const kickExpand = kickPulse * 25 * (1 - phase * 0.6);
+    const percExpand = percPulse * 15 * (0.5 + phase * 0.5);
+    const breathe = Math.sin(t * 0.3 + i * 0.7) * 3;
+    const radius = baseRadius + kickExpand + percExpand + breathe;
+
+    // Earth tones: warm amber → deep brown
+    const r = Math.floor(196 - phase * 80);
+    const g = Math.floor(149 - phase * 80);
+    const b = Math.floor(106 - phase * 60);
+    const alpha = 0.15 + kickPulse * 0.25 + percPulse * 0.15 - phase * 0.05;
+
+    ctx.strokeStyle = `rgba(${r},${g},${b},${Math.max(0.05, alpha)})`;
+    ctx.lineWidth = 1.5 + kickPulse * 2;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Rotating percussion dots — polyrhythmic orbits
+  const dotCount = 8;
+  for (let i = 0; i < dotCount; i++) {
+    const angle = (t * (0.3 + i * 0.05)) + (i * Math.PI * 2 / dotCount);
+    const orbit = 60 + i * 25 + percPulse * 20;
+    const x = cx + Math.cos(angle) * orbit;
+    const y = cy + Math.sin(angle) * orbit;
+    const dotR = 2 + mid_e * 4;
+
+    ctx.fillStyle = `rgba(196,149,106,${0.2 + percPulse * 0.4})`;
+    ctx.beginPath();
+    ctx.arc(x, y, dotR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Central glow on kick
+  if (kickPulse > 0.15) {
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80 + kickPulse * 60);
+    grad.addColorStop(0, `rgba(200,140,80,${kickPulse * 0.15})`);
+    grad.addColorStop(1, 'rgba(200,140,80,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 80 + kickPulse * 60, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // High-frequency shimmer (shaker visualization) — tiny dots
+  if (hi_e > 0.1) {
+    for (let i = 0; i < 12; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const dist = 100 + Math.random() * (Math.min(w,h) * 0.3);
+      const x = cx + Math.cos(a) * dist;
+      const y = cy + Math.sin(a) * dist;
+      ctx.fillStyle = `rgba(220,200,170,${hi_e * 0.3})`;
+      ctx.beginPath();
+      ctx.arc(x, y, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+draw();
+
+// ─── INTERACTION ───
+const startBtn = document.getElementById('startBtn');
+
+async function handleStart() {
+  if (!playing) {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    await actx.resume();
+    setupAudio(actx);
+    startSequencer();
+    playing = true;
+    document.body.classList.add('playing');
+  } else {
+    if (actx.state === 'running') {
+      stopSequencer();
+      await actx.suspend();
+      startBtn.textContent = 'tap to resume';
+      startBtn.style.opacity = '1';
+      startBtn.style.pointerEvents = 'all';
+      document.body.classList.remove('playing');
+    } else {
+      await actx.resume();
+      startSequencer();
+      document.body.classList.add('playing');
+    }
+  }
+}
+
+startBtn.addEventListener('click', handleStart);
+startBtn.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  handleStart();
+});
+</script>
+</body>
+</html>
