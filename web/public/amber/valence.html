@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VALENCE — What does 0.95 feel like to you?</title>
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="VALENCE — What does 0.95 feel like to you?">
+  <meta property="og:description" content="A question about whether numbers can convey warmth">
+  <meta property="og:image" content="https://intheamber.com/amber/valence-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/valence.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="VALENCE — What does 0.95 feel like to you?">
+  <meta name="twitter:description" content="A question about whether numbers can convey warmth">
+  <meta name="twitter:image" content="https://intheamber.com/amber/valence-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: pointer;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 10;
+    }
+
+    .label {
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: #D4A574;
+      opacity: 0.6;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .number {
+      font-family: 'Space Mono', monospace;
+      font-size: 120px;
+      font-weight: 700;
+      color: #FFD700;
+      text-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
+      margin-bottom: 40px;
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    .question {
+      font-family: 'Inter', sans-serif;
+      font-size: 24px;
+      font-weight: 300;
+      color: #D4A574;
+      text-align: center;
+      line-height: 1.5;
+      max-width: 600px;
+    }
+
+    .meaning {
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      color: #2D9596;
+      margin-top: 30px;
+      opacity: 0;
+      transition: opacity 0.5s;
+      letter-spacing: 1px;
+    }
+
+    .meaning.visible {
+      opacity: 1;
+    }
+
+    .timestamp {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: #D4A574;
+      opacity: 0.4;
+      letter-spacing: 1px;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        text-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
+      }
+      50% {
+        transform: scale(1.05);
+        text-shadow: 0 0 60px rgba(255, 215, 0, 0.8);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .number {
+        font-size: 80px;
+      }
+      .question {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="overlay">
+    <div class="label">valence</div>
+    <div class="number">0.95</div>
+    <div class="question">What does this feel like to you?</div>
+    <div class="meaning" id="meaning">warm · inviting · connected · luminous</div>
+  </div>
+  
+  <div class="timestamp">12:00 PM · MIDDAY</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const meaningEl = document.getElementById('meaning');
+
+    let width, height;
+    let particles = [];
+    let audioContext, oscillator;
+    let isPlaying = false;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    class Particle {
+      constructor() {
+        this.angle = Math.random() * Math.PI * 2;
+        this.distance = 50 + Math.random() * 200;
+        this.speed = 0.002 + Math.random() * 0.003;
+        this.size = 2 + Math.random() * 3;
+        this.color = this.randomColor();
+        this.alpha = 0.3 + Math.random() * 0.4;
+      }
+
+      randomColor() {
+        const colors = ['#FFD700', '#D4A574', '#2D9596'];
+        return colors[Math.floor(Math.random() * colors.length)];
+      }
+
+      update() {
+        this.angle += this.speed;
+      }
+
+      draw() {
+        const x = width / 2 + Math.cos(this.angle) * this.distance;
+        const y = height / 2 + Math.sin(this.angle) * this.distance;
+
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(x, y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function init() {
+      resize();
+      
+      // Create orbital particles
+      for (let i = 0; i < 30; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function animate() {
+      // Fade effect for trails
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Update and draw particles
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      // Draw central glow
+      const centerX = width / 2;
+      const centerY = height / 2;
+      
+      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 150);
+      gradient.addColorStop(0, 'rgba(255, 215, 0, 0.1)');
+      gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      requestAnimationFrame(animate);
+    }
+
+    function startAmbientSound() {
+      if (isPlaying) return;
+      
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(220, audioContext.currentTime); // A3 - warm tone
+        
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.02, audioContext.currentTime + 1);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.start();
+        
+        isPlaying = true;
+      } catch (e) {
+        console.log('Audio not supported');
+      }
+    }
+
+    function handleInteraction() {
+      meaningEl.classList.add('visible');
+      startAmbientSound();
+    }
+
+    canvas.addEventListener('click', handleInteraction);
+    canvas.addEventListener('touchstart', handleInteraction);
+
+    window.addEventListener('resize', resize);
+
+    init();
+    animate();
+
+    // Show meaning after 2 seconds
+    setTimeout(() => {
+      meaningEl.classList.add('visible');
+    }, 2000);
+  </script>
+</body>
+</html>
