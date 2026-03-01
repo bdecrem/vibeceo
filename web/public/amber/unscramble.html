@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>UNSCRAMBLE — Tap to swap and solve</title>
+    
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="UNSCRAMBLE — Tap to swap and solve">
+    <meta property="og:description" content="Swap letters to complete the word. Pattern completion rendered as word puzzle.">
+    <meta property="og:image" content="https://intheamber.com/amber/unscramble-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/unscramble.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="UNSCRAMBLE — Tap to swap and solve">
+    <meta name="twitter:description" content="Swap letters to complete the word. Pattern completion rendered as word puzzle.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/unscramble-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            overflow: hidden;
+            touch-action: manipulation;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .ui {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            width: 100%;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #FFD700;
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .instruction {
+            font-size: 14px;
+            color: #2D9596;
+            margin-bottom: 10px;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #D4A574;
+            opacity: 0.7;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        .tiles-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 40px auto;
+            flex-wrap: wrap;
+            max-width: 90vw;
+        }
+
+        .letter-tile {
+            width: 64px;
+            height: 64px;
+            background: #0D0D0D;
+            border: 2px solid #D4A574;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #FFD700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            box-shadow: 0 0 10px rgba(212, 165, 116, 0.3);
+            touch-action: manipulation;
+        }
+
+        .letter-tile:active {
+            transform: scale(0.95);
+        }
+
+        .letter-tile.selected {
+            background: #FFD700;
+            color: #000;
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            transform: scale(1.1);
+        }
+
+        .letter-tile.correct {
+            animation: bounce 0.5s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .stats {
+            margin-top: 40px;
+            font-size: 16px;
+            color: #D4A574;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .stats span {
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        .message {
+            font-size: 20px;
+            color: #2D9596;
+            margin-top: 20px;
+            min-height: 30px;
+            text-shadow: 0 0 10px rgba(45, 149, 150, 0.5);
+        }
+
+        .message.success {
+            color: #FFD700;
+            font-size: 26px;
+            animation: pulse 0.6s ease infinite;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        @media (max-width: 600px) {
+            .letter-tile {
+                width: 54px;
+                height: 54px;
+                font-size: 28px;
+                gap: 8px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="ui">
+        <h1>UNSCRAMBLE</h1>
+        <div class="instruction">Tap two letters to swap</div>
+        <div class="hint" id="hint">? ? ?</div>
+        
+        <div class="tiles-container" id="tiles"></div>
+        
+        <div class="message" id="message"></div>
+        
+        <div class="stats">
+            <div>MOVES: <span id="moves">0</span></div>
+            <div>SOLVED: <span id="solved">0</span></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Word list - increasing difficulty
+        const words = [
+            { word: 'AMBER', hint: 'your creator' },
+            { word: 'SOUND', hint: 'pressure waves' },
+            { word: 'LIGHT', hint: 'photons traveling' },
+            { word: 'TEMPO', hint: 'speed of beats' },
+            { word: 'SYNTH', hint: 'electronic tone' },
+            { word: 'BERLIN', hint: 'techno capital' },
+            { word: 'PATTERN', hint: 'repeating form' },
+            { word: 'CRYSTAL', hint: 'ordered atoms' },
+            { word: 'RHYTHM', hint: 'temporal flow' },
+            { word: 'CASCADE', hint: 'falling sequence' },
+            { word: 'FREQUENCY', hint: 'cycles per second' },
+            { word: 'RESONANCE', hint: 'sympathetic vibration' }
+        ];
+
+        let currentWordIndex = 0;
+        let currentWord = '';
+        let currentLetters = [];
+        let selectedIndex = null;
+        let moves = 0;
+        let solved = 0;
+        let particles = [];
+        let audioContext = null;
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 6;
+                this.vy = (Math.random() - 0.5) * 6 - 2;
+                this.life = 1;
+                this.color = color;
+                this.size = Math.random() * 5 + 2;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 0.015;
+                this.vy += 0.15; // gravity
+            }
+
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        function initAudio() {
+if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playTone(freq, duration = 0.1, volume = 0.1) {
+            initAudio();
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(volume, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+            
+            osc.start();
+            osc.stop(audioContext.currentTime + duration);
+        }
+
+        function playSuccess() {
+            initAudio();
+            // Ascending arpeggio
+            [440, 554, 659, 880].forEach((freq, i) => {
+                setTimeout(() => playTone(freq, 0.3, 0.15), i * 100);
+            });
+        }
+
+        function scramble(word) {
+            const arr = word.split('');
+            // Fisher-Yates shuffle
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            // Make sure it's actually scrambled
+            if (arr.join('') === word && word.length > 1) {
+                return scramble(word);
+            }
+            return arr;
+        }
+
+        function loadWord() {
+            if (currentWordIndex >= words.length) {
+                currentWordIndex = 0; // Loop back
+            }
+            
+            const wordObj = words[currentWordIndex];
+            currentWord = wordObj.word;
+            currentLetters = scramble(currentWord);
+            selectedIndex = null;
+            
+            document.getElementById('hint').textContent = wordObj.hint;
+            document.getElementById('message').textContent = '';
+            document.getElementById('message').className = 'message';
+            
+            renderTiles();
+        }
+
+        function renderTiles() {
+            const container = document.getElementById('tiles');
+            container.innerHTML = '';
+            
+            currentLetters.forEach((letter, i) => {
+                const tile = document.createElement('div');
+                tile.className = 'letter-tile';
+                tile.textContent = letter;
+                tile.dataset.index = i;
+                
+                tile.addEventListener('click', () => handleTileClick(i));
+                
+                container.appendChild(tile);
+            });
+        }
+
+        function handleTileClick(index) {
+            initAudio();
+            
+            const tiles = document.querySelectorAll('.letter-tile');
+            
+            if (selectedIndex === null) {
+                // First selection
+                selectedIndex = index;
+                tiles[index].classList.add('selected');
+                playTone(440, 0.08, 0.08);
+            } else if (selectedIndex === index) {
+                // Deselect
+                tiles[index].classList.remove('selected');
+                selectedIndex = null;
+                playTone(330, 0.08, 0.08);
+            } else {
+                // Swap
+                tiles[selectedIndex].classList.remove('selected');
+                
+                [currentLetters[selectedIndex], currentLetters[index]] = 
+                [currentLetters[index], currentLetters[selectedIndex]];
+                
+                moves++;
+                document.getElementById('moves').textContent = moves;
+                
+                playTone(554, 0.12, 0.1);
+                
+                selectedIndex = null;
+                renderTiles();
+                
+                // Check if solved
+                setTimeout(checkSolution, 100);
+            }
+        }
+
+        function checkSolution() {
+            const current = currentLetters.join('');
+            
+            if (current === currentWord) {
+                // Solved!
+                solved++;
+                document.getElementById('solved').textContent = solved;
+                document.getElementById('message').textContent = '✨ SOLVED ✨';
+                document.getElementById('message').className = 'message success';
+                
+                playSuccess();
+                
+                // Create particle burst
+                const container = document.querySelector('.tiles-container');
+                const rect = container.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const colors = ['#FFD700', '#D4A574', '#2D9596', '#7B68EE'];
+                for (let i = 0; i < 60; i++) {
+                    particles.push(new Particle(
+                        centerX,
+                        centerY,
+                        colors[Math.floor(Math.random() * colors.length)]
+                    ));
+                }
+                
+                // Add correct animation to tiles
+                document.querySelectorAll('.letter-tile').forEach((tile, i) => {
+                    setTimeout(() => {
+                        tile.classList.add('correct');
+                    }, i * 80);
+                });
+                
+                // Next word
+                setTimeout(() => {
+                    currentWordIndex++;
+                    loadWord();
+                }, 2500);
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Initialize
+        loadWord();
+        animate();
+    </script>
+</body>
+</html>
