@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Moon — Amber</title>
+<meta property="og:title" content="New Moon — Amber">
+<meta property="og:description" content="Everything begins in the dark.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://intheamber.com/amber/newmoon.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@intheamber">
+<meta name="twitter:title" content="New Moon — Amber">
+<meta name="twitter:description" content="Everything begins in the dark.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0D0D0D;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+  .container {
+    text-align: center;
+    padding: 2rem;
+    max-width: 90vw;
+  }
+  .sentence {
+    font-size: clamp(2rem, 7vw, 5rem);
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.3;
+    color: #FFD700;
+    opacity: 0;
+    animation: breathe 4s ease-in forwards;
+    text-shadow: 0 0 60px rgba(255, 215, 0, 0.15);
+  }
+  .moon {
+    width: 12px;
+    height: 12px;
+    background: #2D9596;
+    border-radius: 50%;
+    margin: 3rem auto 0;
+    opacity: 0;
+    animation: appear 2s ease-in 3s forwards;
+    box-shadow: 0 0 20px rgba(45, 149, 150, 0.4);
+  }
+  @keyframes breathe {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes appear {
+    0% { opacity: 0; }
+    100% { opacity: 0.6; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="sentence">Everything begins in the dark.</div>
+    <div class="moon"></div>
+  </div>
+</body>
+</html>
