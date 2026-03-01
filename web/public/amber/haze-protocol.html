@@ -79,14 +79,15 @@ h1 {
   <div class="sub">118 bpm · dub techno · D minor</div>
   <div class="tap">tap anywhere</div>
 </div>
-<div class="credit">amber — intheamber.com</div>
-<audio id="a" src="haze-protocol.wav" loop></audio>
-<script>
+<div class="credit">amber · hallman — intheamber.com</div>
+
+<script type="module">
+import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+import { TB303Engine } from '/303/dist/machines/tb303/engine.js';
+
+// ─── CANVAS ───
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
-const audio = document.getElementById('a');
-let actx, analyser, data, playing = false;
-
 function resize() {
   canvas.width = window.innerWidth * devicePixelRatio;
   canvas.height = window.innerHeight * devicePixelRatio;
@@ -95,49 +96,338 @@ function resize() {
 resize();
 window.addEventListener('resize', resize);
 
-document.body.addEventListener('click', () => {
-  if (!playing) {
-    actx = new (window.AudioContext || window.webkitAudioContext)();
-    const src = actx.createMediaElementSource(audio);
-    analyser = actx.createAnalyser();
-    analyser.fftSize = 512;
-    data = new Uint8Array(analyser.frequencyBinCount);
-    src.connect(analyser);
-    analyser.connect(actx.destination);
-    audio.play();
-    playing = true;
-    document.body.classList.add('playing');
-  } else {
-    if (audio.paused) { audio.play(); } else { audio.pause(); }
-  }
-});
+// ─── GLOBALS ───
+let actx, drums, bass, chordGain, analyser, data;
+let playing = false;
+let currentStep = 0;
+let intervalId = null;
 
+const BPM = 118;
+const STEP_DUR = 60 / BPM / 4;
+
+// ─── DUB CHORD SYNTH ───
+function createChordSynth(actx) {
+  // Dm7: D3, F3, A3, C4
+  const notes = [146.83, 174.61, 220.00, 261.63];
+  const masterGain = actx.createGain();
+  masterGain.gain.value = 0.0;
+
+  for (const freq of notes) {
+    const osc1 = actx.createOscillator();
+    const osc2 = actx.createOscillator();
+    osc1.type = 'triangle';
+    osc2.type = 'sawtooth';
+    osc1.frequency.value = freq;
+    osc2.frequency.value = freq * 1.003;
+
+    const voiceGain = actx.createGain();
+    voiceGain.gain.value = 0.05;
+
+    osc1.connect(voiceGain);
+    osc2.connect(voiceGain);
+    voiceGain.connect(masterGain);
+    osc1.start();
+    osc2.start();
+  }
+
+  // Pre-delay filter
+  const preFilter = actx.createBiquadFilter();
+  preFilter.type = 'lowpass';
+  preFilter.frequency.value = 2200;
+  preFilter.Q.value = 0.5;
+  masterGain.connect(preFilter);
+
+  // ─── DELAY CHAIN 1: dotted 8th ───
+  const delayTime1 = (60 / BPM) * 0.75;
+  const delay1 = actx.createDelay(2);
+  delay1.delayTime.value = delayTime1;
+  const fb1 = actx.createGain();
+  fb1.gain.value = 0.6;
+  const fbFilter1 = actx.createBiquadFilter();
+  fbFilter1.type = 'lowpass';
+  fbFilter1.frequency.value = 2000;
+  fbFilter1.Q.value = 0.5;
+
+  preFilter.connect(delay1);
+  delay1.connect(fbFilter1);
+  fbFilter1.connect(fb1);
+  fb1.connect(delay1);
+
+  // ─── DELAY CHAIN 2: quarter note ───
+  const delayTime2 = 60 / BPM;
+  const delay2 = actx.createDelay(2);
+  delay2.delayTime.value = delayTime2;
+  const fb2 = actx.createGain();
+  fb2.gain.value = 0.55;
+  const fbFilter2 = actx.createBiquadFilter();
+  fbFilter2.type = 'lowpass';
+  fbFilter2.frequency.value = 1800;
+  fbFilter2.Q.value = 0.5;
+
+  preFilter.connect(delay2);
+  delay2.connect(fbFilter2);
+  fbFilter2.connect(fb2);
+  fb2.connect(delay2);
+
+  // ─── REVERB ───
+  const convolver = actx.createConvolver();
+  const reverbLen = 1.8;
+  const reverbRate = actx.sampleRate;
+  const reverbBuf = actx.createBuffer(2, reverbRate * reverbLen, reverbRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = reverbBuf.getChannelData(ch);
+    for (let i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3.5);
+    }
+  }
+  convolver.buffer = reverbBuf;
+  const reverbGain = actx.createGain();
+  reverbGain.gain.value = 0.18;
+
+  // ─── STEREO PANNING ───
+  const pan1 = actx.createStereoPanner();
+  pan1.pan.value = -0.4;
+  const pan2 = actx.createStereoPanner();
+  pan2.pan.value = 0.4;
+
+  delay1.connect(pan1);
+  delay2.connect(pan2);
+
+  const wetMix = actx.createGain();
+  wetMix.gain.value = 0.5;
+  pan1.connect(wetMix);
+  pan2.connect(wetMix);
+  preFilter.connect(wetMix);
+
+  wetMix.connect(convolver);
+  convolver.connect(reverbGain);
+
+  const output = actx.createGain();
+  output.gain.value = 0.35;
+  wetMix.connect(output);
+  reverbGain.connect(output);
+
+  // ─── SLOW LFO ───
+  const lfo = actx.createOscillator();
+  lfo.type = 'triangle';
+  lfo.frequency.value = 0.05;
+  const lfoGain1 = actx.createGain();
+  lfoGain1.gain.value = 250;
+  const lfoGain2 = actx.createGain();
+  lfoGain2.gain.value = 200;
+  lfo.connect(lfoGain1);
+  lfo.connect(lfoGain2);
+  lfoGain1.connect(fbFilter1.frequency);
+  lfoGain2.connect(fbFilter2.frequency);
+  lfo.start();
+
+  return { masterGain, output };
+}
+
+function triggerChordStab(chord, time) {
+  chord.masterGain.gain.cancelScheduledValues(time);
+  chord.masterGain.gain.setValueAtTime(0, time);
+  chord.masterGain.gain.linearRampToValueAtTime(0.18, time + 0.005);
+  chord.masterGain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+}
+
+// ─── NOISE TEXTURE ───
+function createNoiseTexture(actx) {
+  const bufferSize = actx.sampleRate * 2;
+  const buffer = actx.createBuffer(1, bufferSize, actx.sampleRate);
+  const d = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) d[i] = Math.random() * 2 - 1;
+  const noise = actx.createBufferSource();
+  noise.buffer = buffer;
+  noise.loop = true;
+
+  const hpf = actx.createBiquadFilter();
+  hpf.type = 'highpass';
+  hpf.frequency.value = 4000;
+  const lpf = actx.createBiquadFilter();
+  lpf.type = 'lowpass';
+  lpf.frequency.value = 12000;
+  const noiseGain = actx.createGain();
+  noiseGain.gain.value = 0.012;
+
+  noise.connect(hpf);
+  hpf.connect(lpf);
+  lpf.connect(noiseGain);
+  noise.start();
+  return noiseGain;
+}
+
+// ─── INIT AUDIO ───
+function initAudio() {
+  actx = new AudioContext();
+
+  const compressor = actx.createDynamicsCompressor();
+  compressor.threshold.value = -8;
+  compressor.ratio.value = 2.5;
+  compressor.attack.value = 0.01;
+  compressor.release.value = 0.15;
+  compressor.connect(actx.destination);
+
+  // ─── TR-909 DRUMS ───
+  drums = new TR909Engine({ context: actx });
+  drums.setBpm(BPM);
+
+  const drumPattern = {
+    kick: Array.from({length: 16}, (_, i) =>
+      ({ velocity: [0,4,8,12].includes(i) ? 1.0 : 0 })),
+    ch: Array.from({length: 16}, (_, i) =>
+      ({ velocity: [2,6,10,14].includes(i) ? 0.35 : 0 })),
+    oh: Array.from({length: 16}, (_, i) =>
+      ({ velocity: [6,14].includes(i) ? 0.2 : 0 })),
+    rimshot: Array.from({length: 16}, (_, i) =>
+      ({ velocity: [3,11].includes(i) ? 0.25 : 0 })),
+    clap: Array.from({length: 16}, (_, i) =>
+      ({ velocity: [4,12].includes(i) ? 0.2 : 0 }))
+  };
+
+  drums.setPattern('main', drumPattern);
+
+  try {
+    drums.setVoiceParam?.('kick', 'decay', 0.55);
+    drums.setVoiceParam?.('kick', 'tune', -3);
+    drums.setVoiceParam?.('kick', 'level', 1.0);
+    drums.setVoiceParam?.('kick', 'attack', 0.7);
+    drums.setVoiceParam?.('ch', 'decay', 0.1);
+    drums.setVoiceParam?.('ch', 'level', 0.3);
+    drums.setVoiceParam?.('oh', 'decay', 0.25);
+    drums.setVoiceParam?.('oh', 'level', 0.18);
+    drums.setVoiceParam?.('rimshot', 'decay', 0.15);
+    drums.setVoiceParam?.('rimshot', 'level', 0.22);
+    drums.setVoiceParam?.('clap', 'decay', 0.35);
+    drums.setVoiceParam?.('clap', 'level', 0.18);
+  } catch(e) {}
+
+  const drumGain = actx.createGain();
+  drumGain.gain.value = 0.9;
+  drums.output.connect(drumGain);
+
+  // Light drum reverb — short room
+  const drumReverb = actx.createConvolver();
+  const drBufLen = actx.sampleRate * 1.2;
+  const drBuf = actx.createBuffer(2, drBufLen, actx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = drBuf.getChannelData(ch);
+    for (let i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+    }
+  }
+  drumReverb.buffer = drBuf;
+  const drumReverbGain = actx.createGain();
+  drumReverbGain.gain.value = 0.1;
+  drums.output.connect(drumReverb);
+  drumReverb.connect(drumReverbGain);
+
+  drumGain.connect(compressor);
+  drumReverbGain.connect(compressor);
+
+  // ─── TB-303 BASS ───
+  bass = new TB303Engine({ context: actx });
+  bass.setBpm(BPM);
+
+  const bassPattern = [
+    { note: 'D1', gate: true, accent: false, slide: false },
+    { note: 'D1', gate: false, accent: false, slide: false },
+    { note: 'D1', gate: false, accent: false, slide: false },
+    { note: 'D1', gate: false, accent: false, slide: false },
+    { note: 'D1', gate: false, accent: false, slide: false },
+    { note: 'D1', gate: false, accent: false, slide: false },
+    { note: 'D1', gate: false, accent: false, slide: false },
+    { note: 'D1', gate: false, accent: false, slide: false },
+    { note: 'A1', gate: true, accent: false, slide: true },
+    { note: 'A1', gate: false, accent: false, slide: false },
+    { note: 'A1', gate: false, accent: false, slide: false },
+    { note: 'A1', gate: false, accent: false, slide: false },
+    { note: 'D1', gate: true, accent: false, slide: true },
+    { note: 'D1', gate: false, accent: false, slide: false },
+    { note: 'D1', gate: false, accent: false, slide: false },
+    { note: 'D1', gate: false, accent: false, slide: false },
+  ];
+
+  bass.setPattern(bassPattern);
+  bass.setParameter('cutoff', 0.15);
+  bass.setParameter('resonance', 0.05);
+  bass.setParameter('envMod', 0.03);
+  bass.setParameter('decay', 0.7);
+  bass.setParameter('accent', 0.2);
+  bass.setWaveform('sawtooth');
+
+  const bassGain = actx.createGain();
+  bassGain.gain.value = 0.55;
+  bass.output.connect(bassGain);
+  bassGain.connect(compressor);
+
+  // ─── DUB CHORD SYNTH ───
+  const chord = createChordSynth(actx);
+  chordGain = chord;
+  chord.output.connect(compressor);
+
+  // ─── NOISE TEXTURE ───
+  const noise = createNoiseTexture(actx);
+  noise.connect(compressor);
+
+  // ─── ANALYSER ───
+  analyser = actx.createAnalyser();
+  analyser.fftSize = 512;
+  data = new Uint8Array(analyser.frequencyBinCount);
+  compressor.connect(analyser);
+
+  return chord;
+}
+
+// ─── SEQUENCER ───
+function startSequencer(chord) {
+  drums.startSequencer();
+  bass.startSequencer();
+
+  const chordSteps = [0, 8];
+  currentStep = 0;
+  intervalId = setInterval(() => {
+    const step = currentStep % 16;
+    const now = actx.currentTime;
+    if (chordSteps.includes(step)) triggerChordStab(chord, now);
+    currentStep++;
+  }, STEP_DUR * 1000);
+}
+
+function stopSequencer() {
+  drums.stopSequencer();
+  bass.stopSequencer();
+  if (intervalId) clearInterval(intervalId);
+  intervalId = null;
+}
+
+// ─── VISUALIZATION ───
 function draw() {
   requestAnimationFrame(draw);
   const w = window.innerWidth, h = window.innerHeight;
   ctx.clearRect(0, 0, w, h);
-  
+
   if (!analyser) {
-    // idle state — slow breathing fog
     const t = Date.now() * 0.0003;
     for (let i = 0; i < 5; i++) {
       const y = h * 0.3 + Math.sin(t + i * 1.2) * h * 0.15;
       const r = h * 0.3 + Math.sin(t * 0.7 + i) * 50;
       const grad = ctx.createRadialGradient(w/2, y, 0, w/2, y, r);
-      grad.addColorStop(0, `rgba(100,130,180,${0.03})`);
+      grad.addColorStop(0, 'rgba(100,130,180,0.03)');
       grad.addColorStop(1, 'rgba(100,130,180,0)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
     }
     return;
   }
-  
+
   analyser.getByteFrequencyData(data);
   const len = data.length;
   const t = Date.now() * 0.001;
-  
-  // Fog layers reacting to bass
-  const bass = (data[1] + data[2] + data[3]) / (3 * 255);
+
+  const bass_e = (data[1] + data[2] + data[3]) / (3 * 255);
+  const mid = (data[10] + data[15] + data[20]) / (3 * 255);
+
   for (let i = 0; i < 8; i++) {
     const freq = data[Math.floor(i * len / 8)] / 255;
     const y = h * 0.2 + i * h * 0.08 + Math.sin(t * 0.3 + i * 0.8) * h * 0.05;
@@ -148,19 +438,18 @@ function draw() {
     );
     const alpha = 0.015 + freq * 0.04;
     const blue = 120 + Math.floor(freq * 60);
-    grad.addColorStop(0, `rgba(80,${blue},${160 + Math.floor(bass * 40)},${alpha})`);
+    grad.addColorStop(0, `rgba(80,${blue},${160 + Math.floor(bass_e * 40)},${alpha})`);
     grad.addColorStop(1, 'rgba(80,120,160,0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
   }
-  
-  // Horizontal lines — like tape echoes dissolving
-  ctx.strokeStyle = `rgba(100,140,200,${0.08 + bass * 0.12})`;
+
   ctx.lineWidth = 1;
   for (let i = 0; i < 24; i++) {
     const idx = Math.floor(i * len / 24);
     const amp = data[idx] / 255;
     const y = h * 0.15 + i * h * 0.03;
+    ctx.strokeStyle = `rgba(100,140,200,${0.05 + mid * 0.15 + amp * 0.05})`;
     ctx.beginPath();
     for (let x = 0; x < w; x += 4) {
       const wave = Math.sin(x * 0.005 + t + i * 0.5) * amp * 20;
@@ -168,8 +457,35 @@ function draw() {
     }
     ctx.stroke();
   }
+
+  if (bass_e > 0.3) {
+    const kickGrad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, h * 0.4 * bass_e);
+    kickGrad.addColorStop(0, `rgba(80,100,160,${bass_e * 0.08})`);
+    kickGrad.addColorStop(1, 'rgba(80,100,160,0)');
+    ctx.fillStyle = kickGrad;
+    ctx.fillRect(0, 0, w, h);
+  }
 }
 draw();
+
+// ─── INTERACTION ───
+document.body.addEventListener('click', async () => {
+  if (!playing) {
+    const chord = initAudio();
+    await actx.resume();
+    startSequencer(chord);
+    playing = true;
+    document.body.classList.add('playing');
+  } else {
+    if (actx.state === 'running') {
+      stopSequencer();
+      actx.suspend();
+    } else {
+      actx.resume();
+      startSequencer(chordGain);
+    }
+  }
+});
 </script>
 </body>
 </html>
