@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>BULLSEYE — Amber</title>
+<meta name="description" content="Tap when the ring hits the target. How precise are you?">
+<meta property="og:title" content="BULLSEYE">
+<meta property="og:description" content="Tap when the ring hits the target.">
+<meta property="og:image" content="https://intheamber.com/amber/og/bullseye.png">
+<meta property="og:url" content="https://intheamber.com/amber/bullseye.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@intheamber">
+<meta name="twitter:title" content="BULLSEYE">
+<meta name="twitter:description" content="Tap when the ring hits the target.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/bullseye.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0a;font-family:'SF Mono',monospace;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100%;height:100%}
+#ui{position:fixed;top:20px;left:0;right:0;text-align:center;pointer-events:none;z-index:10}
+#score{color:#FFD700;font-size:28px;font-weight:bold;text-shadow:0 0 20px rgba(255,215,0,.5)}
+#combo{color:#2D9596;font-size:16px;margin-top:4px;opacity:0;transition:opacity .3s}
+#feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:48px;font-weight:bold;pointer-events:none;z-index:20;opacity:0}
+#start{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:30;background:#0a0a0a}
+#start h1{color:#FFD700;font-size:48px;margin-bottom:8px}
+#start p{color:#2D9596;font-size:16px;margin-bottom:40px}
+#start button{background:none;border:2px solid #FFD700;color:#FFD700;font-size:20px;padding:16px 48px;border-radius:50px;font-family:inherit;cursor:pointer;min-height:56px;min-width:200px}
+#start button:active{background:#FFD700;color:#0a0a0a}
+#gameover{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:30;background:rgba(10,10,10,.95)}
+#gameover h2{color:#ec4899;font-size:36px;margin-bottom:8px}
+#gameover .final{color:#FFD700;font-size:64px;font-weight:bold;margin-bottom:4px}
+#gameover .best{color:#2D9596;font-size:18px;margin-bottom:32px}
+#gameover button{background:none;border:2px solid #FFD700;color:#FFD700;font-size:20px;padding:16px 48px;border-radius:50px;font-family:inherit;cursor:pointer;min-height:56px}
+</style>
+</head>
+<body>
+<div id="ui"><div id="score">0</div><div id="combo"></div></div>
+<div id="feedback"></div>
+<div id="start"><h1>🎯 BULLSEYE</h1><p>tap when the ring hits the circle</p><button id="playBtn">PLAY</button></div>
+<div id="gameover"><h2>GAME OVER</h2><div class="final" id="finalScore">0</div><div class="best" id="bestScore">best: 0</div><button id="retryBtn">AGAIN</button></div>
+<canvas id="c"></canvas>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H,dpr;
+function resize(){dpr=window.devicePixelRatio||1;W=window.innerWidth;H=window.innerHeight;canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
+resize();window.addEventListener('resize',resize);
+
+let audioCtx,score=0,combo=0,lives=3,targets=[],particles=[],gameRunning=false,best=+(localStorage.getItem('bullseye-best')||0);
+
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
+function playSound(freq,type,dur,vol=.3){
+if(!audioCtx)return;
+const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+o.type=type;o.frequency.value=freq;
+g.gain.setValueAtTime(vol,audioCtx.currentTime);
+g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);
+o.connect(g);g.connect(audioCtx.destination);
+o.start();o.stop(audioCtx.currentTime+dur);
+}
+function hitSound(quality){
+if(quality==='perfect'){playSound(880,'sine',.15,.4);setTimeout(()=>playSound(1320,'sine',.2,.3),80)}
+else if(quality==='great'){playSound(660,'sine',.12,.3)}
+else if(quality==='ok'){playSound(440,'triangle',.1,.2)}
+}
+function missSound(){playSound(150,'sawtooth',.2,.2);playSound(120,'sawtooth',.3,.15)}
+
+class Target{
+constructor(){
+this.x=60+Math.random()*(W-120);
+this.y=80+Math.random()*(H-160);
+this.r=30+Math.random()*15;// target circle radius
+this.ringR=this.r*4;// ring starts big
+this.speed=1.2+score*0.015;// gets faster
+this.alive=true;
+this.hit=false;
+this.opacity=1;
+this.color='#FFD700';
+}
+update(){
+if(this.hit)return;
+this.ringR-=this.speed;
+if(this.ringR<0){this.alive=false;lives--;missSound();showFeedback('MISS','#ec4899');combo=0;updateUI()}
+}
+draw(){
+if(!this.alive&&!this.hit)return;
+let a=this.hit?this.opacity:1;
+// target circle
+ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+ctx.fillStyle=`rgba(255,215,0,${a*0.15})`;ctx.fill();
+ctx.strokeStyle=`rgba(255,215,0,${a*0.6})`;ctx.lineWidth=2;ctx.stroke();
+// shrinking ring
+if(!this.hit){
+ctx.beginPath();ctx.arc(this.x,this.y,this.ringR,0,Math.PI*2);
+let diff=Math.abs(this.ringR-this.r);
+let c=diff<5?'#00ff88':diff<15?'#FFD700':'#2D9596';
+ctx.strokeStyle=c;ctx.lineWidth=3;ctx.stroke();
+}
+}
+checkTap(tx,ty){
+let d=Math.hypot(tx-this.x,ty-this.y);
+if(d>this.ringR+20)return false;
+let diff=Math.abs(this.ringR-this.r);
+this.hit=true;
+if(diff<5){score+=100*(1+combo*0.5);combo++;hitSound('perfect');showFeedback('PERFECT','#00ff88');spawnParticles(this.x,this.y,'#00ff88',20)}
+else if(diff<15){score+=50*(1+combo*0.3);combo++;hitSound('great');showFeedback('GREAT','#FFD700');spawnParticles(this.x,this.y,'#FFD700',12)}
+else if(diff<30){score+=20;combo=0;hitSound('ok');showFeedback('OK','#2D9596');spawnParticles(this.x,this.y,'#2D9596',6)}
+else{lives--;combo=0;missSound();showFeedback('MISS','#ec4899')}
+updateUI();
+setTimeout(()=>{this.alive=false},200);
+return true;
+}
+}
+
+class Particle{
+constructor(x,y,color){
+this.x=x;this.y=y;this.color=color;
+let a=Math.random()*Math.PI*2,s=2+Math.random()*5;
+this.vx=Math.cos(a)*s;this.vy=Math.sin(a)*s;
+this.life=1;this.decay=.02+Math.random()*.03;
+this.size=3+Math.random()*4;
+}
+update(){this.x+=this.vx;this.y+=this.vy;this.vx*=.96;this.vy*=.96;this.life-=this.decay}
+draw(){ctx.globalAlpha=this.life;ctx.fillStyle=this.color;ctx.fillRect(this.x-this.size/2,this.y-this.size/2,this.size,this.size);ctx.globalAlpha=1}
+}
+function spawnParticles(x,y,c,n){for(let i=0;i<n;i++)particles.push(new Particle(x,y,c))}
+
+let feedbackTimer=0;
+function showFeedback(text,color){
+const el=document.getElementById('feedback');
+el.textContent=text;el.style.color=color;el.style.opacity=1;
+el.style.transform='translate(-50%,-50%) scale(1.2)';
+clearTimeout(feedbackTimer);
+feedbackTimer=setTimeout(()=>{el.style.opacity=0;el.style.transform='translate(-50%,-50%) scale(1)'},400);
+}
+function updateUI(){
+document.getElementById('score').textContent=Math.floor(score);
+const c=document.getElementById('combo');
+if(combo>1){c.textContent=combo+'x COMBO';c.style.opacity=1}else{c.style.opacity=0}
+}
+
+let spawnTimer=0,spawnInterval=90;
+function update(){
+if(!gameRunning)return;
+spawnTimer++;
+if(spawnTimer>=spawnInterval){
+spawnTimer=0;
+targets.push(new Target());
+spawnInterval=Math.max(30,90-score*0.08);
+}
+targets.forEach(t=>t.update());
+targets=targets.filter(t=>t.alive||t.hit);
+particles.forEach(p=>p.update());
+particles=particles.filter(p=>p.life>0);
+if(lives<=0)endGame();
+}
+function draw(){
+ctx.clearRect(0,0,W,H);
+// lives
+for(let i=0;i<3;i++){
+ctx.fillStyle=i<lives?'#ec4899':'rgba(236,72,153,.2)';
+ctx.beginPath();ctx.arc(W-30-i*28,30,8,0,Math.PI*2);ctx.fill();
+}
+targets.forEach(t=>t.draw());
+particles.forEach(p=>p.draw());
+}
+function loop(){update();draw();requestAnimationFrame(loop)}
+
+function startGame(){
+initAudio();
+document.getElementById('start').style.display='none';
+document.getElementById('gameover').style.display='none';
+score=0;combo=0;lives=3;targets=[];particles=[];spawnTimer=60;spawnInterval=90;
+updateUI();gameRunning=true;
+}
+function endGame(){
+gameRunning=false;
+if(score>best){best=Math.floor(score);localStorage.setItem('bullseye-best',best)}
+document.getElementById('finalScore').textContent=Math.floor(score);
+document.getElementById('bestScore').textContent='best: '+best;
+document.getElementById('gameover').style.display='flex';
+}
+
+function handleTap(x,y){
+if(!gameRunning)return;
+let hit=false;
+// tap closest to ring match first
+targets.sort((a,b)=>Math.abs(a.ringR-a.r)-Math.abs(b.ringR-b.r));
+for(let t of targets){if(!t.hit&&t.checkTap(x,y)){hit=true;break}}
+if(!hit){combo=0;updateUI()}
+}
+
+canvas.addEventListener('pointerdown',e=>{e.preventDefault();handleTap(e.clientX,e.clientY)});
+document.getElementById('playBtn').addEventListener('click',startGame);
+document.getElementById('retryBtn').addEventListener('click',startGame);
+
+loop();
+</script>
+</body>
+</html>
