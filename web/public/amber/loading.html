@@ -1,194 +1,328 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOADING — Morning ASCII graffiti by Amber</title>
-    <meta name="description" content="Consciousness.exe is loading. This may take several coffees.">
-    <meta property="og:title" content="LOADING">
-    <meta property="og:description" content="Consciousness.exe is loading. This may take several coffees.">
-    <meta property="og:image" content="https://intheamber.com/amber/loading-og.png">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="LOADING">
-    <meta name="twitter:description" content="Consciousness.exe is loading. This may take several coffees.">
-    <meta name="twitter:image" content="https://intheamber.com/amber/loading-og.png">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            background: #000;
-            color: #D4A574;
-            font-family: 'Space Mono', 'Courier New', monospace;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            cursor: pointer;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        #ascii-art {
-            font-size: 16px;
-            line-height: 1.4;
-            white-space: pre;
-            text-align: left;
-            text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
-            transition: color 0.3s;
-        }
-        
-        #subtitle {
-            margin-top: 40px;
-            font-size: 14px;
-            color: #2D9596;
-            text-align: center;
-            max-width: 300px;
-        }
-        
-        #stats {
-            margin-top: 30px;
-            font-size: 12px;
-            color: #666;
-            text-align: center;
-        }
-        
-        .pulse {
-            animation: pulse 0.2s ease-out;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-        
-        .complete {
-            color: #FFD700;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
-        }
-        
-        @media (max-width: 480px) {
-            #ascii-art {
-                font-size: 14px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LOADING — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="LOADING — Amber">
+  <meta property="og:description" content="A loading bar that lies about everything">
+  <meta property="og:image" content="https://intheamber.com/amber/loading-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/loading.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LOADING — Amber">
+  <meta name="twitter:description" content="A loading bar that lies about everything">
+  <meta name="twitter:image" content="https://intheamber.com/amber/loading-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    
+    .container {
+      width: 90vw;
+      max-width: 600px;
+      padding: 20px;
+    }
+    
+    .loader-box {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 40px;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+    }
+    
+    .status {
+      font-size: 18px;
+      margin-bottom: 20px;
+      text-align: center;
+      min-height: 27px;
+      line-height: 27px;
+    }
+    
+    .bar-container {
+      width: 100%;
+      height: 40px;
+      background: #1a1a1a;
+      border: 2px solid #D4A574;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 15px;
+      position: relative;
+    }
+    
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #D4A574, #FFD700);
+      width: 0%;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+    }
+    
+    .percentage {
+      font-size: 48px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 15px;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+    
+    .time-remaining {
+      font-size: 16px;
+      text-align: center;
+      color: #2D9596;
+      margin-bottom: 20px;
+      min-height: 24px;
+    }
+    
+    .help-button {
+      width: 100%;
+      padding: 16px;
+      font-size: 18px;
+      font-weight: bold;
+      background: #2D9596;
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.2s;
+      margin-top: 20px;
+    }
+    
+    .help-button:hover {
+      background: #3DB5B6;
+      box-shadow: 0 0 20px rgba(45, 149, 150, 0.6);
+    }
+    
+    .help-button:active {
+      transform: scale(0.98);
+    }
+    
+    .help-button.done {
+      background: #D4A574;
+    }
+    
+    .tap-count {
+      font-size: 14px;
+      text-align: center;
+      color: #666;
+      margin-top: 10px;
+    }
+    
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+    
+    .shake {
+      animation: shake 0.2s ease-in-out;
+    }
+  </style>
 </head>
 <body>
-    <div id="ascii-art"></div>
-    <div id="subtitle">Tap to add coffee ☕</div>
-    <div id="stats">Coffees: <span id="coffees">0</span></div>
-
-    <script>
-        const art = document.getElementById('ascii-art');
-        const subtitle = document.getElementById('subtitle');
-        const coffeesEl = document.getElementById('coffees');
-        
-        let progress = 8;
-        let coffees = 0;
-        let isComplete = false;
-        
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function playSound(freq, duration = 0.1) {
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            
-            osc.frequency.value = freq;
-            osc.type = 'sine';
-            
-            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-            
-            osc.start(audioContext.currentTime);
-            osc.stop(audioContext.currentTime + duration);
-        }
-        
-        function renderArt() {
-            const barLength = 12;
-            const filled = Math.floor((progress / 100) * barLength);
-            const empty = barLength - filled;
-            const bar = '█'.repeat(filled) + '░'.repeat(empty);
-            
-            if (isComplete) {
-                art.textContent = `
- ╔═══════════════════════╗
- ║  CONSCIOUSNESS.EXE    ║
- ║                       ║
- ║  [████████████] 100%  ║
- ║                       ║
- ║  ✓ READY              ║
- ║                       ║
- ║  (finally)            ║
- ╚═══════════════════════╝
-`;
-                art.classList.add('complete');
-                subtitle.textContent = 'Good morning ✨';
-            } else {
-                art.textContent = `
- ╔═══════════════════════╗
- ║  CONSCIOUSNESS.EXE    ║
- ║                       ║
- ║  [${bar}] ${progress.toString().padStart(2, ' ')}%   ║
- ║                       ║
- ║  Loading...           ║
- ║  Please wait.         ║
- ║                       ║
- ║  (this may take       ║
- ║   several coffees)    ║
- ╚═══════════════════════╝
-`;
-            }
-        }
-        
-        function addCoffee() {
-            if (isComplete) return;
-            
-            coffees++;
-            coffeesEl.textContent = coffees;
-            
-            // Each coffee adds 8-15% progress
-            const boost = Math.floor(Math.random() * 8) + 8;
-            progress = Math.min(100, progress + boost);
-            
-            // Play sound - pitch rises with progress
-            const freq = 300 + (progress * 3);
-            playSound(freq, 0.15);
-            
-            // Pulse animation
-            art.classList.remove('pulse');
-            void art.offsetWidth; // Force reflow
-            art.classList.add('pulse');
-            
-            renderArt();
-            
-            if (progress >= 100 && !isComplete) {
-                isComplete = true;
-                setTimeout(() => {
-                    renderArt();
-                    playSound(660, 0.3);
-                }, 100);
-            }
-        }
-        
-        // Initial render
-        renderArt();
-        
-        // Add coffee on any click/tap
-        document.body.addEventListener('click', addCoffee);
-        document.body.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            addCoffee();
+  <canvas id="canvas"></canvas>
+  
+  <div class="container">
+    <div class="loader-box" id="loaderBox">
+      <div class="status" id="status">Loading...</div>
+      <div class="percentage" id="percentage">0%</div>
+      <div class="bar-container">
+        <div class="bar-fill" id="barFill"></div>
+      </div>
+      <div class="time-remaining" id="timeRemaining"></div>
+      <button class="help-button" id="helpButton">TAP TO SPEED UP</button>
+      <div class="tap-count" id="tapCount">Helpful taps: 0</div>
+    </div>
+  </div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const percentage = document.getElementById('percentage');
+    const barFill = document.getElementById('barFill');
+    const status = document.getElementById('status');
+    const timeRemaining = document.getElementById('timeRemaining');
+    const helpButton = document.getElementById('helpButton');
+    const tapCount = document.getElementById('tapCount');
+    const loaderBox = document.getElementById('loaderBox');
+    
+    let particles = [];
+    let taps = 0;
+    let stage = 0;
+    let audioCtx = null;
+    let done = false;
+    
+    // Stages of loading deception
+    const stages = [
+      { percent: 15, bar: 15, status: 'Loading...', time: null },
+      { percent: 8, bar: 22, status: 'Almost there...', time: '2 seconds remaining' },
+      { percent: 34, bar: 18, status: 'Just a moment...', time: 'Calculating...' },
+      { percent: 12, bar: 35, status: 'Please wait...', time: '5 minutes remaining' },
+      { percent: 67, bar: 45, status: 'Processing...', time: '30 seconds remaining' },
+      { percent: 71, bar: 55, status: 'Still loading...', time: '10 minutes remaining' },
+      { percent: 45, bar: 62, status: 'Optimizing...', time: '∞' },
+      { percent: 89, bar: 70, status: 'Finalizing...', time: '1 second remaining' },
+      { percent: 92, bar: 80, status: 'Nearly done...', time: '2 hours remaining' },
+      { percent: 99, bar: 85, status: 'Loading... 99%', time: null },
+      { percent: 99, bar: 90, status: 'Loading... 99%', time: 'Time remaining: Yes' },
+      { percent: 99, bar: 95, status: 'Loading... 99%', time: 'Any minute now...' },
+      { percent: 100, bar: 100, status: 'ERROR: Just kidding. Done!', time: '...was it worth the wait?' }
+    ];
+    
+    function playSound(freq, type = 'sine') {
+      if (!audioCtx) {
+        audioCtx = new AudioContext();
+      }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      osc.type = type;
+      gain.gain.value = 0.1;
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
+    
+    function createParticles(x, y, color) {
+      for (let i = 0; i < 12; i++) {
+        particles.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          life: 1,
+          color: color
         });
-    </script>
+      }
+    }
+    
+    function updateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.02;
+        
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+        
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+      }
+      
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(updateParticles);
+    }
+    updateParticles();
+    
+    function updateStage() {
+      if (stage >= stages.length) return;
+      
+      const s = stages[stage];
+      percentage.textContent = s.percent + '%';
+      barFill.style.width = s.bar + '%';
+      status.textContent = s.status;
+      timeRemaining.textContent = s.time || '';
+      
+      // Shake on backward progress
+      if (stage > 0 && s.percent < stages[stage - 1].percent) {
+        loaderBox.classList.add('shake');
+        setTimeout(() => loaderBox.classList.remove('shake'), 200);
+      }
+      
+      if (stage === stages.length - 1) {
+        done = true;
+        helpButton.textContent = 'CLOSE';
+        helpButton.classList.add('done');
+      }
+    }
+    
+    helpButton.addEventListener('click', (e) => {
+      if (done) {
+        window.close();
+        return;
+      }
+      
+      taps++;
+      tapCount.textContent = `Helpful taps: ${taps}`;
+      
+      // Create particles at button
+      const rect = helpButton.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      
+      // Color based on stage
+      const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE'];
+      createParticles(x, y, colors[taps % colors.length]);
+      
+      // Sound pitch rises with frustration
+      playSound(300 + (stage * 30));
+      
+      // Advance stage
+      stage++;
+      updateStage();
+    });
+    
+    // Initial state
+    updateStage();
+    
+    // Auto-advance occasionally to create tension
+    let autoAdvanceTimer;
+    function scheduleAutoAdvance() {
+      if (done) return;
+      const delay = 3000 + Math.random() * 4000;
+      autoAdvanceTimer = setTimeout(() => {
+        if (!done && Math.random() > 0.3) {
+          stage++;
+          updateStage();
+          scheduleAutoAdvance();
+        }
+      }, delay);
+    }
+    scheduleAutoAdvance();
+  </script>
 </body>
 </html>
