@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NUTRITION — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="NUTRITION — Amber">
+  <meta property="og:description" content="Nutrition facts for one day (24 hours). Tap to see different varieties.">
+  <meta property="og:image" content="https://intheamber.com/amber/nutrition-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/nutrition.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="NUTRITION — Amber">
+  <meta name="twitter:description" content="Nutrition facts for one day (24 hours). Tap to see different varieties.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/nutrition-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+    
+    .label {
+      background: #fff;
+      color: #000;
+      border: 3px solid #000;
+      max-width: 400px;
+      width: 100%;
+      padding: 20px;
+      font-size: 14px;
+      line-height: 1.4;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+    }
+    
+    .title {
+      font-size: 48px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      letter-spacing: -1px;
+    }
+    
+    .subtitle {
+      font-size: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 12px solid #000;
+    }
+    
+    .variety {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .serving {
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #000;
+    }
+    
+    .bold {
+      font-weight: bold;
+    }
+    
+    .section {
+      margin: 15px 0;
+      padding: 10px 0;
+      border-top: 8px solid #000;
+    }
+    
+    .fact-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+      padding: 5px 0;
+      border-bottom: 1px solid #ccc;
+    }
+    
+    .fact-row.major {
+      border-bottom: 3px solid #000;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    
+    .indent {
+      padding-left: 20px;
+    }
+    
+    .percent {
+      text-align: right;
+    }
+    
+    .ingredients {
+      margin-top: 15px;
+      padding-top: 10px;
+      border-top: 4px solid #000;
+    }
+    
+    .ingredients-list {
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    
+    .warning {
+      margin-top: 15px;
+      padding: 10px;
+      background: #ffe6e6;
+      border: 2px solid #cc0000;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      color: #D4A574;
+      font-size: 12px;
+    }
+    
+    .tap-hint {
+      color: #D4A574;
+      font-size: 14px;
+      text-align: center;
+      margin-top: 20px;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+  <div class="label" id="label">
+    <div class="title">Nutrition Facts</div>
+    <div class="subtitle">Amount Per Day</div>
+    
+    <div class="variety" id="variety">MONDAY</div>
+    
+    <div class="serving">
+      <div><span class="bold">Serving Size:</span> 1 Day (24 hours)</div>
+      <div><span class="bold">Servings Per Week:</span> 7</div>
+    </div>
+    
+    <div class="section">
+      <div class="fact-row major">
+        <span>Calories from Work</span>
+        <span id="work-cal">480</span>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div style="text-align: right; font-size: 12px; margin-bottom: 5px;">% Daily Value*</div>
+      
+      <div class="fact-row major">
+        <span><span class="bold">Total Productivity</span></span>
+        <span class="percent"><span class="bold" id="productivity">23%</span></span>
+      </div>
+      
+      <div class="fact-row indent">
+        <span>Actual Work</span>
+        <span class="percent" id="actual-work">15%</span>
+      </div>
+      
+      <div class="fact-row indent">
+        <span>Looking Busy</span>
+        <span class="percent" id="looking-busy">8%</span>
+      </div>
+      
+      <div class="fact-row major">
+        <span><span class="bold">Doomscrolling</span></span>
+        <span class="percent"><span class="bold" id="doomscroll">47%</span></span>
+      </div>
+      
+      <div class="fact-row">
+        <span><span class="bold">Regret</span></span>
+        <span class="percent"><span class="bold" id="regret">31%</span></span>
+      </div>
+      
+      <div class="fact-row">
+        <span><span class="bold">Joy</span></span>
+        <span class="percent"><span class="bold" id="joy">12%</span></span>
+      </div>
+      
+      <div class="fact-row">
+        <span><span class="bold">Caffeine</span></span>
+        <span class="percent"><span class="bold" id="caffeine">89%</span></span>
+      </div>
+      
+      <div class="fact-row">
+        <span><span class="bold">Hope</span></span>
+        <span class="percent"><span class="bold" id="hope">8%</span></span>
+      </div>
+      
+      <div class="fact-row">
+        <span><span class="bold">Existential Dread</span></span>
+        <span class="percent"><span class="bold" id="dread">64%</span></span>
+      </div>
+    </div>
+    
+    <div style="font-size: 11px; margin-top: 10px; padding-top: 10px; border-top: 4px solid #000;">
+      * Percent Daily Values are based on a 2,000 hour work year. Your daily values may be higher or lower depending on your life choices.
+    </div>
+    
+    <div class="ingredients">
+      <div class="bold" style="margin-bottom: 5px;">INGREDIENTS:</div>
+      <div class="ingredients-list" id="ingredients">
+        Caffeine, anxiety, notifications, emails, meetings that could have been emails, deadlines, self-doubt, hope (traces), WiFi, regret, snacks, social media, existential questions, and other natural and artificial additives.
+      </div>
+    </div>
+    
+    <div class="warning" id="warning">
+      ⚠️ WARNING: May contain traces of existential dread. Not suitable for those avoiding reality. Keep away from optimists.
+    </div>
+  </div>
+  
+  <div class="tap-hint">TAP TO TRY DIFFERENT VARIETIES</div>
+  
+  <div class="footer">
+    NUTRITION — Amber<br>
+    <span id="time">4:00 PM</span>
+  </div>
+  
+  <script>
+    const varieties = [
+      {
+        name: 'MONDAY',
+        workCal: 480,
+        productivity: 23,
+        actualWork: 15,
+        lookingBusy: 8,
+        doomscroll: 47,
+        regret: 31,
+        joy: 12,
+        caffeine: 89,
+        hope: 8,
+        dread: 64,
+        ingredients: 'Caffeine, anxiety, notifications, emails, meetings that could have been emails, deadlines, self-doubt, hope (traces), WiFi, regret, snacks, social media, existential questions, and other natural and artificialadditives.',
+        warning: '⚠️ WARNING: May contain traces of existential dread. Not suitable for those avoiding reality. Keep away from optimists.'
+      },
+      {
+        name: 'FRIDAY',
+        workCal: 120,
+        productivity: 8,
+        actualWork: 3,
+        lookingBusy: 5,
+        doomscroll: 72,
+        regret: 5,
+        joy: 45,
+        caffeine: 34,
+        hope: 68,
+        dread: 12,
+        ingredients: 'Weekend anticipation, clock-watching, minimal effort, social plans, excitement (building), relief, happy hour thoughts, freedom (incoming), and reduced artificial preservatives.',
+        warning: '⚠️ CAUTION: Contains high levels of anticipation. May cause premature celebration. Productivity levels critically low.'
+      },
+      {
+        name: 'GOOD DAY',
+        workCal: 360,
+        productivity: 67,
+        actualWork: 54,
+        lookingBusy: 13,
+        doomscroll: 12,
+        regret: 8,
+        joy: 71,
+        caffeine: 45,
+        hope: 82,
+        dread: 15,
+        ingredients: 'Optimism, momentum, accomplishment, good vibes, positive feedback, flow state, satisfaction, pride, gratitude, and naturally occurring endorphins.',
+        warning: '✓ NOTICE: Unusually high joy levels detected. Enjoy while it lasts. Not guaranteed to repeat tomorrow.'
+      },
+      {
+        name: 'BAD DAY',
+        workCal: 600,
+        productivity: 12,
+        actualWork: 5,
+        lookingBusy: 7,
+        doomscroll: 83,
+        regret: 91,
+        joy: 2,
+        caffeine: 97,
+        hope: 3,
+        dread: 94,
+        ingredients: 'Stress, disappointment, frustration, mistakes, criticism, self-loathing, comparison, imposter syndrome, exhaustion, despair, and excessive artificial negativity.',
+        warning: '⚠️ DANGER: Toxic levels of everything. Not safe for consumption. Recommend skipping to tomorrow.'
+      },
+      {
+        name: 'SUNDAY',
+        workCal: 0,
+        productivity: 0,
+        actualWork: 0,
+        lookingBusy: 0,
+        doomscroll: 38,
+        regret: 15,
+        joy: 34,
+        caffeine: 23,
+        hope: 12,
+        dread: 89,
+        ingredients: 'Relaxation (attempted), anxiety (increasing), Sunday scaries, weekend ending, Monday approaching, rest (interrupted by existential thoughts), and artificially sweetened denial.',
+        warning: '⚠️ WARNING: Contains Sunday Scaries (89% DV). Existential dread levels rise exponentially after 6 PM. Tomorrow is Monday.'
+      }
+    ];
+    
+    let currentIndex = 0;
+    let audioContext;
+    let audioStarted = false;
+    
+    function updateLabel() {
+      const v = varieties[currentIndex];
+      document.getElementById('variety').textContent = v.name;
+      document.getElementById('work-cal').textContent = v.workCal;
+      document.getElementById('productivity').textContent = v.productivity + '%';
+      document.getElementById('actual-work').textContent = v.actualWork + '%';
+      document.getElementById('looking-busy').textContent = v.lookingBusy + '%';
+      document.getElementById('doomscroll').textContent = v.doomscroll + '%';
+      document.getElementById('regret').textContent = v.regret + '%';
+      document.getElementById('joy').textContent = v.joy + '%';
+      document.getElementById('caffeine').textContent = v.caffeine + '%';
+      document.getElementById('hope').textContent = v.hope + '%';
+      document.getElementById('dread').textContent = v.dread + '%';
+      document.getElementById('ingredients').textContent = v.ingredients;
+      document.getElementById('warning').textContent = v.warning;
+    }
+    
+    function playTone() {
+      if (!audioStarted) {
+        audioContext = new AudioContext();
+        audioStarted = true;
+      }
+      
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.frequency.value = 440 + (currentIndex * 100);
+      gain.gain.value = 0.1;
+      
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+      osc.stop(audioContext.currentTime + 0.3);
+    }
+    
+    document.body.addEventListener('click', () => {
+      currentIndex = (currentIndex + 1) % varieties.length;
+      updateLabel();
+      playTone();
+    });
+    
+    // Update time
+    function updateTime() {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      document.getElementById('time').textContent = `${displayHours}:${minutes} ${ampm}`;
+    }
+    
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    // Initialize
+    updateLabel();
+  </script>
+</body>
+</html>
