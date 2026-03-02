@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRIBAL RAW — das kollektiv</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥁</text></svg>">
+<meta property="og:title" content="TRIBAL RAW">
+<meta property="og:description" content="JB01 · 132 bpm · two kicks, one hat, one decay knob">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TRIBAL RAW — das kollektiv">
+<meta name="twitter:description" content="JB01 · 132 bpm · two kicks, one hat, one decay knob">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #060606;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+}
+.ui {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  pointer-events: none;
+}
+h1 {
+  font-size: clamp(1.8rem, 6vw, 3.5rem);
+  letter-spacing: 0.3em;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 0.3em;
+  opacity: 0.9;
+}
+.sub {
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
+  color: #444;
+  letter-spacing: 0.15em;
+}
+#startBtn {
+  margin-top: 2em;
+  background: none;
+  border: 1px solid #333;
+  color: #666;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  padding: 0.6em 1.6em;
+  cursor: pointer;
+  pointer-events: all;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.5s;
+}
+.playing #startBtn { opacity: 0; pointer-events: none; }
+.credit {
+  position: fixed;
+  bottom: 1rem;
+  font-size: 0.65rem;
+  color: #1a1a1a;
+  letter-spacing: 0.1em;
+  z-index: 2;
+}
+#decayBar {
+  position: fixed;
+  bottom: 45px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  max-width: 350px;
+  height: 2px;
+  background: #111;
+  z-index: 2;
+}
+#decayFill {
+  height: 100%;
+  width: 10%;
+  background: #444;
+  transition: width 0.05s linear;
+}
+#decayLabel {
+  position: fixed;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.5rem;
+  color: #282828;
+  letter-spacing: 0.15em;
+  z-index: 2;
+}
+#sceneLabel {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: #333;
+  letter-spacing: 0.2em;
+  z-index: 2;
+  text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="ui">
+  <h1>TRIBAL RAW</h1>
+  <div class="sub">132 bpm · JB01 · two kicks, one hat, one decay knob</div>
+  <button id="startBtn">tap to start</button>
+</div>
+<div id="sceneLabel"></div>
+<div id="decayLabel">CH DECAY</div>
+<div id="decayBar"><div id="decayFill"></div></div>
+<div class="credit">das kollektiv · hallman — daskollektiv.rip</div>
+
+<script type="module">
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const decayFill = document.getElementById('decayFill');
+const sceneLabelEl = document.getElementById('sceneLabel');
+
+function resize() {
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resize();
+window.addEventListener('resize', resize);
+
+let actx, engine, analyser, data;
+let playing = false;
+let currentStep = 0;
+let globalStep = 0;
+let timeoutId = null;
+
+const BPM = 132;
+const STEP_DUR = 60 / BPM / 4;
+
+// ─── PATTERNS ───
+// Tribal kick: tresillo [1,4,5,7,9,12,13,15] (0-indexed: [0,3,4,6,8,11,12,14])
+// 4x4 on lowtom: [1,5,9,13]
+// Hats: continuous 16ths or 8ths
+
+function makePattern(hits, baseVel, spread = 0) {
+  return Array.from({length: 16}, (_, i) => {
+    if (!hits.includes(i)) return { velocity: 0 };
+    const v = baseVel + (spread ? (Math.random() - 0.5) * spread : 0);
+    return { velocity: Math.max(1, Math.min(127, v)) };
+  });
+}
+
+const TRIBAL_HITS = [0,3,4,6,8,11,12,14];
+const FOUR_HITS = [0,4,8,12];
+const HAT16_HITS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
+const HAT8_HITS = [0,2,4,6,8,10,12,14];
+
+// ─── HAT DECAY CURVES (engine units 0-1) ───
+const tight    = () => Array(16).fill(0.05);
+const warm     = () => Array(16).fill(0.15);
+const triangle = () => Array.from({length:16}, (_,i) => { const t=i/15; return 0.05+(t<0.5?t*2:2-t*2)*0.35; });
+const rampUp   = () => Array.from({length:16}, (_,i) => 0.05+(i/15)*0.5);
+const rampDown = () => Array.from({length:16}, (_,i) => 0.55-(i/15)*0.5);
+const mills    = () => [0.05,0.4,0.05,0.55, 0.08,0.35,0.05,0.6, 0.05,0.7,0.04,0.45, 0.08,0.5,0.1,0.75];
+const wild     = () => Array.from({length:16}, (_,i) => (i%2===1?0.3:0.06)+Math.random()*0.5);
+const breathe  = () => Array.from({length:16}, (_,i) => 0.08+0.25*(0.5+0.5*Math.sin(i/15*Math.PI*2)));
+const open     = () => Array(16).fill(0.55);
+
+// ─── LEVELS (from SOUL.md recipe) ───
+const KICK_P  = { decay: 0.45, tune: -0.2, level: 0.8, attack: 0.65 };
+const FOUR_P  = { decay: 0.4, tune: -0.35, level: 0.7, attack: 0.55 };
+
+// ─── ARRANGEMENT: 52 bars @ 132 BPM ≈ 95 seconds ───
+const scenes = [
+  // ACT 1: ESTABLISHING
+  { bars: 4, name: 'hats — 8ths',
+    kick: null, four: null, hats: HAT8_HITS, hatVel: 65, hatSpread: 15,
+    hatLevel: 0.45, curve: tight },
+  { bars: 4, name: 'hats — 16ths',
+    kick: null, four: null, hats: HAT16_HITS, hatVel: 70, hatSpread: 20,
+    hatLevel: 0.45, curve: tight },
+
+  // ACT 2: FOUNDATION
+  { bars: 4, name: '4×4 enters',
+    kick: null, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 72, hatSpread: 20,
+    hatLevel: 0.5, curve: warm },
+  { bars: 4, name: 'tribal kick in',
+    kick: TRIBAL_HITS, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 75, hatSpread: 20,
+    hatLevel: 0.5, curve: warm },
+
+  // ACT 3: THE PERFORMANCE
+  { bars: 4, name: 'triangle',
+    kick: TRIBAL_HITS, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 78, hatSpread: 20,
+    hatLevel: 0.55, curve: triangle },
+  { bars: 4, name: 'ramp up',
+    kick: TRIBAL_HITS, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 78, hatSpread: 20,
+    hatLevel: 0.55, curve: rampUp },
+  { bars: 4, name: 'mills accent',
+    kick: TRIBAL_HITS, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 82, hatSpread: 20,
+    hatLevel: 0.6, curve: mills },
+  { bars: 4, name: 'peak — wild',
+    kick: TRIBAL_HITS, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 85, hatSpread: 20,
+    hatLevel: 0.6, curve: wild },
+
+  // ACT 4: THE STRIP
+  { bars: 4, name: 'tribal kick out',
+    kick: null, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 75, hatSpread: 20,
+    hatLevel: 0.5, curve: open },
+  { bars: 4, name: 'just hats',
+    kick: null, four: null, hats: HAT16_HITS, hatVel: 68, hatSpread: 20,
+    hatLevel: 0.45, curve: breathe },
+
+  // ACT 5: RETURN
+  { bars: 2, name: '4×4 returns',
+    kick: null, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 72, hatSpread: 20,
+    hatLevel: 0.5, curve: triangle },
+  { bars: 4, name: 'full return',
+    kick: TRIBAL_HITS, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 80, hatSpread: 20,
+    hatLevel: 0.55, curve: mills },
+
+  // ACT 6: CLOSE
+  { bars: 4, name: 'closing',
+    kick: null, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 68, hatSpread: 15,
+    hatLevel: 0.45, curve: rampDown },
+  { bars: 2, name: 'gone',
+    kick: null, four: null, hats: HAT8_HITS, hatVel: 55, hatSpread: 10,
+    hatLevel: 0.3, curve: tight },
+];
+
+// Precompute scene boundaries in global steps
+let totalSteps = 0;
+const sceneBounds = [];
+for (const s of scenes) {
+  const steps = s.bars * 16;
+  sceneBounds.push({ start: totalSteps, end: totalSteps + steps, ...s });
+  totalSteps += steps;
+}
+
+function getCurrentScene(step) {
+  const loopStep = step % totalSteps;
+  for (const sb of sceneBounds) {
+    if (loopStep >= sb.start && loopStep < sb.end) return sb;
+  }
+  return sceneBounds[0];
+}
+
+// ─── SETUP ───
+function setupAudio(actx) {
+  const compressor = actx.createDynamicsCompressor();
+  compressor.threshold.value = -8;
+  compressor.ratio.value = 2.5;
+  compressor.attack.value = 0.01;
+  compressor.release.value = 0.12;
+  compressor.connect(actx.destination);
+
+  engine = new JB01Engine({ context: actx });
+
+  // Set initial params
+  for (const [p, v] of Object.entries(KICK_P)) engine.setVoiceParam('kick', p, v);
+  for (const [p, v] of Object.entries(FOUR_P)) engine.setVoiceParam('lowtom', p, v);
+  engine.setVoiceParam('ch', 'decay', 0.1);
+  engine.setVoiceParam('ch', 'level', 0.45);
+
+  engine.output.connect(compressor);
+
+  // Tiny room
+  const reverb = actx.createConvolver();
+  const rvLen = actx.sampleRate * 0.3;
+  const rvBuf = actx.createBuffer(2, rvLen, actx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = rvBuf.getChannelData(ch);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/d.length, 5);
+  }
+  reverb.buffer = rvBuf;
+  const rvGain = actx.createGain();
+  rvGain.gain.value = 0.04;
+  engine.output.connect(reverb);
+  reverb.connect(rvGain);
+  rvGain.connect(compressor);
+
+  analyser = actx.createAnalyser();
+  analyser.fftSize = 256;
+  data = new Uint8Array(analyser.frequencyBinCount);
+  compressor.connect(analyser);
+}
+
+// ─── SEQUENCER ───
+let currentCurve = tight();
+let currentScene = null;
+
+function playStep() {
+  if (!playing) return;
+
+  const scene = getCurrentScene(globalStep);
+
+  // Scene changed — update params + curve
+  if (scene !== currentScene) {
+    currentScene = scene;
+    currentCurve = scene.curve();
+    engine.setVoiceParam('ch', 'level', scene.hatLevel);
+    sceneLabelEl.textContent = scene.name;
+  }
+
+  const step = currentStep % 16;
+  const now = actx.currentTime;
+
+  // Hat decay automation
+  const decay = currentCurve[step];
+  engine.setVoiceParam('ch', 'decay', decay);
+  decayFill.style.width = `${Math.min(100, (decay / 0.75) * 100)}%`;
+
+  // Trigger kick
+  if (scene.kick && scene.kick.includes(step)) {
+    engine.trigger('kick', 0.8 + Math.random() * 0.15, now);
+  }
+
+  // Trigger 4x4
+  if (scene.four && scene.four.includes(step)) {
+    engine.trigger('lowtom', 0.7 + Math.random() * 0.1, now);
+  }
+
+  // Trigger hat
+  if (scene.hats && scene.hats.includes(step)) {
+    const vel = (scene.hatVel + (Math.random() - 0.5) * scene.hatSpread) / 127;
+    engine.trigger('ch', vel, now);
+  }
+
+  currentStep++;
+  globalStep++;
+
+  timeoutId = setTimeout(playStep, STEP_DUR * 1000);
+}
+
+function startSequencer() {
+  playing = true;
+  playStep();
+}
+
+function stopSequencer() {
+  playing = false;
+  if (timeoutId) clearTimeout(timeoutId);
+  timeoutId = null;
+}
+
+// ─── VISUALIZATION ───
+let kickFlash = 0, hatFlash = 0;
+
+function draw() {
+  requestAnimationFrame(draw);
+  const w = window.innerWidth, h = window.innerHeight;
+
+  ctx.fillStyle = 'rgba(6, 6, 6, 0.18)';
+  ctx.fillRect(0, 0, w, h);
+
+  kickFlash *= 0.84;
+  hatFlash *= 0.9;
+
+  if (!analyser) return;
+  analyser.getByteFrequencyData(data);
+
+  const bass_e = (data[1] + data[2] + data[3]) / (3 * 255);
+  const hi_e = (data[20] + data[30] + data[40]) / (3 * 255);
+  kickFlash = Math.max(kickFlash, bass_e);
+  hatFlash = Math.max(hatFlash, hi_e);
+
+  const cx = w / 2, cy = h / 2;
+
+  // Kick: expanding concentric circles from center
+  if (kickFlash > 0.1) {
+    const rings = 4;
+    for (let i = 0; i < rings; i++) {
+      const r = kickFlash * (80 + i * 50);
+      const alpha = kickFlash * 0.3 * (1 - i / rings);
+      ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+      ctx.lineWidth = 2 - i * 0.3;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Center flash
+    ctx.fillStyle = `rgba(255,255,255,${kickFlash * 0.06})`;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  // Hats: horizontal tick marks spreading from center
+  if (hatFlash > 0.06) {
+    const numTicks = 12;
+    const spread = hatFlash * w * 0.35;
+    ctx.strokeStyle = `rgba(200,200,200,${hatFlash * 0.35})`;
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < numTicks; i++) {
+      const yOff = (i - numTicks/2) * 12;
+      const xSpread = spread * (0.5 + Math.random() * 0.5);
+      ctx.beginPath();
+      ctx.moveTo(cx - xSpread, cy + yOff);
+      ctx.lineTo(cx + xSpread, cy + yOff);
+      ctx.stroke();
+    }
+  }
+
+  // Step dots
+  const dotY = h - 28;
+  const dotSpacing = w * 0.5 / 16;
+  const dotStart = w * 0.25;
+  const activeStep = ((currentStep - 1) % 16 + 16) % 16;
+  for (let i = 0; i < 16; i++) {
+    const x = dotStart + i * dotSpacing;
+    const isActive = i === activeStep;
+    const isTKick = TRIBAL_HITS.includes(i);
+    const is4x4 = FOUR_HITS.includes(i);
+    const brightness = isActive ? 0.8 : isTKick ? 0.2 : is4x4 ? 0.15 : 0.06;
+    const size = isActive ? 3.5 : isTKick ? 2.5 : 1.5;
+    ctx.fillStyle = `rgba(255,255,255,${brightness})`;
+    ctx.beginPath();
+    ctx.arc(x, dotY, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+draw();
+
+// ─── INTERACTION ───
+const startBtn = document.getElementById('startBtn');
+let started = false;
+
+async function handleStart() {
+  if (!started) {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    await actx.resume();
+    setupAudio(actx);
+    startSequencer();
+    started = true;
+    document.body.classList.add('playing');
+  } else if (playing) {
+    stopSequencer();
+    await actx.suspend();
+    startBtn.textContent = 'tap to resume';
+    startBtn.style.opacity = '1';
+    startBtn.style.pointerEvents = 'all';
+    document.body.classList.remove('playing');
+  } else {
+    await actx.resume();
+    playing = true;
+    playStep();
+    document.body.classList.add('playing');
+  }
+}
+
+startBtn.addEventListener('click', handleStart);
+startBtn.addEventListener('touchend', (e) => { e.preventDefault(); handleStart(); });
+</script>
+</body>
+</html>
