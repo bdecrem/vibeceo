@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>SLINGSHOT — Amber</title>
+<meta name="description" content="Hold. Charge. Release. Hit the target.">
+<meta property="og:title" content="SLINGSHOT">
+<meta property="og:description" content="Hold. Charge. Release. Hit the target.">
+<meta property="og:image" content="https://intheamber.com/amber/og/slingshot.png">
+<meta property="og:url" content="https://intheamber.com/amber/slingshot.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SLINGSHOT">
+<meta name="twitter:description" content="Hold. Charge. Release. Hit the target.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/slingshot.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0a;font-family:'Courier New',monospace;color:#FFD700;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100%;height:100%}
+#hud{position:fixed;top:16px;left:0;right:0;text-align:center;pointer-events:none;z-index:10}
+#score{font-size:28px;font-weight:bold;text-shadow:0 0 12px rgba(255,215,0,.5)}
+#combo{font-size:16px;color:#2D9596;margin-top:4px;opacity:0;transition:opacity .3s}
+#hint{position:fixed;bottom:40px;left:0;right:0;text-align:center;font-size:14px;color:#666;pointer-events:none;z-index:10;transition:opacity 1s}
+</style>
+</head>
+<body>
+<div id="hud">
+  <div id="score">0</div>
+  <div id="combo"></div>
+</div>
+<div id="hint">hold anywhere · charge · release</div>
+<canvas id="c"></canvas>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H,dpr;
+function resize(){dpr=window.devicePixelRatio||1;W=window.innerWidth;H=window.innerHeight;C.width=W*dpr;C.height=H*dpr;X.setTransform(dpr,0,0,dpr,0,0)}
+resize();window.onresize=resize;
+
+// Audio
+let actx;
+function initAudio(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)()}
+function playTone(f,d,v=.3,type='sine'){
+  if(!actx)return;
+  const o=actx.createOscillator(),g=actx.createGain();
+  o.type=type;o.frequency.value=f;
+  g.gain.setValueAtTime(v,actx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d);
+  o.connect(g);g.connect(actx.destination);
+  o.start();o.stop(actx.currentTime+d);
+}
+function playHit(perfect){
+  if(!actx)return;
+  if(perfect){playTone(880,.15,.4);setTimeout(()=>playTone(1320,.2,.3),80)}
+  else{playTone(660,.12,.3)}
+}
+function playCharge(pct){if(!actx)playTone(200+pct*600,.05,.1)}
+function playMiss(){if(!actx)return;playTone(150,.3,.2,'sawtooth')}
+
+// State
+let score=0,combo=0,bestCombo=0;
+let charging=false,chargeStart=0,chargePct=0;
+let touchX=0,touchY=0;
+
+// Ball
+let ball=null; // {x,y,vx,vy,r,alive,trail:[]}
+// Target
+let target={x:0,y:0,r:30,pulse:0,hit:false};
+// Particles
+let particles=[];
+// Ring (charge indicator)
+let chargeRing={x:0,y:0,r:0};
+
+function spawnTarget(){
+  const margin=60;
+  target.x=margin+Math.random()*(W-margin*2);
+  target.y=margin+Math.random()*(H*0.5-margin);
+  target.r=24+Math.random()*16;
+  target.pulse=0;
+  target.hit=false;
+}
+spawnTarget();
+
+function spawnParticles(x,y,color,count=12){
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2,sp=2+Math.random()*4;
+    particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,color,r:2+Math.random()*3});
+  }
+}
+
+// Input
+function onDown(e){
+  e.preventDefault();initAudio();
+  const t=e.touches?e.touches[0]:e;
+  touchX=t.clientX;touchY=t.clientY;
+  charging=true;chargeStart=performance.now();chargePct=0;
+  chargeRing.x=touchX;chargeRing.y=touchY;chargeRing.r=0;
+  document.getElementById('hint').style.opacity='0';
+}
+function onUp(e){
+  e.preventDefault();
+  if(!charging)return;
+  charging=false;
+  // Launch ball toward target based on charge
+  const power=Math.min(chargePct,1);
+  const angle=Math.atan2(target.y-touchY,target.x-touchX);
+  const speed=8+power*18;
+  ball={x:touchX,y:touchY,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,r:8,alive:true,trail:[],age:0};
+  playTone(300+power*400,.15,.2);
+}
+C.addEventListener('touchstart',onDown,{passive:false});
+C.addEventListener('touchend',onUp,{passive:false});
+C.addEventListener('mousedown',onDown);
+C.addEventListener('mouseup',onUp);
+
+function update(dt){
+  // Charge
+  if(charging){
+    chargePct=Math.min((performance.now()-chargeStart)/1000,1);
+    chargeRing.r=20+chargePct*60;
+    if(Math.random()<chargePct*0.3)playTone(200+chargePct*800,.03,.05);
+  }
+
+  // Ball physics
+  if(ball&&ball.alive){
+    ball.x+=ball.vx;
+    ball.y+=ball.vy;
+    ball.vy+=0.15; // gravity
+    ball.age++;
+    ball.trail.push({x:ball.x,y:ball.y,a:1});
+    if(ball.trail.length>20)ball.trail.shift();
+    ball.trail.forEach(t=>t.a*=0.92);
+
+    // Check target hit
+    if(!target.hit){
+      const dx=ball.x-target.x,dy=ball.y-target.y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<target.r+ball.r){
+        target.hit=true;
+        const perfect=dist<target.r*0.4;
+        const pts=perfect?50:20;
+        combo++;
+        if(combo>bestCombo)bestCombo=combo;
+        score+=pts*(1+Math.floor(combo/3));
+        document.getElementById('score').textContent=score;
+        const comboEl=document.getElementById('combo');
+        if(combo>1){comboEl.textContent=combo+'x combo';comboEl.style.opacity='1'}
+        playHit(perfect);
+        spawnParticles(target.x,target.y,perfect?'#FFD700':'#2D9596',perfect?24:12);
+        if(perfect)spawnParticles(target.x,target.y,'#ec4899',8);
+        ball.alive=false;
+        setTimeout(spawnTarget,400);
+      }
+    }
+
+    // Out of bounds
+    if(ball.y>H+50||ball.x<-50||ball.x>W+50){
+      ball.alive=false;
+      combo=0;
+      document.getElementById('combo').style.opacity='0';
+      playMiss();
+      spawnParticles(ball.x,Math.min(ball.y,H-10),'#444',6);
+    }
+  }
+
+  // Particles
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;p.vx*=0.98;p.life-=0.025});
+  particles=particles.filter(p=>p.life>0);
+
+  // Target pulse
+  if(!target.hit)target.pulse=(target.pulse+0.03)%1;
+}
+
+function draw(){
+  X.clearRect(0,0,W,H);
+
+  // Grid dots (subtle)
+  X.fillStyle='#1a1a1a';
+  const gs=40;
+  for(let gx=gs;gx<W;gx+=gs)for(let gy=gs;gy<H;gy+=gs)X.fillRect(gx,gy,1,1);
+
+  // Target
+  if(!target.hit){
+    const p=Math.sin(target.pulse*Math.PI*2)*0.3+0.7;
+    // Outer ring
+    X.beginPath();X.arc(target.x,target.y,target.r+4,0,Math.PI*2);
+    X.strokeStyle=`rgba(45,149,150,${p*0.5})`;X.lineWidth=2;X.stroke();
+    // Inner
+    X.beginPath();X.arc(target.x,target.y,target.r,0,Math.PI*2);
+    X.fillStyle=`rgba(45,149,150,${p*0.15})`;X.fill();
+    X.strokeStyle=`rgba(255,215,0,${p})`;X.lineWidth=2;X.stroke();
+    // Bullseye
+    X.beginPath();X.arc(target.x,target.y,target.r*0.35,0,Math.PI*2);
+    X.fillStyle=`rgba(236,72,153,${p*0.6})`;X.fill();
+  }
+
+  // Charge ring
+  if(charging){
+    const p=chargePct;
+    X.beginPath();X.arc(chargeRing.x,chargeRing.y,chargeRing.r,0,Math.PI*2);
+    X.strokeStyle=`rgba(255,215,0,${0.3+p*0.5})`;X.lineWidth=3;X.stroke();
+    // Power arc
+    X.beginPath();X.arc(chargeRing.x,chargeRing.y,chargeRing.r,-Math.PI/2,-Math.PI/2+p*Math.PI*2);
+    X.strokeStyle=p>0.8?'#ec4899':'#FFD700';X.lineWidth=4;X.stroke();
+    // Aim line
+    if(!target.hit){
+      X.beginPath();X.moveTo(chargeRing.x,chargeRing.y);
+      X.lineTo(chargeRing.x+(target.x-chargeRing.x)*0.3,chargeRing.y+(target.y-chargeRing.y)*0.3);
+      X.strokeStyle='rgba(255,215,0,0.15)';X.lineWidth=1;X.setLineDash([4,8]);X.stroke();X.setLineDash([]);
+    }
+  }
+
+  // Ball trail
+  if(ball){
+    ball.trail.forEach((t,i)=>{
+      X.beginPath();X.arc(t.x,t.y,3*t.a,0,Math.PI*2);
+      X.fillStyle=`rgba(255,215,0,${t.a*0.4})`;X.fill();
+    });
+    // Ball
+    if(ball.alive){
+      X.beginPath();X.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+      X.fillStyle='#FFD700';X.fill();
+      X.shadowColor='#FFD700';X.shadowBlur=12;
+      X.fill();X.shadowBlur=0;
+    }
+  }
+
+  // Particles
+  particles.forEach(p=>{
+    X.beginPath();X.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);
+    X.fillStyle=p.color;X.globalAlpha=p.life;X.fill();X.globalAlpha=1;
+  });
+}
+
+let last=0;
+function loop(t){
+  const dt=Math.min(t-last,32);last=t;
+  update(dt);draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
