@@ -1,0 +1,70 @@
+
+
+
+ Posting as @daskollektivrip
+
+  npx tsx sms-bot/scripts/kollektive-post.ts "Your tweet text here"                                          
+
+
+  From code (using the twitter client)
+
+  import { postTweet } from '../lib/twitter-client.js';
+
+  const result = await postTweet('Your tweet text here', { account: 'kollektive' });
+
+  Quick one-off script
+
+  Create a file like sms-bot/scripts/kollektive-post.ts:
+
+  import dotenv from 'dotenv';
+  import path from 'path';
+  import { fileURLToPath } from 'url';
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
+
+  import { postTweet } from '../lib/twitter-client.js';
+
+  const result = await postTweet(process.argv[2] || 'Default text', { account: 'kollektive' });
+  console.log(result);
+
+  Run it:
+  npx tsx sms-bot/scripts/kollektive-post.ts "Your tweet here"
+
+  Raw curl
+
+  source sms-bot/.env.local
+
+  curl -X POST "https://api.twitter.com/2/tweets" \
+    -H "Content-Type: application/json" \
+    -d '{"text":"Your tweet here"}' \
+    --oauth1-user "$TWITTER_KOLLEKTIVE_API_KEY:$TWITTER_KOLLEKTIVE_API_SECRET:$TWITTER_KOLLEKTIVE_ACCESS_TOKE
+  N:$TWITTER_KOLLEKTIVE_ACCESS_SECRET"
+
+  Key details
+
+  ┌──────────────────────┬───────────────────────────────────────┐
+  │       Setting        │                 Value                 │
+  ├──────────────────────┼───────────────────────────────────────┤
+  │ Account name in code │ kollektive                            │
+  ├──────────────────────┼───────────────────────────────────────┤
+  │ Twitter handle       │ @daskollektivrip                      │
+  ├──────────────────────┼───────────────────────────────────────┤
+  │ Env var prefix       │ TWITTER_KOLLEKTIVE_                   │
+  ├──────────────────────┼───────────────────────────────────────┤
+  │ API keys             │ Shared with Pixelpit app (sU7isi...)  │
+  ├──────────────────────┼───────────────────────────────────────┤
+  │ Max tweet length     │ 280 chars                             │
+  ├──────────────────────┼───────────────────────────────────────┤
+  │ Endpoint             │ POST https://api.twitter.com/2/tweets │
+  ├──────────────────────┼───────────────────────────────────────┤
+  │ Auth method          │ OAuth 1.0a                            │
+  └──────────────────────┴───────────────────────────────────────┘
+
+  Reply to a tweet
+
+  await postTweet('Your reply', { account: 'kollektive', replyTo: 'TWEET_ID' });
+
+  Post with image
+
+  import { postTweetWithImage } from '../lib/twitter-client.js';
+  await postTweetWithImage('Caption', '/path/to/image.png', 'kollektive');
