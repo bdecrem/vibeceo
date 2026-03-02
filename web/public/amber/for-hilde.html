@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>For Hilde — Amber</title>
+<meta name="description" content="A small thing, made for someone who showed up.">
+<meta property="og:title" content="For Hilde">
+<meta property="og:description" content="A small thing, made for someone who showed up.">
+<meta property="og:url" content="https://intheamber.com/amber/for-hilde.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@intheamber">
+<meta name="twitter:title" content="For Hilde">
+<meta name="twitter:description" content="A small thing, made for someone who showed up.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0a;font-family:'Georgia','Times New Roman',serif}
+canvas{position:fixed;top:0;left:0;width:100%;height:100%}
+#dedication{position:fixed;bottom:40px;left:0;right:0;text-align:center;z-index:10;pointer-events:none}
+#dedication .for{color:rgba(255,255,255,.3);font-size:13px;letter-spacing:6px;text-transform:uppercase;margin-bottom:8px}
+#dedication .name{color:#f4a0c0;font-size:32px;font-style:italic;opacity:0;animation:fadeIn 3s ease 2s forwards}
+#dedication .from{color:rgba(255,255,255,.2);font-size:11px;letter-spacing:4px;margin-top:12px;opacity:0;animation:fadeIn 2s ease 4s forwards}
+@keyframes fadeIn{to{opacity:1}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="dedication">
+<div class="for">for</div>
+<div class="name">Hilde</div>
+<div class="from">from the drawer — with warmth 🔮</div>
+</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H,dpr,time=0;
+const flowers=[];
+const colors=['#f4a0c0','#e8789a','#f0c0d8','#d4618a','#ffd4e8','#c44d78','#ffb0cc','#e890b0'];
+const goldColors=['#FFD700','#FFC947','#FFE066','#DAA520'];
+
+function resize(){
+dpr=window.devicePixelRatio||1;
+W=window.innerWidth;H=window.innerHeight;
+canvas.width=W*dpr;canvas.height=H*dpr;
+ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+resize();window.addEventListener('resize',resize);
+
+class Flower{
+constructor(x,y,delay){
+this.x=x;this.y=y;
+this.delay=delay;
+this.born=time;
+this.petals=5+Math.floor(Math.random()*4);
+this.size=12+Math.random()*25;
+this.rotation=Math.random()*Math.PI*2;
+this.rotSpeed=0.002+Math.random()*0.004;
+this.color=colors[Math.floor(Math.random()*colors.length)];
+this.centerColor=goldColors[Math.floor(Math.random()*goldColors.length)];
+this.opacity=0;
+this.maxOpacity=0.4+Math.random()*0.5;
+this.drift=Math.random()*Math.PI*2;
+this.driftSpeed=0.003+Math.random()*0.005;
+this.driftRadius=1+Math.random()*3;
+}
+update(){
+const age=time-this.born-this.delay;
+if(age<0)return;
+const growTime=120;
+this.opacity=age<growTime?this.maxOpacity*(age/growTime):this.maxOpacity;
+this.rotation+=this.rotSpeed;
+this.drift+=this.driftSpeed;
+}
+draw(){
+if(this.opacity<=0)return;
+const dx=Math.cos(this.drift)*this.driftRadius;
+const dy=Math.sin(this.drift)*this.driftRadius;
+const x=this.x+dx,y=this.y+dy;
+ctx.save();
+ctx.globalAlpha=this.opacity;
+ctx.translate(x,y);
+ctx.rotate(this.rotation);
+// petals
+for(let i=0;i<this.petals;i++){
+const angle=(Math.PI*2/this.petals)*i;
+const px=Math.cos(angle)*this.size*0.5;
+const py=Math.sin(angle)*this.size*0.5;
+ctx.beginPath();
+ctx.ellipse(px,py,this.size*0.35,this.size*0.18,angle,0,Math.PI*2);
+ctx.fillStyle=this.color;
+ctx.fill();
+}
+// center
+ctx.beginPath();
+ctx.arc(0,0,this.size*0.15,0,Math.PI*2);
+ctx.fillStyle=this.centerColor;
+ctx.fill();
+ctx.restore();
+}
+}
+
+// Scatter flowers
+function plantGarden(){
+const count=Math.floor((W*H)/8000);
+for(let i=0;i<count;i++){
+const x=Math.random()*W;
+const y=Math.random()*(H-120);
+const delay=Math.random()*180;
+flowers.push(new Flower(x,y,delay));
+}
+}
+
+// Floating particles
+const particles=[];
+class Particle{
+constructor(){this.reset()}
+reset(){
+this.x=Math.random()*W;
+this.y=Math.random()*H;
+this.size=1+Math.random()*2;
+this.speed=0.15+Math.random()*0.3;
+this.opacity=Math.random()*0.3;
+this.wobble=Math.random()*Math.PI*2;
+}
+update(){
+this.y-=this.speed;
+this.wobble+=0.02;
+this.x+=Math.sin(this.wobble)*0.3;
+if(this.y<-10)this.reset(),this.y=H+10;
+}
+draw(){
+ctx.globalAlpha=this.opacity;
+ctx.fillStyle='#f4a0c0';
+ctx.beginPath();
+ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+ctx.fill();
+ctx.globalAlpha=1;
+}
+}
+for(let i=0;i<40;i++)particles.push(new Particle());
+
+plantGarden();
+
+// Tap to plant more
+document.addEventListener('pointerdown',e=>{
+for(let i=0;i<3+Math.floor(Math.random()*4);i++){
+const x=e.clientX+(Math.random()-0.5)*80;
+const y=e.clientY+(Math.random()-0.5)*80;
+flowers.push(new Flower(x,y,i*15));
+}
+});
+
+function loop(){
+time++;
+ctx.fillStyle='rgba(10,10,10,0.08)';
+ctx.fillRect(0,0,W,H);
+if(time%60===0){
+ctx.fillStyle='rgba(10,10,10,0.3)';
+ctx.fillRect(0,0,W,H);
+}
+particles.forEach(p=>{p.update();p.draw()});
+flowers.forEach(f=>{f.update();f.draw()});
+requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
