@@ -178,8 +178,8 @@ function setupAudio(actx) {
   engine.setVoiceParam('ch', 'decay', 0.1);
   engine.setVoiceParam('ch', 'level', 0.55);
 
-  // Connect engine output → compressor
-  engine.output.connect(compressor);
+  // Redirect engine output to our compressor
+  engine.connectOutput(compressor);
 
   // Tiny room verb — just enough life
   const reverb = actx.createConvolver();
@@ -194,7 +194,7 @@ function setupAudio(actx) {
   reverb.buffer = rvBuf;
   const rvGain = actx.createGain();
   rvGain.gain.value = 0.05;
-  engine.output.connect(reverb);
+  engine.masterGain.connect(reverb);
   reverb.connect(rvGain);
   rvGain.connect(compressor);
 

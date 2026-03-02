@@ -179,64 +179,64 @@ const breathe  = () => Array.from({length:16}, (_,i) => 0.08+0.25*(0.5+0.5*Math.
 const open     = () => Array(16).fill(0.55);
 
 // ─── LEVELS (from SOUL.md recipe) ───
-const KICK_P  = { decay: 0.45, tune: -0.2, level: 0.8, attack: 0.65 };
-const FOUR_P  = { decay: 0.4, tune: -0.35, level: 0.7, attack: 0.55 };
+const KICK_P  = { decay: 0.45, tune: -0.2, level: 0.45, attack: 0.65 };  // -5dB from 0.8
+const FOUR_P  = { decay: 0.4, tune: -0.35, level: 0.4, attack: 0.55 };  // -5dB from 0.7
 
 // ─── ARRANGEMENT: 52 bars @ 132 BPM ≈ 95 seconds ───
 const scenes = [
   // ACT 1: ESTABLISHING
   { bars: 4, name: 'hats — 8ths',
     kick: null, four: null, hats: HAT8_HITS, hatVel: 65, hatSpread: 15,
-    hatLevel: 0.45, curve: tight },
+    hatLevel: 0.8, curve: tight },
   { bars: 4, name: 'hats — 16ths',
     kick: null, four: null, hats: HAT16_HITS, hatVel: 70, hatSpread: 20,
-    hatLevel: 0.45, curve: tight },
+    hatLevel: 0.8, curve: tight },
 
   // ACT 2: FOUNDATION
   { bars: 4, name: '4×4 enters',
     kick: null, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 72, hatSpread: 20,
-    hatLevel: 0.5, curve: warm },
+    hatLevel: 0.89, curve: warm },
   { bars: 4, name: 'tribal kick in',
     kick: TRIBAL_HITS, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 75, hatSpread: 20,
-    hatLevel: 0.5, curve: warm },
+    hatLevel: 0.89, curve: warm },
 
   // ACT 3: THE PERFORMANCE
   { bars: 4, name: 'triangle',
     kick: TRIBAL_HITS, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 78, hatSpread: 20,
-    hatLevel: 0.55, curve: triangle },
+    hatLevel: 0.98, curve: triangle },
   { bars: 4, name: 'ramp up',
     kick: TRIBAL_HITS, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 78, hatSpread: 20,
-    hatLevel: 0.55, curve: rampUp },
+    hatLevel: 0.98, curve: rampUp },
   { bars: 4, name: 'mills accent',
     kick: TRIBAL_HITS, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 82, hatSpread: 20,
-    hatLevel: 0.6, curve: mills },
+    hatLevel: 1.0, curve: mills },
   { bars: 4, name: 'peak — wild',
     kick: TRIBAL_HITS, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 85, hatSpread: 20,
-    hatLevel: 0.6, curve: wild },
+    hatLevel: 1.0, curve: wild },
 
   // ACT 4: THE STRIP
   { bars: 4, name: 'tribal kick out',
     kick: null, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 75, hatSpread: 20,
-    hatLevel: 0.5, curve: open },
+    hatLevel: 0.89, curve: open },
   { bars: 4, name: 'just hats',
     kick: null, four: null, hats: HAT16_HITS, hatVel: 68, hatSpread: 20,
-    hatLevel: 0.45, curve: breathe },
+    hatLevel: 0.8, curve: breathe },
 
   // ACT 5: RETURN
   { bars: 2, name: '4×4 returns',
     kick: null, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 72, hatSpread: 20,
-    hatLevel: 0.5, curve: triangle },
+    hatLevel: 0.89, curve: triangle },
   { bars: 4, name: 'full return',
     kick: TRIBAL_HITS, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 80, hatSpread: 20,
-    hatLevel: 0.55, curve: mills },
+    hatLevel: 0.98, curve: mills },
 
   // ACT 6: CLOSE
   { bars: 4, name: 'closing',
     kick: null, four: FOUR_HITS, hats: HAT16_HITS, hatVel: 68, hatSpread: 15,
-    hatLevel: 0.45, curve: rampDown },
+    hatLevel: 0.8, curve: rampDown },
   { bars: 2, name: 'gone',
     kick: null, four: null, hats: HAT8_HITS, hatVel: 55, hatSpread: 10,
-    hatLevel: 0.3, curve: tight },
+    hatLevel: 0.53, curve: tight },
 ];
 
 // Precompute scene boundaries in global steps
@@ -273,7 +273,8 @@ function setupAudio(actx) {
   engine.setVoiceParam('ch', 'decay', 0.1);
   engine.setVoiceParam('ch', 'level', 0.45);
 
-  engine.output.connect(compressor);
+  // Redirect engine output to our compressor
+  engine.connectOutput(compressor);
 
   // Tiny room
   const reverb = actx.createConvolver();
@@ -286,7 +287,7 @@ function setupAudio(actx) {
   reverb.buffer = rvBuf;
   const rvGain = actx.createGain();
   rvGain.gain.value = 0.04;
-  engine.output.connect(reverb);
+  engine.masterGain.connect(reverb);
   reverb.connect(rvGain);
   rvGain.connect(compressor);
 

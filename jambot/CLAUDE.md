@@ -327,6 +327,37 @@ clock.getStepTime(4, true); // Time with swing applied
 
 An Engine manages voices and provides the instrument's interface.
 
+**Base class:** `SynthEngine` (`web/public/{synth}/dist/core/engine.js`)
+
+**Internal audio graph:** `voices → compressor → analyser → masterGain → context.destination`
+
+**Key properties and methods:**
+
+| Property/Method | Description |
+|-----------------|-------------|
+| `engine.context` | The AudioContext |
+| `engine.masterGain` | GainNode — the engine's final output node |
+| `engine.compressor` | DynamicsCompressor before masterGain |
+| `engine.analyser` | AnalyserNode between compressor and masterGain |
+| `engine.connectOutput(node)` | Redirects masterGain to a custom destination (disconnects from context.destination) |
+| `engine.trigger(voiceId, velocity, time)` | Trigger a voice |
+| `engine.setVoiceParameter(voiceId, paramId, value)` | Set a voice parameter |
+| `engine.registerVoice(id, voice)` | Register a voice (connects it to internal compressor) |
+
+**IMPORTANT: There is NO `engine.output` property.** Use `engine.connectOutput(node)` to reroute, or `engine.masterGain` to tap the output for parallel connections (e.g. reverb sends).
+
+```javascript
+// Rerouting engine output to a custom compressor + reverb send:
+const compressor = actx.createDynamicsCompressor();
+compressor.connect(actx.destination);
+
+const engine = new JB01Engine({ context: actx });
+engine.connectOutput(compressor);        // Redirects masterGain → compressor
+engine.masterGain.connect(reverbNode);   // Parallel send to reverb
+```
+
+**Subclassing:**
+
 ```javascript
 // web/public/{synth}/dist/machines/{synth}/engine.js
 import { SynthEngine } from '../../core/engine.js';
