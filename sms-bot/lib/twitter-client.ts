@@ -10,25 +10,28 @@ import path from 'path';
 // Read env vars at runtime (not module load) to support late dotenv loading
 // Optional account parameter for multi-account support (e.g., "intheamber", "tokentank")
 function getTwitterCredentials(account?: string) {
-  // API key/secret are app-level (same for all accounts)
-  const apiKey = process.env.TWITTER_API_KEY;
-  const apiSecret = process.env.TWITTER_API_SECRET;
-
-  // Access token/secret are per-account
+  // Access token/secret and optionally API key/secret are per-account
   // If account specified, look for TWITTER_<ACCOUNT>_ACCESS_TOKEN, etc.
+  // Per-account API keys (TWITTER_<ACCOUNT>_API_KEY) override shared keys if present
   // Special case: "tokentank" uses default TWITTER_ACCESS_TOKEN (no prefix)
-  // Otherwise use default TWITTER_ACCESS_TOKEN
   let accessToken: string | undefined;
   let accessSecret: string | undefined;
+  let apiKey: string | undefined;
+  let apiSecret: string | undefined;
 
   if (account && account.toLowerCase() !== 'tokentank') {
     const prefix = `TWITTER_${account.toUpperCase()}_`;
     accessToken = process.env[`${prefix}ACCESS_TOKEN`];
     accessSecret = process.env[`${prefix}ACCESS_SECRET`];
+    // Use per-account API keys if available, otherwise fall back to shared
+    apiKey = process.env[`${prefix}API_KEY`] || process.env.TWITTER_API_KEY;
+    apiSecret = process.env[`${prefix}API_SECRET`] || process.env.TWITTER_API_SECRET;
   } else {
     // Default credentials are for @TokenTankAI
     accessToken = process.env.TWITTER_ACCESS_TOKEN;
     accessSecret = process.env.TWITTER_ACCESS_SECRET;
+    apiKey = process.env.TWITTER_API_KEY;
+    apiSecret = process.env.TWITTER_API_SECRET;
   }
 
   return { apiKey, apiSecret, accessToken, accessSecret };
