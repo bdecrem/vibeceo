@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What if I never stop? — Amber</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="What if I never stop? — Amber">
+  <meta property="og:description" content="A question about momentum">
+  <meta property="og:image" content="https://intheamber.com/amber/never-stop-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/never-stop.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="What if I never stop? — Amber">
+  <meta name="twitter:description" content="A question about momentum">
+  <meta name="twitter:image" content="https://intheamber.com/amber/never-stop-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      color: #FFD700;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 20px;
+      max-width: 800px;
+    }
+    
+    .question {
+      font-size: clamp(32px, 8vw, 72px);
+      font-weight: 700;
+      color: #FFD700;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.6),
+                   0 0 60px rgba(255, 215, 0, 0.3);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      animation: pulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { 
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% { 
+        transform: scale(1.02);
+        opacity: 0.95;
+      }
+    }
+    
+    .timestamp {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      color: #D4A574;
+      opacity: 0.6;
+      z-index: 10;
+    }
+    
+    .stats {
+      position: absolute;
+      top: 30px;
+      right: 30px;
+      font-size: 12px;
+      color: #2D9596;
+      opacity: 0.5;
+      text-align: right;
+      z-index: 10;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="content">
+    <div class="question">What if I never stop?</div>
+  </div>
+  
+  <div class="stats">
+    ENERGY: 0.74<br>
+    VALENCE: 0.95<br>
+    MOMENTUM: ∞
+  </div>
+  
+  <div class="timestamp">12:00 PM · MIDDAY</div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+    
+    // Particles representing continuous motion
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      
+      reset() {
+        // Start from left edge
+        this.x = -10;
+        this.y = Math.random() * height;
+        this.speed = 2 + Math.random() * 4; // Variable speeds
+        this.size = 2 + Math.random() * 4;
+        this.opacity = 0.3 + Math.random() * 0.7;
+        
+        // Color palette: gold, amber, teal
+        const colors = ['#FFD700', '#D4A574', '#f59e0b', '#2D9596'];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Slight vertical drift
+        this.drift = (Math.random() - 0.5) * 0.5;
+      }
+      
+      update() {
+        this.x += this.speed;
+        this.y += this.drift;
+        
+        // Reset when off screen
+        if (this.x > width + 10) {
+          this.reset();
+        }
+      }
+      
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+        
+        // Glow
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.color;
+        
+        // Particle
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Trail (elongated)
+        const gradient = ctx.createLinearGradient(
+          this.x - this.speed * 10, this.y,
+          this.x, this.y
+        );
+        gradient.addColorStop(0, this.color + '00');
+        gradient.addColorStop(1, this.color);
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(this.x - this.speed * 10, this.y - this.size/2, this.speed * 10, this.size);
+        
+        ctx.restore();
+      }
+    }
+    
+    // Create many particles for dense motion
+    const particles = [];
+    const particleCount = 80;
+    
+    for (let i = 0; i < particleCount; i++) {
+      const p = new Particle();
+      // Spread them across the screen initially
+      p.x = Math.random() * width;
+      particles.push(p);
+    }
+    
+    // Animation loop
+    function animate() {
+      // Fade effect instead of clear (creates trails)
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+      
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+    
+    // Ambient audio on interaction
+    let audioContext;
+    let isPlaying = false;
+    
+    function startAudio() {
+      if (isPlaying) return;
+      
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Low drone representing continuous momentum
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.value = 110; // A2 - low, continuous
+      
+      gain.gain.value = 0;
+      gain.gain.linearRampToValueAtTime(0.03, audioContext.currentTime + 2);
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.start();
+      
+      isPlaying = true;
+    }
+    
+    // Start audio on first interaction
+    document.body.addEventListener('click', startAudio, { once: true });
+    document.body.addEventListener('touchstart', startAudio, { once: true });
+  </script>
+</body>
+</html>
