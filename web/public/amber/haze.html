@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAZE — Amber</title>
+<meta property="og:title" content="HAZE">
+<meta property="og:description" content="dub techno from the drawer. 118 bpm. tap to dissolve.">
+<meta property="og:image" content="https://intheamber.com/amber/og/haze.png">
+<meta property="og:url" content="https://intheamber.com/amber/haze.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@intheamber">
+<meta name="twitter:title" content="HAZE">
+<meta name="twitter:description" content="dub techno from the drawer. 118 bpm. tap to dissolve.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/haze.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0f;
+  color: #c8b8e8;
+  font-family: 'Courier New', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+}
+.overlay {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  pointer-events: none;
+}
+h1 {
+  font-size: clamp(3rem, 12vw, 8rem);
+  font-weight: 100;
+  letter-spacing: 0.4em;
+  color: #6b5b95;
+  text-shadow: 0 0 60px rgba(107,91,149,0.4);
+  transition: opacity 0.8s;
+}
+.sub {
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  color: #4a4060;
+  margin-top: 1rem;
+  text-transform: uppercase;
+}
+.prompt {
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: #3a3050;
+  margin-top: 2rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+.playing .prompt { display: none; }
+.credit {
+  position: fixed;
+  bottom: 1rem;
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: #2a2040;
+  z-index: 2;
+}
+</style>
+</head>
+<body>
+<canvas id="viz"></canvas>
+<div class="overlay">
+  <h1>HAZE</h1>
+  <div class="sub">dub techno · 118 bpm</div>
+  <div class="prompt">tap to dissolve</div>
+</div>
+<div class="credit">amber · 🔮</div>
+
+<audio id="audio" loop preload="auto">
+  <source src="haze.wav" type="audio/wav">
+</audio>
+
+<script>
+const canvas = document.getElementById('viz');
+const ctx = canvas.getContext('2d');
+const audio = document.getElementById('audio');
+let audioCtx, analyser, dataArray, source;
+let playing = false;
+
+function resize() {
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resize();
+window.addEventListener('resize', () => { ctx.setTransform(1,0,0,1,0,0); resize(); });
+
+function initAudio() {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 512;
+  analyser.smoothingTimeConstant = 0.85;
+  dataArray = new Uint8Array(analyser.frequencyBinCount);
+  source = audioCtx.createMediaElementSource(audio);
+  source.connect(analyser);
+  analyser.connect(audioCtx.destination);
+}
+
+document.body.addEventListener('click', () => {
+  if (!playing) {
+    initAudio();
+    audio.play();
+    playing = true;
+    document.body.classList.add('playing');
+  } else {
+    if (audio.paused) { audio.play(); } else { audio.pause(); }
+  }
+});
+
+// Fog particles
+const particles = [];
+for (let i = 0; i < 80; i++) {
+  particles.push({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    r: Math.random() * 80 + 40,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.15,
+    opacity: Math.random() * 0.08
+  });
+}
+
+function draw() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  
+  ctx.fillStyle = 'rgba(10, 10, 15, 0.15)';
+  ctx.fillRect(0, 0, w, h);
+  
+  let bass = 0, mid = 0, high = 0;
+  if (analyser && playing) {
+    analyser.getByteFrequencyData(dataArray);
+    const len = dataArray.length;
+    for (let i = 0; i < len * 0.15; i++) bass += dataArray[i];
+    for (let i = Math.floor(len*0.15); i < len*0.5; i++) mid += dataArray[i];
+    for (let i = Math.floor(len*0.5); i < len; i++) high += dataArray[i];
+    bass /= (len * 0.15 * 255);
+    mid /= (len * 0.35 * 255);
+    high /= (len * 0.5 * 255);
+  }
+
+  // Draw fog particles — react to frequencies
+  particles.forEach(p => {
+    p.x += p.vx + bass * 2;
+    p.y += p.vy + Math.sin(Date.now() * 0.001 + p.x * 0.01) * 0.3;
+    
+    if (p.x > w + p.r) p.x = -p.r;
+    if (p.x < -p.r) p.x = w + p.r;
+    if (p.y > h + p.r) p.y = -p.r;
+    if (p.y < -p.r) p.y = h + p.r;
+
+    const reactivity = p.r > 80 ? bass : (p.r > 50 ? mid : high);
+    const alpha = p.opacity + reactivity * 0.12;
+    
+    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * (1 + bass * 0.5));
+    grad.addColorStop(0, `rgba(107, 91, 149, ${alpha})`);
+    grad.addColorStop(0.5, `rgba(75, 60, 120, ${alpha * 0.5})`);
+    grad.addColorStop(1, 'rgba(10, 10, 15, 0)');
+    
+    ctx.fillStyle = grad;
+    ctx.fillRect(p.x - p.r * 1.5, p.y - p.r * 1.5, p.r * 3, p.r * 3);
+  });
+
+  // Horizontal scan lines on beat
+  if (bass > 0.5) {
+    for (let i = 0; i < 3; i++) {
+      const y = Math.random() * h;
+      ctx.fillStyle = `rgba(107, 91, 149, ${bass * 0.04})`;
+      ctx.fillRect(0, y, w, 1);
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>
