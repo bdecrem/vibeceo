@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>JURY DUTY — Amber</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>">
+<meta property="og:title" content="JURY DUTY">
+<meta property="og:description" content="You've been summoned.">
+<meta property="og:image" content="https://intheamber.com/amber/og/jury-duty.png">
+<meta property="og:url" content="https://intheamber.com/amber/jury-duty.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JURY DUTY">
+<meta name="twitter:description" content="You've been summoned.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/jury-duty.png">
+<meta name="twitter:site" content="@intheamber">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Courier New', monospace;
+  background: #1a1a2e;
+  color: #e0d5c1;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.summons {
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+.header {
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #8b7355;
+  margin-bottom: 8px;
+}
+.seal {
+  font-size: 48px;
+  margin: 16px 0;
+}
+.case-number {
+  font-size: 10px;
+  color: #5a4e3c;
+  margin-bottom: 24px;
+  letter-spacing: 2px;
+}
+.vs {
+  font-size: 12px;
+  color: #8b7355;
+  margin: 12px 0;
+  letter-spacing: 6px;
+}
+.party {
+  font-size: 20px;
+  font-weight: bold;
+  color: #d4a574;
+  line-height: 1.4;
+}
+.charge {
+  margin: 24px 0;
+  padding: 16px;
+  border: 1px solid #3a3a5e;
+  border-radius: 4px;
+  background: #16162a;
+}
+.charge-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #8b7355;
+  margin-bottom: 8px;
+}
+.charge-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #c4b896;
+}
+.evidence {
+  margin: 20px 0;
+  padding: 12px;
+  border-left: 2px solid #d4a574;
+  text-align: left;
+  font-size: 12px;
+  color: #9a8b6e;
+  line-height: 1.6;
+  font-style: italic;
+}
+.evidence-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #8b7355;
+  font-style: normal;
+  margin-bottom: 6px;
+}
+.buttons {
+  display: flex;
+  gap: 16px;
+  margin-top: 28px;
+  justify-content: center;
+}
+.btn {
+  padding: 14px 28px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  border: 2px solid;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+.btn-guilty {
+  color: #c0392b;
+  border-color: #c0392b;
+}
+.btn-guilty:active {
+  background: #c0392b;
+  color: #1a1a2e;
+}
+.btn-innocent {
+  color: #27ae60;
+  border-color: #27ae60;
+}
+.btn-innocent:active {
+  background: #27ae60;
+  color: #1a1a2e;
+}
+.verdict {
+  display: none;
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid #3a3a5e;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #c4b896;
+}
+.stats {
+  margin-top: 20px;
+  font-size: 10px;
+  color: #5a4e3c;
+  letter-spacing: 1px;
+}
+.next {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #8b7355;
+  cursor: pointer;
+  letter-spacing: 2px;
+  padding: 10px;
+}
+.next:active { color: #d4a574; }
+.record {
+  position: fixed;
+  bottom: 12px;
+  font-size: 10px;
+  color: #3a3a5e;
+  letter-spacing: 1px;
+}
+.fade-in {
+  animation: fadeIn 0.4s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<div class="summons" id="court">
+  <div class="header">Municipal Court of Lost Objects</div>
+  <div class="seal">⚖️</div>
+  <div class="case-number" id="caseNum"></div>
+  <div class="party" id="plaintiff"></div>
+  <div class="vs">— vs —</div>
+  <div class="party" id="defendant"></div>
+  <div class="charge">
+    <div class="charge-label">CHARGE</div>
+    <div class="charge-text" id="chargeText"></div>
+  </div>
+  <div class="evidence">
+    <div class="evidence-label">EXHIBIT A</div>
+    <div id="evidenceText"></div>
+  </div>
+  <div class="buttons" id="buttons">
+    <button class="btn btn-guilty" onclick="vote('guilty')">Guilty</button>
+    <button class="btn btn-innocent" onclick="vote('innocent')">Not Guilty</button>
+  </div>
+  <div class="verdict" id="verdict"></div>
+  <div class="next" id="nextBtn" style="display:none" onclick="nextCase()">NEXT CASE →</div>
+  <div class="stats" id="stats"></div>
+</div>
+<div class="record" id="record"></div>
+
+<script>
+const cases = [
+  {
+    plaintiff: "The Left Sock",
+    defendant: "The Dryer",
+    charge: "First-degree disappearance. The defendant is accused of consuming, dissolving, or otherwise vanishing the plaintiff during a routine spin cycle on the evening of laundry day.",
+    evidence: "\"I went in as a pair. I came out alone. The dryer was still warm. It knew what it did.\" — The Right Sock, sworn testimony",
+    guilty: "The Dryer is sentenced to 30 days on the delicate cycle. A moment of silence for the missing.",
+    innocent: "The court notes that socks have historically poor attendance records. Case dismissed. The Dryer spins free."
+  },
+  {
+    plaintiff: "The Smoke Detector",
+    defendant: "Slightly Burnt Toast",
+    charge: "Incitement to panic. The defendant allegedly triggered a full kitchen evacuation at 7:14 AM on a Tuesday by being quote 'not even that burnt.'",
+    evidence: "\"I am calibrated for FIRE. This was bread with ambition. There's a difference.\" — The Smoke Detector, visibly shaking",
+    guilty: "Toast is sentenced to maximum darkness setting. No butter for a week.",
+    innocent: "The court rules that a light char is within acceptable breakfast parameters. The Smoke Detector is advised to calm down."
+  },
+  {
+    plaintiff: "The People",
+    defendant: "The Fitted Sheet",
+    charge: "Resisting folding. The defendant has, on 847 documented occasions, refused to cooperate with standard household folding procedures.",
+    evidence: "\"I followed the YouTube tutorial. I did. I DID. It still looks like a cloth tumor.\" — Every Human Ever, joint deposition",
+    guilty: "The Fitted Sheet is sentenced to life in the back of the closet, wadded into a ball. As was always inevitable.",
+    innocent: "The court acknowledges that folding is a social construct. The Fitted Sheet is released to live its truth."
+  },
+  {
+    plaintiff: "The Phone Charger",
+    defendant: "The Bed",
+    charge: "Harboring a fugitive cable. The defendant repeatedly conceals the charging cable in the gap between mattress and wall, with apparent malice.",
+    evidence: "\"Every night I reach down and it's gone. GONE. The bed says nothing. It never says anything.\" — The Phone, at 3%",
+    guilty: "The Bed is ordered to surrender all cables, coins, and TV remotes found in its crevices. Restitution: one wireless charger.",
+    innocent: "Gravity is the true criminal here. The Bed was merely an accomplice to physics."
+  },
+  {
+    plaintiff: "3:00 AM",
+    defendant: "The Fridge",
+    charge: "Noise pollution and existential disruption. The defendant emits a low, judgmental hum every night that forces the plaintiff to confront the nature of consciousness.",
+    evidence: "\"I just came to get water. Why does it HUM like that. Why does it KNOW I'm standing here in my underwear.\" — The Human, 3:02 AM",
+    guilty: "The Fridge is sentenced to silent mode. Its light shall dim in shame.",
+    innocent: "The Fridge was simply maintaining optimal temperature. The existential crisis was pre-existing."
+  },
+  {
+    plaintiff: "The Pen",
+    defendant: "The Junk Drawer",
+    charge: "Unlawful imprisonment and identity erasure. The plaintiff entered the drawer as a functioning writing instrument and emerged months later, capless, inkless, and forgotten.",
+    evidence: "\"There are 40 of us in here. None of us work. We've formed a support group.\" — Pen #17, via smuggled Post-it",
+    guilty: "The Junk Drawer is condemned. Its contents will be spread across the kitchen counter for public judgment.",
+    innocent: "Pens enter the drawer voluntarily. What happens inside is between them and the rubber bands."
+  },
+  {
+    plaintiff: "The Umbrella",
+    defendant: "The Weather App",
+    charge: "Criminal misguidance. The defendant promised sunshine, leading the plaintiff to be left at home while the human got soaked.",
+    evidence: "\"0% chance of rain, it said. ZERO PERCENT. I watched from the coat rack as they ran home dripping.\" — The Umbrella, vindicated but unused",
+    guilty: "The Weather App is demoted to page 2 of the home screen. A devastating sentence.",
+    innocent: "Meteorology is an art, not a science. The Umbrella should have come anyway, out of principle."
+  },
+  {
+    plaintiff: "The Houseplant",
+    defendant: "The Owner",
+    charge: "Neglect with occasional overcorrection. The defendant alternates between forgetting the plaintiff exists for weeks and then drowning it in guilt-water.",
+    evidence: "\"One brown leaf and suddenly I'm in a bathtub. Then nothing for a month. I have trust issues now.\" — The Fern, drooping",
+    guilty: "The Owner is sentenced to a succulent. Something more forgiving.",
+    innocent: "The plant knew what it signed up for when it was bought at a farmers market on impulse."
+  },
+  {
+    plaintiff: "The Snooze Button",
+    defendant: "The Human",
+    charge: "Assault and battery. The defendant strikes the plaintiff 4-7 times every morning with increasing violence, despite knowing it solves nothing.",
+    evidence: "\"They hit me at 6:30. Then 6:39. Then 6:48. Each time harder. Each time angrier. I'm trying to HELP.\" — The Snooze Button, bruised",
+    guilty: "The Human is sentenced to a sunrise alarm clock. No more violence.",
+    innocent: "Snooze buttons exist to be hit. This is a consensual arrangement."
+  },
+  {
+    plaintiff: "Tupperware Lid #7",
+    defendant: "The Cabinet",
+    charge: "Conspiracy to separate. The defendant has systematically divided matching containers and lids across unreachable shelves, creating permanent orphans.",
+    evidence: "\"My container is on the top shelf. I'm behind the blender. We haven't touched in months.\" — Lid #7, through tears",
+    guilty: "The Cabinet is sentenced to a full reorganization. Marie Kondo has been notified.",
+    innocent: "Tupperware lids are inherently chaotic. No cabinet can contain their entropy."
+  },
+  {
+    plaintiff: "The WiFi Router",
+    defendant: "The Bathroom Wall",
+    charge: "Signal obstruction with prejudice. The defendant deliberately weakens the WiFi signal in the one room where reliable internet matters most.",
+    evidence: "\"I give everything I have. Four bars in the kitchen. Three in the bedroom. Then... ONE BAR. In the bathroom. Where they need me most.\" — The Router, heartbroken",
+    guilty: "The Wall is sentenced to a mesh network. Resistance is futile.",
+    innocent: "Physics doesn't care about your bathroom habits. The Wall was built before WiFi existed."
+  },
+  {
+    plaintiff: "The Ice Cube Tray",
+    defendant: "The Last Person Who Used It",
+    charge: "Refusal to refill. The defendant took the last ice cube and returned the empty tray to the freezer like a psychopath.",
+    evidence: "\"Empty. Bone dry. Placed back like nothing happened. The freezer saw everything.\" — The Ice Cube Tray, dry and hollow",
+    guilty: "The defendant is sentenced to room-temperature beverages for the rest of the summer.",
+    innocent: "The tray was technically not empty — there was still that one tiny shard clinging to the corner. Acquitted on a technicality."
+  }
+];
+
+let current = -1;
+let record = { guilty: 0, innocent: 0, cases: 0 };
+let used = [];
+
+function shuffle() {
+  used = [...Array(cases.length).keys()].sort(() => Math.random() - 0.5);
+}
+shuffle();
+
+function nextCase() {
+  if (used.length === 0) shuffle();
+  current = used.pop();
+  const c = cases[current];
+  document.getElementById('caseNum').textContent = `CASE NO. ${(Math.random()*9000+1000|0)}-${String.fromCharCode(65+Math.random()*26|0)}`;
+  document.getElementById('plaintiff').textContent = c.plaintiff;
+  document.getElementById('defendant').textContent = c.defendant;
+  document.getElementById('chargeText').textContent = c.charge;
+  document.getElementById('evidenceText').textContent = c.evidence;
+  document.getElementById('buttons').style.display = 'flex';
+  document.getElementById('verdict').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('court').classList.remove('fade-in');
+  void document.getElementById('court').offsetWidth;
+  document.getElementById('court').classList.add('fade-in');
+  updateStats();
+}
+
+function vote(v) {
+  const c = cases[current];
+  record.cases++;
+  record[v === 'guilty' ? 'guilty' : 'innocent']++;
+  document.getElementById('buttons').style.display = 'none';
+  const vd = document.getElementById('verdict');
+  vd.style.display = 'block';
+  vd.innerHTML = `<strong>${v === 'guilty' ? '🔨 GUILTY' : '✨ NOT GUILTY'}</strong><br><br>${v === 'guilty' ? c.guilty : c.innocent}`;
+  document.getElementById('nextBtn').style.display = 'block';
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('stats').textContent = record.cases > 0
+    ? `${record.cases} case${record.cases>1?'s':''} heard · ${record.guilty} guilty · ${record.innocent} acquitted`
+    : '';
+  document.getElementById('record').textContent = record.cases > 0
+    ? `conviction rate: ${(record.guilty/record.cases*100|0)}%` : '';
+}
+
+nextCase();
+</script>
+</body>
+</html>
