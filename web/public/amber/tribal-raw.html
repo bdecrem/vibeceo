@@ -171,12 +171,12 @@ function setupAudio(actx) {
   // Kick: punchy, tuned down, prominent
   engine.setVoiceParam('kick', 'decay', 0.5);
   engine.setVoiceParam('kick', 'tune', -3);
-  engine.setVoiceParam('kick', 'level', 1.0);
+  engine.setVoiceParam('kick', 'level', 0.55);   // -5dB
   engine.setVoiceParam('kick', 'attack', 0.75);
 
   // Hats: starting tight, automation will move the decay
   engine.setVoiceParam('ch', 'decay', 0.1);
-  engine.setVoiceParam('ch', 'level', 0.55);
+  engine.setVoiceParam('ch', 'level', 0.98);     // +5dB
 
   // Redirect engine output to our compressor
   engine.connectOutput(compressor);
