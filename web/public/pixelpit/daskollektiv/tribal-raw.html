@@ -179,8 +179,8 @@ const breathe  = () => Array.from({length:16}, (_,i) => 0.08+0.25*(0.5+0.5*Math.
 const open     = () => Array(16).fill(0.55);
 
 // ─── LEVELS (from SOUL.md recipe) ───
-const KICK_P  = { decay: 0.45, tune: -0.2, level: 0.45, attack: 0.65 };  // -5dB from 0.8
-const FOUR_P  = { decay: 0.4, tune: -0.35, level: 0.4, attack: 0.55 };  // -5dB from 0.7
+const KICK_P  = { decay: 0.45, tune: -0.2, level: 0.25, attack: 0.65 };  // -10dB from 0.8
+const FOUR_P  = { decay: 0.4, tune: -0.35, level: 0.22, attack: 0.55 }; // -10dB from 0.7
 
 // ─── ARRANGEMENT: 52 bars @ 132 BPM ≈ 95 seconds ───
 const scenes = [
