@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>JUMP - Endless Runner</title>
+  
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="JUMP">
+  <meta property="og:description" content="Tap to jump. Don't hit obstacles. Speed increases. How far can you run?">
+  <meta property="og:image" content="https://intheamber.com/amber/jump-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/jump.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="JUMP">
+  <meta name="twitter:description" content="Tap to jump. Don't hit obstacles. Speed increases. How far can you run?">
+  <meta name="twitter:image" content="https://intheamber.com/amber/jump-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: none;
+    }
+    
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 20px;
+    }
+    
+    canvas {
+      border: 2px solid #D4A574;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      cursor: pointer;
+      max-width: 100%;
+      height: auto;
+    }
+    
+    #ui {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+    }
+    
+    #score, #best {
+      color: #FFD700;
+      font-weight: 700;
+    }
+    
+    #gameOver {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.95);
+      border: 3px solid #D4A574;
+      padding: 40px;
+      text-align: center;
+      display: none;
+      z-index: 100;
+      min-width: 300px;
+    }
+    
+    #gameOver h1 {
+      color: #FFD700;
+      font-size: 32px;
+      margin-bottom: 20px;
+    }
+    
+    #gameOver p {
+      font-size: 18px;
+      margin: 10px 0;
+    }
+    
+    #gameOver button {
+      margin-top: 20px;
+      padding: 15px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    #gameOver button:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+    
+    #startScreen {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.95);
+      border: 3px solid #D4A574;
+      padding: 40px;
+      text-align: center;
+      z-index: 100;
+      min-width: 300px;
+    }
+    
+    #startScreen h1 {
+      color: #FFD700;
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    
+    #startScreen p {
+      font-size: 16px;
+      margin: 15px 0;
+      color: #D4A574;
+    }
+    
+    #startScreen button {
+      margin-top: 30px;
+      padding: 20px 60px;
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    #startScreen button:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+    
+    @media (max-width: 600px) {
+      #gameOver, #startScreen {
+        min-width: 80%;
+        padding: 30px 20px;
+      }
+      
+      #startScreen h1 {
+        font-size: 36px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="startScreen">
+    <h1>JUMP</h1>
+    <p>Tap anywhere to jump</p>
+    <p>Don't hit obstacles</p>
+    <p>Speed increases every 20</p>
+    <button id="startBtn">START</button>
+  </div>
+  
+  <div id="container">
+    <canvas id="canvas" width="400" height="300"></canvas>
+    <div id="ui">
+      <div>SCORE: <span id="score">0</span></div>
+      <div>BEST: <span id="best">0</span></div>
+      <div id="speed">SPEED: 1.0x</div>
+    </div>
+  </div>
+  
+  <div id="gameOver">
+    <h1>GAME OVER</h1>
+    <p>SCORE: <span id="finalScore">0</span></p>
+    <p>BEST: <span id="finalBest">0</span></p>
+    <button id="restartBtn">PLAY AGAIN</button>
+  </div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const bestEl = document.getElementById('best');
+    const speedEl = document.getElementById('speed');
+    const gameOverEl = document.getElementById('gameOver');
+    const finalScoreEl = document.getElementById('finalScore');
+    const finalBestEl = document.getElementById('finalBest');
+    const startScreen = document.getElementById('startScreen');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    
+    // Audio context
+    let audioCtx = null;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    function playJump() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
+    }
+    
+    function playPass() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.05);
+    }
+    
+    function playCrash() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+    
+    // Game state
+    let gameState = 'start'; // start, playing, gameOver
+    let score = 0;
+    let bestScore = parseInt(localStorage.getItem('jumpBest')) || 0;
+    let speed = 3;
+    let baseSpeed = 3;
+    
+    // Player
+    const player = {
+      x: 50,
+      y: 240,
+      width: 16,
+      height: 16,
+      velocityY: 0,
+      gravity: 0.6,
+      jumpPower: -12,
+      isJumping: false,
+      groundY: 240,
+      frame: 0,
+      frameCounter: 0
+    };
+    
+    // Obstacles
+    let obstacles = [];
+    let obstacleTimer = 0;
+    let obstacleInterval = 80;
+    
+    // Particles
+    let particles = [];
+    
+    bestEl.textContent = bestScore;
+    
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
+        this.life = 30;
+        this.maxLife = 30;
+        this.color = color;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+      }
+      
+      draw() {
+        const alpha = this.life / this.maxLife;
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = alpha;
+        ctx.fillRect(Math.floor(this.x), Math.floor(this.y), 2, 2);
+        ctx.globalAlpha = 1;
+      }
+    }
+    
+    function createParticleBurst(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    }
+    
+    function drawPlayer() {
+      // Running animation
+      player.frameCounter++;
+      if (player.frameCounter % 10 === 0) {
+        player.frame = (player.frame + 1) % 2;
+      }
+      
+      // Body
+      ctx.fillStyle = '#D4A574';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+      
+      // Eyes
+      ctx.fillStyle = '#000';
+      ctx.fillRect(player.x + 4, player.y + 4, 2, 2);
+      ctx.fillRect(player.x + 10, player.y + 4, 2, 2);
+      
+      // Running legs (alternating)
+      ctx.fillStyle = '#D4A574';
+      if (player.frame === 0) {
+        ctx.fillRect(player.x + 3, player.y + player.height, 4, 4);
+        ctx.fillRect(player.x + 9, player.y + player.height, 4, 4);
+      } else {
+        ctx.fillRect(player.x + 2, player.y + player.height, 4, 4);
+        ctx.fillRect(player.x + 10, player.y + player.height, 4, 4);
+      }
+      
+      // Trail particles
+      if (Math.random() < 0.3) {
+        particles.push(new Particle(player.x + player.width / 2, player.y + player.height, '#D4A574'));
+      }
+    }
+    
+    function drawObstacle(obs) {
+      ctx.fillStyle = '#2D9596';
+      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+      
+      // Spikes on top
+      ctx.fillStyle = '#FFD700';
+      for (let i = 0; i < 3; i++) {
+        ctx.fillRect(obs.x + i * 6, obs.y - 4, 4, 4);
+      }
+    }
+    
+    function drawGround() {
+      ctx.strokeStyle = '#D4A574';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 260);
+      ctx.lineTo(400, 260);
+      ctx.stroke();
+    }
+    
+    function updatePlayer() {
+      // Apply gravity
+      player.velocityY += player.gravity;
+      player.y += player.velocityY;
+      
+      // Ground collision
+      if (player.y >= player.groundY) {
+        player.y = player.groundY;
+        player.velocityY = 0;
+        player.isJumping = false;
+      }
+    }
+    
+    function jump() {
+      if (!player.isJumping && gameState === 'playing') {
+        player.velocityY = player.jumpPower;
+        player.isJumping = true;
+        playJump();
+        createParticleBurst(player.x + player.width / 2, player.y + player.height, '#FFD700', 8);
+      }
+    }
+    
+    function updateObstacles() {
+      obstacleTimer++;
+      
+      // Spawn new obstacles
+      if (obstacleTimer > obstacleInterval) {
+        obstacles.push({
+          x: 400,
+          y: 244,
+          width: 16,
+          height: 16,
+          passed: false
+        });
+        obstacleTimer = 0;
+      }
+      
+      // Move obstacles
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].x -= speed;
+        
+        // Check if passed
+        if (!obstacles[i].passed && obstacles[i].x + obstacles[i].width < player.x) {
+          obstacles[i].passed = true;
+          score++;
+          scoreEl.textContent = score;
+          playPass();
+          
+          // Increase speed every 20
+          if (score % 20 === 0) {
+            speed += 0.5;
+            speedEl.textContent = `SPEED: ${(speed / baseSpeed).toFixed(1)}x`;
+          }
+        }
+        
+        // Remove off-screen obstacles
+        if (obstacles[i].x + obstacles[i].width < 0) {
+          obstacles.splice(i, 1);
+        }
+      }
+    }
+    
+    function checkCollision() {
+      for (let obs of obstacles) {
+        if (player.x < obs.x + obs.width &&
+            player.x + player.width > obs.x &&
+            player.y < obs.y + obs.height &&
+            player.y + player.height > obs.y) {
+          gameOver();
+        }
+      }
+    }
+    
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        if (particles[i].life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+    
+    function gameOver() {
+      gameState = 'gameOver';
+      playCrash();
+      
+      // Create crash particles
+      createParticleBurst(player.x + player.width / 2, player.y + player.height / 2, '#FF4444', 30);
+      
+      // Update best score
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('jumpBest', bestScore);
+      }
+      
+      finalScoreEl.textContent = score;
+      finalBestEl.textContent = bestScore;
+      bestEl.textContent = bestScore;
+      
+      setTimeout(() => {
+        gameOverEl.style.display = 'block';
+      }, 500);
+    }
+    
+    function resetGame() {
+      gameState = 'playing';
+      score = 0;
+      speed = baseSpeed;
+      obstacles = [];
+      particles = [];
+      obstacleTimer = 0;
+      player.y = player.groundY;
+      player.velocityY = 0;
+      player.isJumping = false;
+      scoreEl.textContent = score;
+      speedEl.textContent = 'SPEED: 1.0x';
+      gameOverEl.style.display = 'none';
+    }
+    
+    function gameLoop() {
+      // Clear with fade effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      drawGround();
+      
+      if (gameState === 'playing') {
+        updatePlayer();
+        updateObstacles();
+        checkCollision();
+      }
+      
+      updateParticles();
+      
+      // Draw everything
+      particles.forEach(p => p.draw());
+      obstacles.forEach(obs => drawObstacle(obs));
+      drawPlayer();
+      
+      requestAnimationFrame(gameLoop);
+    }
+    
+    // Event listeners
+    canvas.addEventListener('click', () => {
+      initAudio();
+      jump();
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      initAudio();
+      jump();
+    });
+    
+    startBtn.addEventListener('click', () => {
+      initAudio();
+      startScreen.style.display = 'none';
+      resetGame();
+    });
+    
+    restartBtn.addEventListener('click', () => {
+      resetGame();
+    });
+    
+    // Start game loop
+    gameLoop();
+  </script>
+</body>
+</html>
