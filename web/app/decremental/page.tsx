@@ -608,7 +608,7 @@ export default function KochitoLabsAscii() {
           className={`${poppins.className} w-full max-w-3xl text-sm leading-relaxed mb-8 px-1`}
           style={{ color: "#555" }}
         >
-          Tools, prototypes, and incomplete thoughts we built with AI over 9 months, some open source, mostly in one <a href="https://github.com/bdecrem/vibeceo" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>mono-slop-repo</a>: a clean iOS client for OpenClaw, Claude Code for music, an AI sidekick that posts on Twitter and trades stocks, apps you evolve by asking for new features, a responsible AI incubator concept, and more.
+          Tools, prototypes, and incomplete thoughts we built with AI over 9 months, some open source, mostly in one <a href="https://github.com/bdecrem/vibeceo" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>mono-slop-repo</a>: an OpenClaw iPhone app, Claude Code for music, a verbose AI sidekick that posts on Twitter and trades stocks, apps you evolve by asking for new features, a responsible AI incubator concept, and more.
         </p>
 
         {/* Terminal window */}
