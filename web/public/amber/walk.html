@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WALK — Random walk sequencer</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="WALK — Random walk sequencer">
+  <meta property="og:description" content="Particles drift randomly, playing gentle melodies as they trace glowing paths.">
+  <meta property="og:image" content="https://intheamber.com/amber/walk-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/walk.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="WALK — Random walk sequencer">
+  <meta name="twitter:description" content="Particles drift randomly, playing gentle melodies as they trace glowing paths.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/walk-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    #canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 100vh;
+      cursor: crosshair;
+    }
+
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 14px;
+      z-index: 10;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+    }
+
+    #title {
+      font-size: 24px;
+      color: #FFD700;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    #stats {
+      font-size: 12px;
+      color: #2D9596;
+      line-height: 1.6;
+    }
+
+    #startButton {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px 40px;
+      font-size: 20px;
+      font-family: 'Space Mono', monospace;
+      color: #000;
+      background: #FFD700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+      z-index: 20;
+      transition: all 0.3s;
+    }
+
+    #startButton:hover {
+      background: #D4A574;
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    #startButton.hidden {
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      #title { font-size: 18px; }
+      #stats { font-size: 11px; }
+      #startButton { 
+        font-size: 16px; 
+        padding: 15px 30px; 
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div id="title">WALK</div>
+    <div id="stats">
+      Walkers: <span id="walkerCount">0</span><br>
+      Steps: <span id="stepCount">0</span><br>
+      <br>
+      Tap to add walker
+    </div>
+  </div>
+
+  <button id="startButton">START</button>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const startButton = document.getElementById('startButton');
+
+    let audioStarted = false;
+    let audioCtx;
+    let walkers = [];
+    let stepCount = 0;
+
+    // Canvas setup
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // D minor pentatonic scale (D4 to F5)
+    const scale = [293.66, 349.23, 392.00, 440.00, 523.25, 587.33, 698.46];
+    
+    // Color palette
+    const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#FF69B4', '#FF6B6B', '#4ECDC4'];
+
+    class Walker {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.pitch = scale[Math.floor(Math.random() * scale.length)];
+        this.path = [{x, y}];
+        this.stepDelay = 500; // ms between steps
+        this.lastStep = Date.now();
+        this.stepSize = 30;
+        this.alpha = 1.0;
+      }
+
+      step() {
+        // Random walk: 4 directions
+        const dir = Math.floor(Math.random() * 4);
+        
+        if (dir === 0) this.y -= this.stepSize; // up
+        else if (dir === 1) this.y += this.stepSize; // down
+        else if (dir === 2) this.x -= this.stepSize; // left
+        else this.x += this.stepSize; // right
+
+        // Wrap around edges
+        if (this.x < 0) this.x = canvas.width;
+        if (this.x > canvas.width) this.x = 0;
+        if (this.y < 0) this.y = canvas.height;
+        if (this.y > canvas.height) this.y = 0;
+
+        this.path.push({x: this.x, y: this.y});
+        
+        // Keep path manageable
+        if (this.path.length > 100) {
+          this.path.shift();
+        }
+
+        // Play note
+        if (audioStarted) {
+          playNote(this.pitch);
+          stepCount++;
+          document.getElementById('stepCount').textContent = stepCount;
+        }
+      }
+
+      update() {
+        const now = Date.now();
+        if (now - this.lastStep > this.stepDelay) {
+          this.step();
+          this.lastStep = now;
+        }
+      }
+
+      draw() {
+        // Draw path with gradient fade
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        
+        ctx.beginPath();
+        for (let i = 0; i < this.path.length; i++) {
+          const p = this.path[i];
+          const alpha = (i / this.path.length) * 0.5; // Fade older parts
+          ctx.globalAlpha = alpha;
+          
+          if (i === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+
+        // Draw walker particle
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    function playNote(freq) {
+      if (!audioCtx) return;
+
+      const now = audioCtx.currentTime;
+      
+      // Oscillator (gentle sine wave)
+      const osc = audioCtx.createOscillator();
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+
+      // Gain envelope
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.08, now + 0.01); // Attack
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4); // Decay
+
+      // Lowpass filter for warmth
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 1200;
+      filter.Q.value = 1;
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.4);
+    }
+
+    function addWalker(x, y) {
+      walkers.push(new Walker(x, y));
+      document.getElementById('walkerCount').textContent = walkers.length;
+    }
+
+    function animate() {
+      // Fade effect for trails
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Update and draw walkers
+      walkers.forEach(walker => {
+        walker.update();
+        walker.draw();
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    // Start audio on button click
+    startButton.addEventListener('click', () => {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioStarted = true;
+      startButton.classList.add('hidden');
+
+      // Start with 3 walkers
+      addWalker(canvas.width * 0.3, canvas.height * 0.5);
+      addWalker(canvas.width * 0.5, canvas.height * 0.5);
+      addWalker(canvas.width * 0.7, canvas.height * 0.5);
+    });
+
+    // Add walker on click/tap
+    canvas.addEventListener('click', (e) => {
+      if (!audioStarted) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      addWalker(x, y);
+      
+      // Play a tone on click
+      playNote(440);
+    });
+
+    // Touch support
+    canvas.addEventListener('touchstart', (e) => {
+      if (!audioStarted) return;
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      
+      addWalker(x, y);
+      playNote(440);
+    });
+
+    // Start animation loop
+    animate();
+  </script>
+</body>
+</html>
