@@ -63,7 +63,7 @@ const projects: Project[] = [
     image: null,
     shortDesc: "apps that evolve",
     fullDesc: "ask your todo list for a new feature, it builds it. source is yours.",
-    status: "wip",
+    status: "respinning",
     order: -2,
   },
   {
@@ -83,7 +83,7 @@ const projects: Project[] = [
     image: null,
     shortDesc: "daily startup idea generator",
     fullDesc: "market analysis included. usefulness tbd.",
-    status: "wip",
+    status: "respinning",
     order: 1,
   },
   {
@@ -230,6 +230,15 @@ function StatusIndicator({ status, emoji }: { status: ProjectStatus; emoji?: str
     );
   }
 
+  if (status === "respinning") {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: "#c9b458", animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" }} />
+        <span className="text-xs" style={{ color: "#c9b458" }}>booting up</span>
+      </span>
+    );
+  }
+
   if (status === "neglected") {
     return (
       <span className="inline-flex items-center gap-1.5">
@@ -253,7 +262,7 @@ function StatusIndicator({ status, emoji }: { status: ProjectStatus; emoji?: str
     <span className="inline-flex items-center gap-1.5">
       <span className="inline-block h-2 w-2 rounded-full border" style={{ borderColor: "#444", backgroundColor: "transparent" }} />
       <span className="text-xs" style={{ color: "#555" }}>
-        rip{emoji && <span className="ml-1" style={{ fontSize: "0.6rem" }}>{emoji}</span>}
+        🫗†
       </span>
     </span>
   );
