@@ -545,6 +545,28 @@ export default function AmberFeed({
           overflow: hidden;
         }
 
+        .feed-view-all {
+          display: block;
+          width: 100%;
+          margin-top: 2rem;
+          padding: 1rem;
+          background: transparent;
+          border: 1px solid rgba(212, 165, 116, 0.15);
+          border-radius: 8px;
+          color: var(--text-muted);
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          letter-spacing: 0.05em;
+        }
+
+        .feed-view-all:hover {
+          color: var(--amber-300);
+          border-color: rgba(212, 165, 116, 0.3);
+          background: rgba(212, 165, 116, 0.05);
+        }
+
         /* Loading State */
         .feed-loading {
           display: flex;
@@ -1170,6 +1192,12 @@ export default function AmberFeed({
               {feedItems.map((item) => (
                 <FeedCard key={item.id} item={item} />
               ))}
+              <a
+                href="/amber/drawer"
+                className="feed-view-all"
+              >
+                View All
+              </a>
             </div>
           )}
         </section>
