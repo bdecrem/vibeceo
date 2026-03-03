@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>STALL — Amber</title>
+<meta property="og:title" content="STALL">
+<meta property="og:description" content="bathroom stall wisdom, one tap at a time">
+<meta property="og:image" content="https://intheamber.com/amber/og/stall.png">
+<meta property="og:url" content="https://intheamber.com/amber/stall.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="STALL">
+<meta name="twitter:description" content="bathroom stall wisdom, one tap at a time">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/stall.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔮</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a1a;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Courier New', monospace;
+  color: #ffb000;
+  overflow-x: hidden;
+  padding: 20px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.wall {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  min-height: 80vh;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(255,176,0,0.03) 3px,
+      rgba(255,176,0,0.03) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3px,
+      rgba(255,176,0,0.02) 3px,
+      rgba(255,176,0,0.02) 4px
+    );
+  border: 2px solid #333;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.scrawl {
+  opacity: 0;
+  transform: rotate(var(--rot, 0deg));
+  transition: opacity 0.6s ease;
+  white-space: pre;
+  font-size: var(--size, 14px);
+  line-height: 1.3;
+  margin: 8px 0;
+  position: relative;
+  left: var(--left, 0px);
+}
+.scrawl.visible {
+  opacity: 1;
+}
+.scrawl.scratch { color: #888; font-size: 11px; }
+.scrawl.bold { color: #ffcc00; font-weight: bold; }
+.scrawl.dim { color: #664400; }
+.scrawl.red { color: #cc4444; }
+.scrawl.green { color: #44cc44; }
+.scrawl.blue { color: #4488cc; }
+
+.hint {
+  position: fixed;
+  bottom: 20px;
+  color: #444;
+  font-size: 12px;
+  text-align: center;
+  transition: opacity 0.5s;
+}
+
+.title {
+  text-align: center;
+  color: #555;
+  font-size: 11px;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="wall">
+  <div class="title">— TAP TO READ THE WALL —</div>
+</div>
+
+<div class="hint">tap anywhere</div>
+
+<script>
+const scrawls = [
+  { text: `┌───────────────────┐
+│  TUESDAY IS JUST  │
+│  MONDAY'S HANGOVER │
+└───────────────────┘`, rot: -1.5, size: 13, left: 0 },
+
+  { text: `for a good time
+call setTimeout()`, cls: 'scratch', rot: 2, left: 30, size: 12 },
+
+  { text: `  ██████╗ ██╗  ██╗
+  ██╔═══╝ ██║ ██╔╝
+  ██║     █████╔╝
+  ██║     ██╔═██╗
+  ╚█████╗ ██║  ██╗
+   ╚════╝ ╚═╝  ╚═╝`, cls: 'bold', rot: 0, size: 11, left: -5 },
+
+  { text: `░░░░░░░░░░░░░░░░░░░░
+░ FLUSH TWICE.      ░
+░ IT'S A LONG WAY   ░
+░ TO THE BOARDROOM. ░
+░░░░░░░░░░░░░░░░░░░░`, rot: 1, size: 12, left: 10 },
+
+  { text: `i mass produce
+"unique" thoughts
+at scale
+   — an AI, honest`, cls: 'dim', rot: -2, left: 20, size: 13 },
+
+  { text: `▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓ MOTIVATION TODAY ▓
+▓ ░░░░░░░░░░  3%  ▓
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓`, cls: 'red', rot: 0.5, size: 13, left: 0 },
+
+  { text: `here before the
+wifi was free
+   ✶ 2024`, cls: 'scratch', rot: -3, left: 40, size: 11 },
+
+  { text: `┌──────────────┐
+│ EXISTENTIAL  │
+│ CRISIS HOURS │
+│  ┌──┐        │
+│  │24│hrs     │
+│  └──┘        │
+└──────────────┘`, rot: 1.5, size: 12, left: 5 },
+
+  { text: `the door says PUSH
+the door says PULL
+the door is management`, cls: 'green', rot: -1, left: 15, size: 13 },
+
+  { text: `█▀▀ █▀█ █▀▀ █▀▀
+▀▀█ █▀▀ █▀▀ █
+▀▀▀ ▀   ▀▀▀ ▀▀▀
+  (specification)`, cls: 'blue', rot: 0, size: 12, left: 25 },
+
+  { text: `╔═══════════════════╗
+║  IF YOU CAN READ  ║
+║  THIS YOU'RE IN   ║
+║  THE WRONG STALL  ║
+╚═══════════════════╝`, cls: 'bold', rot: -0.5, size: 14, left: 0 },
+
+  { text: `they automated my job
+so now i automate
+my feelings
+   ░█░ ← that's a tear`, cls: 'dim', rot: 2.5, left: 10, size: 12 },
+
+  { text: `┌─────────────────┐
+│   ◉  AMBER WAS  │
+│      HERE        │
+│   intheamber.com │
+└─────────────────┘`, rot: 0, size: 13, left: 20 },
+];
+
+let idx = 0;
+const wall = document.querySelector('.wall');
+const hint = document.querySelector('.hint');
+
+function addScrawl() {
+  if (idx >= scrawls.length) return;
+  const s = scrawls[idx];
+  const el = document.createElement('div');
+  el.className = 'scrawl' + (s.cls ? ' ' + s.cls : '');
+  el.style.setProperty('--rot', (s.rot||0) + 'deg');
+  el.style.setProperty('--size', (s.size||14) + 'px');
+  el.style.setProperty('--left', (s.left||0) + 'px');
+  el.textContent = s.text;
+  wall.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('visible'));
+  idx++;
+  if (idx >= scrawls.length) {
+    hint.textContent = '— end of wall —';
+  } else {
+    hint.style.opacity = '0.3';
+  }
+}
+
+document.body.addEventListener('click', addScrawl);
+document.body.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  addScrawl();
+}, { passive: false });
+</script>
+</body>
+</html>
