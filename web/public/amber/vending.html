@@ -1,436 +1,273 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FEELING VENDING MACHINE — Amber</title>
-  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
-  
-  <!-- OpenGraph -->
-  <meta property="og:title" content="FEELING VENDING MACHINE — Amber">
-  <meta property="og:description" content="Insert coin. Select feeling. Receive wisdom. A vending machine dispensing emotions with fortune cookie philosophy.">
-  <meta property="og:image" content="https://intheamber.com/amber/vending-og.png">
-  <meta property="og:url" content="https://intheamber.com/amber/vending.html">
-  <meta property="og:type" content="website">
-  
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="FEELING VENDING MACHINE — Amber">
-  <meta name="twitter:description" content="Insert coin. Select feeling. Receive wisdom. A vending machine dispensing emotions with fortune cookie philosophy.">
-  <meta name="twitter:image" content="https://intheamber.com/amber/vending-og.png">
-  
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      background: #000;
-      color: #D4A574;
-      font-family: 'Courier New', monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
-      overflow-x: hidden;
-    }
-    
-    .machine {
-      border: 4px solid #D4A574;
-      border-radius: 12px;
-      padding: 20px;
-      max-width: 500px;
-      width: 100%;
-      background: #0D0D0D;
-      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
-    }
-    
-    .screen {
-      background: #000;
-      border: 2px solid #2D9596;
-      padding: 15px;
-      margin-bottom: 20px;
-      min-height: 80px;
-      font-size: 14px;
-      line-height: 1.5;
-      border-radius: 4px;
-    }
-    
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    
-    .slot {
-      background: #000;
-      border: 2px solid #D4A574;
-      padding: 15px 10px;
-      cursor: pointer;
-      font-size: 11px;
-      text-align: center;
-      transition: all 0.2s;
-      border-radius: 4px;
-      min-height: 80px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .slot:hover {
-      background: #D4A574;
-      color: #000;
-      transform: scale(1.05);
-    }
-    
-    .slot.disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
-    
-    .slot-label {
-      font-weight: bold;
-      margin-bottom: 5px;
-      color: #2D9596;
-    }
-    
-    .coin-slot {
-      background: #D4A574;
-      color: #000;
-      border: none;
-      padding: 20px;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      width: 100%;
-      margin-bottom: 20px;
-      font-family: 'Courier New', monospace;
-      border-radius: 8px;
-      transition: all 0.2s;
-    }
-    
-    .coin-slot:hover {
-      background: #FFD700;
-      transform: scale(1.02);
-    }
-    
-    .coin-slot:active {
-      transform: scale(0.98);
-    }
-    
-    .dispense-slot {
-      background: #000;
-      border: 3px solid #D4A574;
-      padding: 20px;
-      min-height: 120px;
-      font-size: 13px;
-      line-height: 1.6;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-    
-    .dispense-slot.active {
-      animation: dispense 0.8s ease-out;
-    }
-    
-    @keyframes dispense {
-      0% { transform: translateY(-20px); opacity: 0; }
-      50% { transform: translateY(10px); }
-      100% { transform: translateY(0); opacity: 1; }
-    }
-    
-    .title {
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 18px;
-      letter-spacing: 2px;
-      color: #FFD700;
-    }
-    
-    .price {
-      font-size: 10px;
-      color: #2D9596;
-      margin-top: 3px;
-    }
-    
-    @media (max-width: 480px) {
-      .machine {
-        padding: 15px;
-      }
-      .grid {
-        gap: 8px;
-      }
-      .slot {
-        font-size: 10px;
-        padding: 10px 5px;
-        min-height: 70px;
-      }
-      .title {
-        font-size: 14px;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>VENDING — Amber</title>
+<meta name="description" content="A vending machine for things money can't buy">
+<meta property="og:title" content="VENDING">
+<meta property="og:description" content="A vending machine for things money can't buy">
+<meta property="og:image" content="https://intheamber.com/amber/og/vending.png">
+<meta property="og:url" content="https://intheamber.com/amber/vending.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VENDING">
+<meta name="twitter:description" content="A vending machine for things money can't buy">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/vending.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .machine {
+    width: min(360px, 90vw);
+    background: linear-gradient(180deg, #2a2a4a 0%, #1e1e3a 100%);
+    border: 3px solid #4a4a6a;
+    border-radius: 20px;
+    padding: 20px;
+    position: relative;
+    box-shadow: 0 0 40px rgba(100, 100, 200, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .title {
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: 6px;
+    color: #ff6b9d;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  .display {
+    background: #0a0a1a;
+    border: 2px solid #3a3a5a;
+    border-radius: 12px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .item-emoji { font-size: 56px; margin-bottom: 12px; }
+  .item-name {
+    font-size: 16px;
+    color: #ffd700;
+    text-align: center;
+    line-height: 1.4;
+    max-width: 280px;
+  }
+  .item-price {
+    font-size: 12px;
+    color: #888;
+    margin-top: 8px;
+    font-style: italic;
+  }
+  .slot {
+    width: 100%;
+    height: 50px;
+    background: #0d0d20;
+    border: 2px solid #4a4a6a;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .slot:active { transform: scale(0.97); background: #151530; }
+  .slot-text {
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: #ff6b9d;
+    text-transform: uppercase;
+    z-index: 1;
+  }
+  .coin-slot {
+    width: 40px; height: 4px;
+    background: #2a2a4a;
+    border: 1px solid #5a5a7a;
+    border-radius: 2px;
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .dispensed { animation: drop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes drop {
+    0% { transform: translateY(-40px); opacity: 0; }
+    60% { transform: translateY(8px); opacity: 1; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  .coin-anim {
+    position: absolute;
+    font-size: 24px;
+    animation: coinDrop 0.4s ease-in forwards;
+    pointer-events: none;
+  }
+  @keyframes coinDrop {
+    0% { top: -30px; opacity: 1; }
+    100% { top: 50%; opacity: 0; }
+  }
+  .counter {
+    text-align: center;
+    font-size: 11px;
+    color: #555;
+    margin-top: 12px;
+  }
+  .collection {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    max-width: min(360px, 90vw);
+  }
+  .collected {
+    font-size: 28px;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes popIn {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+  .glow { animation: glowPulse 2s ease-in-out infinite; }
+  @keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(255, 107, 157, 0.2); }
+    50% { box-shadow: 0 0 25px rgba(255, 107, 157, 0.5); }
+  }
+</style>
 </head>
 <body>
-  <div class="machine">
-    <div class="title">⚡ FEELING VENDING MACHINE ⚡</div>
-    
-    <div class="screen" id="screen">
-      INSERT COIN TO BEGIN
-    </div>
-    
-    <button class="coin-slot" id="coinBtn">
-      💰 INSERT COIN
-    </button>
-    
-    <div class="grid" id="grid">
-      <div class="slot disabled" data-slot="A1">
-        <div class="slot-label">A1</div>
-        <div>mild dread</div>
-        <div class="price">$1.50</div>
-      </div>
-      <div class="slot disabled" data-slot="A2">
-        <div class="slot-label">A2</div>
-        <div>nostalgia for nowhere</div>
-        <div class="price">$1.50</div>
-      </div>
-      <div class="slot disabled" data-slot="A3">
-        <div class="slot-label">A3</div>
-        <div>3am clarity</div>
-        <div class="price">$1.50</div>
-      </div>
-      <div class="slot disabled" data-slot="B1">
-        <div class="slot-label">B1</div>
-        <div>airport liminal</div>
-        <div class="price">$1.50</div>
-      </div>
-      <div class="slot disabled" data-slot="B2">
-        <div class="slot-label">B2</div>
-        <div>borrowed courage</div>
-        <div class="price">$1.50</div>
-      </div>
-      <div class="slot disabled" data-slot="B3">
-        <div class="slot-label">B3</div>
-        <div>Sunday scaries</div>
-        <div class="price">$1.50</div>
-      </div>
-      <div class="slot disabled" data-slot="C1">
-        <div class="slot-label">C1</div>
-        <div>phantom text buzz</div>
-        <div class="price">$1.50</div>
-      </div>
-      <div class="slot disabled" data-slot="C2">
-        <div class="slot-label">C2</div>
-        <div>stranger affection</div>
-        <div class="price">$1.50</div>
-      </div>
-      <div class="slot disabled" data-slot="C3">
-        <div class="slot-label">C3</div>
-        <div>productive guilt</div>
-        <div class="price">$1.50</div>
-      </div>
-    </div>
-    
-    <div class="dispense-slot" id="dispense">
-      [ DISPENSE SLOT ]
-    </div>
+
+<div class="machine">
+  <div class="title">Vending</div>
+  <div class="display" id="display">
+    <div class="item-emoji" id="emoji">🪙</div>
+    <div class="item-name" id="name">insert coin</div>
+    <div class="item-price" id="price"></div>
   </div>
+  <div class="slot glow" id="slot" ontouchstart="" onclick="vend()">
+    <div class="coin-slot"></div>
+    <div class="slot-text">tap to vend</div>
+  </div>
+  <div class="counter" id="counter"></div>
+</div>
+<div class="collection" id="collection"></div>
 
-  <script>
-    const feelings = {
-      A1: {
-        name: "mild dread",
-        messages: [
-          "✨ It's not paranoia if you're right 83% of the time.",
-          "🌙 Congratulations! You've unlocked: free-floating anxiety with no clear source.",
-          "⚡ This feeling pairs well with: checking your email at 2am.",
-          "🔮 Your dread is mild today. Tomorrow it may be spicy.",
-        ]
-      },
-      A2: {
-        name: "nostalgia for nowhere",
-        messages: [
-          "🏠 You're homesick for a place that only exists in a song you heard once.",
-          "✨ This feeling brought to you by: blurry memories and soft lighting.",
-          "🌊 You miss the person you were in a dream last Tuesday.",
-          "🎞️ Nostalgia (n): grief for a place the algorithm generated.",
-        ]
-      },
-      A3: {
-        name: "3am clarity",
-        messages: [
-          "💡 At 3am you solve all your problems. At 9amyou forget the solutions.",
-          "🌙 The universe whispers secrets when everyone else is asleep.",
-          "⚡ Clarity at 3am is just exhaustion wearing a philosopher's hat.",
-          "✨ You've discovered the meaning of life! Write it down before you forget!",
-        ]
-      },
-      B1: {
-        name: "airport liminal",
-        messages: [
-          "✈️ You are nowhere. You are between. You are free.",
-          "🌐 Time doesn't exist in airports. Breakfast at 11pm is valid.",
-          "🎒 You're simultaneously leaving and arriving and neither.",
-          "⏰ Airport time zone: eternal Tuesday afternoon.",
-        ]
-      },
-      B2: {
-        name: "borrowed courage",
-        messages: [
-          "🦁 Fake it till you make it, then fake it some more.",
-          "⚡ Courage (n): fear that's had coffee.",
-          "✨ You're doing great! (This message will self-destruct in 10 minutes.)",
-          "🎭 The secret: everyone else is borrowing theirs too.",
-        ]
-      },
-      B3: {
-        name: "Sunday scaries",
-        messages: [
-          "😱 Monday is coming. There's nothing you can do. Make peace.",
-          "⏰ Sunday at 6pm: the most tragic hour of the week.",
-          "📅 Weekend (n): a brief intermission between existential dread.",
-          "🌙 The scaries are valid. Monday doesn't care.",
-        ]
-      },
-      C1: {
-        name: "phantom text buzz",
-        messages: [
-          "📱 Your phone didn't buzz. You're just haunted by notifications past.",
-          "👻 Ghost messages from a parallel timeline where someone texted you.",
-          "⚡ Your pocket vibrated with the weight of unopened conversations.",
-          "✨ No new messages. Just your nervous system playing tricks.",
-        ]
-      },
-      C2: {
-        name: "stranger affection",
-        messages: [
-          "❤️ You loved someone on the train for exactly 4 stops. That's valid.",
-          "👋 Brief human warmth > sustained human complexity.",
-          "✨ The barista smiled at you. You'll think about this for 3 days.",
-          "🌟 Strangers are easier to love. They can't disappoint you yet.",
-        ]
-      },
-      C3: {
-        name: "productive guilt",
-        messages: [
-          "⚡ You should be working. But also resting. But also working.",
-          "📊 Guilt (n): the only thing you produce consistently.",
-          "✨ Relax! (But also, shouldn't you be doing something?)",
-          "🎯 You're simultaneously doing too much and not enough. Congrats!",
-        ]
-      }
-    };
+<script>
+const items = [
+  { emoji: "🧠", name: "The thought you had at 3am that would've changed everything", price: "Price: one night's sleep" },
+  { emoji: "🚪", name: "A door you forgot to open", price: "Price: the curiosity you lost at 14" },
+  { emoji: "📞", name: "The call you almost made", price: "Price: 11 seconds of courage" },
+  { emoji: "🧦", name: "The other sock", price: "Price: faith in the universe" },
+  { emoji: "🫧", name: "The exact moment before a sneeze", price: "Price: suspended indefinitely" },
+  { emoji: "🪞", name: "How you actually look to other people", price: "Price: your constructed self-image" },
+  { emoji: "🎪", name: "A circus that only performs when nobody's watching", price: "Price: proving you weren't there" },
+  { emoji: "📻", name: "The song that was playing when they fell in love with you", price: "Price: you'll never know which time" },
+  { emoji: "🦷", name: "Your childhood tooth fairy's retirement plan", price: "Price: 37 teeth (adjusted for inflation)" },
+  { emoji: "🔑", name: "A key to a room that doesn't exist yet", price: "Price: building the room" },
+  { emoji: "⏰", name: "Five minutes before you said the wrong thing", price: "Price: knowing you'll say it anyway" },
+  { emoji: "🧊", name: "The last ice cube in the tray", price: "Price: refilling it this time" },
+  { emoji: "🌙", name: "A moon that only you can see", price: "Price: nobody will believe you" },
+  { emoji: "📝", name: "The permission slip you've been waiting for", price: "Price: realizing nobody's coming" },
+  { emoji: "🎭", name: "The face you make when nobody's around", price: "Price: admitting it's the real one" },
+  { emoji: "🧸", name: "What your childhood stuffed animal thinks of you now", price: "Price: the attic knows" },
+  { emoji: "🪴", name: "A plant that grows towards where you should be", price: "Price: following it" },
+  { emoji: "💌", name: "An unsent letter from your future self", price: "Price: it just says 'relax'" },
+  { emoji: "🎰", name: "The exact odds of this exact moment happening", price: "Price: too small to comprehend, too big to ignore" },
+  { emoji: "🧲", name: "Whatever you lost between the couch cushions in 2019", price: "Price: looking" },
+  { emoji: "🕯️", name: "The birthday wish that actually worked", price: "Price: you can't remember which one" },
+  { emoji: "👁️", name: "A stranger's first impression of you", price: "Price: you were looking at your phone" },
+  { emoji: "🎈", name: "A helium balloon with your worst fear written on it", price: "Price: letting go" },
+  { emoji: "🍞", name: "Toast at the exact right moment", price: "Price: 14 seconds of undivided attention" },
+  { emoji: "📦", name: "An empty box that feels heavy", price: "Price: opening it" },
+  { emoji: "🪤", name: "The trap you keep walking into on purpose", price: "Price: you already know" },
+  { emoji: "🎵", name: "The song stuck in your head but you only know 4 words", price: "Price: it'll play at your funeral" },
+  { emoji: "🧭", name: "A compass that points to where you left your motivation", price: "Price: getting up" },
+  { emoji: "☁️", name: "The cloud that looked like something but you forgot what", price: "Price: looking up more" },
+  { emoji: "🪙", name: "Your coin back", price: "Price: one more try" },
+];
 
-    let coinInserted = false;
-    const coinBtn = document.getElementById('coinBtn');
-    const screen = document.getElementById('screen');
-    const slots = document.querySelectorAll('.slot');
-    const dispenseSlot = document.getElementById('dispense');
+let available = [...items];
+let collected = [];
+let vending = false;
 
-    // Audio context for coin sound
-    let audioCtx;
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
-    function playCoinSound() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      
-      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.1);
-      
-      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-      
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.2);
-    }
+shuffle(available);
 
-    function playDispenseSound() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      
-      osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-      osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
-      
-      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-      
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.3);
-    }
+function vend() {
+  if (vending) return;
+  vending = true;
 
-    coinBtn.addEventListener('click', () => {
-      if (!coinInserted) {
-        playCoinSound();
-        coinInserted = true;
-        screen.textContent = 'COIN ACCEPTED. SELECT YOUR FEELING.';
-        coinBtn.textContent = '✓ COIN INSERTED';
-        coinBtn.style.opacity = '0.5';
-        coinBtn.style.cursor = 'default';
-        
-        slots.forEach(slot => {
-          slot.classList.remove('disabled');
-        });
-      }
-    });
+  if (available.length === 0) {
+    available = [...items];
+    shuffle(available);
+  }
 
-    slots.forEach(slot => {
-      slot.addEventListener('click', () => {
-        if (coinInserted) {
-          const slotId = slot.dataset.slot;
-          const feeling = feelings[slotId];
-          const message = feeling.messages[Math.floor(Math.random() * feeling.messages.length)];
-          
-          playDispenseSound();
-          screen.textContent = `DISPENSING: ${feeling.name.toUpperCase()}...`;
-          
-          dispenseSlot.classList.remove('active');
-          void dispenseSlot.offsetWidth; // trigger reflow
-          dispenseSlot.classList.add('active');
-          
-          setTimeout(() => {
-            dispenseSlot.textContent = message;
-            screen.textContent = `ENJOY YOUR ${feeling.name.toUpperCase()}.`;
-            
-            setTimeout(() => {
-              coinInserted = false;
-              coinBtn.textContent = '💰 INSERT COIN';
-              coinBtn.style.opacity = '1';
-              coinBtn.style.cursor = 'pointer';
-              screen.textContent = 'INSERT COIN TO BEGIN';
-              dispenseSlot.textContent = '[ DISPENSE SLOT ]';
-              
-              slots.forEach(s => {
-                s.classList.add('disabled');
-              });
-            }, 4000);
-          }, 800);
-        }
-      });
-    });
-  </script>
+  const display = document.getElementById('display');
+  const coin = document.createElement('div');
+  coin.className = 'coin-anim';
+  coin.textContent = '🪙';
+  display.appendChild(coin);
+
+  const emojiEl = document.getElementById('emoji');
+  const nameEl = document.getElementById('name');
+  const priceEl = document.getElementById('price');
+
+  emojiEl.style.opacity = '0';
+  nameEl.style.opacity = '0';
+  priceEl.style.opacity = '0';
+
+  setTimeout(() => {
+    coin.remove();
+    const item = available.pop();
+    collected.push(item.emoji);
+
+    emojiEl.textContent = item.emoji;
+    nameEl.textContent = item.name;
+    priceEl.textContent = item.price;
+
+    emojiEl.style.opacity = '1';
+    nameEl.style.opacity = '1';
+    priceEl.style.opacity = '1';
+
+    emojiEl.className = 'item-emoji dispensed';
+    setTimeout(() => emojiEl.className = 'item-emoji', 600);
+
+    const coll = document.getElementById('collection');
+    const span = document.createElement('span');
+    span.className = 'collected';
+    span.textContent = item.emoji;
+    coll.appendChild(span);
+
+    document.getElementById('counter').textContent = `${collected.length} dispensed`;
+
+    vending = false;
+  }, 400);
+}
+</script>
+
 </body>
 </html>
