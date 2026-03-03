@@ -2,16 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DRIFT — Sine waves morph through particle space</title>
-  <meta property="og:title" content="DRIFT — Sine waves morph through particle space">
-  <meta property="og:description" content="A music machine by Amber">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DRIFT — Horizontal drifters make pitch waves</title>
+  <meta property="og:title" content="DRIFT — Horizontal drifters make pitch waves">
+  <meta property="og:description" content="Particles drift horizontally, Y position controls pitch. Tap to add voices. Watch them wander, hear them morph.">
   <meta property="og:image" content="https://intheamber.com/amber/drift-og.png">
-  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://intheamber.com/amber/drift.html">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="DRIFT — Sine waves morph through particle space">
-  <meta name="twitter:description" content="A music machine by Amber">
-  <meta name="twitter:image" content="https://intheamber.com/amber/drift-og.png">
   <style>
     * {
       margin: 0;
@@ -19,449 +16,353 @@
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
     }
-
+    
     body {
-      width: 100vw;
-      height: 100vh;
       background: #000;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
       font-family: 'Space Mono', monospace;
-      color: #D4A574;
       touch-action: none;
     }
-
+    
     canvas {
       display: block;
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
     }
-
-    #overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.95);
-z-index: 10;
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #D4A574;
+      font-size: 14px;
       pointer-events: none;
-      opacity: 1;
-      transition: opacity 0.5s;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+      z-index: 10;
     }
-
-    #overlay.hidden {
-      opacity: 0;
+    
+    #stats {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: #2D9596;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 10;
     }
-
+    
     #startBtn {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px 40px;
       background: #D4A574;
       color: #000;
       border: none;
-      padding: 20px 50px;
-      font-size: 24px;
       font-family: 'Space Mono', monospace;
+      font-size: 18px;
       font-weight: bold;
       cursor: pointer;
       border-radius: 4px;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.6);
+      z-index: 100;
       transition: all 0.2s;
-      margin-bottom: 20px;
-      pointer-events: all;
     }
-
+    
     #startBtn:hover {
       background: #FFD700;
-      transform: scale(1.05);
-    }
-
-    #instruction {
-      font-size: 14px;
-      color: #D4A574;
-      opacity: 0.7;
-      text-align: center;
-      max-width: 500px;
-      line-height: 1.8;
-      padding: 0 20px;
-    }
-
-    #stats {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      font-size: 11px;
-      color: #D4A574;
-      opacity: 0.5;
-      font-family: 'Space Mono', monospace;
-      line-height: 1.8;
-    }
-
-    @media (max-width: 768px) {
-      #startBtn {
-        padding: 16px 40px;
-        font-size: 20px;
-      }
-      #instruction {
-        font-size: 13px;
-      }
-      #stats {
-        font-size: 10px;
-        bottom: 12px;
-        left: 12px;
-      }
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
     }
   </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <canvas id="canvas"></canvas>
-
-  <div id="overlay">
-    <button id="startBtn">START</button>
-    <div id="instruction">
-      Five drones drift through harmonic space<br>
-      Each particle pulls frequencies toward itself<br>
-      Tap to add gravity wells<br>
-      Let it evolve
-    </div>
-  </div>
-
+  <div id="ui">DRIFT</div>
   <div id="stats">
-    DRONES: <span id="droneCount">5</span><br>
-    WELLS: <span id="wellCount">8</span><br>
-    DRIFT: <span id="driftSpeed">slow</span>
+    DRIFTERS: <span id="drifterCount">0</span><br>
+    ENERGY: 0.54 · VALENCE: 0.95
   </div>
+  <button id="startBtn">TAP TO DRIFT</button>
 
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const overlay = document.getElementById('overlay');
     const startBtn = document.getElementById('startBtn');
-    const droneCountStat = document.getElementById('droneCount');
-    const wellCountStat = document.getElementById('wellCount');
-    const driftSpeedStat = document.getElementById('driftSpeed');
-
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
-
-    window.addEventListener('resize', () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-    });
-
-    // Audio setup
+    const drifterCountEl = document.getElementById('drifterCount');
+    
     let audioCtx = null;
     let audioStarted = false;
-
-    // D minor pentatonic frequencies (Hz) - across 3 octaves for variation
-    const scaleFreqs = [
-      146.83, // D3
-      164.81, // E3
-      174.61, // F3
-      220.00, // A3
-      246.94, // B3
-      293.66, // D4
-      329.63, // E4
-      349.23, // F4
-      440.00, // A4
-      493.88, // B4
-      587.33, // D5
-      659.25, // E5
-    ];
-
-    // Drones - continuous sine wave oscillators
-    const drones = [];
-    const DRONE_COUNT = 5;
-
-    class Drone {
-      constructor(index) {
-        this.index = index;
-        this.targetFreq = scaleFreqs[index % scaleFreqs.length];
-        this.currentFreq = this.targetFreq;
-        this.color = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#FF69B4'][index % 5];
-        
-        // Web Audio nodes
-        this.osc = null;
-        this.gain = null;
-        this.filter = null;
-        
-        // Visual position (follows target frequency)
-        this.x = width * (0.2 + (index / DRONE_COUNT) * 0.6);
-        this.y = height / 2;
-        this.size = 15;
-        this.phase = Math.random() * Math.PI * 2; // For breathing animation
-      }
-
-      init(audioContext) {
-        this.osc = audioContext.createOscillator();
-        this.gain = audioContext.createGain();
-        this.filter = audioContext.createBiquadFilter();
-        
-        this.osc.type = 'sine';
-        this.osc.frequency.value = this.currentFreq;
-        
-        this.filter.type = 'lowpass';
-        this.filter.frequency.value = 800;
-        this.filter.Q.value = 1;
-        
-        this.gain.gain.value = 0.08; // Quiet, ambient volume
-        
-        this.osc.connect(this.filter);
-        this.filter.connect(this.gain);
-        this.gain.connect(audioContext.destination);
-        
-        this.osc.start();
-      }
-
-      update(wells) {
-        if (!this.osc) return;
-
-        // Calculate target frequency based on gravity wells
-        let totalPull = 0;
-        let weightedFreq = 0;
-
-        wells.forEach(well => {
-          const dx = well.x - this.x;
-          const dy = well.y - this.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const pull = well.mass / (dist + 50); // Prevent division by zero
-          
-          totalPull += pull;
-          weightedFreq += well.freq * pull;
-        });
-
-        if (totalPull > 0) {
-          this.targetFreq = weightedFreq / totalPull;
-        }
-
-        // Smoothly interpolate toward target frequency (slow drift)
-        this.currentFreq += (this.targetFreq - this.currentFreq) * 0.005;
-        
-        // Apply frequency to oscillator
-        this.osc.frequency.setTargetAtTime(this.currentFreq, audioCtx.currentTime, 0.1);
-
-        // Update visual position based on frequency (map freq to Y position)
-        const freqIndex = scaleFreqs.indexOf(scaleFreqs.reduce((prev, curr) => 
-          Math.abs(curr - this.currentFreq) < Math.abs(prev - this.currentFreq) ? curr : prev
-        ));
-        
-        const targetY = height * 0.2 + (freqIndex / scaleFreqs.length) * height * 0.6;
-        this.y += (targetY - this.y) * 0.01;
-
-        // Update breathing phase
-        this.phase += 0.02;
-      }
-
-      draw() {
-        const breathe = Math.sin(this.phase) * 0.2 + 1.0; // 0.8 to 1.2
-        const size = this.size * breathe;
-
-        // Outer glow
-        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, size * 3);
-        gradient.addColorStop(0, this.color + 'AA');
-        gradient.addColorStop(0.4, this.color + '44');
-        gradient.addColorStop(1, this.color + '00');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(this.x - size * 3, this.y - size * 3, size * 6, size * 6);
-
-        // Core
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Frequency ring
-        ctx.strokeStyle = this.color + '80';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, size * 1.8, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      destroy() {
-        if (this.osc) this.osc.stop();
-        if (this.gain) this.gain.disconnect();
-        if (this.filter) this.filter.disconnect();
-      }
+    let drifters = [];
+    let drifterCount = 0;
+    
+    // Resize canvas
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     }
-
-    // Gravity wells - attract drone frequencies
-    const wells = [];
-
-    class Well {
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Color palette
+    const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#FF69B4', '#FF7F50', '#00CED1'];
+    
+    // D minor pentatonic frequencies (D3 to D6)
+    const baseFreqs = [146.83, 164.81, 174.61, 196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25, 698.46, 783.99, 880.00];
+    
+    class Drifter {
       constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.mass = 150 + Math.random() * 200;
-        this.freq = scaleFreqs[Math.floor(Math.random() * scaleFreqs.length)];
-        this.life = 1.0;
-        this.decay = 0.001; // Very slow fade
-        this.color = '#FFD700';
-        this.pulse = 0;
-      }
-
-      update() {
-        this.life -= this.decay;
-        this.pulse += 0.05;
-      }
-
-      draw() {
-        const pulse = Math.sin(this.pulse) * 0.3 + 0.7;
-        const alpha = Math.floor(this.life * 120).toString(16).padStart(2, '0');
+        this.vx = (Math.random() - 0.5) * 2 + 1; // Horizontal drift speed (1-2 px/frame)
+        this.vy = (Math.random() - 0.5) * 0.3; // Small vertical random walk
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.trail = [];
+        this.maxTrailLength = 50;
         
-        // Radial rings
-        for (let i = 3; i > 0; i--) {
-          ctx.strokeStyle = this.color + Math.floor(alpha * (i / 3) * 0.5).toString(16).padStart(2, '0');
+        // Audio components
+        if (audioCtx) {
+          this.osc = audioCtx.createOscillator();
+          this.osc.type = 'sine';
+          
+          this.gain = audioCtx.createGain();
+          this.gain.gain.value = 0.08; // Quiet individual voices
+          
+          this.filter = audioCtx.createBiquadFilter();
+          this.filter.type = 'lowpass';
+          this.filter.frequency.value = 1200;
+          this.filter.Q.value = 1;
+          
+          this.osc.connect(this.filter);
+          this.filter.connect(this.gain);
+          this.gain.connect(audioCtx.destination);
+          
+          this.osc.start();
+          this.updateFrequency();
+        }
+      }
+      
+      updateFrequency() {
+        if (!this.osc) return;
+        
+        // Map Y position to frequency
+        // Top of screen = high pitch, bottom = low pitch
+        const normalizedY = 1 - (this.y / canvas.height);
+        const freqIndex = Math.floor(normalizedY * (baseFreqs.length - 1));
+        const targetFreq = baseFreqs[Math.max(0, Math.min(baseFreqs.length - 1, freqIndex))];
+        
+        // Smooth frequency transitions
+        this.osc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.1);
+      }
+      
+      update() {
+        // Add to trail
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > this.maxTrailLength) {
+          this.trail.shift();
+        }
+        
+        // Horizontal drift
+        this.x += this.vx;
+        
+        // Vertical random walk
+        this.vy += (Math.random() - 0.5) * 0.1;
+        this.vy *= 0.95; // Damping
+        this.vy = Math.max(-1, Math.min(1, this.vy)); // Clamp
+        this.y += this.vy;
+        
+        // Wrap horizontally
+        if (this.x > canvas.width + 20) {
+          this.x = -20;
+          this.trail = [];
+        }
+        if (this.x < -20) {
+          this.x = canvas.width + 20;
+          this.trail = [];
+        }
+        
+        // Bounce vertically
+        if (this.y < 0) {
+          this.y = 0;
+          this.vy = Math.abs(this.vy);
+        }
+        if (this.y > canvas.height) {
+          this.y = canvas.height;
+          this.vy = -Math.abs(this.vy);
+        }
+        
+        // Update audio frequency based on Y position
+        this.updateFrequency();
+      }
+      
+      draw() {
+        // Draw trail
+        if (this.trail.length > 1) {
+          ctx.strokeStyle = this.color;
           ctx.lineWidth = 2;
+          ctx.globalAlpha = 0.3;
           ctx.beginPath();
-          ctx.arc(this.x, this.y, (this.mass / 10) * pulse * i * 0.5, 0, Math.PI * 2);
+          ctx.moveTo(this.trail[0].x, this.trail[0].y);
+          for (let i = 1; i < this.trail.length; i++) {
+            const alpha = i / this.trail.length;
+            ctx.globalAlpha = 0.3 * alpha;
+            ctx.lineTo(this.trail[i].x, this.trail[i].y);
+          }
           ctx.stroke();
         }
-
-        // Core
-        ctx.fillStyle = this.color + alpha;
+        
+        // Draw particle
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 20;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, 8, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, 6, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      
+      stop() {
+        if (this.osc) {
+          this.gain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+          setTimeout(() => {
+            this.osc.stop();
+          }, 200);
+        }
       }
     }
-
-    // Initialize audio
-    async function startAudio() {
+    
+    function addDrifter(x, y) {
+      const drifter = new Drifter(x, y);
+      drifters.push(drifter);
+      drifterCount++;
+      drifterCountEl.textContent = drifterCount;
+      
+      // Particle burst
+      for (let i = 0; i < 12; i++) {
+        const angle = (Math.PI * 2 * i) / 12;
+        const speed = Math.random() * 3 + 2;
+        createParticle(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed, drifter.color);
+      }
+    }
+    
+    const particles = [];
+    
+    function createParticle(x, y, vx, vy, color) {
+      particles.push({ x, y, vx, vy, life: 1, color });
+    }
+    
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.1; // Gravity
+        p.life -= 0.02;
+        
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+    
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
+    
+    function drawPitchZones() {
+      // Draw subtle horizontal lines showing pitch zones
+      ctx.strokeStyle = '#D4A574';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.05;
+      
+      const zones = 10;
+      for (let i = 0; i <= zones; i++) {
+        const y = (canvas.height / zones) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+      
+      ctx.globalAlpha = 1;
+    }
+    
+    function animate() {
+      // Fade effect for trails
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw pitch zone grid
+      drawPitchZones();
+      
+      // Update and draw drifters
+      drifters.forEach(d => {
+        d.update();
+        d.draw();
+      });
+      
+      // Update and draw particles
+      updateParticles();
+      drawParticles();
+      
+      requestAnimationFrame(animate);
+    }
+    
+    function startAudio() {
       if (audioStarted) return;
-
-      try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // iOS unlock
-        if (audioCtx.state === 'suspended') {
-          await audioCtx.resume();
-        }
-
-        // Create drones
-        for (let i = 0; i < DRONE_COUNT; i++) {
-          const drone = new Drone(i);
-          drone.init(audioCtx);
-          drones.push(drone);
-        }
-
-        // Spawn initial gravity wells
-        for (let i = 0; i < 8; i++) {
-          wells.push(new Well(
-            width * (0.2 + Math.random() * 0.6),
-            height * (0.2 + Math.random() * 0.6)
-          ));
-        }
-
-        audioStarted = true;
-        overlay.classList.add('hidden');
-        
-      } catch (err) {
-        console.error('Audio init error:', err);
-        alert('Audio failed: ' + err.message);
+      
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioStarted = true;
+      startBtn.style.display = 'none';
+      
+      // Spawn 3 initial drifters
+      for (let i = 0; i < 3; i++) {
+        const x = Math.random() * canvas.width;
+        const y = (canvas.height / 4) + Math.random() * (canvas.height / 2);
+        addDrifter(x, y);
       }
     }
-
-    // Handle interaction - add new gravity well
-    function handleInteraction(e) {
+    
+    // Start button
+    startBtn.addEventListener('click', startAudio);
+    
+    // Tap/click to add drifters
+    canvas.addEventListener('click', (e) => {
+      if (!audioStarted) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      addDrifter(x, y);
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
       if (!audioStarted) return;
       
       e.preventDefault();
-      
       const rect = canvas.getBoundingClientRect();
-      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
       
-      wells.push(new Well(x, y));
-    }
-
-    startBtn.addEventListener('click', startAudio);
-    startBtn.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      startAudio();
+      addDrifter(x, y);
     });
-
-    canvas.addEventListener('click', handleInteraction);
-    canvas.addEventListener('touchstart', handleInteraction);
-
-    // Animation loop
-    function animate() {
-      // Dark fade trail
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
-      ctx.fillRect(0, 0, width, height);
-
-      if (audioStarted) {
-        // Update wells
-        for (let i = wells.length - 1; i >= 0; i--) {
-          wells[i].update();
-          wells[i].draw();
-          
-          if (wells[i].life <= 0) {
-            wells.splice(i, 1);
-          }
-        }
-
-        // Draw connection lines from drones to nearby wells
-        drones.forEach(drone => {
-          wells.forEach(well => {
-            const dx = well.x - drone.x;
-            const dy = well.y - drone.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            if (dist < 200) {
-              const alpha = Math.floor((1 - dist / 200) * well.life * 40).toString(16).padStart(2, '0');
-              ctx.strokeStyle = '#2D9596' + alpha;
-              ctx.lineWidth = 1;
-              ctx.beginPath();
-              ctx.moveTo(drone.x, drone.y);
-              ctx.lineTo(well.x, well.y);
-              ctx.stroke();
-            }
-          });
-        });
-
-        // Update and draw drones
-        drones.forEach(drone => {
-          drone.update(wells);
-          drone.draw();
-        });
-
-        // Update stats
-        wellCountStat.textContent = wells.length;
-      } else {
-        // Preview animation - pulsing circles
-        const previewTime = Date.now() * 0.001;
-        for (let i = 0; i < 5; i++) {
-          const x = width * (0.2 + (i / 5) * 0.6);
-          const y = height / 2;
-          const pulse = Math.sin(previewTime * 2 + i * 0.5) * 0.3 + 0.7;
-          const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#FF69B4'];
-          
-          ctx.fillStyle = colors[i] + '40';
-          ctx.beginPath();
-          ctx.arc(x, y, 15 * pulse, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      requestAnimationFrame(animate);
-    }
-
+    
+    // Start animation loop
     animate();
-
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-      drones.forEach(d => d.destroy());
-      if (audioCtx) audioCtx.close();
-    });
   </script>
 </body>
 </html>
