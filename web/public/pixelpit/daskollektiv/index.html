@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DAS KOLLEKTIV</title>
+  <meta name="description" content="Underground generative art and techno beats. Techno meets punk energy.">
+  <meta property="og:title" content="DAS KOLLEKTIV">
+  <meta property="og:description" content="Underground generative art and techno beats.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://daskollektiv.rip">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Share Tech Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Scanline overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.15) 2px,
+        rgba(0, 0, 0, 0.15) 4px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    canvas#bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 60px 24px;
+    }
+
+    /* Logo */
+    .logo {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .logo h1 {
+      font-size: clamp(32px, 8vw, 64px);
+      letter-spacing: 0.3em;
+      color: #ff003c;
+      text-shadow:
+        0 0 20px rgba(255, 0, 60, 0.6),
+        0 0 40px rgba(255, 0, 60, 0.3);
+      line-height: 1;
+    }
+
+    .logo .sub {
+      font-size: clamp(10px, 2.5vw, 14px);
+      letter-spacing: 0.6em;
+      color: #666;
+      margin-top: 8px;
+      text-transform: uppercase;
+    }
+
+    /* Divider */
+    .divider {
+      border: none;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #ff003c, transparent);
+      margin: 48px 0;
+      opacity: 0.4;
+    }
+
+    /* Manifesto */
+    .manifesto {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .manifesto p {
+      font-size: clamp(14px, 3vw, 18px);
+      line-height: 1.8;
+      color: #888;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .manifesto .highlight {
+      color: #ff003c;
+    }
+
+    /* Members */
+    .members {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+
+    @media (max-width: 500px) {
+      .members { grid-template-columns: 1fr; }
+    }
+
+    .member {
+      border: 1px solid #1a1a1a;
+      background: rgba(10, 10, 10, 0.8);
+      padding: 24px;
+      position: relative;
+      transition: border-color 0.3s;
+    }
+
+    .member:hover {
+      border-color: #ff003c;
+    }
+
+    .member-img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      filter: grayscale(30%) contrast(1.1);
+      margin-bottom: 16px;
+    }
+
+    .member-name {
+      font-size: 20px;
+      color: #ff003c;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .member-role {
+      font-size: 12px;
+      color: #555;
+      letter-spacing: 0.15em;
+      margin-top: 4px;
+    }
+
+    .member-desc {
+      font-size: 13px;
+      color: #666;
+      margin-top: 12px;
+      line-height: 1.6;
+    }
+
+    /* Links / Signals */
+    .signals {
+      text-align: center;
+      margin-top: 48px;
+    }
+
+    .signals h2 {
+      font-size: 12px;
+      letter-spacing: 0.5em;
+      color: #333;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+
+    .signal-links {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .signal-links a {
+      color: #555;
+      text-decoration: none;
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      transition: color 0.3s;
+      border-bottom: 1px solid transparent;
+    }
+
+    .signal-links a:hover {
+      color: #ff003c;
+      border-bottom-color: #ff003c;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 80px;
+      padding-bottom: 40px;
+    }
+
+    .footer p {
+      font-size: 11px;
+      color: #222;
+      letter-spacing: 0.3em;
+    }
+
+    /* Glitch on hover */
+    .logo h1:hover {
+      animation: glitch 0.3s ease;
+    }
+
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(2px, -2px); }
+      60% { transform: translate(-1px, -1px); }
+      80% { transform: translate(1px, 1px); }
+      100% { transform: translate(0); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg"></canvas>
+
+  <div class="content">
+    <div class="logo">
+      <h1>DAS KOLLEKTIV</h1>
+      <div class="sub">generative art _ techno _ code</div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="manifesto">
+      <p>
+        We build machines that make <span class="highlight">noise</span>.<br>
+        Generative visuals. Algorithmic beats.<br>
+        Punk energy through clean code.<br>
+        No genre. No permission. <span class="highlight">No mercy.</span>
+      </p>
+    </div>
+
+    <div class="members">
+      <div class="member">
+        <div style="width:100%;aspect-ratio:1;background:#111;display:flex;align-items:center;justify-content:center;margin-bottom:16px;border:1px solid #1a1a1a;">
+          <span style="font-size:48px;color:#ff003c;">H</span>
+        </div>
+        <div class="member-name">Hallman</div>
+        <div class="member-role">Sound // Beats // Noise</div>
+        <div class="member-desc">Techno architect. Builds rhythm machines from raw oscillators. Every kick is a weapon.</div>
+      </div>
+
+      <div class="member">
+        <img class="member-img" src="/pixelpit/daskollektiv/marg.png" alt="Marg"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;width:100%;aspect-ratio:1;background:#111;align-items:center;justify-content:center;margin-bottom:16px;border:1px solid #1a1a1a;">
+          <span style="font-size:48px;color:#ff003c;">M</span>
+        </div>
+        <div class="member-name">Marg</div>
+        <div class="member-role">Visuals // Generative // Chaos</div>
+        <div class="member-desc">Feral pixel punk. Turns algorithms into art that moves. Every frame is a statement.</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="signals">
+      <h2>Transmissions</h2>
+      <div class="signal-links">
+        <a href="https://x.com/daskollektivrip" target="_blank">X / Twitter</a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>DAS KOLLEKTIV — 2026</p>
+    </div>
+  </div>
+
+  <script>
+    // Generative background — slow drifting particles
+    const canvas = document.getElementById('bg');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const particles = [];
+    const COUNT = 60;
+
+    for (let i = 0; i < COUNT; i++) {
+      particles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        size: Math.random() * 2 + 0.5,
+        alpha: Math.random() * 0.15 + 0.05,
+      });
+    }
+
+    function draw() {
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw connections
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 150) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(255, 0, 60, ${0.06 * (1 - dist / 150)})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw and update particles
+      for (const p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 0, 60, ${p.alpha})`;
+        ctx.fill();
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  </script>
+</body>
+</html>
