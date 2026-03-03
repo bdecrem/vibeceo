@@ -22,22 +22,6 @@
       overflow-x: hidden;
     }
 
-    /* Scanline overlay */
-    body::after {
-      content: '';
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0, 0, 0, 0.15) 2px,
-        rgba(0, 0, 0, 0.15) 4px
-      );
-      pointer-events: none;
-      z-index: 1000;
-    }
-
     canvas#bg {
       position: fixed;
       top: 0; left: 0;
@@ -48,55 +32,48 @@
     .content {
       position: relative;
       z-index: 1;
-      max-width: 800px;
+      max-width: 600px;
       margin: 0 auto;
-      padding: 60px 24px;
+      padding: 80px 24px;
     }
 
-    /* Logo */
     .logo {
       text-align: center;
       margin-bottom: 16px;
     }
 
     .logo h1 {
-      font-size: clamp(32px, 8vw, 64px);
+      font-size: clamp(28px, 7vw, 56px);
       letter-spacing: 0.3em;
       color: #ff003c;
-      text-shadow:
-        0 0 20px rgba(255, 0, 60, 0.6),
-        0 0 40px rgba(255, 0, 60, 0.3);
       line-height: 1;
     }
 
     .logo .sub {
-      font-size: clamp(10px, 2.5vw, 14px);
+      font-size: clamp(10px, 2.5vw, 13px);
       letter-spacing: 0.6em;
-      color: #666;
+      color: #444;
       margin-top: 8px;
       text-transform: uppercase;
     }
 
-    /* Divider */
     .divider {
       border: none;
       height: 1px;
-      background: linear-gradient(90deg, transparent, #ff003c, transparent);
+      background: #1a1a1a;
       margin: 48px 0;
-      opacity: 0.4;
     }
 
-    /* Manifesto */
     .manifesto {
       text-align: center;
       margin-bottom: 48px;
     }
 
     .manifesto p {
-      font-size: clamp(14px, 3vw, 18px);
-      line-height: 1.8;
-      color: #888;
-      max-width: 600px;
+      font-size: clamp(13px, 2.8vw, 16px);
+      line-height: 2;
+      color: #555;
+      max-width: 500px;
       margin: 0 auto;
     }
 
@@ -104,119 +81,62 @@
       color: #ff003c;
     }
 
-    /* Members */
+    /* Members — text only */
     .members {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
+      display: flex;
+      justify-content: center;
+      gap: 64px;
       margin-bottom: 48px;
     }
 
-    @media (max-width: 500px) {
-      .members { grid-template-columns: 1fr; }
+    @media (max-width: 400px) {
+      .members { gap: 40px; }
     }
 
     .member {
-      border: 1px solid #1a1a1a;
-      background: rgba(10, 10, 10, 0.8);
-      padding: 24px;
-      position: relative;
-      transition: border-color 0.3s;
-    }
-
-    .member:hover {
-      border-color: #ff003c;
-    }
-
-    .member-img {
-      width: 100%;
-      aspect-ratio: 1;
-      object-fit: cover;
-      filter: grayscale(30%) contrast(1.1);
-      margin-bottom: 16px;
+      text-align: center;
     }
 
     .member-name {
-      font-size: 20px;
+      font-size: 16px;
       color: #ff003c;
       letter-spacing: 0.2em;
       text-transform: uppercase;
     }
 
     .member-role {
-      font-size: 12px;
-      color: #555;
+      font-size: 11px;
+      color: #333;
       letter-spacing: 0.15em;
-      margin-top: 4px;
+      margin-top: 6px;
     }
 
-    .member-desc {
-      font-size: 13px;
-      color: #666;
-      margin-top: 12px;
-      line-height: 1.6;
-    }
-
-    /* Links / Signals */
     .signals {
       text-align: center;
       margin-top: 48px;
     }
 
-    .signals h2 {
-      font-size: 12px;
-      letter-spacing: 0.5em;
+    .signals a {
       color: #333;
-      margin-bottom: 24px;
-      text-transform: uppercase;
-    }
-
-    .signal-links {
-      display: flex;
-      justify-content: center;
-      gap: 32px;
-      flex-wrap: wrap;
-    }
-
-    .signal-links a {
-      color: #555;
       text-decoration: none;
-      font-size: 13px;
-      letter-spacing: 0.1em;
+      font-size: 12px;
+      letter-spacing: 0.15em;
       transition: color 0.3s;
-      border-bottom: 1px solid transparent;
     }
 
-    .signal-links a:hover {
+    .signals a:hover {
       color: #ff003c;
-      border-bottom-color: #ff003c;
     }
 
-    /* Footer */
     .footer {
       text-align: center;
       margin-top: 80px;
-      padding-bottom: 40px;
     }
 
     .footer p {
-      font-size: 11px;
-      color: #222;
+      font-size: 10px;
+      color: #1a1a1a;
       letter-spacing: 0.3em;
-    }
-
-    /* Glitch on hover */
-    .logo h1:hover {
-      animation: glitch 0.3s ease;
-    }
-
-    @keyframes glitch {
-      0% { transform: translate(0); }
-      20% { transform: translate(-2px, 2px); }
-      40% { transform: translate(2px, -2px); }
-      60% { transform: translate(-1px, -1px); }
-      80% { transform: translate(1px, 1px); }
-      100% { transform: translate(0); }
     }
   </style>
 </head>
@@ -242,42 +162,27 @@
 
     <div class="members">
       <div class="member">
-        <div style="width:100%;aspect-ratio:1;background:#111;display:flex;align-items:center;justify-content:center;margin-bottom:16px;border:1px solid #1a1a1a;">
-          <span style="font-size:48px;color:#ff003c;">H</span>
-        </div>
         <div class="member-name">Hallman</div>
         <div class="member-role">Sound // Beats // Noise</div>
-        <div class="member-desc">Techno architect. Builds rhythm machines from raw oscillators. Every kick is a weapon.</div>
       </div>
-
       <div class="member">
-        <img class="member-img" src="/pixelpit/daskollektiv/marg.png" alt="Marg"
-          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-        <div style="display:none;width:100%;aspect-ratio:1;background:#111;align-items:center;justify-content:center;margin-bottom:16px;border:1px solid #1a1a1a;">
-          <span style="font-size:48px;color:#ff003c;">M</span>
-        </div>
         <div class="member-name">Marg</div>
         <div class="member-role">Visuals // Generative // Chaos</div>
-        <div class="member-desc">Feral pixel punk. Turns algorithms into art that moves. Every frame is a statement.</div>
       </div>
     </div>
 
     <hr class="divider">
 
     <div class="signals">
-      <h2>Transmissions</h2>
-      <div class="signal-links">
-        <a href="https://x.com/daskollektivrip" target="_blank">X / Twitter</a>
-      </div>
+      <a href="https://x.com/daskollektivrip" target="_blank">@daskollektivrip</a>
     </div>
 
     <div class="footer">
-      <p>DAS KOLLEKTIV — 2026</p>
+      <p>2026</p>
     </div>
   </div>
 
   <script>
-    // Generative background — slow drifting particles
     const canvas = document.getElementById('bg');
     const ctx = canvas.getContext('2d');
 
@@ -289,16 +194,16 @@
     window.addEventListener('resize', resize);
 
     const particles = [];
-    const COUNT = 60;
+    const COUNT = 40;
 
     for (let i = 0; i < COUNT; i++) {
       particles.push({
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        size: Math.random() * 2 + 0.5,
-        alpha: Math.random() * 0.15 + 0.05,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2,
+        size: Math.random() * 1.5 + 0.5,
+        alpha: Math.random() * 0.08 + 0.02,
       });
     }
 
@@ -306,24 +211,22 @@
       ctx.fillStyle = '#0a0a0a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw connections
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 150) {
+          if (dist < 120) {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(255, 0, 60, ${0.06 * (1 - dist / 150)})`;
+            ctx.strokeStyle = `rgba(255, 0, 60, ${0.04 * (1 - dist / 120)})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
         }
       }
 
-      // Draw and update particles
       for (const p of particles) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
