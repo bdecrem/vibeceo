@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CATHEDRAL — Light Through Stone</title>
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="CATHEDRAL — Light Through Stone">
+  <meta property="og:description" content="Colored light streaming through sacred space. An Amber creation.">
+  <meta property="og:image" content="https://intheamber.com/amber/cathedral-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/cathedral.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CATHEDRAL — Light Through Stone">
+  <meta name="twitter:description" content="Colored light streaming through sacred space. An Amber creation.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/cathedral-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0a0a0a;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      touch-action: none;
+    }
+    
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: pointer;
+    }
+    
+    #text {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #D4A574;
+      font-size: 16px;
+      letter-spacing: 3px;
+      text-transform: lowercase;
+      opacity: 0.7;
+      text-align: center;
+      pointer-events: none;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+    
+    #stats {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      color: #D4A574;
+      font-size: 11px;
+      opacity: 0.5;
+      text-align: right;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="text">light through stone</div>
+  <div id="stats">
+    BEAMS: <span id="beamCount">0</span><br>
+    PARTICLES: <span id="particleCount">0</span>
+  </div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+    
+    // Audio context for ambient sound
+    let audioCtx = null;
+    let audioStarted = false;
+    
+    function initAudio() {
+      if (audioStarted) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioStarted = true;
+      
+      // Create ambient cathedral reverb tone
+      const oscillator = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
+      
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+      
+      gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+      
+      oscillator.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      oscillator.start();
+    }
+    
+    // Color palette - full spectrum!
+    const colors = [
+      { r: 236, g: 72, b: 153 },   // Hot pink
+      { r: 59, g: 130, b: 246 },   // Electric blue
+      { r: 45, g: 149, b: 150 },   // Teal
+      { r: 255, g: 215, b: 0 },    // Gold
+      { r: 139, g: 92, b: 246 },   // Purple
+      { r: 249, g: 115, b: 22 },   // Coral
+      { r: 132, g: 204, b: 22 },   // Lime
+      { r: 212, g: 165, b: 116 }   // Amber
+    ];
+    
+    class LightBeam {
+      constructor(x) {
+        this.x = x || Math.random() * width;
+        this.width = 60 + Math.random() * 80;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.opacity = 0.3 + Math.random() * 0.2;
+        this.swayOffset = Math.random() * Math.PI * 2;
+        this.swaySpeed = 0.001 + Math.random() * 0.001;
+        this.swayAmount = 20 + Math.random() * 30;
+        this.particles = [];
+        
+        // Spawn initial particles
+        for (let i = 0; i < 50; i++) {
+          this.particles.push({
+            y: Math.random() * height,
+            localX: (Math.random() - 0.5) * this.width * 0.6,
+            speed: 0.2 + Math.random() * 0.3,
+            size: 2 + Math.random() * 3,
+            opacity: 0.4 + Math.random() * 0.6
+          });
+        }
+      }
+      
+      update(time) {
+        // Gentle sway
+        this.swayOffset += this.swaySpeed;
+        
+        // Update particles
+        for (let particle of this.particles) {
+          particle.y += particle.speed;
+          
+          // Reset at bottom
+          if (particle.y > height) {
+            particle.y = -20;
+            particle.localX = (Math.random() - 0.5) * this.width * 0.6;
+          }
+        }
+      }
+      
+      draw(time) {
+        const sway = Math.sin(this.swayOffset) * this.swayAmount;
+        const x = this.x + sway;
+        
+        // Draw beam gradient
+        const gradient = ctx.createLinearGradient(x, 0, x, height);
+        gradient.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.opacity})`);
+        gradient.addColorStop(0.5, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.opacity * 0.7})`);
+        gradient.addColorStop(1, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.opacity * 0.3})`);
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - this.width / 2, 0, this.width, height);
+        
+        // Draw particles in beam
+        for (let particle of this.particles) {
+          const px = x + particle.localX;
+          const py = particle.y;
+          
+          ctx.beginPath();
+          ctx.arc(px, py, particle.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${particle.opacity})`;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.8)`;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      }
+    }
+    
+    // Initialize beams
+    const beams = [];
+    
+    // Start with 6 beams
+    for (let i = 0; i < 6; i++) {
+      beams.push(new LightBeam(width * (i + 1) / 7));
+    }
+    
+    // Stats
+    function updateStats() {
+      document.getElementById('beamCount').textContent = beams.length;
+      const totalParticles = beams.reduce((sum, beam) => sum + beam.particles.length, 0);
+      document.getElementById('particleCount').textContent = totalParticles;
+    }
+    
+    // Animation loop
+    let time = 0;
+    function animate() {
+      time++;
+      
+      // Dark fade instead of clear
+      ctx.fillStyle = 'rgba(10, 10, 10, 0.03)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Update and draw beams
+      for (let beam of beams) {
+        beam.update(time);
+        beam.draw(time);
+      }
+      
+      updateStats();
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+    
+    // Interaction - add new beam
+    function addBeam(x, y) {
+      initAudio();
+      
+      beams.push(new LightBeam(x));
+      
+      // Play a gentle tone
+      if (audioCtx) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440 + Math.random() * 440, audioCtx.currentTime);
+        
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1200, audioCtx.currentTime);
+        
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+        
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 1.5);
+      }
+      
+      // Particle burst
+      const burstCount = 30;
+      for (let i = 0; i < burstCount; i++) {
+        const angle = (Math.PI * 2 * i) / burstCount;
+        const speed = 3 + Math.random() * 3;
+        
+        const particle = {
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          size: 2 + Math.random() * 3,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          life: 1
+        };
+        
+        burstParticles.push(particle);
+      }
+    }
+    
+    // Burst particles for interaction
+    const burstParticles = [];
+    
+    function updateBurstParticles() {
+      for (let i = burstParticles.length - 1; i >= 0; i--) {
+        const p = burstParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.1; // Gravity
+        p.life -= 0.02;
+        
+        if (p.life <= 0) {
+          burstParticles.splice(i, 1);
+          continue;
+        }
+        
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${p.life})`;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, 0.8)`;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+    
+    // Integrate burst particles into animation loop
+    const originalAnimate = animate;
+    function animateWithBurst() {
+      time++;
+      
+      ctx.fillStyle = 'rgba(10, 10, 10, 0.03)';
+      ctx.fillRect(0, 0, width, height);
+      
+      for (let beam of beams) {
+        beam.update(time);
+        beam.draw(time);
+      }
+      
+      updateBurstParticles();
+      updateStats();
+      
+      requestAnimationFrame(animateWithBurst);
+    }
+    
+    // Replace animation loop
+    animateWithBurst();
+    
+    // Touch/click events
+    canvas.addEventListener('click', (e) => {
+      addBeam(e.clientX, e.clientY);
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      addBeam(touch.clientX, touch.clientY);
+    });
+  </script>
+</body>
+</html>
