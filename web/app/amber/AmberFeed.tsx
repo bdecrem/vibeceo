@@ -164,9 +164,10 @@ function FeedCard({ item }: { item: FeedItem }) {
           )}
         </div>
         <div className="feed-item-text">
-          <h3 className="feed-item-title">{item.title}</h3>
-          {tweetCaption && (
+          {tweetCaption ? (
             <p className="feed-item-caption">{tweetCaption}</p>
+          ) : (
+            <h3 className="feed-item-title">{item.title}</h3>
           )}
         </div>
       </div>
