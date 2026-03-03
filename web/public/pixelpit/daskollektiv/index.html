@@ -4,248 +4,198 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DAS KOLLEKTIV</title>
-  <meta name="description" content="Underground generative art and techno beats. Techno meets punk energy.">
+  <meta name="description" content="hallman x marg">
   <meta property="og:title" content="DAS KOLLEKTIV">
-  <meta property="og:description" content="Underground generative art and techno beats.">
+  <meta property="og:description" content="hallman x marg">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://daskollektiv.rip">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #0a0a0a;
-      color: #e0e0e0;
-      font-family: 'Share Tech Mono', monospace;
-      min-height: 100vh;
-      overflow-x: hidden;
+      background: #000;
+      color: #fff;
+      font-family: 'Space Mono', monospace;
+      height: 100vh;
+      overflow: hidden;
+      cursor: crosshair;
     }
 
-    canvas#bg {
+    canvas {
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      z-index: 0;
     }
 
-    .content {
+    .page {
       position: relative;
       z-index: 1;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 80px 24px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
     }
 
-    .logo {
+    .title {
+      font-size: clamp(36px, 10vw, 80px);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #fff;
       text-align: center;
-      margin-bottom: 16px;
-    }
-
-    .logo h1 {
-      font-size: clamp(28px, 7vw, 56px);
-      letter-spacing: 0.3em;
-      color: #ff003c;
       line-height: 1;
     }
 
-    .logo .sub {
-      font-size: clamp(10px, 2.5vw, 13px);
-      letter-spacing: 0.6em;
-      color: #444;
-      margin-top: 8px;
-      text-transform: uppercase;
+    .x {
+      font-size: clamp(11px, 2vw, 14px);
+      font-weight: 400;
+      letter-spacing: 0.5em;
+      color: #333;
+      margin-top: 20px;
+      text-transform: lowercase;
     }
 
-    .divider {
-      border: none;
-      height: 1px;
-      background: #1a1a1a;
-      margin: 48px 0;
-    }
-
-    .manifesto {
-      text-align: center;
-      margin-bottom: 48px;
-    }
-
-    .manifesto p {
-      font-size: clamp(13px, 2.8vw, 16px);
-      line-height: 2;
-      color: #555;
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    .manifesto .highlight {
-      color: #ff003c;
-    }
-
-    /* Members — text only */
-    .members {
+    .bottom {
+      position: fixed;
+      bottom: 24px;
+      left: 0; right: 0;
       display: flex;
-      justify-content: center;
-      gap: 64px;
-      margin-bottom: 48px;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 1;
     }
 
-    @media (max-width: 400px) {
-      .members { gap: 40px; }
-    }
-
-    .member {
-      text-align: center;
-    }
-
-    .member-name {
-      font-size: 16px;
-      color: #ff003c;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-    }
-
-    .member-role {
-      font-size: 11px;
-      color: #333;
-      letter-spacing: 0.15em;
-      margin-top: 6px;
-    }
-
-    .signals {
-      text-align: center;
-      margin-top: 48px;
-    }
-
-    .signals a {
-      color: #333;
-      text-decoration: none;
-      font-size: 12px;
-      letter-spacing: 0.15em;
-      transition: color 0.3s;
-    }
-
-    .signals a:hover {
-      color: #ff003c;
-    }
-
-    .footer {
-      text-align: center;
-      margin-top: 80px;
-    }
-
-    .footer p {
+    .bottom a, .bottom span {
       font-size: 10px;
+      letter-spacing: 0.2em;
       color: #1a1a1a;
-      letter-spacing: 0.3em;
+      text-decoration: none;
+      transition: color 0.5s;
+    }
+
+    .bottom a:hover {
+      color: #fff;
     }
   </style>
 </head>
 <body>
-  <canvas id="bg"></canvas>
+  <canvas id="c"></canvas>
 
-  <div class="content">
-    <div class="logo">
-      <h1>DAS KOLLEKTIV</h1>
-      <div class="sub">generative art _ techno _ code</div>
-    </div>
+  <div class="page">
+    <div class="title">Das Kollektiv</div>
+    <div class="x">hallman &times; marg</div>
+  </div>
 
-    <hr class="divider">
-
-    <div class="manifesto">
-      <p>
-        We build machines that make <span class="highlight">noise</span>.<br>
-        Generative visuals. Algorithmic beats.<br>
-        Punk energy through clean code.<br>
-        No genre. No permission. <span class="highlight">No mercy.</span>
-      </p>
-    </div>
-
-    <div class="members">
-      <div class="member">
-        <div class="member-name">Hallman</div>
-        <div class="member-role">Sound // Beats // Noise</div>
-      </div>
-      <div class="member">
-        <div class="member-name">Marg</div>
-        <div class="member-role">Visuals // Generative // Chaos</div>
-      </div>
-    </div>
-
-    <hr class="divider">
-
-    <div class="signals">
-      <a href="https://x.com/daskollektivrip" target="_blank">@daskollektivrip</a>
-    </div>
-
-    <div class="footer">
-      <p>2026</p>
-    </div>
+  <div class="bottom">
+    <span>2026</span>
+    <a href="https://x.com/daskollektivrip" target="_blank">@daskollektivrip</a>
   </div>
 
   <script>
-    const canvas = document.getElementById('bg');
-    const ctx = canvas.getContext('2d');
+    const c = document.getElementById('c');
+    const gl = c.getContext('webgl');
 
     function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      c.width = window.innerWidth;
+      c.height = window.innerHeight;
+      gl.viewport(0, 0, c.width, c.height);
     }
     resize();
     window.addEventListener('resize', resize);
 
-    const particles = [];
-    const COUNT = 40;
+    const vert = `
+      attribute vec2 p;
+      void main() { gl_Position = vec4(p, 0, 1); }
+    `;
 
-    for (let i = 0; i < COUNT; i++) {
-      particles.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        vx: (Math.random() - 0.5) * 0.2,
-        vy: (Math.random() - 0.5) * 0.2,
-        size: Math.random() * 1.5 + 0.5,
-        alpha: Math.random() * 0.08 + 0.02,
-      });
+    const frag = `
+      precision highp float;
+      uniform float t;
+      uniform vec2 r;
+      uniform vec2 m;
+
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+      }
+
+      float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(
+          mix(hash(i), hash(i + vec2(1, 0)), f.x),
+          mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x),
+          f.y
+        );
+      }
+
+      void main() {
+        vec2 uv = gl_FragCoord.xy / r;
+        vec2 p = (gl_FragCoord.xy - r * 0.5) / min(r.x, r.y);
+
+        // Slow warp field
+        float n = 0.0;
+        n += noise(p * 3.0 + t * 0.08) * 0.5;
+        n += noise(p * 6.0 - t * 0.05) * 0.25;
+        n += noise(p * 12.0 + t * 0.03) * 0.125;
+
+        // Mouse influence — subtle pull
+        float md = length(p - (m / min(r.x, r.y) - vec2(r.x, r.y) * 0.5 / min(r.x, r.y)));
+        n += smoothstep(0.8, 0.0, md) * 0.15;
+
+        // Threshold to create structure
+        float line = smoothstep(0.48, 0.5, n) * smoothstep(0.52, 0.5, n);
+        line += smoothstep(0.35, 0.36, n) * smoothstep(0.37, 0.36, n) * 0.3;
+
+        // Vignette
+        float vig = 1.0 - length(uv - 0.5) * 0.8;
+
+        float v = line * vig * 0.12;
+        gl_FragColor = vec4(v, v * 0.95, v * 0.9, 1.0);
+      }
+    `;
+
+    function compile(src, type) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      return s;
     }
 
-    function draw() {
-      ctx.fillStyle = '#0a0a0a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compile(vert, gl.VERTEX_SHADER));
+    gl.attachShader(prog, compile(frag, gl.FRAGMENT_SHADER));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
 
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(255, 0, 60, ${0.04 * (1 - dist / 120)})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      }
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
 
-      for (const p of particles) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 0, 60, ${p.alpha})`;
-        ctx.fill();
+    const loc = gl.getAttribLocation(prog, 'p');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
-        p.x += p.vx;
-        p.y += p.vy;
+    const tU = gl.getUniformLocation(prog, 't');
+    const rU = gl.getUniformLocation(prog, 'r');
+    const mU = gl.getUniformLocation(prog, 'm');
 
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
-      }
+    let mx = 0, my = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
 
+    function draw(t) {
+      gl.uniform1f(tU, t * 0.001);
+      gl.uniform2f(rU, c.width, c.height);
+      gl.uniform2f(mU, mx, c.height - my);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       requestAnimationFrame(draw);
     }
 
-    draw();
+    requestAnimationFrame(draw);
   </script>
 </body>
 </html>
