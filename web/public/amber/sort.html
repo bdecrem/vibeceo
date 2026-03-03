@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SORT — Amber</title>
+<meta name="description" content="Drag the planets into order. How fast can you sort the solar system?">
+<meta property="og:title" content="SORT">
+<meta property="og:description" content="Drag the planets into order. How fast can you sort the solar system?">
+<meta property="og:image" content="https://intheamber.com/amber/og/sort.png">
+<meta property="og:url" content="https://intheamber.com/amber/sort.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@intheamber">
+<meta name="twitter:title" content="SORT">
+<meta name="twitter:description" content="Drag the planets into order.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/sort.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪐</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body{background:#0a0a0a;color:#FFD700;font-family:'Courier New',monospace;height:100dvh;overflow:hidden;display:flex;flex-direction:column;align-items:center;touch-action:none}
+h1{font-size:1.4rem;margin-top:1.2rem;letter-spacing:.3em;color:#FFD700}
+.sub{font-size:.7rem;color:#2D9596;margin:.3rem 0 .5rem;letter-spacing:.15em}
+#timer{font-size:2rem;color:#ec4899;font-weight:bold;margin:.3rem 0}
+#best{font-size:.7rem;color:#2D9596;margin-bottom:.5rem;min-height:1rem}
+#slots{display:flex;flex-direction:column;gap:8px;padding:0 16px;width:100%;max-width:400px;flex:1;justify-content:center}
+.slot{height:calc((100dvh - 200px)/8 - 8px);max-height:56px;border:2px dashed #333;border-radius:12px;display:flex;align-items:center;justify-content:center;position:relative;transition:border-color .2s}
+.slot.over{border-color:#2D9596}
+.slot.correct{border-color:#FFD700;background:rgba(255,215,0,.08)}
+.planet{position:absolute;width:calc(100% - 4px);height:calc(100% - 4px);border-radius:10px;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:1rem;cursor:grab;z-index:10;transition:transform .15s,opacity .15s}
+.planet.dragging{opacity:.6;transform:scale(1.08);z-index:100}
+.planet .emoji{font-size:1.6rem;flex-shrink:0}
+.planet .name{color:#FFD700;font-weight:bold;letter-spacing:.1em}
+.ghost{position:fixed;pointer-events:none;z-index:1000;opacity:.85;transform:scale(1.1)}
+#win{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+#win.show{display:flex}
+#win h2{font-size:2rem;color:#FFD700}
+#win .time{font-size:3rem;color:#ec4899;font-weight:bold}
+#win .msg{color:#2D9596;font-size:.9rem}
+#win button{background:none;border:2px solid #FFD700;color:#FFD700;padding:12px 32px;border-radius:8px;font-size:1rem;font-family:inherit;cursor:pointer;margin-top:8px;min-height:48px;min-width:120px}
+</style>
+</head>
+<body>
+<h1>SORT</h1>
+<div class="sub">DRAG THE PLANETS INTO ORDER</div>
+<div id="timer">0.00</div>
+<div id="best"></div>
+<div id="slots"></div>
+<div id="win"><h2>🪐 SORTED</h2><div class="time" id="winTime"></div><div class="msg" id="winMsg"></div><button id="again">AGAIN</button></div>
+
+<script>
+const planets=[
+{name:'Mercury',emoji:'☿️',color:'#b0b0b0'},
+{name:'Venus',emoji:'♀️',color:'#e8c56d'},
+{name:'Earth',emoji:'🌍',color:'#4a90d9'},
+{name:'Mars',emoji:'♂️',color:'#c1440e'},
+{name:'Jupiter',emoji:'♃',color:'#d4a574'},
+{name:'Saturn',emoji:'♄',color:'#e8d5a3'},
+{name:'Uranus',emoji:'♅',color:'#7fdbca'},
+{name:'Neptune',emoji:'♆',color:'#4169e1'}
+];
+
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function beep(freq,dur=.08){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=freq;g.gain.value=.15;o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur)}
+function winSound(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.15),i*100))}
+
+let started=false,startTime=0,timerInterval=null,best=localStorage.getItem('sort-best');
+const timerEl=document.getElementById('timer'),bestEl=document.getElementById('best'),slotsEl=document.getElementById('slots');
+if(best)bestEl.textContent='BEST: '+parseFloat(best).toFixed(2)+'s';
+
+let state=[];// current planet index in each slot (or null)
+let dragFrom=null,ghost=null,dragPlanet=null;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function init(){
+ started=false;startTime=0;clearInterval(timerInterval);timerEl.textContent='0.00';
+ slotsEl.innerHTML='';
+ let order=shuffle([...Array(8).keys()]);
+ // make sure it's not already sorted
+ while(order.every((v,i)=>v===i))order=shuffle([...Array(8).keys()]);
+ state=[...order];
+ for(let i=0;i<8;i++){
+  const slot=document.createElement('div');slot.className='slot';slot.dataset.idx=i;
+  const p=makePlanet(order[i]);slot.appendChild(p);
+  slotsEl.appendChild(slot);
+ }
+}
+
+function makePlanet(pi){
+ const d=document.createElement('div');d.className='planet';
+ d.style.background=planets[pi].color+'22';d.style.border='2px solid '+planets[pi].color+'66';
+ d.innerHTML=`<span class="emoji">${planets[pi].emoji}</span><span class="name">${planets[pi].name}</span>`;
+ d.dataset.pi=pi;
+ return d;
+}
+
+function checkWin(){
+ if(state.every((v,i)=>v===i)){
+  clearInterval(timerInterval);
+  const t=((Date.now()-startTime)/1000);
+  timerEl.textContent=t.toFixed(2);
+  document.getElementById('winTime').textContent=t.toFixed(2)+'s';
+  if(!best||t<parseFloat(best)){best=t;localStorage.setItem('sort-best',t);bestEl.textContent='BEST: '+t.toFixed(2)+'s';document.getElementById('winMsg').textContent='NEW BEST!';}
+  else document.getElementById('winMsg').textContent='Best: '+parseFloat(best).toFixed(2)+'s';
+  winSound();
+  document.getElementById('win').classList.add('show');
+ }
+}
+
+function updateCorrect(){
+ document.querySelectorAll('.slot').forEach((s,i)=>{
+  s.classList.toggle('correct',state[i]===i);
+ });
+}
+
+// Touch drag
+let touchId=null,touchStartSlot=null;
+
+slotsEl.addEventListener('touchstart',e=>{
+ if(touchId!==null)return;
+ const t=e.changedTouches[0];
+ const slot=t.target.closest('.slot');if(!slot)return;
+ const pi=state[+slot.dataset.idx];if(pi===null||pi===undefined)return;
+ audioCtx.resume();
+ e.preventDefault();
+ touchId=t.identifier;touchStartSlot=+slot.dataset.idx;dragPlanet=pi;
+ // create ghost
+ const pl=slot.querySelector('.planet');
+ ghost=pl.cloneNode(true);ghost.classList.add('ghost');
+ ghost.style.width=pl.offsetWidth+'px';ghost.style.height=pl.offsetHeight+'px';
+ document.body.appendChild(ghost);
+ moveGhost(t.clientX,t.clientY);
+ pl.classList.add('dragging');
+ beep(300);
+},{passive:false});
+
+slotsEl.addEventListener('touchmove',e=>{
+ for(const t of e.changedTouches){
+  if(t.identifier===touchId){e.preventDefault();moveGhost(t.clientX,t.clientY);highlightSlot(t.clientX,t.clientY);break;}
+ }
+},{passive:false});
+
+slotsEl.addEventListener('touchend',e=>{
+ for(const t of e.changedTouches){
+  if(t.identifier!==touchId)continue;
+  e.preventDefault();
+  const target=getSlotAt(t.clientX,t.clientY);
+  if(target!==null&&target!==touchStartSlot)swapSlots(touchStartSlot,target);
+  cleanup();break;
+ }
+});
+slotsEl.addEventListener('touchcancel',cleanup);
+
+function moveGhost(x,y){if(ghost){ghost.style.left=(x-ghost.offsetWidth/2)+'px';ghost.style.top=(y-ghost.offsetHeight/2)+'px'}}
+function highlightSlot(x,y){
+ document.querySelectorAll('.slot').forEach(s=>s.classList.remove('over'));
+ const idx=getSlotAt(x,y);
+ if(idx!==null&&idx!==touchStartSlot)document.querySelectorAll('.slot')[idx].classList.add('over');
+}
+function getSlotAt(x,y){
+ const els=document.querySelectorAll('.slot');
+ for(const s of els){const r=s.getBoundingClientRect();if(y>=r.top&&y<=r.bottom&&x>=r.left&&x<=r.right)return+s.dataset.idx;}
+ return null;
+}
+
+function swapSlots(a,b){
+ if(!started){started=true;startTime=Date.now();timerInterval=setInterval(()=>{timerEl.textContent=((Date.now()-startTime)/1000).toFixed(2)},50)}
+ [state[a],state[b]]=[state[b],state[a]];
+ const slots=document.querySelectorAll('.slot');
+ const pa=slots[a].querySelector('.planet'),pb=slots[b].querySelector('.planet');
+ slots[a].removeChild(pa);slots[b].removeChild(pb);
+ slots[a].appendChild(makePlanet(state[a]));slots[b].appendChild(makePlanet(state[b]));
+ beep(500+state[b]*50);
+ updateCorrect();checkWin();
+}
+
+function cleanup(){
+ if(ghost){ghost.remove();ghost=null}
+ document.querySelectorAll('.planet').forEach(p=>p.classList.remove('dragging'));
+ document.querySelectorAll('.slot').forEach(s=>s.classList.remove('over'));
+ touchId=null;touchStartSlot=null;dragPlanet=null;
+}
+
+// Mouse fallback
+let mouseDown=false,mouseSlot=null;
+slotsEl.addEventListener('mousedown',e=>{
+ const slot=e.target.closest('.slot');if(!slot)return;
+ audioCtx.resume();mouseDown=true;mouseSlot=+slot.dataset.idx;
+ const pl=slot.querySelector('.planet');
+ ghost=pl.cloneNode(true);ghost.classList.add('ghost');
+ ghost.style.width=pl.offsetWidth+'px';ghost.style.height=pl.offsetHeight+'px';
+ document.body.appendChild(ghost);moveGhost(e.clientX,e.clientY);
+ pl.classList.add('dragging');beep(300);
+});
+document.addEventListener('mousemove',e=>{if(mouseDown){moveGhost(e.clientX,e.clientY);highlightSlot(e.clientX,e.clientY)}});
+document.addEventListener('mouseup',e=>{
+ if(!mouseDown)return;mouseDown=false;
+ const target=getSlotAt(e.clientX,e.clientY);
+ if(target!==null&&target!==mouseSlot)swapSlots(mouseSlot,target);
+ cleanup();
+});
+
+document.getElementById('again').addEventListener('click',()=>{document.getElementById('win').classList.remove('show');init()});
+
+init();updateCorrect();
+</script>
+</body>
+</html>
