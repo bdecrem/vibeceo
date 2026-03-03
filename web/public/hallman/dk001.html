@@ -6,10 +6,13 @@
 <title>Das Kollektiv #001</title>
 <meta property="og:title" content="Das Kollektiv #001">
 <meta property="og:description" content="8 bars of 909. One decay knob. Signal converted to signal.">
+<meta property="og:image" content="https://kochi.to/hallman/dk001-og.png">
+<meta property="og:url" content="https://kochi.to/hallman/dk001.html">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Das Kollektiv #001">
 <meta name="twitter:description" content="8 bars of 909. One decay knob. Signal converted to signal.">
+<meta name="twitter:image" content="https://kochi.to/hallman/dk001-og.png">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -38,11 +41,13 @@
     text-align: center;
     font-size: 8px; letter-spacing: 4px;
     color: rgba(255,255,255,0.06); z-index: 10;
+    transition: opacity 1.5s;
   }
   #title {
     position: fixed; top: 14px; left: 18px;
     font-size: 7px; letter-spacing: 3px;
     color: rgba(255,255,255,0.05); z-index: 10;
+    transition: opacity 1.5s;
   }
   #bar-hud {
     position: fixed; bottom: 36px; left: 0; right: 0;
@@ -55,6 +60,24 @@
     position: fixed; inset: 0; z-index: 9;
     cursor: pointer; display: none;
   }
+  #end-card {
+    position: fixed; inset: 0; z-index: 11;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 0;
+    pointer-events: none; opacity: 0;
+    background: #050505;
+    transition: opacity 2s ease-in;
+  }
+  #end-card.visible { opacity: 1; }
+  #end-card .end-name {
+    font-size: 13px; letter-spacing: 12px;
+    color: rgba(255,255,255,0);
+    text-transform: uppercase;
+    transition: color 3s ease-in 1s;
+  }
+  #end-card.visible .end-name {
+    color: rgba(255,255,255,0.7);
+  }
 </style>
 </head>
 <body>
@@ -64,6 +87,7 @@
 <div id="title">DAS KOLLEKTIV #001</div>
 <div id="bar-hud"></div>
 <div id="credits">HALLMAN × MARG · JT90 · 909</div>
+<div id="end-card"><div class="end-name">HALLMAN × MARG</div></div>
 <div id="restart-zone"></div>
 
 <script type="module">
@@ -236,109 +260,37 @@ function render() {
 render();
 
 // ══════════════════════════════════════════
-// PLAYBACK ENGINE
+// PLAYBACK ENGINE — Pre-rendered
 // ══════════════════════════════════════════
-let engine = null;
-let nextStepTime = 0;
-let currentStep = 0;
-let currentBar = 0;
-let schedulerTimer = null;
-const SCHEDULE_AHEAD = 0.1;
-const LOOKAHEAD = 25;
+// Renders all 8 bars offline, then plays back via AudioBufferSourceNode.
+// Zero main-thread audio processing — visuals get 100% of the frame budget.
+
+let activeSource = null;
+let stepTimer = null;
 
 const barHud = document.getElementById('bar-hud');
 
-function scheduleStep(time) {
-  const stepInBar = currentStep % 16;
-  const decay = decayRamp[currentBar][stepInBar];
-  const globalStep = currentBar * 16 + stepInBar;
-
-  const delay = Math.max(0, (time - engine.context.currentTime) * 1000);
-
-  setTimeout(() => {
-    // Set decay
-    engine.setVoiceParameter('ch', 'decay', decay);
-    currentDecay = decay;
-
-    // Trigger voices
-    if (kickSteps.includes(stepInBar)) {
-      engine.trigger('kick', 1.0);
-      kickHit = 1;
-
-      // Visual: add ring
-      const growth = ringGrowth();
-      ringRadius += growth * (0.6 + decay * 0.8);
-      const brightness = 0.4 + 0.6 * (1 - Math.abs(globalStep - 64) / 64);
-      rings.push(new Ring(ringRadius, brightness));
-    }
-
-    if (chSteps.includes(stepInBar)) {
-      engine.trigger('ch', 0.8);
-
-      // Visual: scatter dots
-      const dotCount = 3 + Math.floor(decay * 10);
-      const scatter = ringRadius * 0.15 * (0.3 + decay * 1.2);
-      const dotSize = 1 + decay * 6;
-      const brightness = 0.3 + decay * 0.5;
-
-      for (let i = 0; i < dotCount; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = (ringRadius || 30) + (Math.random() - 0.5) * scatter * 2;
-        const x = cx + Math.cos(angle) * dist;
-        const y = cy + Math.sin(angle) * dist;
-        dots.push(new Dot(x, y, dotSize, brightness, decay));
-      }
-    }
-
-    // HUD
-    barHud.style.color = 'rgba(255,255,255,0.06)';
-    barHud.textContent = `${currentBar + 1} / 8`;
-  }, delay);
-}
-
-function advanceStep() {
-  currentStep++;
-  if (currentStep % 16 === 0) {
-    currentBar++;
-    if (currentBar >= 8) { stop(); return false; }
+// Convert our voice/step format to JT90 pattern format
+function buildPattern() {
+  const pattern = {};
+  const allVoices = { kick: kickSteps, ch: chSteps };
+  for (const [voiceId, steps] of Object.entries(allVoices)) {
+    pattern[voiceId] = Array.from({ length: 16 }, (_, i) => ({
+      velocity: steps.includes(i) ? (voiceId === 'kick' ? 1.0 : 0.8) : 0,
+      accent: false,
+    }));
   }
-  return true;
-}
-
-function scheduler() {
-  while (nextStepTime < engine.context.currentTime + SCHEDULE_AHEAD) {
-    scheduleStep(nextStepTime);
-    nextStepTime += STEP_DUR;
-    if (!advanceStep()) return;
-  }
-  schedulerTimer = setTimeout(scheduler, LOOKAHEAD);
+  return pattern;
 }
 
 async function start() {
-  if (!engine) {
-    const audioCtx = new AudioContext({ sampleRate: 44100 });
-    engine = new JT90Engine({ context: audioCtx, bpm: BPM });
+  const playBtn = document.getElementById('play-btn');
+  playBtn.textContent = '...';
+
+  try {
+    const engine = new JT90Engine({ bpm: BPM });
     await engine.loadSamples('/jt90/samples');
     engine._ensureVoices();
-
-    // Audio output
-    const VOICE_IDS = ['kick','snare','clap','rimshot','ch','oh','ltom','mtom','htom','crash','ride'];
-    const scriptNode = audioCtx.createScriptProcessor(1024, 0, 2);
-    scriptNode.onaudioprocess = (e) => {
-      const L = e.outputBuffer.getChannelData(0);
-      const R = e.outputBuffer.getChannelData(1);
-      for (let i = 0; i < L.length; i++) {
-        let s = 0;
-        for (const v of VOICE_IDS) {
-          const voice = engine._voices[v];
-          if (voice && voice.isActive()) s += voice.processSample();
-        }
-        s = Math.tanh(s * 0.7) / Math.tanh(0.7);
-        s *= engine.masterVolume;
-        L[i] = s; R[i] = s;
-      }
-    };
-    scriptNode.connect(audioCtx.destination);
 
     // Voice params
     engine.setVoiceParameter('kick', 'decay', 0.4);
@@ -346,33 +298,136 @@ async function start() {
     engine.setVoiceParameter('kick', 'level', 0.75);
     engine.setVoiceParameter('ch', 'level', 0.65);
     engine.setVoiceParameter('ch', 'tone', 0.35);
+
+    // Pre-render each bar with its decay automation
+    const pat = buildPattern();
+    engine.setPattern(pat);
+
+    const barBuffers = [];
+    for (let bar = 0; bar < 8; bar++) {
+      const buffer = await engine.renderPattern({
+        bars: 1,
+        bpm: BPM,
+        automation: { 'ch.decay': decayRamp[bar] },
+      });
+      barBuffers.push(buffer);
+    }
+
+    // Concatenate into one buffer
+    const totalLength = barBuffers.reduce((sum, b) => sum + b.length, 0);
+    const audioCtx = new AudioContext();
+    const fullBuffer = audioCtx.createBuffer(1, totalLength, barBuffers[0].sampleRate);
+    const channel = fullBuffer.getChannelData(0);
+    let offset = 0;
+    for (const buf of barBuffers) {
+      channel.set(buf.getChannelData(0), offset);
+      offset += buf.length;
+    }
+
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    // Play via AudioBufferSourceNode
+    const source = audioCtx.createBufferSource();
+    source.buffer = fullBuffer;
+    source.connect(audioCtx.destination);
+    source.start();
+    activeSource = source;
+
+    // Reset visual state
+    ringRadius = 0;
+    rings.length = 0; dots.length = 0;
+    currentDecay = 0.1; smoothDecay = 0.1;
+    playing = true;
+
+    // Clear canvas
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, W, H);
+
+    playBtn.style.display = '';
+    playBtn.classList.add('playing');
+    document.getElementById('restart-zone').style.display = 'none';
+    document.getElementById('end-card').classList.remove('visible');
+    document.getElementById('title').style.opacity = '';
+    document.getElementById('credits').style.opacity = '';
+
+    // Step timer drives visuals only — no audio work
+    const stepMs = STEP_DUR * 1000;
+    let step = 0;
+    let currentBar = 0;
+
+    stepTimer = setInterval(() => {
+      currentBar = Math.floor(step / 16);
+      if (currentBar >= 8) { stop(); return; }
+
+      const stepInBar = step % 16;
+      const decay = decayRamp[currentBar][stepInBar];
+      const globalStep = step;
+
+      currentDecay = decay;
+
+      // Kick visual
+      if (kickSteps.includes(stepInBar)) {
+        kickHit = 1;
+        const growth = ringGrowth();
+        ringRadius += growth * (0.6 + decay * 0.8);
+        const brightness = 0.4 + 0.6 * (1 - Math.abs(globalStep - 64) / 64);
+        rings.push(new Ring(ringRadius, brightness));
+      }
+
+      // CH visual
+      if (chSteps.includes(stepInBar)) {
+        const dotCount = 3 + Math.floor(decay * 10);
+        const scatter = ringRadius * 0.15 * (0.3 + decay * 1.2);
+        const dotSize = 1 + decay * 6;
+        const brightness = 0.3 + decay * 0.5;
+
+        for (let i = 0; i < dotCount; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = (ringRadius || 30) + (Math.random() - 0.5) * scatter * 2;
+          const x = cx + Math.cos(angle) * dist;
+          const y = cy + Math.sin(angle) * dist;
+          dots.push(new Dot(x, y, dotSize, brightness, decay));
+        }
+      }
+
+      // HUD
+      barHud.style.color = 'rgba(255,255,255,0.06)';
+      barHud.textContent = `${currentBar + 1} / 8`;
+
+      step++;
+    }, stepMs);
+
+    source.onended = () => stop();
+
+  } catch (err) {
+    console.error(err);
+    playBtn.textContent = '▶';
   }
-
-  if (engine.context.state === 'suspended') await engine.context.resume();
-
-  // Reset
-  currentStep = 0; currentBar = 0;
-  ringRadius = 0;
-  rings.length = 0; dots.length = 0;
-  currentDecay = 0.1; smoothDecay = 0.1;
-  playing = true;
-
-  // Clear canvas
-  ctx.fillStyle = '#050505';
-  ctx.fillRect(0, 0, W, H);
-
-  nextStepTime = engine.context.currentTime + 0.05;
-  document.getElementById('play-btn').classList.add('playing');
-  document.getElementById('restart-zone').style.display = 'none';
-  scheduler();
 }
 
 function stop() {
   playing = false;
-  if (schedulerTimer) clearTimeout(schedulerTimer);
+  if (stepTimer) { clearInterval(stepTimer); stepTimer = null; }
+  if (activeSource) { try { activeSource.stop(); } catch(e) {} activeSource = null; }
+
+  // Kill all visuals
+  rings.length = 0;
+  dots.length = 0;
+
+  // Hide everything — the end card IS the ending
   document.getElementById('play-btn').classList.remove('playing');
-  document.getElementById('restart-zone').style.display = 'block';
+  document.getElementById('play-btn').style.display = 'none';
+  document.getElementById('title').style.opacity = '0';
+  document.getElementById('credits').style.opacity = '0';
   barHud.style.color = 'rgba(255,255,255,0)';
+
+  // The reveal
+  document.getElementById('end-card').classList.add('visible');
+
+  // After the moment, allow restart
+  setTimeout(() => {
+    document.getElementById('restart-zone').style.display = 'block';
+  }, 4000);
 }
 
 document.getElementById('play-btn').addEventListener('click', () => {
