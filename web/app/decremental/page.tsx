@@ -43,7 +43,7 @@ const projects: Project[] = [
     shortDesc: "native ios client for openclaw",
     fullDesc: "point at your openclaw server and go. no accounts, no tracking, no data collection.",
     status: "wip",
-    order: -2,
+    order: -5,
   },
   {
     name: "jambot",
@@ -53,7 +53,7 @@ const projects: Project[] = [
     shortDesc: "cli for music production",
     fullDesc: <>outputs midi, wav, stems. not a &quot;make me a song&quot; button. includes <a href="https://kochi.to/jb200" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>web synths</a>.</>,
     status: "wip",
-    order: -3,
+    order: -1,
     artifacts: [{ label: "screenshot", url: "/images/jambot-screencap.png" }],
   },
   {
@@ -401,7 +401,7 @@ export default function VoiceBTerminal() {
 
         {/* Intro — voice b: terse, lowercase */}
         <p className={`${poppins.className} w-full max-w-3xl text-sm leading-relaxed mb-8 px-1`} style={{ color: "#555" }}>
-          nine months of building with ai. one <a href="https://github.com/bdecrem/vibeceo" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>repo</a>. non-technical founder, claude code, too many ideas. most of it works.
+          nine months of building (tinkering) with ai (claude code), mostly around agentic loops &amp; creativity. a lot of unfinished thoughts, one main <a href="https://github.com/bdecrem/vibeceo" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>repo</a>, some of it open source. most of this works …mostly — <a href="https://twitter.com/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>@bartdecrem</a>
         </p>
 
         {/* Terminal window */}
@@ -426,7 +426,7 @@ export default function VoiceBTerminal() {
           {/* Footer */}
           <div className="px-4 sm:px-6 py-3 text-xs flex items-center justify-between cursor-text group" style={{ borderTop: "1px solid #151515" }} onClick={() => setShowCLI(true)}>
             <span className="flex items-center gap-2">
-              <span style={{ color: "#333" }}>everything ships. most of it breaks.</span>
+              <span style={{ color: "#333" }}>the future&apos;s here. it&apos;s just uneven.</span>
               <span className="inline-block w-1.5 h-3.5 animate-pulse group-hover:opacity-100" style={{ backgroundColor: "#7cb87c", opacity: 0.3, animation: "pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite" }} />
             </span>
             <span style={{ color: "#222" }}>{projects.filter(p => p.status === "active").length} live</span>
