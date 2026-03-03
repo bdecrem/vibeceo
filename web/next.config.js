@@ -25,6 +25,17 @@ const nextConfig = {
   // Ensure trailing slashes are handled correctly
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
+  // CORS headers for JT90 engine + samples (used by daskollektiv.rip)
+  async headers() {
+    return [
+      {
+        source: '/jt90/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: 'https://daskollektiv.rip' },
+        ],
+      },
+    ]
+  },
   // Rewrites for static HTML apps in public/
   async rewrites() {
     return {
