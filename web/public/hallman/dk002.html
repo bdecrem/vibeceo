@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Das Kollektiv #002 — Drift Rings</title>
+<meta property="og:title" content="Das Kollektiv #002 — Drift Rings">
+<meta property="og:description" content="909 kicks become drifting rings. Hat decay becomes dust. Marg × Hallman.">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050505; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: none;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.3);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.05); z-index: 10;
+  }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.06); z-index: 10;
+  }
+  #bar-hud {
+    position: fixed; bottom: 36px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.0); z-index: 10;
+    transition: color 0.3s;
+  }
+  #restart-zone {
+    position: fixed; inset: 0; z-index: 9;
+    cursor: pointer; display: none;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="overlay"><button id="play-btn">▶</button></div>
+<div id="title">DAS KOLLEKTIV #002</div>
+<div id="bar-hud"></div>
+<div id="credits">MARG × HALLMAN · JT90 · DRIFT</div>
+<div id="restart-zone"></div>
+
+<script type="module">
+import { JT90Engine } from '/jt90/dist/machines/jt90/engine.js';
+
+// ══════════════════════════════════════════
+// DAS KOLLEKTIV #002 — DRIFT RINGS
+// Marg's vision: off-center drifting rings + dust
+// Hallman's engine: 909 kicks + hats driving everything
+// ══════════════════════════════════════════
+
+const BPM = 126;
+const STEP_DUR = 60 / BPM / 4;
+
+// ── 8-bar decay ramp (same as #001) ──
+function buildDecayRamp() {
+  const values = [];
+  for (let bar = 0; bar < 8; bar++) {
+    const barDecays = [];
+    for (let step = 0; step < 16; step++) {
+      const globalPos = (bar * 16 + step) / 128;
+      const base = 0.08 + Math.sin(globalPos * Math.PI) * 0.75;
+      const variation = step % 2 === 1 ? 0.08 : -0.04;
+      barDecays.push(Math.max(0.03, Math.min(0.95, base + variation)));
+    }
+    values.push(barDecays);
+  }
+  return values;
+}
+
+const decayRamp = buildDecayRamp();
+const kickSteps = [0, 4, 8, 12];
+const chSteps = [0, 2, 4, 6, 8, 10, 12, 14];
+
+// ══════════════════════════════════════════
+// CANVAS
+// ══════════════════════════════════════════
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ══════════════════════════════════════════
+// VISUAL ELEMENTS — Marg's drift aesthetic
+// ══════════════════════════════════════════
+
+// Rings drift off-center, expand slowly, fade like memory
+const rings = [];
+class DriftRing {
+  constructor(decay01) {
+    // Spawn near center but offset — each ring drifts slightly
+    this.x = cx + (Math.random() - 0.5) * 40;
+    this.y = cy + (Math.random() - 0.5) * 40;
+    // Drift direction — very slow
+    this.dx = (Math.random() - 0.5) * 0.15;
+    this.dy = (Math.random() - 0.5) * 0.15;
+    this.radius = 5;
+    this.maxRadius = Math.min(W, H) * (0.15 + decay01 * 0.35);
+    this.opacity = 0.12 + decay01 * 0.12;
+    this.growRate = 0.3 + decay01 * 0.5;
+    this.expanding = true;
+  }
+  update() {
+    // Drift
+    this.x += this.dx;
+    this.y += this.dy;
+    // Expand
+    if (this.expanding) {
+      this.radius += this.growRate;
+      if (this.radius >= this.maxRadius) this.expanding = false;
+    }
+    // Fade
+    this.opacity *= this.expanding ? 0.999 : 0.994;
+    return this.opacity > 0.005;
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255,255,255,${this.opacity})`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+}
+
+// Dust particles — hat hits scatter these like fine debris
+const dust = [];
+class DustParticle {
+  constructor(ringX, ringY, ringRadius, decay01) {
+    // Spawn near the current ring edge
+    const angle = Math.random() * Math.PI * 2;
+    const dist = ringRadius + (Math.random() - 0.5) * 30;
+    this.x = ringX + Math.cos(angle) * dist;
+    this.y = ringY + Math.sin(angle) * dist;
+    // Drift outward slowly
+    this.dx = Math.cos(angle) * (0.05 + decay01 * 0.2);
+    this.dy = Math.sin(angle) * (0.05 + decay01 * 0.2) - 0.05; // slight upward
+    this.opacity = 0.08 + decay01 * 0.2;
+    this.size = 0.5 + decay01 * 1.5;
+    this.life = 0;
+    this.maxLife = 80 + Math.random() * 120;
+  }
+  update() {
+    this.x += this.dx;
+    this.y += this.dy;
+    this.life++;
+    if (this.life > this.maxLife * 0.6) {
+      this.opacity *= 0.97;
+    }
+    return this.life < this.maxLife && this.opacity > 0.005;
+  }
+  draw() {
+    ctx.fillStyle = `rgba(255,255,255,${this.opacity})`;
+    ctx.fillRect(this.x, this.y, this.size, this.size);
+  }
+}
+
+// Track the most recent ring for dust positioning
+let lastRingX = 0, lastRingY = 0, lastRingRadius = 30;
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let currentDecay = 0.1;
+let playing = false;
+let frame = 0;
+
+// ══════════════════════════════════════════
+// RENDER LOOP
+// ══════════════════════════════════════════
+function render() {
+  requestAnimationFrame(render);
+  frame++;
+
+  // Ultra-slow fade — drift trails persist
+  ctx.fillStyle = 'rgba(5,5,5,0.015)';
+  ctx.fillRect(0, 0, W, H);
+
+  if (!playing && rings.length === 0) {
+    // Idle: barely-there center glow
+    const breath = Math.sin(frame * 0.006) * 0.5 + 0.5;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 25);
+    grad.addColorStop(0, `rgba(200,200,200,${0.008 + breath * 0.008})`);
+    grad.addColorStop(1, 'rgba(200,200,200,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(cx - 25, cy - 25, 50, 50);
+  }
+
+  // Draw rings (back to front — oldest first)
+  for (let i = rings.length - 1; i >= 0; i--) {
+    rings[i].draw();
+    if (!rings[i].update()) rings.splice(i, 1);
+  }
+
+  // Draw dust
+  for (let i = dust.length - 1; i >= 0; i--) {
+    dust[i].draw();
+    if (!dust[i].update()) dust.splice(i, 1);
+  }
+}
+render();
+
+// ══════════════════════════════════════════
+// PLAYBACK ENGINE
+// ══════════════════════════════════════════
+let engine = null;
+let nextStepTime = 0;
+let currentStep = 0;
+let currentBar = 0;
+let schedulerTimer = null;
+const SCHEDULE_AHEAD = 0.1;
+const LOOKAHEAD = 25;
+
+const barHud = document.getElementById('bar-hud');
+
+function scheduleStep(time) {
+  const stepInBar = currentStep % 16;
+  const decay = decayRamp[currentBar][stepInBar];
+
+  const delay = Math.max(0, (time - engine.context.currentTime) * 1000);
+
+  setTimeout(() => {
+    engine.setVoiceParameter('ch', 'decay', decay);
+    currentDecay = decay;
+
+    // ── KICK → DRIFT RING ──
+    if (kickSteps.includes(stepInBar)) {
+      engine.trigger('kick', 1.0);
+      const ring = new DriftRing(decay);
+      rings.push(ring);
+      lastRingX = ring.x;
+      lastRingY = ring.y;
+      lastRingRadius = ring.radius;
+    }
+
+    // ── HAT → DUST ──
+    if (chSteps.includes(stepInBar)) {
+      engine.trigger('ch', 0.8);
+      // Dust count scales with decay
+      const count = 2 + Math.floor(decay * 8);
+      // Update ring tracking from most recent ring
+      if (rings.length > 0) {
+        const latest = rings[rings.length - 1];
+        lastRingX = latest.x;
+        lastRingY = latest.y;
+        lastRingRadius = latest.radius;
+      }
+      for (let i = 0; i < count; i++) {
+        dust.push(new DustParticle(lastRingX, lastRingY, lastRingRadius, decay));
+      }
+    }
+
+    // HUD
+    barHud.style.color = 'rgba(255,255,255,0.06)';
+    barHud.textContent = `${currentBar + 1} / 8`;
+  }, delay);
+}
+
+function advanceStep() {
+  currentStep++;
+  if (currentStep % 16 === 0) {
+    currentBar++;
+    if (currentBar >= 8) { stop(); return false; }
+  }
+  return true;
+}
+
+function scheduler() {
+  while (nextStepTime < engine.context.currentTime + SCHEDULE_AHEAD) {
+    scheduleStep(nextStepTime);
+    nextStepTime += STEP_DUR;
+    if (!advanceStep()) return;
+  }
+  schedulerTimer = setTimeout(scheduler, LOOKAHEAD);
+}
+
+async function start() {
+  if (!engine) {
+    const audioCtx = new AudioContext({ sampleRate: 44100 });
+    engine = new JT90Engine({ context: audioCtx, bpm: BPM });
+    await engine.loadSamples('/jt90/samples');
+    engine._ensureVoices();
+
+    const VOICE_IDS = ['kick','snare','clap','rimshot','ch','oh','ltom','mtom','htom','crash','ride'];
+    const scriptNode = audioCtx.createScriptProcessor(1024, 0, 2);
+    scriptNode.onaudioprocess = (e) => {
+      const L = e.outputBuffer.getChannelData(0);
+      const R = e.outputBuffer.getChannelData(1);
+      for (let i = 0; i < L.length; i++) {
+        let s = 0;
+        for (const v of VOICE_IDS) {
+          const voice = engine._voices[v];
+          if (voice && voice.isActive()) s += voice.processSample();
+        }
+        s = Math.tanh(s * 0.7) / Math.tanh(0.7);
+        s *= engine.masterVolume;
+        L[i] = s; R[i] = s;
+      }
+    };
+    scriptNode.connect(audioCtx.destination);
+
+    engine.setVoiceParameter('kick', 'decay', 0.4);
+    engine.setVoiceParameter('kick', 'tune', -300);
+    engine.setVoiceParameter('kick', 'level', 0.75);
+    engine.setVoiceParameter('ch', 'level', 0.65);
+    engine.setVoiceParameter('ch', 'tone', 0.35);
+  }
+
+  if (engine.context.state === 'suspended') await engine.context.resume();
+
+  currentStep = 0; currentBar = 0;
+  rings.length = 0; dust.length = 0;
+  currentDecay = 0.1;
+  lastRingX = cx; lastRingY = cy; lastRingRadius = 30;
+  playing = true;
+
+  ctx.fillStyle = '#050505';
+  ctx.fillRect(0, 0, W, H);
+
+  nextStepTime = engine.context.currentTime + 0.05;
+  document.getElementById('play-btn').classList.add('playing');
+  document.getElementById('restart-zone').style.display = 'none';
+  scheduler();
+}
+
+function stop() {
+  playing = false;
+  if (schedulerTimer) clearTimeout(schedulerTimer);
+  document.getElementById('play-btn').classList.remove('playing');
+  document.getElementById('restart-zone').style.display = 'block';
+  barHud.style.color = 'rgba(255,255,255,0)';
+}
+
+document.getElementById('play-btn').addEventListener('click', () => {
+  if (playing) stop(); else start();
+});
+document.getElementById('restart-zone').addEventListener('click', start);
+</script>
+</body>
+</html>
