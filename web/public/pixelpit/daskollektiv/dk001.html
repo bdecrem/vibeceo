@@ -288,6 +288,9 @@ async function start() {
   playBtn.textContent = '...';
 
   try {
+    // Create AudioContext immediately in gesture handler (iOS requirement)
+    const audioCtx = new AudioContext();
+
     const engine = new JT90Engine({ bpm: BPM });
     await engine.loadSamples('https://kochi.to/jt90/samples');
     engine._ensureVoices();
@@ -315,7 +318,6 @@ async function start() {
 
     // Concatenate into one buffer
     const totalLength = barBuffers.reduce((sum, b) => sum + b.length, 0);
-    const audioCtx = new AudioContext();
     const fullBuffer = audioCtx.createBuffer(1, totalLength, barBuffers[0].sampleRate);
     const channel = fullBuffer.getChannelData(0);
     let offset = 0;
