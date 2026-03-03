@@ -263,7 +263,7 @@ scriptNode.onaudioprocess = (e) => {
 **JB01 is different** — it's pure synthesis, so real-time `trigger()` scheduling works fine (see `hallman/index.html`). JT90's sample voices are what make real-time processing too expensive.
 
 **Reference implementations:**
-- `web/public/hallman/dk001.html` — JT90 pre-rendered, 8 bars
+- `web/public/pixelpit/daskollektiv/dk001.html` — JT90 pre-rendered, 8 bars
 - `web/public/hallman/sick.html` — JT90 pre-rendered, multi-section arrangement
 - `web/public/jt90/tribal.html` — JT90 pre-rendered, simple version
 
