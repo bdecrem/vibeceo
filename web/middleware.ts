@@ -12,6 +12,13 @@ export function middleware(request: NextRequest) {
 
   log(`[Middleware] Processing: ${pathname}`)
 
+  // CORS for /jt90/* — allows daskollektiv.rip to load engine + samples
+  if (pathname.startsWith('/jt90/')) {
+    const response = NextResponse.next()
+    response.headers.set('Access-Control-Allow-Origin', 'https://daskollektiv.rip')
+    return response
+  }
+
   const isTokenTankDomain = host?.includes('token-tank') || host?.includes('tokentank')
   const isB52Domain = host === 'b52s.me' || host === 'www.b52s.me'
   const isKochiDomain = host === 'kochi.to' || host === 'www.kochi.to'
