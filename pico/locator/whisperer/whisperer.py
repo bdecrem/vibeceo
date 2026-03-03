@@ -231,7 +231,7 @@ def deliver(message: str):
         try:
             subprocess.run(
                 ["openclaw", "message", "send",
-                 "--channel", "whatsapp", "--target", "Bart",
+                 "--channel", "whatsapp", "--target", "+16508989508",
                  "--message", message],
                 capture_output=True, timeout=15
             )
