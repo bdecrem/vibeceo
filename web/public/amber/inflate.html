@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INFLATE — Pump it up without popping</title>
+  
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="INFLATE — Pump it up without popping">
+  <meta property="og:description" content="Tap to pump air into the balloon. Make it as big as possible... but don't let it pop!">
+  <meta property="og:image" content="https://intheamber.com/amber/inflate-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/inflate.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="INFLATE — Pump it up without popping">
+  <meta name="twitter:description" content="Tap to pump air into the balloon. Make it as big as possible... but don't let it pop!">
+  <meta name="twitter:image" content="https://intheamber.com/amber/inflate-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: pointer;
+    }
+
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #pumps {
+      font-size: 48px;
+      font-weight: bold;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    }
+
+    #best {
+      font-size: 16px;
+      color: #D4A574;
+      margin-top: 8px;
+    }
+
+    #instruction {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      color: #2D9596;
+      pointer-events: none;
+      text-align: center;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    #gameOver {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: all;
+      background: rgba(13, 13, 13, 0.95);
+      padding: 40px;
+      border-radius: 20px;
+      border: 2px solid #D4A574;
+      display: none;
+    }
+
+    #gameOver.show {
+      display: block;
+      animation: popIn 0.3s ease-out;
+    }
+
+    #finalScore {
+      font-size: 72px;
+      color: #FFD700;
+      margin-bottom: 10px;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+    }
+
+    #message {
+      font-size: 20px;
+      color: #D4A574;
+      margin-bottom: 30px;
+    }
+
+    #playAgain {
+      background: #2D9596;
+      color: #000;
+      border: none;
+      padding: 16px 32px;
+      font-size: 20px;
+      font-family: 'Space Mono', monospace;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    #playAgain:hover {
+      background: #3DB5B6;
+      transform: scale(1.05);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes popIn {
+      0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="pumps">0</div>
+    <div id="best">BEST: 0</div>
+  </div>
+
+  <div id="instruction">TAP TO PUMP</div>
+
+  <div id="gameOver">
+    <div id="finalScore">0</div>
+    <div id="message">PUMPS</div>
+    <button id="playAgain">PUMP AGAIN</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const pumpsEl = document.getElementById('pumps');
+    const bestEl = document.getElementById('best');
+    const instructionEl = document.getElementById('instruction');
+    const gameOverEl = document.getElementById('gameOver');
+    const finalScoreEl = document.getElementById('finalScore');
+    const messageEl = document.getElementById('message');
+    const playAgainBtn = document.getElementById('playAgain');
+
+    // Audio context
+    let audioCtx;
+    const initAudio = () => {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    };
+
+    // Resize canvas
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Game state
+    let pumps = 0;
+    let best = parseInt(localStorage.getItem('inflateBest') || '0');
+    let popThreshold = 0;
+    let isPopped = false;
+    let balloonSize = 40;
+    let balloonColor = '#D4A574';
+    let wobblePhase = 0;
+    let particles = [];
+
+    bestEl.textContent = `BEST: ${best}`;
+
+    // Color progression based on size
+    const getColor = (size) => {
+      if (size < 100) return '#D4A574'; // amber
+      if (size < 150) return '#FFD700'; // gold
+      if (size < 200) return '#FFA500'; // orange
+      return '#FF6B6B'; // red (danger!)
+    };
+
+    // Pump sound
+    const playPumpSound = (pitch = 1) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(200 * pitch, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(300 * pitch, audioCtx.currentTime + 0.05);
+      
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
+    };
+
+    // Pop sound
+    const playPopSound = () => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+      
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    };
+
+    // Create explosion particles
+    const explode = (x, y) => {
+      for (let i = 0; i < 60; i++) {
+        const angle = (Math.PI * 2 * i) / 60;
+        const speed = 3 + Math.random() * 5;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          size: 3 + Math.random() * 5,
+          color: balloonColor,
+          life: 1
+        });
+      }
+    };
+
+    // Reset game
+    const resetGame = () => {
+      pumps = 0;
+      balloonSize = 40;
+      isPopped = false;
+      particles = [];
+      popThreshold = 15 + Math.floor(Math.random() * 15); // Random between 15-30 pumps
+      pumpsEl.textContent = '0';
+      balloonColor = '#D4A574';
+      instructionEl.style.display = 'block';
+      gameOverEl.classList.remove('show');
+    };
+
+    // Handle pump
+    const pump = () => {
+      if (isPopped) return;
+
+      initAudio();
+      pumps++;
+      balloonSize += 8;
+      balloonColor = getColor(balloonSize);
+      
+      pumpsEl.textContent = pumps;
+      playPumpSound(1 + pumps * 0.05);
+
+      // Hide instruction after first pump
+      if (pumps === 1) {
+        instructionEl.style.display = 'none';
+      }
+
+      // Check if balloon should pop
+      if (pumps >= popThreshold) {
+        isPopped = true;
+        explode(canvas.width / 2, canvas.height / 2);
+        playPopSound();
+
+        // Update best score
+        if (pumps > best) {
+          best = pumps;
+          localStorage.setItem('inflateBest', best.toString());
+          bestEl.textContent = `BEST: ${best}`;
+        }
+
+        // Show game over
+        setTimeout(() => {
+          finalScoreEl.textContent = pumps;
+          if (pumps === best && pumps > 0) {
+            messageEl.textContent = 'NEW RECORD!';
+          } else {
+            messageEl.textContent = 'PUMPS';
+          }
+          gameOverEl.classList.add('show');
+        }, 800);
+      }
+    };
+
+    // Event listeners
+    canvas.addEventListener('click', pump);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      pump();
+    });
+
+    playAgainBtn.addEventListener('click', resetGame);
+
+    // Animation loop
+    const animate = () => {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (!isPopped) {
+        // Draw balloon with wobble
+        wobblePhase += 0.05;
+        const wobbleX = Math.sin(wobblePhase) * (balloonSize / 20);
+        const wobbleY = Math.cos(wobblePhase * 1.3) * (balloonSize / 25);
+
+        const centerX = canvas.width / 2 + wobbleX;
+        const centerY = canvas.height / 2 + wobbleY;
+
+        // Balloon body (stretched ellipse)
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        
+        // Glow effect
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = balloonColor;
+        
+        // Main balloon
+        ctx.fillStyle = balloonColor;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, balloonSize, balloonSize * 1.1, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Highlight
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.beginPath();
+        ctx.ellipse(-balloonSize * 0.2, -balloonSize * 0.2, balloonSize * 0.3, balloonSize * 0.4, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Balloon knot
+        ctx.fillStyle = balloonColor;
+        ctx.beginPath();
+        ctx.ellipse(0, balloonSize * 1.1, 8, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // String
+        ctx.strokeStyle = balloonColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, balloonSize * 1.1 + 12);
+        ctx.quadraticCurveTo(10, balloonSize * 1.1 + 40, 0, balloonSize * 1.1 + 60);
+        ctx.stroke();
+        
+        ctx.restore();
+      }
+
+      // Draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2; // Gravity
+        p.life -= 0.02;
+
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      requestAnimationFrame(animate);
+    };
+
+    // Start
+    resetGame();
+    animate();
+  </script>
+</body>
+</html>
