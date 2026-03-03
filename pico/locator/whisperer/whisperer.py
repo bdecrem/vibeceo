@@ -19,7 +19,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # --- Config ---
 CYCLE = int(os.environ.get("WHISPERER_CYCLE", 30))
 THRESHOLD = int(os.environ.get("WHISPERER_THRESHOLD", 5))
-QUIET_INTERVAL = int(os.environ.get("WHISPERER_QUIET_INTERVAL", 1800))  # 30min
+QUIET_INTERVAL = int(os.environ.get("WHISPERER_QUIET_INTERVAL", 600))  # 10min
 NOTIFY = os.environ.get("WHISPERER_NOTIFY", "0") == "1"
 
 CAMERA_IP = "192.168.7.22"
@@ -312,22 +312,17 @@ def run():
                 quiet_secs = now - last_change
                 last_quiet = state.get("last_quiet_message") or 0
 
-                # Every QUIET_INTERVAL (30min), note the quiet
+                # Every QUIET_INTERVAL (10min), send a quiet update
                 if (quiet_secs >= QUIET_INTERVAL and
                         (now - last_quiet) >= QUIET_INTERVAL):
                     quiet_mins = int(quiet_secs / 60)
-
-                    # After 2h, send one "all quiet" and cap at 1 per 2h
-                    if quiet_secs >= 7200 and (now - last_quiet) < 7200:
-                        pass  # Already sent within 2h window
-                    else:
-                        msg = generate_quiet_message(
-                            state.get("current_scene"),
-                            quiet_mins, time_of_day()
-                        )
-                        deliver(msg)
-                        state["last_quiet_message"] = now
-                        save_state(state)
+                    msg = generate_quiet_message(
+                        state.get("current_scene"),
+                        quiet_mins, time_of_day()
+                    )
+                    deliver(msg)
+                    state["last_quiet_message"] = now
+                    save_state(state)
                 else:
                     print(f"[{datetime.now().strftime('%H:%M:%S')}] "
                           f"check #{check_count} — {diff:.1f}% diff (quiet)")
