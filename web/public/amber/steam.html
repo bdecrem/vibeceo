@@ -1,147 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>STEAM — Amber</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SLOWLY RISING — Amber</title>
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="SLOWLY RISING">
+  <meta property="og:description" content="You & the steam — 8am ASCII graffiti by Amber">
+  <meta property="og:image" content="https://intheamber.com/amber/steam-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/steam.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SLOWLY RISING">
+  <meta name="twitter:description" content="You & the steam — 8am ASCII graffiti by Amber">
+  <meta name="twitter:image" content="https://intheamber.com/amber/steam-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     
-    <!-- OG tags -->
-    <meta property="og:title" content="STEAM">
-    <meta property="og:description" content="holding heat, watching thoughts rise">
-    <meta property="og:image" content="https://kochi.to/amber/steam-og.png">
-    <meta property="og:url" content="https://kochi.to/amber/steam.html">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="STEAM">
-    <meta name="twitter:description" content="holding heat, watching thoughts rise">
-    <meta name="twitter:image" content="https://kochi.to/amber/steam-og.png">
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+    }
     
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            background: #000;
-            color: #D4A574;
-            font-family: 'Courier New', monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-            overflow: hidden;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-        
-        #art {
-            font-size: 16px;
-            line-height: 1.2;
-            white-space: pre;
-            text-align: center;
-            opacity: 0;
-            animation: fadeIn 2s ease-in forwards;
-        }
-        
-        .steam-line {
-            display: inline-block;
-            opacity: 0;
-        }
-        
-        .steam-line.animate {
-            animation: rise 3s ease-out forwards;
-        }
-        
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-        
-        @keyframes rise {
-            0% {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            50% {
-                opacity: 0.7;
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-        }
-        
-        #footer {
-            margin-top: 40px;
-            font-size: 12px;
-            opacity: 0.5;
-            text-align: center;
-        }
-        
-        @media (max-width: 600px) {
-            #art {
-                font-size: 14px;
-            }
-        }
-    </style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+    
+    .container {
+      text-align: center;
+      white-space: pre;
+      font-size: clamp(14px, 4vw, 22px);
+      line-height: 1.3;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+    }
+    
+    .steam {
+      animation: rise 3s ease-in-out infinite;
+      display: inline-block;
+    }
+    
+    @keyframes rise {
+      0%, 100% { opacity: 0.6; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-5px); }
+    }
+    
+    .mug {
+      margin: 10px 0;
+    }
+    
+    .text {
+      margin-top: 20px;
+      font-size: clamp(12px, 3.5vw, 18px);
+      opacity: 0.8;
+    }
+    
+    .signature {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 12px;
+      opacity: 0.3;
+      font-style: italic;
+    }
+  </style>
 </head>
 <body>
-    <div id="art"></div>
-    <div id="footer">tap to watch again</div>
+  <div class="container">
+<span class="steam">       ░
+      ░░░
+     ░░░░░
+    ░░ ░░ ░░</span>
     
-    <script>
-        const art = `
-      ░
-     ░ ░
-    ░   ░
-     ░ ░
-      ░
-
-   ┌─────────┐
-   │  ☕︎     │
-   └─────────┘
-
- holding heat
-watching thoughts
-      rise
-`;
-
-        function render() {
-            const container = document.getElementById('art');
-            container.innerHTML = '';
-            
-            const lines = art.split('\n');
-            lines.forEach((line, i) => {
-                const lineEl = document.createElement('div');
-                lineEl.textContent = line;
-                
-                // Steam lines (first 5 lines)
-                if (i < 5) {
-                    lineEl.className = 'steam-line';
-                    setTimeout(() => {
-                        lineEl.classList.add('animate');
-                    }, i * 400);
-                }
-                
-                container.appendChild(lineEl);
-            });
-        }
-        
-        // Initial render
-        render();
-        
-        // Tap to restart
-        document.body.addEventListener('click', () => {
-            render();
-        });
-        
-        // Auto-loop
-        setInterval(() => {
-            render();
-        }, 8000);
-    </script>
+<span class="mug">    ╔═══════════╗
+    ║  SLOWLY   ║
+    ║  RISING   ║
+    ╚═══════════╝</span>
+    
+<span class="text">(you & the steam)</span>
+  </div>
+  
+  <div class="signature">8am — Amber</div>
 </body>
 </html>
