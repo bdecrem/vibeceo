@@ -124,7 +124,12 @@ export async function GET(request: NextRequest) {
     // Build feed items
     const feedItems: FeedItem[] = filteredCreations.map((creation) => {
       const meta = creation.metadata as CreationMetadata;
-      const url = meta?.url || "";
+      // Try metadata.url first, then extract from content text (older creations embed URL at end)
+      let url = meta?.url || "";
+      if (!url && creation.content) {
+        const urlMatch = creation.content.match(/URL:\s*(https:\/\/intheamber\.com\/amber\/[^\s]+)/);
+        if (urlMatch) url = urlMatch[1];
+      }
 
       // Try to find matching tweet text, fall back to prompt
       let tweetText: string | null = null;
@@ -153,10 +158,13 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // Filter out items with no valid URL (they'd just reload the homepage)
+    const validItems = feedItems.filter(item => item.url && item.url.includes('/amber/'));
+
     return NextResponse.json({
-      items: feedItems,
-      total: feedItems.length,
-      hasMore: feedItems.length === limit,
+      items: validItems,
+      total: validItems.length,
+      hasMore: validItems.length === limit,
     });
   } catch (err) {
     console.error("Error fetching feed:", err);
