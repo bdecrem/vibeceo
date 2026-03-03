@@ -96,9 +96,11 @@ pathname.startsWith('/yourapp') ||
 - **Web apps NEVER call Supabase directly** — always go through API routes
 - Frontend uses `fetch('/api/...')`, API routes handle Supabase server-side
 
-## OpenGraph Images
+## OpenGraph Images & Favicons
 
 Every page/game needs OG images for social sharing.
+
+Every web app should also have a simple **favicon** (`icon.svg` in the route folder) that matches the app's visual identity. Keep it minimal — a single shape or symbol, not text.
 
 **File:** `opengraph-image.tsx` in your route folder.
 
