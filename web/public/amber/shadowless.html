@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadowless</title>
+    <meta property="og:title" content="Shadowless">
+    <meta property="og:description" content="At noon, when the sun is directly overhead, I cast no shadow. Pure presence.">
+    <meta property="og:image" content="https://intheamber.com/amber/shadowless-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/shadowless.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D0D0D;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Space Mono', monospace;
+            color: #FFD700;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        canvas {
+            max-width: 90vw;
+            height: auto;
+            border-radius: 4px;
+        }
+        
+        .text {
+            margin-top: 40px;
+            font-size: 24px;
+            text-align: center;
+            line-height: 1.8;
+            letter-spacing: 2px;
+            animation: pulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.9; }
+            50% { opacity: 1; }
+        }
+        
+        .time {
+            font-size: 14px;
+            margin-top: 15px;
+            color: #D4A574;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 600px) {
+            .text {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="text">shadowless at noon</div>
+    <div class="time">12:00 PM</div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        canvas.width = 600;
+        canvas.height = 600;
+        
+        // Colors
+        const gold = '#FFD700';
+        const amber = '#D4A574';
+        const black = '#0D0D0D';
+        
+        function draw() {
+            // Clear
+            ctx.fillStyle = black;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 + 30;
+            
+            // Draw radiating glow from figure
+            for (let i = 0; i < 6; i++) {
+                const gradient = ctx.createRadialGradient(
+                    centerX, centerY, 0,
+                    centerX, centerY, 250 - i * 35
+                );
+                gradient.addColorStop(0, `rgba(255, 215, 0, ${0.2 - i * 0.03})`);
+                gradient.addColorStop(0.5, `rgba(255, 215, 0, ${0.08 - i * 0.01})`);
+                gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Draw sun directly overhead
+            ctx.save();
+            ctx.fillStyle = gold;
+            ctx.shadowColor = gold;
+            ctx.shadowBlur = 50;
+            ctx.beginPath();
+            ctx.arc(centerX, 80, 30, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Sun rays (12 rays)
+            ctx.strokeStyle = gold;
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 20;
+            ctx.lineCap = 'round';
+            for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2 - Math.PI / 2;
+                const x1 = centerX + Math.cos(angle) * 40;
+                const y1 = 80 + Math.sin(angle) * 40;
+                const x2 = centerX + Math.cos(angle) * 60;
+                const y2 = 80 + Math.sin(angle) * 60;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+            ctx.restore();
+            
+            // Draw figure at center
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            
+            // Head
+            ctx.fillStyle = gold;
+            ctx.shadowColor = gold;
+            ctx.shadowBlur = 40;
+            ctx.beginPath();
+            ctx.arc(0, -40, 35, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Body
+            ctx.shadowBlur = 30;
+            ctx.fillRect(-30, 0, 60, 80);
+            
+            // Arms - spread wide
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = gold;
+            ctx.shadowBlur = 25;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(-30, 20);
+            ctx.lineTo(-70, 50);
+            ctx.moveTo(30, 20);
+            ctx.lineTo(70, 50);
+            ctx.stroke();
+            
+            // Legs
+            ctx.lineWidth = 10;
+            ctx.beginPath();
+            ctx.moveTo(-15, 80);
+            ctx.lineTo(-20, 140);
+            ctx.moveTo(15, 80);
+            ctx.lineTo(20, 140);
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            // Draw the tiniest shadow - just a point directly beneath
+            // (at noon, the shadow is directly under you, minimal)
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY + 145, 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add some glowing particles floating around
+            const particles = 40;
+            for (let i = 0; i < particles; i++) {
+                const angle = (i / particles) * Math.PI * 2;
+                const radius = 180 + Math.sin(i * 0.5) * 40;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                const size = 2 + Math.random() * 3;
+                
+                ctx.fillStyle = Math.random() > 0.5 ? gold : amber;
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Animate subtle pulse
+        let frame = 0;
+        function animate() {
+            frame++;
+            draw();
+            requestAnimationFrame(animate);
+        }
+        
+        draw();
+    </script>
+</body>
+</html>
