@@ -1,13 +1,23 @@
 #!/bin/bash
-# Reolink watcher — takes a pic every minute, compares with previous via Qwen 3.5
+# Reolink watcher — snap pair 1s apart, compare via Qwen 3.5, repeat every cycle
 # Sends a macOS notification + saves the image when something changes
-# Usage: ./watch.sh [interval_seconds]
-#   Default interval: 60 seconds
+# Usage: ./watch.sh [cycle_seconds]
+#   Default cycle: 120 seconds (2 min between comparisons)
 #   Ctrl+C to stop
+#
+# Each cycle:
+#   1. Take photo A
+#   2. Wait 1 second
+#   3. Take photo B
+#   4. Wait 10 seconds (let system breathe)
+#   5. Compare A vs B via Qwen 3.5 (~60s on M1)
+#   6. Wait remaining cycle time, then repeat
 
 set -e
 
-INTERVAL=${1:-60}
+CYCLE=${1:-120}
+SNAP_GAP=1
+PRE_COMPARE_WAIT=10
 CAMERA_IP="192.168.7.22"
 CAMERA_USER="admin"
 CAMERA_PASS="8iguana61"
@@ -28,7 +38,6 @@ get_token() {
 }
 
 snap() {
-  # Refresh token every 50 min (expires at 60)
   local now=$(date +%s)
   if [ -z "$TOKEN" ] || [ $((now - TOKEN_TIME)) -gt 3000 ]; then
     get_token
@@ -38,7 +47,6 @@ snap() {
 }
 
 compare_images() {
-  # Returns "SAME" or "DIFFERENT" (+ explanation)
   local img1="$1" img2="$2"
   local b1 b2 tmpfile result
 
@@ -51,7 +59,7 @@ compare_images() {
   cat > "$tmpfile" <<ENDJSON
 {
   "model": "qwen3.5:4b",
-  "prompt": "Compare these two security camera images. Has anything meaningfully changed? Ignore minor lighting shifts or noise. Focus on: people appearing/leaving, objects moved, doors opening, pets, etc. Answer SAME if nothing meaningful changed, or DIFFERENT if something notable happened. First line must be just SAME or DIFFERENT. Second line: brief explanation. /no_think",
+  "prompt": "Compare these two security camera images taken 1 second apart. Has anything meaningfully changed? Ignore compression artifacts and minor noise. Focus on: people appearing/leaving/moving, objects moved, doors opening/closing, pets, vehicles. First line must be just SAME or DIFFERENT. Second line: brief explanation of what changed (or 'no change'). /no_think",
   "images": ["$b1", "$b2"],
   "stream": false,
   "options": {"num_predict": 150}
@@ -74,44 +82,52 @@ except:
 notify() {
   local msg="$1"
   local img="$2"
-  # macOS notification
   osascript -e "display notification \"$msg\" with title \"🏠 Living Room\" sound name \"Glass\"" 2>/dev/null || true
   echo "[$(date '+%H:%M:%S')] CHANGE: $msg"
   echo "  Saved: $img"
 }
 
-echo "🏠 Reolink Watcher starting (every ${INTERVAL}s)"
+echo "🏠 Reolink Watcher starting (${CYCLE}s cycle)"
+echo "   Snap pair (1s gap) → wait 10s → compare → wait for next cycle"
 echo "   Camera: $CAMERA_IP"
 echo "   Changes saved to: $CHANGES_DIR"
 echo "   Press Ctrl+C to stop"
 echo ""
 
-# Take initial snapshot
-PREV="$WATCH_DIR/prev.jpg"
-snap "$PREV"
-echo "[$(date '+%H:%M:%S')] Initial snapshot taken"
-
 while true; do
-  sleep "$INTERVAL"
+  CYCLE_START=$(date +%s)
 
-  CURR="$WATCH_DIR/curr.jpg"
-  snap "$CURR"
+  # Step 1 & 2: Take two photos 1 second apart
+  FRAME_A="$WATCH_DIR/frame_a.jpg"
+  FRAME_B="$WATCH_DIR/frame_b.jpg"
 
-  echo -n "[$(date '+%H:%M:%S')] Comparing... "
+  snap "$FRAME_A"
+  sleep "$SNAP_GAP"
+  snap "$FRAME_B"
+  echo -n "[$(date '+%H:%M:%S')] Snapped pair. "
 
-  RESULT=$(compare_images "$PREV" "$CURR")
+  # Step 3: Breathe
+  sleep "$PRE_COMPARE_WAIT"
+
+  # Step 4: Compare
+  echo -n "Comparing... "
+  RESULT=$(compare_images "$FRAME_A" "$FRAME_B")
   FIRST_LINE=$(echo "$RESULT" | head -1 | tr -d '[:space:]')
 
   if [ "$FIRST_LINE" = "DIFFERENT" ]; then
     EXPLANATION=$(echo "$RESULT" | tail -n +2 | head -1)
     TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
     SAVE_PATH="$CHANGES_DIR/change_${TIMESTAMP}.jpg"
-    cp "$CURR" "$SAVE_PATH"
+    cp "$FRAME_B" "$SAVE_PATH"
     notify "$EXPLANATION" "$SAVE_PATH"
   else
     echo "no change"
   fi
 
-  # Current becomes previous
-  mv "$CURR" "$PREV"
+  # Step 5: Wait remaining cycle time
+  ELAPSED=$(( $(date +%s) - CYCLE_START ))
+  REMAINING=$(( CYCLE - ELAPSED ))
+  if [ "$REMAINING" -gt 0 ]; then
+    sleep "$REMAINING"
+  fi
 done
