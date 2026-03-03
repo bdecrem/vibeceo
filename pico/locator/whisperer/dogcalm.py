@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
-"""DogCalm — plays music when Glimmer's on her bed (plush tiger visible)."""
+"""DogCalm — plays music when Glimmer's on her bed (plush tiger visible).
+Uses local Qwen 3.5 via Ollama for vision — zero API cost."""
 
-import base64
-import json
 import os
 import subprocess
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
 
-import anthropic
+import ollama
 import requests
 import urllib3
 
@@ -29,9 +27,7 @@ SNAP_DIR = Path(os.environ.get("DOGCALM_SNAP_DIR",
     "/Users/bart/Documents/code/vibeceo/web/public/whisperer/snaps"))
 WORK_DIR = Path("/tmp/dogcalm")
 NOTIFY = os.environ.get("DOGCALM_NOTIFY", "0") == "1"
-
-claude = anthropic.Anthropic()
-MODEL = "claude-3-haiku-20240307"
+MODEL = os.environ.get("DOGCALM_MODEL", "qwen3.5:4b")
 
 
 # --- Camera ---
@@ -57,28 +53,26 @@ class Camera:
         path.write_bytes(r.content)
 
 
-# --- Vision ---
-def check_for_tiger(image_path: Path) -> tuple[bool, str]:
-    """Ask Claude if the plush tiger is visible. Returns (is_present, description)."""
-    img_data = base64.standard_b64encode(image_path.read_bytes()).decode()
-    response = claude.messages.create(
+# --- Vision (local Qwen via Ollama) ---
+def check_for_tiger(image_path: Path) -> tuple:
+    """Ask Qwen if the plush tiger is visible. Returns (is_present, description)."""
+    response = ollama.chat(
         model=MODEL,
-        max_tokens=150,
         messages=[{
             "role": "user",
-            "content": [
-                {"type": "image", "source": {
-                    "type": "base64", "media_type": "image/jpeg", "data": img_data
-                }},
-                {"type": "text", "text": (
-                    "Is there a large plush/stuffed tiger visible in this security camera image? "
-                    "Also note if there's a dog (Glimmer) near it. "
-                    "First word must be YES or NO. Then one sentence explaining what you see."
-                )}
-            ]
+            "content": (
+                "Is there a large plush or stuffed tiger visible in this image? "
+                "Also note if there is a dog nearby. "
+                "First word must be YES or NO. Then one sentence explaining what you see. "
+                "/no_think"
+            ),
+            "images": [str(image_path)]
         }]
     )
-    text = response.content[0].text.strip()
+    text = response.message.content.strip()
+    # Strip any <think> tags if present
+    import re
+    text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
     is_present = text.upper().startswith("YES")
     return is_present, text
 
@@ -106,18 +100,9 @@ def stop_music():
                    capture_output=True, timeout=10)
 
 
-def is_music_playing() -> bool:
-    """Check if Music.app is currently playing."""
-    r = subprocess.run(
-        ["osascript", "-e", 'tell application "Music" to return player state as string'],
-        capture_output=True, text=True, timeout=10)
-    return "playing" in r.stdout.strip().lower()
-
-
 # --- Image compression ---
 def compress_and_save(src: Path, dest: Path):
-    """Compress image to ~100KB and save."""
-    # Resize to 800px wide first, then use magick for quality control
+    """Compress image to ~40KB and save."""
     subprocess.run(
         ["magick", str(src), "-resize", "800x", "-quality", "60", str(dest)],
         capture_output=True, timeout=15)
@@ -145,7 +130,7 @@ def main():
     music_on = False
     check_count = 0
 
-    print(f"🐕 DogCalm starting ({CYCLE}s cycle)")
+    print(f"🐕 DogCalm starting ({CYCLE}s cycle, local {MODEL})")
     print(f"   Camera: {CAMERA_IP}")
     print(f"   Speaker: {SPEAKER}")
     print(f"   Playlist: {PLAYLIST}")
@@ -158,33 +143,41 @@ def main():
         check_count += 1
 
         try:
-            # Snap
+            # Snap and downscale for faster vision processing
+            raw_frame = WORK_DIR / "frame_raw.jpg"
             frame = WORK_DIR / "frame.jpg"
-            camera.snap(frame)
+            camera.snap(raw_frame)
+            subprocess.run(
+                ["magick", str(raw_frame), "-resize", "800x", str(frame)],
+                capture_output=True, timeout=10)
 
-            # Check for tiger
+            # Check for tiger (local Qwen ~46s)
+            t0 = time.time()
             tiger_present, description = check_for_tiger(frame)
+            vision_time = time.time() - t0
             ts = datetime.now().strftime("%H:%M:%S")
 
             if tiger_present:
-                # Save compressed snap
+                # Save compressed snap from full-res original
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 snap_path = SNAP_DIR / f"snap_{timestamp}.jpg"
-                compress_and_save(frame, snap_path)
+                compress_and_save(raw_frame, snap_path)
 
                 if not music_on:
                     play_music()
                     music_on = True
                     notify(f"🐕 Tiger spotted! Playing {PLAYLIST} for Glimmer 🎵")
 
-                print(f"[{ts}] #{check_count} 🐯 tiger present — music on — saved {snap_path.name}")
+                print(f"[{ts}] #{check_count} 🐯 tiger present — music on — "
+                      f"saved {snap_path.name} ({vision_time:.0f}s)")
             else:
                 if music_on:
                     stop_music()
                     music_on = False
                     notify("🐕 Tiger gone — music paused")
 
-                print(f"[{ts}] #{check_count} no tiger — {description[:60]}")
+                print(f"[{ts}] #{check_count} no tiger ({vision_time:.0f}s) — "
+                      f"{description[:80]}")
 
         except requests.exceptions.ConnectionError:
             print(f"[{datetime.now().strftime('%H:%M:%S')}] camera unreachable")
