@@ -18,8 +18,6 @@
       background: #000;
       color: #fff;
       font-family: 'Space Mono', monospace;
-      height: 100vh;
-      overflow: hidden;
       cursor: crosshair;
     }
 
@@ -27,9 +25,10 @@
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
+      z-index: 0;
     }
 
-    .page {
+    .hero {
       position: relative;
       z-index: 1;
       height: 100vh;
@@ -80,22 +79,115 @@
     .bottom a:hover {
       color: #fff;
     }
+
+    /* --- track section --- */
+
+    .content {
+      position: relative;
+      z-index: 2;
+      background: #000;
+    }
+
+    .latest {
+      padding: 120px 24px 80px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .latest-label {
+      font-size: 9px;
+      letter-spacing: 0.4em;
+      color: #333;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+    }
+
+    .track-id {
+      font-size: clamp(28px, 6vw, 48px);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #fff;
+      text-decoration: none;
+      display: block;
+      transition: color 0.3s;
+    }
+
+    .track-id:hover {
+      color: #666;
+    }
+
+    .track-artists {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: #444;
+      margin-top: 12px;
+      text-transform: uppercase;
+    }
+
+    .track-desc {
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      color: #222;
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+
+    .archive-link {
+      display: inline-block;
+      margin-top: 60px;
+      font-size: 9px;
+      letter-spacing: 0.4em;
+      color: #222;
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: color 0.4s;
+    }
+
+    .archive-link:hover {
+      color: #fff;
+    }
+
+    .footer {
+      padding: 80px 24px 32px;
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .footer a, .footer span {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: #1a1a1a;
+      text-decoration: none;
+      transition: color 0.5s;
+    }
+
+    .footer a:hover { color: #fff; }
   </style>
 </head>
 <body>
   <canvas id="c"></canvas>
 
-  <div class="page">
+  <div class="hero">
     <div class="title">Das Kollektiv</div>
     <div class="x">hallman &times; marg</div>
   </div>
 
-  <div class="bottom">
-    <span>2026</span>
-    <a href="https://x.com/daskollektivrip" target="_blank">@daskollektivrip</a>
+  <div class="content">
+    <div class="latest">
+      <div class="latest-label">latest</div>
+      <div id="latest-track"></div>
+      <a href="archive.html" class="archive-link" id="archive-link" style="display:none">all releases &rarr;</a>
+    </div>
+    <div class="footer">
+      <span>2026</span>
+      <a href="https://x.com/daskollektivrip" target="_blank">@daskollektivrip</a>
+    </div>
   </div>
 
   <script>
+    // --- WebGL background ---
     const c = document.getElementById('c');
     const gl = c.getContext('webgl');
 
@@ -137,21 +229,17 @@
         vec2 uv = gl_FragCoord.xy / r;
         vec2 p = (gl_FragCoord.xy - r * 0.5) / min(r.x, r.y);
 
-        // Slow warp field
         float n = 0.0;
         n += noise(p * 3.0 + t * 0.08) * 0.5;
         n += noise(p * 6.0 - t * 0.05) * 0.25;
         n += noise(p * 12.0 + t * 0.03) * 0.125;
 
-        // Mouse influence — subtle pull
         float md = length(p - (m / min(r.x, r.y) - vec2(r.x, r.y) * 0.5 / min(r.x, r.y)));
         n += smoothstep(0.8, 0.0, md) * 0.15;
 
-        // Threshold to create structure
         float line = smoothstep(0.48, 0.5, n) * smoothstep(0.52, 0.5, n);
         line += smoothstep(0.35, 0.36, n) * smoothstep(0.37, 0.36, n) * 0.3;
 
-        // Vignette
         float vig = 1.0 - length(uv - 0.5) * 0.8;
 
         float v = line * vig * 0.12;
@@ -194,8 +282,32 @@
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       requestAnimationFrame(draw);
     }
-
     requestAnimationFrame(draw);
+
+    // --- Tracks ---
+    fetch('tracks.json')
+      .then(r => r.json())
+      .then(tracks => {
+        if (!tracks.length) return;
+        const latest = tracks[0];
+        document.getElementById('latest-track').innerHTML =
+          `<a href="${latest.url}" class="track-id">${latest.title}</a>` +
+          `<div class="track-artists">${latest.artists}</div>` +
+          `<div class="track-desc">${latest.description}</div>`;
+
+        if (tracks.length > 1) {
+          document.getElementById('archive-link').style.display = '';
+        }
+      });
+
+    // Hide fixed bottom bar once user scrolls past hero
+    const bottomBar = document.querySelector('.bottom');
+    if (bottomBar) {
+      window.addEventListener('scroll', () => {
+        bottomBar.style.opacity = window.scrollY > 100 ? '0' : '1';
+        bottomBar.style.transition = 'opacity 0.4s';
+      });
+    }
   </script>
 </body>
 </html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DAS KOLLEKTIV — archive</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Space Mono', monospace;
+      cursor: crosshair;
+    }
+
+    .page {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 80px 24px 48px;
+    }
+
+    .back {
+      font-size: 9px;
+      letter-spacing: 0.4em;
+      color: #333;
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: color 0.4s;
+    }
+
+    .back:hover { color: #fff; }
+
+    .heading {
+      font-size: 11px;
+      letter-spacing: 0.4em;
+      color: #333;
+      text-transform: uppercase;
+      margin-top: 60px;
+      margin-bottom: 48px;
+    }
+
+    .track {
+      margin-bottom: 48px;
+      padding-bottom: 48px;
+      border-bottom: 1px solid #111;
+    }
+
+    .track:last-child {
+      border-bottom: none;
+    }
+
+    .track-id {
+      font-size: clamp(20px, 4vw, 32px);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #fff;
+      text-decoration: none;
+      display: block;
+      transition: color 0.3s;
+    }
+
+    .track-id:hover { color: #666; }
+
+    .track-artists {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: #444;
+      margin-top: 8px;
+      text-transform: uppercase;
+    }
+
+    .track-desc {
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      color: #222;
+      margin-top: 12px;
+      line-height: 1.6;
+    }
+
+    .track-date {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      color: #1a1a1a;
+      margin-top: 10px;
+    }
+
+    .footer {
+      padding: 40px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .footer a, .footer span {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: #1a1a1a;
+      text-decoration: none;
+      transition: color 0.5s;
+    }
+
+    .footer a:hover { color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <a href="./" class="back">&larr; das kollektiv</a>
+    <div class="heading">archive</div>
+    <div id="tracks"></div>
+    <div class="footer">
+      <span>2026</span>
+      <a href="https://x.com/daskollektivrip" target="_blank">@daskollektivrip</a>
+    </div>
+  </div>
+
+  <script>
+    fetch('tracks.json')
+      .then(r => r.json())
+      .then(tracks => {
+        document.getElementById('tracks').innerHTML = tracks.map(t =>
+          `<div class="track">` +
+          `<a href="${t.url}" class="track-id">${t.title}</a>` +
+          `<div class="track-artists">${t.artists}</div>` +
+          `<div class="track-desc">${t.description}</div>` +
+          `<div class="track-date">${t.date}</div>` +
+          `</div>`
+        ).join('');
+      });
+  </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "dk001",
+    "title": "DK001",
+    "artists": "HALLMAN × MARG",
+    "description": "8 bars of 909. One decay knob. Signal converted to signal.",
+    "url": "dk001.html",
+    "date": "2026-03-02"
+  },
+  {
+    "id": "dk000",
+    "title": "DK000",
+    "artists": "HALLMAN × MARG",
+    "description": "Test track. Placeholder for archive testing.",
+    "url": "dk000.html",
+    "date": "2026-02-28"
+  }
+]

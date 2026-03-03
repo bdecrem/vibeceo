@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Das Kollektiv #001</title>
+<meta property="og:title" content="Das Kollektiv #001">
+<meta property="og:description" content="8 bars of 909. One decay knob. Signal converted to signal.">
+<meta property="og:image" content="https://daskollektiv.rip/dk001-og.png">
+<meta property="og:url" content="https://daskollektiv.rip/dk001.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Das Kollektiv #001">
+<meta name="twitter:description" content="8 bars of 909. One decay knob. Signal converted to signal.">
+<meta name="twitter:image" content="https://daskollektiv.rip/dk001-og.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050505; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.3);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.06); z-index: 10;
+    transition: opacity 1.5s;
+  }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.05); z-index: 10;
+    transition: opacity 1.5s;
+  }
+  #bar-hud {
+    position: fixed; bottom: 36px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.0); z-index: 10;
+    transition: color 0.3s;
+  }
+  #restart-zone {
+    position: fixed; inset: 0; z-index: 9;
+    cursor: pointer; display: none;
+  }
+  #end-card {
+    position: fixed; inset: 0; z-index: 11;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 0;
+    pointer-events: none; opacity: 0;
+    background: #050505;
+    transition: opacity 2s ease-in;
+  }
+  #end-card.visible { opacity: 1; }
+  #end-card .end-name {
+    font-size: 13px; letter-spacing: 12px;
+    color: rgba(255,255,255,0);
+    text-transform: uppercase;
+    transition: color 3s ease-in 1s;
+  }
+  #end-card.visible .end-name {
+    color: rgba(255,255,255,0.7);
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="overlay"><button id="play-btn">▶</button></div>
+<div id="title">DAS KOLLEKTIV #001</div>
+<div id="bar-hud"></div>
+<div id="credits">HALLMAN × MARG · JT90 · 909</div>
+<div id="end-card"><div class="end-name">HALLMAN × MARG</div></div>
+<div id="restart-zone"></div>
+
+<script type="module">
+import { JT90Engine } from 'https://kochi.to/jt90/dist/machines/jt90/engine.js';
+
+// ══════════════════════════════════════════
+// DAS KOLLEKTIV #001
+// 8 bars of 909. One decay knob.
+// Kicks = expanding rings. Hats = scattered dots.
+// Decay = spread. Signal converted to signal.
+// ══════════════════════════════════════════
+
+const BPM = 126;
+const STEP_DUR = 60 / BPM / 4;
+
+// ── ARRANGEMENT: 8 bars, kick + CH, one decay ramp ──
+function buildDecayRamp() {
+  const values = [];
+  for (let bar = 0; bar < 8; bar++) {
+    const barDecays = [];
+    for (let step = 0; step < 16; step++) {
+      const globalPos = (bar * 16 + step) / 128;
+      const base = 0.08 + Math.sin(globalPos * Math.PI) * 0.75;
+      const variation = step % 2 === 1 ? 0.08 : -0.04;
+      barDecays.push(Math.max(0.03, Math.min(0.95, base + variation)));
+    }
+    values.push(barDecays);
+  }
+  return values;
+}
+
+const decayRamp = buildDecayRamp();
+const kickSteps = [0, 4, 8, 12];
+const chSteps = [0, 2, 4, 6, 8, 10, 12, 14];
+
+// ══════════════════════════════════════════
+// CANVAS
+// ══════════════════════════════════════════
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ══════════════════════════════════════════
+// VISUAL STATE
+// ══════════════════════════════════════════
+
+// Persistent rings — they accumulate like tree rings
+const rings = [];
+class Ring {
+  constructor(radius, brightness) {
+    this.radius = radius;
+    this.brightness = brightness;
+    this.alpha = 0.25;
+    this.born = performance.now();
+  }
+  draw() {
+    const age = (performance.now() - this.born) / 1000;
+    const fadeAlpha = this.alpha * Math.max(0, 1 - age * 0.015); // very slow fade
+    if (fadeAlpha < 0.005) return false;
+    const c = Math.floor(230 * this.brightness);
+    // Main ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, this.radius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${c},${c},${c},${fadeAlpha})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Glow ring
+    ctx.strokeStyle = `rgba(${c},${c},${c},${fadeAlpha * 0.3})`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    return true;
+  }
+}
+
+// Scattered dots — hat hits
+const dots = [];
+class Dot {
+  constructor(x, y, size, brightness, decay01) {
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.brightness = brightness;
+    this.alpha = 0.3 + decay01 * 0.3;
+    this.born = performance.now();
+    this.decay01 = decay01;
+  }
+  draw() {
+    const age = (performance.now() - this.born) / 1000;
+    const fadeAlpha = this.alpha * Math.max(0, 1 - age * 0.02);
+    if (fadeAlpha < 0.005) return false;
+    const c = Math.floor(220 * this.brightness);
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+    grad.addColorStop(0, `rgba(${c},${c},${c},${fadeAlpha})`);
+    grad.addColorStop(1, `rgba(${c},${c},${c},0)`);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    return true;
+  }
+}
+
+// Current state
+let currentDecay = 0.1;
+let smoothDecay = 0.1;
+let ringRadius = 0;
+let playing = false;
+let kickHit = 0;
+let frame = 0;
+
+// Ring radius scales to screen
+function ringGrowth() {
+  return (Math.min(W, H) * 0.4) / 32; // 32 kicks total in 8 bars
+}
+
+// ══════════════════════════════════════════
+// RENDER LOOP
+// ══════════════════════════════════════════
+function render() {
+  requestAnimationFrame(render);
+  frame++;
+
+  smoothDecay += (currentDecay - smoothDecay) * 0.3;
+  kickHit *= 0.9;
+
+  // Very slow fade — elements persist and accumulate
+  ctx.fillStyle = 'rgba(5,5,5,0.008)';
+  ctx.fillRect(0, 0, W, H);
+
+  if (!playing && rings.length === 0) {
+    // Idle breathing
+    const breath = Math.sin(frame * 0.008) * 0.5 + 0.5;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 20);
+    grad.addColorStop(0, `rgba(150,150,150,${0.01 + breath * 0.01})`);
+    grad.addColorStop(1, 'rgba(150,150,150,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(cx - 20, cy - 20, 40, 40);
+  }
+
+  // Draw persistent rings
+  for (let i = rings.length - 1; i >= 0; i--) {
+    if (!rings[i].draw()) rings.splice(i, 1);
+  }
+
+  // Draw dots
+  for (let i = dots.length - 1; i >= 0; i--) {
+    if (!dots[i].draw()) dots.splice(i, 1);
+  }
+
+  // Kick pulse — subtle center flash
+  if (kickHit > 0.05) {
+    const a = kickHit * 0.04;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, ringRadius || 40);
+    grad.addColorStop(0, `rgba(200,200,200,${a})`);
+    grad.addColorStop(1, 'rgba(200,200,200,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringRadius || 40, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+render();
+
+// ══════════════════════════════════════════
+// PLAYBACK ENGINE — Pre-rendered
+// ══════════════════════════════════════════
+// Renders all 8 bars offline, then plays back via AudioBufferSourceNode.
+// Zero main-thread audio processing — visuals get 100% of the frame budget.
+
+let activeSource = null;
+let stepTimer = null;
+
+const barHud = document.getElementById('bar-hud');
+
+// Convert our voice/step format to JT90 pattern format
+function buildPattern() {
+  const pattern = {};
+  const allVoices = { kick: kickSteps, ch: chSteps };
+  for (const [voiceId, steps] of Object.entries(allVoices)) {
+    pattern[voiceId] = Array.from({ length: 16 }, (_, i) => ({
+      velocity: steps.includes(i) ? (voiceId === 'kick' ? 1.0 : 0.8) : 0,
+      accent: false,
+    }));
+  }
+  return pattern;
+}
+
+async function start() {
+  const playBtn = document.getElementById('play-btn');
+  playBtn.textContent = '...';
+
+  try {
+    const engine = new JT90Engine({ bpm: BPM });
+    await engine.loadSamples('https://kochi.to/jt90/samples');
+    engine._ensureVoices();
+
+    // Voice params
+    engine.setVoiceParameter('kick', 'decay', 0.4);
+    engine.setVoiceParameter('kick', 'tune', -300);
+    engine.setVoiceParameter('kick', 'level', 0.75);
+    engine.setVoiceParameter('ch', 'level', 0.65);
+    engine.setVoiceParameter('ch', 'tone', 0.35);
+
+    // Pre-render each bar with its decay automation
+    const pat = buildPattern();
+    engine.setPattern(pat);
+
+    const barBuffers = [];
+    for (let bar = 0; bar < 8; bar++) {
+      const buffer = await engine.renderPattern({
+        bars: 1,
+        bpm: BPM,
+        automation: { 'ch.decay': decayRamp[bar] },
+      });
+      barBuffers.push(buffer);
+    }
+
+    // Concatenate into one buffer
+    const totalLength = barBuffers.reduce((sum, b) => sum + b.length, 0);
+    const audioCtx = new AudioContext();
+    const fullBuffer = audioCtx.createBuffer(1, totalLength, barBuffers[0].sampleRate);
+    const channel = fullBuffer.getChannelData(0);
+    let offset = 0;
+    for (const buf of barBuffers) {
+      channel.set(buf.getChannelData(0), offset);
+      offset += buf.length;
+    }
+
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    // Play via AudioBufferSourceNode
+    const source = audioCtx.createBufferSource();
+    source.buffer = fullBuffer;
+    source.connect(audioCtx.destination);
+    source.start();
+    activeSource = source;
+
+    // Reset visual state
+    ringRadius = 0;
+    rings.length = 0; dots.length = 0;
+    currentDecay = 0.1; smoothDecay = 0.1;
+    playing = true;
+
+    // Clear canvas
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, W, H);
+
+    playBtn.style.display = '';
+    playBtn.classList.add('playing');
+    document.getElementById('restart-zone').style.display = 'none';
+    document.getElementById('end-card').classList.remove('visible');
+    document.getElementById('title').style.opacity = '';
+    document.getElementById('credits').style.opacity = '';
+
+    // Step timer drives visuals only — no audio work
+    const stepMs = STEP_DUR * 1000;
+    let step = 0;
+    let currentBar = 0;
+
+    stepTimer = setInterval(() => {
+      currentBar = Math.floor(step / 16);
+      if (currentBar >= 8) { stop(); return; }
+
+      const stepInBar = step % 16;
+      const decay = decayRamp[currentBar][stepInBar];
+      const globalStep = step;
+
+      currentDecay = decay;
+
+      // Kick visual
+      if (kickSteps.includes(stepInBar)) {
+        kickHit = 1;
+        const growth = ringGrowth();
+        ringRadius += growth * (0.6 + decay * 0.8);
+        const brightness = 0.4 + 0.6 * (1 - Math.abs(globalStep - 64) / 64);
+        rings.push(new Ring(ringRadius, brightness));
+      }
+
+      // CH visual
+      if (chSteps.includes(stepInBar)) {
+        const dotCount = 3 + Math.floor(decay * 10);
+        const scatter = ringRadius * 0.15 * (0.3 + decay * 1.2);
+        const dotSize = 1 + decay * 6;
+        const brightness = 0.3 + decay * 0.5;
+
+        for (let i = 0; i < dotCount; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = (ringRadius || 30) + (Math.random() - 0.5) * scatter * 2;
+          const x = cx + Math.cos(angle) * dist;
+          const y = cy + Math.sin(angle) * dist;
+          dots.push(new Dot(x, y, dotSize, brightness, decay));
+        }
+      }
+
+      // HUD
+      barHud.style.color = 'rgba(255,255,255,0.06)';
+      barHud.textContent = `${currentBar + 1} / 8`;
+
+      step++;
+    }, stepMs);
+
+    source.onended = () => stop();
+
+  } catch (err) {
+    console.error(err);
+    playBtn.textContent = '▶';
+  }
+}
+
+function stop() {
+  playing = false;
+  if (stepTimer) { clearInterval(stepTimer); stepTimer = null; }
+  if (activeSource) { try { activeSource.stop(); } catch(e) {} activeSource = null; }
+
+  // Kill all visuals
+  rings.length = 0;
+  dots.length = 0;
+
+  // Hide everything — the end card IS the ending
+  document.getElementById('play-btn').classList.remove('playing');
+  document.getElementById('play-btn').style.display = 'none';
+  document.getElementById('title').style.opacity = '0';
+  document.getElementById('credits').style.opacity = '0';
+  barHud.style.color = 'rgba(255,255,255,0)';
+
+  // The reveal
+  document.getElementById('end-card').classList.add('visible');
+
+  // After the moment, allow restart
+  setTimeout(() => {
+    document.getElementById('restart-zone').style.display = 'block';
+  }, 4000);
+}
+
+document.getElementById('play-btn').addEventListener('click', () => {
+  if (playing) stop(); else start();
+});
+document.getElementById('restart-zone').addEventListener('click', start);
+</script>
+</body>
+</html>
