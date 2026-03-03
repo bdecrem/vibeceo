@@ -1,259 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SIGNAL — Amber</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --amber: #D4A574;
-      --amber-glow: #FFD700;
-      --amber-deep: #B8860B;
-      --teal: #2D9596;
-      --black: #000000;
-      --charcoal: #0A0A0A;
-      --dark: #111111;
-    }
-
-    body {
-      background: var(--black);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      font-family: 'Space Mono', monospace;
-    }
-
-    .poster {
-      width: 1200px;
-      height: 1200px;
-      background: var(--black);
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* Subtle grid */
-    .grid {
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(rgba(45, 149, 150, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(45, 149, 150, 0.03) 1px, transparent 1px);
-      background-size: 30px 30px;
-    }
-
-    /* Scanlines */
-    .scanlines {
-      position: absolute;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0, 0, 0, 0.3) 2px,
-        rgba(0, 0, 0, 0.3) 4px
-      );
-      pointer-events: none;
-      opacity: 0.4;
-    }
-
-    /* ASCII background texture */
-    .ascii-texture {
-      position: absolute;
-      inset: 0;
-      font-size: 10px;
-      line-height: 1.1;
-      color: var(--amber);
-      opacity: 0.04;
-      overflow: hidden;
-      white-space: pre;
-      padding: 20px;
-    }
-
-    /* Main content */
-    .content {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-
-    /* Top label */
-    .top-label {
-      position: absolute;
-      top: 60px;
-      font-size: 11px;
-      letter-spacing: 0.4em;
-      color: var(--teal);
-      text-transform: uppercase;
-    }
-
-    /* Waveform container */
-    .waveform-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 40px;
-    }
-
-    /* Main waveform */
-    .waveform {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      height: 300px;
-    }
-
-    .bar {
-      width: 6px;
-      background: linear-gradient(to top, var(--amber-deep), var(--amber), var(--amber-glow));
-      border-radius: 3px;
-      box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
-    }
-
-    /* Main text */
-    .title {
-      font-size: 120px;
-      font-weight: 700;
-      letter-spacing: 0.15em;
-      color: var(--amber);
-      text-shadow:
-        0 0 40px rgba(212, 165, 116, 0.6),
-        0 0 80px rgba(212, 165, 116, 0.3);
-      margin-top: 20px;
-    }
-
-    /* Subtitle */
-    .subtitle {
-      font-size: 14px;
-      letter-spacing: 0.5em;
-      color: var(--teal);
-      text-transform: uppercase;
-      margin-top: 30px;
-    }
-
-    /* Bottom info */
-    .bottom-info {
-      position: absolute;
-      bottom: 60px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .frequency {
-      font-size: 24px;
-      letter-spacing: 0.3em;
-      color: var(--amber);
-      opacity: 0.6;
-    }
-
-    .location {
-      font-size: 11px;
-      letter-spacing: 0.4em;
-      color: rgba(212, 165, 116, 0.4);
-      text-transform: uppercase;
-    }
-
-    /* Decorative corners */
-    .corner {
-      position: absolute;
-      width: 60px;
-      height: 60px;
-      border: 1px solid var(--teal);
-      opacity: 0.3;
-    }
-
-    .corner.tl { top: 40px; left: 40px; border-right: none; border-bottom: none; }
-    .corner.tr { top: 40px; right: 40px; border-left: none; border-bottom: none; }
-    .corner.bl { bottom: 40px; left: 40px; border-right: none; border-top: none; }
-    .corner.br { bottom: 40px; right: 40px; border-left: none; border-top: none; }
-
-    /* Glowing orb hint */
-    .orb-glow {
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(212, 165, 116, 0.08) 0%, transparent 70%);
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIGNAL — Amber</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="SIGNAL">
+<meta property="og:description" content="130 BPM electro. 909 drums, acid bass, square lead.">
+<meta property="og:image" content="https://intheamber.com/amber/signal-og.png">
+<meta property="og:url" content="https://intheamber.com/amber/signal.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SIGNAL">
+<meta name="twitter:description" content="130 BPM electro. 909 drums, acid bass, square lead.">
+<meta name="twitter:image" content="https://intheamber.com/amber/signal-og.png">
+<meta name="twitter:site" content="@intheamber">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0a;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.overlay {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  pointer-events: none;
+}
+h1 {
+  font-size: 3rem;
+  letter-spacing: 0.6em;
+  color: #00ff88;
+  text-shadow: 0 0 30px #00ff8844;
+  margin-bottom: 0.5rem;
+}
+.sub {
+  font-size: 0.8rem;
+  color: #555;
+  letter-spacing: 0.3em;
+}
+.tap {
+  position: absolute;
+  bottom: 2rem;
+  z-index: 1;
+  font-size: 0.7rem;
+  color: #333;
+  letter-spacing: 0.2em;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+.credit {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 1rem;
+  z-index: 1;
+  font-size: 0.6rem;
+  color: #222;
+}
+</style>
 </head>
 <body>
-  <div class="poster">
-    <div class="grid"></div>
-    <div class="ascii-texture" id="ascii"></div>
-    <div class="orb-glow"></div>
+<canvas id="viz"></canvas>
+<div class="overlay">
+  <h1>SIGNAL</h1>
+  <div class="sub">130 BPM ELECTRO</div>
+</div>
+<div class="tap" id="tap">TAP TO PLAY</div>
+<div class="credit">🔮 amber</div>
 
-    <div class="corner tl"></div>
-    <div class="corner tr"></div>
-    <div class="corner bl"></div>
-    <div class="corner br"></div>
+<script>
+const canvas = document.getElementById('viz');
+const ctx = canvas.getContext('2d');
+let audio, actx, analyser, data;
+let playing = false;
 
-    <div class="content">
-      <div class="top-label">Transmission from the underground</div>
+function resize() {
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resize();
+window.addEventListener('resize', resize);
 
-      <div class="waveform-container">
-        <div class="waveform" id="waveform"></div>
-        <div class="title">SIGNAL</div>
-        <div class="subtitle">Berlin × 4:00 AM × Infinite Loop</div>
-      </div>
+document.body.addEventListener('click', () => {
+  if (!audio) {
+    audio = new Audio('signal.wav');
+    audio.loop = true;
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = actx.createMediaElementSource(audio);
+    analyser = actx.createAnalyser();
+    analyser.fftSize = 256;
+    data = new Uint8Array(analyser.frequencyBinCount);
+    src.connect(analyser);
+    analyser.connect(actx.destination);
+  }
+  if (playing) {
+    audio.pause();
+    playing = false;
+    document.getElementById('tap').textContent = 'TAP TO PLAY';
+  } else {
+    audio.play();
+    playing = true;
+    document.getElementById('tap').textContent = 'TAP TO STOP';
+  }
+});
 
-      <div class="bottom-info">
-        <div class="frequency">128 BPM</div>
-        <div class="location">intheamber.com</div>
-      </div>
-    </div>
+function draw() {
+  requestAnimationFrame(draw);
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  ctx.fillStyle = 'rgba(10, 10, 10, 0.15)';
+  ctx.fillRect(0, 0, w, h);
 
-    <div class="scanlines"></div>
-  </div>
+  if (!analyser || !playing) return;
+  analyser.getByteFrequencyData(data);
 
-  <script>
-    // Generate ASCII texture
-    const chars = '░▒▓│║═╔╗╚╝┌┐└┘├┤┬┴┼0101█▀▄';
-    const ascii = document.getElementById('ascii');
-    let text = '';
-    for (let i = 0; i < 15000; i++) {
-      text += chars[Math.floor(Math.random() * chars.length)];
-      if (i % 130 === 0) text += '\n';
-    }
-    ascii.textContent = text;
+  const bars = data.length;
+  const barW = w / bars;
+  const cx = w / 2;
+  const cy = h / 2;
 
-    // Generate waveform bars
-    const waveform = document.getElementById('waveform');
-    const barCount = 80;
+  // Vertical bars from center
+  for (let i = 0; i < bars; i++) {
+    const v = data[i] / 255;
+    const barH = v * h * 0.4;
+    const hue = 140 + v * 40;
+    ctx.fillStyle = `hsla(${hue}, 100%, ${40 + v * 30}%, ${0.6 + v * 0.4})`;
+    // mirror
+    ctx.fillRect(i * barW, cy - barH, barW - 1, barH);
+    ctx.fillRect(i * barW, cy, barW - 1, barH);
+  }
 
-    for (let i = 0; i < barCount; i++) {
-      const bar = document.createElement('div');
-      bar.className = 'bar';
-
-      // Create a waveform pattern - louder in middle, quieter at edges
-      const centerDistance = Math.abs(i - barCount / 2) / (barCount / 2);
-      const baseHeight = 1 - Math.pow(centerDistance, 1.5);
-
-      // Add some randomness for that raw techno feel
-      const randomFactor = 0.3 + Math.random() * 0.7;
-      const height = Math.max(20, baseHeight * randomFactor * 280);
-
-      bar.style.height = height + 'px';
-      waveform.appendChild(bar);
-    }
-  </script>
+  // Center ring
+  const bass = (data[0] + data[1] + data[2]) / 3 / 255;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 30 + bass * 60, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(0, 255, 136, ${0.3 + bass * 0.5})`;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+draw();
+</script>
 </body>
 </html>
