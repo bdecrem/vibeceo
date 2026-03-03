@@ -207,18 +207,67 @@ render()
 
 ### JT90 - Drum Machine (909-style)
 
-JT90 is a drum machine with 11 voices:
-- **Kick**: Triangle-to-sine with pitch envelope
-- **Snare**: Tuned oscillators + filtered noise
-- **Clap**: Multiple noise bursts
-- **Hi-hats (ch/oh)**: 6 metallic oscillators + noise
-- **Toms (low/mid/hi)**: Sine-like with pitch envelope
-- **Rimshot**: Short metallic hit
-- **Cymbals (crash/ride)**: 8 metallic oscillators + noise
+JT90 is a **hybrid** drum machine with 11 voices:
+- **Synthesized** (pure JS DSP): kick, snare, clap, rimshot, lowtom, midtom, hitom
+- **Sample-based** (WAV playback): ch, oh, crash, ride
 
-**Key feature**: Classic 909 sound with per-voice parameter control.
+Sample WAVs live in `web/public/jt90/samples/` (ch.wav, oh.wav, crash.wav, ride.wav).
 
 **Web UI**: `kochi.to/jt90`
+
+#### JT90 Web Audio: MUST Pre-Render (CRITICAL)
+
+**NEVER use real-time `scriptProcessor` / `onaudioprocess` with JT90.** The sample voices (ch, oh, crash, ride) do per-sample interpolation + envelope + filtering — too CPU-heavy for the audio thread. It will glitch, stutter, or drop frames.
+
+**Always pre-render offline, then play back the buffer:**
+
+```javascript
+// CORRECT — pre-render, then play
+const engine = new JT90Engine({ bpm: 126 });
+await engine.loadSamples('/jt90/samples');
+engine._ensureVoices();
+engine.setPattern(pattern);
+
+// Render offline (no AudioContext needed for this step)
+const buffer = await engine.renderPattern({
+  bars: 4,
+  bpm: 126,
+  automation: { 'ch.decay': [0.8, 0.1, 0.7, 0.2, ...] },
+});
+
+// Play the baked buffer
+const ctx = new AudioContext();
+const audioBuffer = ctx.createBuffer(1, buffer.length, buffer.sampleRate);
+audioBuffer.getChannelData(0).set(buffer.getChannelData(0));
+const source = ctx.createBufferSource();
+source.buffer = audioBuffer;
+source.connect(ctx.destination);
+source.start();
+
+// Drive visuals with setInterval, NOT audio callbacks
+const stepMs = (60 / 126 / 4) * 1000;
+setInterval(() => { /* update visuals from arrangement data */ }, stepMs);
+```
+
+```javascript
+// WRONG — will glitch on mobile, stutter on desktop
+const scriptNode = ctx.createScriptProcessor(1024, 0, 2);
+scriptNode.onaudioprocess = (e) => {
+  // DON'T DO THIS with JT90 — sample voices are too expensive
+  for (const v of VOICE_IDS) {
+    if (voice.isActive()) sample += voice.processSample();
+  }
+};
+```
+
+**JB01 is different** — it's pure synthesis, so real-time `trigger()` scheduling works fine (see `hallman/index.html`). JT90's sample voices are what make real-time processing too expensive.
+
+**Reference implementations:**
+- `web/public/hallman/dk001.html` — JT90 pre-rendered, 8 bars
+- `web/public/hallman/sick.html` — JT90 pre-rendered, multi-section arrangement
+- `web/public/jt90/tribal.html` — JT90 pre-rendered, simple version
+
+**Node.js (headless):** `jt90-node.js` already pre-renders via `renderPattern()`. Remember to call `loadSamplesFromDisk(engine)` before rendering — without it, sample voices are silent stubs.
 
 **Example workflow:**
 ```
