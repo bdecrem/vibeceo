@@ -91,7 +91,7 @@
 <div id="restart-zone"></div>
 
 <script type="module">
-import { JT90Engine } from '/jt90/dist/machines/jt90/engine.js';
+import { JT90Engine } from 'https://kochi.to/jt90/dist/machines/jt90/engine.js';
 
 // ══════════════════════════════════════════
 // DAS KOLLEKTIV #001
@@ -289,7 +289,7 @@ async function start() {
 
   try {
     const engine = new JT90Engine({ bpm: BPM });
-    await engine.loadSamples('/jt90/samples');
+    await engine.loadSamples('https://kochi.to/jt90/samples');
     engine._ensureVoices();
 
     // Voice params
