@@ -401,7 +401,7 @@ export default function VoiceBTerminal() {
 
         {/* Intro — voice b: terse, lowercase */}
         <p className={`${poppins.className} w-full max-w-3xl text-sm leading-relaxed mb-8 px-1`} style={{ color: "#555" }}>
-          nine months of building (tinkering) with ai (claude code), mostly around agentic loops &amp; creativity. a lot of unfinished thoughts, one main <a href="https://github.com/bdecrem/vibeceo" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>repo</a>, some of it open source. most of this works …mostly — <a href="https://twitter.com/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>@bartdecrem</a>
+          nine months of building (tinkering) with ai (claude code), mostly around agentic loops, creativity, and other things <a href="https://linkedin.com/in/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>i am</a> interested in. a lot of unfinished thoughts, one main <a href="https://github.com/bdecrem/vibeceo" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>repo</a>, some of it open source. most of this works …mostly — <a href="https://twitter.com/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>@bartdecrem</a>
         </p>
 
         {/* Terminal window */}
