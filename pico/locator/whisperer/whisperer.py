@@ -250,6 +250,14 @@ def run():
     camera = Camera()
     state = load_state()
 
+    # Initialize timestamps on first run so quiet tracking works immediately
+    now = time.time()
+    if state.get("last_change") is None:
+        state["last_change"] = now
+        save_state(state)
+    if state.get("last_quiet_message") is None:
+        state["last_quiet_message"] = 0
+
     print(f"House Whisperer starting ({CYCLE}s cycle, {THRESHOLD}% threshold)")
     print(f"  Camera: {CAMERA_IP}")
     print(f"  Notify: {'WhatsApp' if NOTIFY else 'stdout only'}")
@@ -302,7 +310,7 @@ def run():
                 state["current_scene"] = scene
                 state["scene_since"] = time.time()
                 state["last_change"] = time.time()
-                state["last_quiet_message"] = None
+                state["last_quiet_message"] = 0
                 save_state(state)
 
             else:
