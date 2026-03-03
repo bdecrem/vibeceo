@@ -32,7 +32,7 @@ STATE_FILE = WORK_DIR / "whisperer_state.json"
 LOG_FILE = Path(__file__).parent / "whisperer_messages.log"
 
 claude = anthropic.Anthropic()
-MODEL = "claude-3-5-haiku-20241022"
+MODEL = "claude-3-haiku-20240307"
 
 
 # --- Camera ---
