@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>MURMUR — Amber</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="MURMUR — Amber">
+<meta property="og:description" content="A starling murmuration in neon. Touch to scatter.">
+<meta property="og:image" content="https://intheamber.com/amber/og/murmur.png">
+<meta property="og:url" content="https://intheamber.com/amber/murmur.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@intheamber">
+<meta name="twitter:title" content="MURMUR — Amber">
+<meta name="twitter:description" content="A starling murmuration in neon. Touch to scatter.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/murmur.png">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0f;touch-action:none}
+canvas{display:block;width:100vw;height:100vh}
+#title{position:fixed;bottom:2vh;right:3vw;font:600 2.5vmin/1 'Helvetica Neue',sans-serif;color:rgba(255,255,255,0.15);letter-spacing:0.3em;text-transform:uppercase;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="title">murmur</div>
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+let W,H;
+function resize(){W=canvas.width=window.innerWidth*devicePixelRatio;H=canvas.height=window.innerHeight*devicePixelRatio;canvas.style.width=window.innerWidth+'px';canvas.style.height=window.innerHeight+'px'}
+resize();window.addEventListener('resize',resize);
+
+const COLORS=['#FFD700','#f59e0b','#2D9596','#14b8a6','#3b82f6','#ec4899','#8b5cf6','#f97316','#84cc16'];
+const N=500;
+const boids=[];
+let pointer={x:W/2,y:H/2,active:false};
+
+class Boid{
+  constructor(){
+    this.x=Math.random()*W;
+    this.y=Math.random()*H;
+    this.vx=(Math.random()-0.5)*4;
+    this.vy=(Math.random()-0.5)*4;
+    this.color=COLORS[Math.floor(Math.random()*COLORS.length)];
+    this.size=1.5+Math.random()*2;
+    this.trail=[];
+  }
+  update(boids){
+    let sx=0,sy=0,sc=0; // separation
+    let ax=0,ay=0,ac=0; // alignment
+    let cx=0,cy=0,cc=0; // cohesion
+    const R=60*devicePixelRatio,R2=R*R;
+    const SR=25*devicePixelRatio,SR2=SR*SR;
+    for(let i=0;i<boids.length;i++){
+      const b=boids[i];if(b===this)continue;
+      const dx=b.x-this.x,dy=b.y-this.y;
+      const d2=dx*dx+dy*dy;
+      if(d2<R2){
+        if(d2<SR2&&d2>0){const d=Math.sqrt(d2);sx-=dx/d;sy-=dy/d;sc++}
+        ax+=b.vx;ay+=b.vy;ac++;
+        cx+=b.x;cy+=b.y;cc++;
+      }
+    }
+    if(sc>0){this.vx+=sx/sc*0.15;this.vy+=sy/sc*0.15}
+    if(ac>0){this.vx+=(ax/ac-this.vx)*0.05;this.vy+=(ay/ac-this.vy)*0.05}
+    if(cc>0){this.vx+=(cx/cc-this.x)*0.003;this.vy+=(cy/cc-this.y)*0.003}
+    // center pull
+    this.vx+=(W/2-this.x)*0.0001;
+    this.vy+=(H/2-this.y)*0.0001;
+    // pointer interaction
+    if(pointer.active){
+      const dx=this.x-pointer.x*devicePixelRatio;
+      const dy=this.y-pointer.y*devicePixelRatio;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<200*devicePixelRatio&&d>0){
+        this.vx+=dx/d*3;
+        this.vy+=dy/d*3;
+      }
+    }
+    // speed limit
+    const spd=Math.sqrt(this.vx*this.vx+this.vy*this.vy);
+    const maxSpd=5;
+    if(spd>maxSpd){this.vx=this.vx/spd*maxSpd;this.vy=this.vy/spd*maxSpd}
+    this.x+=this.vx;this.y+=this.vy;
+    // wrap
+    if(this.x<0)this.x+=W;if(this.x>W)this.x-=W;
+    if(this.y<0)this.y+=H;if(this.y>H)this.y-=H;
+    // trail
+    this.trail.push({x:this.x,y:this.y});
+    if(this.trail.length>6)this.trail.shift();
+  }
+  draw(ctx){
+    // trail
+    for(let i=0;i<this.trail.length;i++){
+      const a=(i/this.trail.length)*0.3;
+      ctx.fillStyle=this.color;
+      ctx.globalAlpha=a;
+      const s=this.size*(i/this.trail.length);
+      ctx.beginPath();ctx.arc(this.trail[i].x,this.trail[i].y,s,0,Math.PI*2);ctx.fill();
+    }
+    // body
+    ctx.globalAlpha=0.9;
+    ctx.fillStyle=this.color;
+    ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
+  }
+}
+
+for(let i=0;i<N;i++)boids.push(new Boid());
+
+// spatial grid for perf
+function loop(){
+  ctx.fillStyle='rgba(10,10,15,0.15)';
+  ctx.fillRect(0,0,W,H);
+  for(const b of boids)b.update(boids);
+  for(const b of boids)b.draw(ctx);
+  requestAnimationFrame(loop);
+}
+loop();
+
+function setPointer(e){
+  const t=e.touches?e.touches[0]:e;
+  pointer.x=t.clientX;pointer.y=t.clientY;pointer.active=true;
+}
+window.addEventListener('touchstart',setPointer,{passive:true});
+window.addEventListener('touchmove',setPointer,{passive:true});
+window.addEventListener('touchend',()=>pointer.active=false);
+window.addEventListener('mousedown',setPointer);
+window.addEventListener('mousemove',e=>{if(e.buttons)setPointer(e)});
+window.addEventListener('mouseup',()=>pointer.active=false);
+</script>
+</body>
+</html>
