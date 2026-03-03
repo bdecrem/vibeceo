@@ -94,13 +94,13 @@ export async function GET(request: NextRequest) {
           return meta?.tweeted === true;
         });
 
-    // Fetch tweet logs to get tweet text
+    // Fetch tweet logs to get tweet text (get all of them for full URL matching)
     const { data: tweetLogs, error: tweetLogsError } = await supabase
       .from("amber_state")
       .select("content, metadata, created_at")
       .eq("type", "tweet_log")
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(500);
 
     if (tweetLogsError) {
       console.error("Error fetching tweet logs:", tweetLogsError);
@@ -136,9 +136,14 @@ export async function GET(request: NextRequest) {
         tweetText = meta.prompt;
       }
 
+      // Truncate title to first line, max 120 chars — never dump full description
+      const rawTitle = creation.content || "Untitled";
+      const firstLine = rawTitle.split('\n')[0].trim();
+      const title = firstLine.length > 120 ? firstLine.slice(0, 117) + "..." : firstLine;
+
       return {
         id: creation.id,
-        title: creation.content || "Untitled",
+        title,
         url: url,
         ogImage: deriveOgImageUrl(url),
         tweetText: tweetText,

@@ -523,6 +523,10 @@ export default function AmberFeed({
           color: var(--amber-100);
           margin: 0 0 0.5rem 0;
           line-height: 1.3;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
 
         .feed-item:hover .feed-item-title {
@@ -535,6 +539,10 @@ export default function AmberFeed({
           color: var(--amber-100);
           margin: 0;
           line-height: 1.5;
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
 
         /* Loading State */
