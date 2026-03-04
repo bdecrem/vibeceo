@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUBMARINE — Amber</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="SUBMARINE — Amber" />
+  <meta property="og:description" content="Sonar pings reveal bioluminescent life in the deep" />
+  <meta property="og:image" content="https://intheamber.com/amber/submarine-og.png" />
+  <meta property="og:url" content="https://intheamber.com/amber/submarine.html" />
+  <meta property="og:type" content="website" />
+  
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="SUBMARINE — Amber" />
+  <meta name="twitter:description" content="Sonar pings reveal bioluminescent life in the deep" />
+  <meta name="twitter:image" content="https://intheamber.com/amber/submarine-og.png" />
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      color: #FFD700;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-size: 14px;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #instructions {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #2D9596;
+      text-align: center;
+      opacity: 0.7;
+      pointer-events: none;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+    
+    @media (max-width: 768px) {
+      #ui {
+        font-size: 12px;
+        top: 10px;
+        left: 10px;
+      }
+      #instructions {
+        font-size: 11px;
+        bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div>SONAR: <span id="pingCount">0</span></div>
+    <div>REVEALED: <span id="revealCount">0</span></div>
+    <div>DEPTH: <span id="depth">-</span>m</div>
+  </div>
+  
+  <div id="instructions">TAP TO PING · REVEAL THE DEEP</div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+    
+    // Audio context
+    let audioCtx;
+    let audioStarted = false;
+    
+    function initAudio() {
+      if (!audioStarted) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioStarted = true;
+      }
+    }
+    
+    function playSonarPing() {
+      if (!audioStarted) return;
+      
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1200, now);
+      osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+      
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start(now);
+      osc.stop(now + 0.5);
+    }
+    
+    function playRevealTone(frequency) {
+      if (!audioStarted) return;
+      
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(frequency, now);
+      
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start(now);
+      osc.stop(now + 0.8);
+    }
+    
+    // Stats
+    let pingCount = 0;
+    let revealCount = 0;
+    
+    // Sonar waves
+    const waves = [];
+    
+    class SonarWave {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 0;
+        this.maxRadius = Math.max(width, height) * 1.5;
+        this.speed = 4;
+        this.alpha = 1;
+        this.color = ['#FFD700', '#f59e0b', '#f97316'][Math.floor(Math.random() * 3)];
+      }
+      
+      update() {
+        this.radius += this.speed;
+        this.alpha = 1 - (this.radius / this.maxRadius);
+        return this.radius < this.maxRadius;
+      }
+      
+      draw() {
+        ctx.strokeStyle = this.color;
+        ctx.globalAlpha = this.alpha * 0.6;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Inner glow
+        ctx.globalAlpha = this.alpha * 0.3;
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+    
+    // Creatures
+    const creatures = [];
+    const creatureTypes = [
+      { shape: 'jellyfish', size: 30, color: '#ec4899' },
+      { shape: 'fish', size: 25, color: '#3b82f6' },
+      { shape: 'squid', size: 35, color: '#8b5cf6' },
+      { shape: 'orb', size: 20, color: '#14b8a6' },
+      { shape: 'eel', size: 40, color: '#84cc16' },
+      { shape: 'star', size: 28, color: '#f472b6' },
+      { shape: 'crystal', size: 32, color: '#60a5fa' }
+    ];
+    
+    class Creature {
+      constructor() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        const type = creatureTypes[Math.floor(Math.random() * creatureTypes.length)];
+        this.shape = type.shape;
+        this.size = type.size;
+        this.color = type.color;
+        this.revealed = false;
+        this.revealAlpha = 0;
+        this.glowPhase = Math.random() * Math.PI * 2;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Wrap edges
+        if (this.x < -50) this.x = width + 50;
+        if (this.x > width + 50) this.x = -50;
+        if (this.y < -50) this.y = height + 50;
+        if (this.y > height + 50) this.y = -50;
+        
+        // Update reveal alpha
+        if (this.revealed && this.revealAlpha < 1) {
+          this.revealAlpha += 0.05;
+        }
+        
+        this.glowPhase += 0.05;
+      }
+      
+      checkSonarHit(wave) {
+        if (this.revealed) return false;
+        
+        const dist = Math.hypot(this.x - wave.x, this.y - wave.y);
+        if (Math.abs(dist - wave.radius) < 20) {
+          this.revealed = true;
+          revealCount++;
+          document.getElementById('revealCount').textContent = revealCount;
+          
+          // Play reveal tone (different frequency per creature)
+          const frequencies = [440, 554, 659, 784, 880, 988, 1047];
+          const freq = frequencies[Math.floor(Math.random() * frequencies.length)];
+          playRevealTone(freq);
+          
+          // Spawn particles
+          for (let i = 0; i < 20; i++) {
+            particles.push(new Particle(this.x, this.y, this.color));
+          }
+          
+          return true;
+        }
+        return false;
+      }
+      
+      draw() {
+        if (this.revealAlpha === 0) return;
+        
+        const glow = Math.sin(this.glowPhase) * 0.3 + 0.7;
+        ctx.globalAlpha = this.revealAlpha * glow;
+        
+        // Outer glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 2);
+        gradient.addColorStop(0, this.color + '40');
+        gradient.addColorStop(1, this.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw shape
+        ctx.fillStyle = this.color;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        
+        switch (this.shape) {
+          case 'jellyfish':
+            // Dome
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size * 0.5, Math.PI, 0);
+            ctx.fill();
+            // Tentacles
+            for (let i = 0; i < 4; i++) {
+              const angle = (i / 4) * Math.PI - Math.PI / 2;
+              ctx.beginPath();
+              ctx.moveTo(this.x + Math.cos(angle) * this.size * 0.3, this.y);
+              ctx.lineTo(this.x + Math.cos(angle) * this.size * 0.3, this.y + this.size * 0.8);
+              ctx.stroke();
+            }
+            break;
+            
+          case 'fish':
+            // Body
+            ctx.beginPath();
+            ctx.ellipse(this.x, this.y, this.size * 0.6, this.size * 0.3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Tail
+            ctx.beginPath();
+            ctx.moveTo(this.x - this.size * 0.6, this.y);
+            ctx.lineTo(this.x - this.size, this.y - this.size * 0.3);
+            ctx.lineTo(this.x - this.size, this.y + this.size * 0.3);
+            ctx.closePath();
+            ctx.fill();
+            break;
+            
+          case 'squid':
+            // Head
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            // Arms
+            for (let i = 0; i < 6; i++) {
+              const angle = (i / 6) * Math.PI * 2;
+              ctx.beginPath();
+              ctx.moveTo(this.x, this.y);
+              ctx.lineTo(this.x + Math.cos(angle) * this.size, this.y + Math.sin(angle) * this.size);
+              ctx.stroke();
+            }
+            break;
+            
+          case 'orb':
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+          case 'eel':
+            // Wavy line
+            ctx.beginPath();
+            ctx.moveTo(this.x - this.size, this.y);
+            for (let i = 0; i <= 10; i++) {
+              const px = this.x - this.size + (i / 10) * this.size * 2;
+              const py = this.y + Math.sin(i * 0.5 + this.glowPhase) * this.size * 0.3;
+              ctx.lineTo(px, py);
+            }
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            break;
+            
+          case 'star':
+            // 5-pointed star
+            ctx.beginPath();
+            for (let i = 0; i < 5; i++) {
+              const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
+              const x = this.x + Math.cos(angle) * this.size * 0.6;
+              const y = this.y + Math.sin(angle) * this.size * 0.6;
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+              
+              const innerAngle = angle + Math.PI / 5;
+              const ix = this.x + Math.cos(innerAngle) * this.size * 0.3;
+              const iy = this.y + Math.sin(innerAngle) * this.size * 0.3;
+              ctx.lineTo(ix, iy);
+            }
+            ctx.closePath();
+            ctx.fill();
+            break;
+            
+          case 'crystal':
+            // Diamond
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y - this.size * 0.6);
+            ctx.lineTo(this.x + this.size * 0.4, this.y);
+            ctx.lineTo(this.x, this.y + this.size * 0.6);
+            ctx.lineTo(this.x - this.size * 0.4, this.y);
+            ctx.closePath();
+            ctx.fill();
+            break;
+        }
+      }
+    }
+    
+    // Particles
+    const particles = [];
+    
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
+        this.alpha = 1;
+        this.size = Math.random() * 3 + 2;
+        this.color = color;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.alpha -= 0.02;
+        this.size *= 0.98;
+        return this.alpha > 0;
+      }
+      
+      draw() {
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Initialize creatures
+    for (let i = 0; i < 40; i++) {
+      creatures.push(new Creature());
+    }
+    
+    // Spawn sonar wave
+    function spawnWave(x, y) {
+      waves.push(new SonarWave(x, y));
+      pingCount++;
+      document.getElementById('pingCount').textContent = pingCount;
+      playSonarPing();
+    }
+    
+    // Click/tap handler
+    canvas.addEventListener('click', (e) => {
+      initAudio();
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      spawnWave(x, y);
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      initAudio();
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      spawnWave(x, y);
+    });
+    
+    // Auto-ping
+    let lastAutoPing = Date.now();
+    const autoPingInterval = 3000;
+    
+    // Animation loop
+    function animate() {
+      // Fade effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Update and draw waves
+      for (let i = waves.length - 1; i >= 0; i--) {
+        const wave = waves[i];
+        if (!wave.update()) {
+          waves.splice(i, 1);
+          continue;
+        }
+        
+        // Check sonar hits
+        creatures.forEach(creature => creature.checkSonarHit(wave));
+        
+        wave.draw();
+      }
+      
+      // Update and draw creatures
+      creatures.forEach(creature => {
+        creature.update();
+        creature.draw();
+      });
+      
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const particle = particles[i];
+        if (!particle.update()) {
+          particles.splice(i, 1);
+          continue;
+        }
+        particle.draw();
+      }
+      
+      // Auto-ping
+      const now = Date.now();
+      if (now - lastAutoPing > autoPingInterval) {
+        const x = width * 0.5 + (Math.random() - 0.5) * width * 0.4;
+        const y = height * 0.5 + (Math.random() - 0.5) * height * 0.4;
+        spawnWave(x, y);
+        lastAutoPing = now;
+      }
+      
+      // Update depth display (simulated)
+      const depth = Math.floor(200 + Math.sin(Date.now() / 10000) * 50);
+      document.getElementById('depth').textContent = depth;
+      
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+  </script>
+</body>
+</html>
