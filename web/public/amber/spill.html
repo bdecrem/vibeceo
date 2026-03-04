@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SPILL — Amber</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="SPILL">
+<meta property="og:description" content="tap to pour color into the dark">
+<meta property="og:image" content="https://intheamber.com/amber/og/spill.png">
+<meta property="og:url" content="https://intheamber.com/amber/spill.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@intheamber">
+<meta name="twitter:title" content="SPILL">
+<meta name="twitter:description" content="tap to pour color into the dark">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/spill.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; touch-action: none; cursor: crosshair; }
+canvas { display: block; width: 100vw; height: 100vh; }
+#title {
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  font: 600 11px/1 'Helvetica Neue', sans-serif; letter-spacing: 4px; text-transform: uppercase;
+  color: rgba(255,255,255,0.25); pointer-events: none; z-index: 10;
+  transition: opacity 2s;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="title">SPILL</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+let W, H;
+function resize() {
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resize();
+window.addEventListener('resize', resize);
+
+const COLORS = [
+  '#FFD700', '#f59e0b', '#2D9596', '#14b8a6',
+  '#3b82f6', '#ec4899', '#8b5cf6', '#f97316', '#84cc16'
+];
+
+class Drop {
+  constructor(x, y, color) {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.r = 2 + Math.random() * 4;
+    this.vy = 0.5 + Math.random() * 2;
+    this.vx = (Math.random() - 0.5) * 1.5;
+    this.gravity = 0.08 + Math.random() * 0.06;
+    this.drag = 0.995;
+    this.life = 1;
+    this.settled = false;
+    this.trail = [];
+    this.maxTrail = 40 + Math.floor(Math.random() * 60);
+    this.opacity = 0.7 + Math.random() * 0.3;
+    this.wobble = Math.random() * Math.PI * 2;
+    this.wobbleSpeed = 0.02 + Math.random() * 0.03;
+  }
+
+  update() {
+    if (this.settled) return;
+    this.trail.push({ x: this.x, y: this.y, r: this.r });
+    if (this.trail.length > this.maxTrail) this.trail.shift();
+
+    this.wobble += this.wobbleSpeed;
+    this.vx += Math.sin(this.wobble) * 0.05;
+    this.vy += this.gravity;
+    this.vx *= this.drag;
+    this.vy *= this.drag;
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // grow as it drips
+    this.r = Math.min(this.r + 0.01, 8);
+
+    if (this.y > H + 20) {
+      this.settled = true;
+    }
+  }
+
+  draw() {
+    // draw trail
+    for (let i = 0; i < this.trail.length; i++) {
+      const t = this.trail[i];
+      const a = (i / this.trail.length) * this.opacity * 0.6;
+      const tr = t.r * (0.5 + 0.5 * (i / this.trail.length));
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, tr, 0, Math.PI * 2);
+      ctx.fillStyle = this.color + hex(a);
+      ctx.fill();
+    }
+
+    if (!this.settled) {
+      // main drop - slightly larger, glowing
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r * 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = this.color + hex(this.opacity * 0.3);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = this.color + hex(this.opacity);
+      ctx.fill();
+    }
+  }
+}
+
+function hex(a) {
+  return Math.round(Math.min(1, Math.max(0, a)) * 255).toString(16).padStart(2, '0');
+}
+
+let drops = [];
+let pouring = false;
+let pourX = 0, pourY = 0;
+let pourColor = COLORS[0];
+let pourInterval = null;
+let touched = false;
+
+function spawnBurst(x, y) {
+  pourColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+  const count = 8 + Math.floor(Math.random() * 12);
+  for (let i = 0; i < count; i++) {
+    const d = new Drop(
+      x + (Math.random() - 0.5) * 20,
+      y + (Math.random() - 0.5) * 10,
+      pourColor
+    );
+    d.vx = (Math.random() - 0.5) * 3;
+    d.vy = Math.random() * 2;
+    drops.push(d);
+  }
+}
+
+function startPour(x, y) {
+  if (!touched) { touched = true; document.getElementById('title').style.opacity = '0'; }
+  pouring = true;
+  pourX = x; pourY = y;
+  pourColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+  spawnBurst(x, y);
+}
+
+function movePour(x, y) {
+  pourX = x; pourY = y;
+}
+
+function stopPour() {
+  pouring = false;
+}
+
+canvas.addEventListener('pointerdown', e => { e.preventDefault(); startPour(e.clientX, e.clientY); });
+canvas.addEventListener('pointermove', e => { if (pouring) { e.preventDefault(); movePour(e.clientX, e.clientY); } });
+canvas.addEventListener('pointerup', e => stopPour());
+canvas.addEventListener('pointercancel', e => stopPour());
+
+// Paint layer - accumulates
+const paintCanvas = document.createElement('canvas');
+const paintCtx = paintCanvas.getContext('2d');
+function resizePaint() {
+  paintCanvas.width = W * dpr;
+  paintCanvas.height = H * dpr;
+  paintCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resizePaint();
+window.addEventListener('resize', resizePaint);
+
+let frame = 0;
+function loop() {
+  frame++;
+
+  // Pour continuously while touching
+  if (pouring && frame % 2 === 0) {
+    const count = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < count; i++) {
+      drops.push(new Drop(
+        pourX + (Math.random() - 0.5) * 16,
+        pourY + (Math.random() - 0.5) * 8,
+        pourColor
+      ));
+    }
+  }
+
+  // Bake settled drops into paint layer
+  const active = [];
+  for (const d of drops) {
+    d.update();
+    if (d.settled) {
+      // bake trail into paint canvas
+      for (const t of d.trail) {
+        paintCtx.beginPath();
+        paintCtx.arc(t.x, t.y, t.r * 0.8, 0, Math.PI * 2);
+        paintCtx.fillStyle = d.color + hex(d.opacity * 0.5);
+        paintCtx.fill();
+      }
+    } else {
+      active.push(d);
+    }
+  }
+  drops = active;
+
+  // Cap active drops
+  if (drops.length > 600) drops.splice(0, drops.length - 600);
+
+  // Draw
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Paint layer
+  ctx.drawImage(paintCanvas, 0, 0, W, H);
+
+  // Active drops
+  for (const d of drops) d.draw();
+
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
