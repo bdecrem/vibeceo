@@ -8,6 +8,8 @@
 | **Mutabl** | AI-customizable micro-apps (Notabl, Todoit, Contxt) | `web/app/mutabl/`, `web/app/api/mutabl/` |
 | **Shipshot** | Product launch tool | `web/app/shipshot/` |
 | **Jambot** | Music tools & synth engines | `jambot/`, `web/app/jb01/`, `web/app/jb200/` |
+
+> **Jambot status:** JB202 is **not usable** right now. Producers should use **JT30** (no resonance) or **JT10** instead.
 | **Amber** | AI sidekick (Twitter, email, creative) | `sms-bot/agents/amber-*/`, `web/app/amber/` |
 | **Kochi.to** | SMS AI agent service | `sms-bot/src/index.ts`, `sms-bot/commands/` |
 

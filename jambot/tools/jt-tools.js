@@ -71,18 +71,24 @@ const jtTools = {
   tweak_jt10: async (input, session, context) => {
     const tweaks = [];
 
-    // Mute/unmute (dB units: -60 = silent, 0 = unity)
+    // Level: sets NODE output level in dB (used by mixer for gain staging)
+    // Routes through ParamSystem → InstrumentNode.setLevel()
+    if (input.level !== undefined) {
+      session.set('jt10.level', input.level);
+      tweaks.push(`level=${input.level}dB`);
+    }
+
+    // Mute/unmute via node output level (dB)
     if (input.mute === true) {
-      session.set('jt10.lead.level', -60);
+      session.set('jt10.level', -60);
       tweaks.push('muted');
     } else if (input.mute === false) {
-      session.set('jt10.lead.level', 0);
+      session.set('jt10.level', 0);
       tweaks.push('unmuted');
     }
 
     // Map tool input names to engine param names
     const paramMap = {
-      level: 'level',
       sawLevel: 'sawLevel',
       pulseLevel: 'pulseLevel',
       pulseWidth: 'pulseWidth',
@@ -159,19 +165,25 @@ const jtTools = {
   tweak_jt30: async (input, session, context) => {
     const tweaks = [];
 
-    // Mute/unmute
+    // Level: sets NODE output level in dB (used by mixer for gain staging)
+    // Routes through ParamSystem → InstrumentNode.setLevel()
+    if (input.level !== undefined) {
+      session.set('jt30.level', input.level);
+      tweaks.push(`level=${input.level}dB`);
+    }
+
+    // Mute/unmute via node output level (dB)
     if (input.mute === true) {
-      session.set('jt30.bass.level', 0);
+      session.set('jt30.level', -60);
       tweaks.push('muted');
     } else if (input.mute === false) {
-      session.set('jt30.bass.level', 1.0);
+      session.set('jt30.level', 0);
       tweaks.push('unmuted');
     }
 
     // Map producer params to engine params
     // Tool uses filterCutoff/filterResonance, engine uses cutoff/resonance
     const paramMap = {
-      level: 'level',
       waveform: 'waveform',
       filterCutoff: 'cutoff',
       filterResonance: 'resonance',
@@ -274,12 +286,14 @@ const jtTools = {
 
     const tweaks = [];
 
-    // Mute/unmute
+    // Mute/unmute (sets voice level to silent/unity)
     if (input.mute === true) {
-      session.set(`jt90.${voice}.level`, 0);
+      const def = getParamDef('jt90', voice, 'level');
+      session.set(`jt90.${voice}.level`, def ? toEngine(-60, def) : 0);
       tweaks.push('muted');
     } else if (input.mute === false) {
-      session.set(`jt90.${voice}.level`, 1.0);
+      const def = getParamDef('jt90', voice, 'level');
+      session.set(`jt90.${voice}.level`, def ? toEngine(0, def) : 0.5);
       tweaks.push('unmuted');
     }
 
