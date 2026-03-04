@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CHAIN — Amber</title>
+<meta name="description" content="Tap one. Watch them all go.">
+<meta property="og:title" content="CHAIN">
+<meta property="og:description" content="Tap one. Watch them all go.">
+<meta property="og:image" content="https://intheamber.com/amber/og/chain.png">
+<meta property="og:url" content="https://intheamber.com/amber/chain.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CHAIN">
+<meta name="twitter:description" content="Tap one. Watch them all go.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/chain.png">
+<meta name="twitter:site" content="@intheamber">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💥</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;overflow:hidden;touch-action:none;font-family:'Courier New',monospace;user-select:none}
+canvas{display:block;width:100vw;height:100vh}
+#ui{position:fixed;top:16px;left:0;right:0;text-align:center;pointer-events:none;z-index:10}
+#score{color:#FFD700;font-size:28px;font-weight:bold;text-shadow:0 0 20px rgba(255,215,0,.5)}
+#combo{color:#2D9596;font-size:16px;margin-top:4px;opacity:0;transition:opacity .3s}
+#hint{position:fixed;bottom:24px;left:0;right:0;text-align:center;color:#666;font-size:14px;pointer-events:none;font-family:'Courier New',monospace}
+#best{position:fixed;top:16px;right:16px;color:#666;font-size:14px;pointer-events:none;font-family:'Courier New',monospace}
+</style>
+</head>
+<body>
+<div id="ui"><div id="score">0</div><div id="combo"></div></div>
+<div id="best"></div>
+<div id="hint">tap a dot</div>
+<canvas id="c"></canvas>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H,dots=[],particles=[],score=0,best=+localStorage.getItem('chain-best')||0,combo=0,audioCtx;
+const COLORS=['#FFD700','#FFA500','#FF6B6B','#2D9596','#ec4899','#a855f7','#34d399'];
+const RADIUS=18,BLAST=90,DOT_COUNT=50;
+
+function resize(){W=C.width=innerWidth*devicePixelRatio;H=C.height=innerHeight*devicePixelRatio;C.style.width=innerWidth+'px';C.style.height=innerHeight+'px'}
+resize();addEventListener('resize',resize);
+
+function initAudio(){if(audioCtx)return;audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume()}
+
+function playPop(freq,vol){
+if(!audioCtx)return;
+const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+o.type='sine';o.frequency.value=freq;
+g.gain.setValueAtTime(vol*.3,audioCtx.currentTime);
+g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.15);
+o.connect(g);g.connect(audioCtx.destination);
+o.start();o.stop(audioCtx.currentTime+.15);
+}
+
+function spawn(){
+dots=[];
+for(let i=0;i<DOT_COUNT;i++){
+dots.push({
+x:Math.random()*W,y:Math.random()*H,
+vx:(Math.random()-.5)*1.5,vy:(Math.random()-.5)*1.5,
+r:RADIUS*devicePixelRatio,
+color:COLORS[Math.floor(Math.random()*COLORS.length)],
+alive:true,exploding:false,explodeT:0,
+scale:1
+});
+}
+}
+spawn();
+
+function explode(dot){
+if(dot.exploding)return;
+dot.exploding=true;dot.explodeT=0;
+combo++;score+=combo;
+document.getElementById('score').textContent=score;
+const ce=document.getElementById('combo');
+if(combo>1){ce.textContent='×'+combo+' CHAIN';ce.style.opacity=1}
+playPop(300+combo*80,.5);
+// particles
+for(let i=0;i<8;i++){
+const a=Math.PI*2*i/8;
+particles.push({x:dot.x,y:dot.y,vx:Math.cos(a)*4*devicePixelRatio,vy:Math.sin(a)*4*devicePixelRatio,life:1,color:dot.color});
+}
+// chain: explode nearby
+setTimeout(()=>{
+dots.forEach(d=>{
+if(d!==dot&&d.alive&&!d.exploding){
+const dx=d.x-dot.x,dy=d.y-dot.y;
+if(Math.sqrt(dx*dx+dy*dy)<BLAST*devicePixelRatio){
+explode(d);
+}
+}
+});
+},80);
+}
+
+function endRound(){
+setTimeout(()=>{
+if(score>best){best=score;localStorage.setItem('chain-best',best)}
+document.getElementById('best').textContent='best: '+best;
+document.getElementById('combo').style.opacity=0;
+score=0;combo=0;
+document.getElementById('score').textContent='0';
+spawn();
+document.getElementById('hint').textContent='tap a dot';
+},1200);
+}
+
+function tap(ex,ey){
+initAudio();
+const px=ex*devicePixelRatio,py=ey*devicePixelRatio;
+document.getElementById('hint').textContent='';
+combo=0;
+let hit=false;
+for(const d of dots){
+if(!d.alive||d.exploding)continue;
+const dx=d.x-px,dy=d.y-py;
+if(Math.sqrt(dx*dx+dy*dy)<d.r*1.5){
+explode(d);hit=true;break;
+}
+}
+if(!hit){playPop(150,.1)}
+}
+
+C.addEventListener('pointerdown',e=>{e.preventDefault();tap(e.clientX,e.clientY)});
+
+if(best>0)document.getElementById('best').textContent='best: '+best;
+
+function draw(){
+X.fillStyle='rgba(10,10,10,.25)';X.fillRect(0,0,W,H);
+
+let allDone=true;
+dots.forEach(d=>{
+if(!d.alive)return;
+if(d.exploding){
+d.explodeT+=.05;
+d.scale=1+d.explodeT*3;
+if(d.explodeT>1){d.alive=false;return}
+X.globalAlpha=1-d.explodeT;
+X.beginPath();X.arc(d.x,d.y,d.r*d.scale,0,Math.PI*2);
+X.fillStyle=d.color;X.fill();
+X.globalAlpha=1;
+}else{
+allDone=false;
+// drift
+d.x+=d.vx;d.y+=d.vy;
+if(d.x<d.r||d.x>W-d.r)d.vx*=-1;
+if(d.y<d.r||d.y>H-d.r)d.vy*=-1;
+// glow
+X.shadowBlur=15*devicePixelRatio;X.shadowColor=d.color;
+X.beginPath();X.arc(d.x,d.y,d.r,0,Math.PI*2);
+X.fillStyle=d.color;X.fill();
+X.shadowBlur=0;
+}
+});
+
+// check if round over (all exploding/dead and no more chains pending)
+const aliveCount=dots.filter(d=>d.alive&&!d.exploding).length;
+const explodingCount=dots.filter(d=>d.alive&&d.exploding).length;
+if(aliveCount===0&&explodingCount===0&&combo>0)endRound();
+
+// particles
+particles=particles.filter(p=>{
+p.x+=p.vx;p.y+=p.vy;p.life-=.03;
+if(p.life<=0)return false;
+X.globalAlpha=p.life;
+X.beginPath();X.arc(p.x,p.y,3*devicePixelRatio,0,Math.PI*2);
+X.fillStyle=p.color;X.fill();
+X.globalAlpha=1;
+return true;
+});
+
+requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>
