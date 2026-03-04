@@ -69,7 +69,7 @@ const projects: Project[] = [
   {
     name: "das kollektiv (und more)",
     slug: "daskollektiv",
-    url: "https://daskollectiv.rip",
+    url: "https://daskollektiv.rip",
     image: null,
     shortDesc: "agents. hardware. questionable wiring",
     fullDesc: "openclaw experiments on weird hardware. marg lives on a pwnagotchi and talks to cameras. a pico, some e-ink, and whatever else is lying around.",
