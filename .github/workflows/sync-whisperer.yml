@@ -1,0 +1,121 @@
+name: Sync Whisperer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/app/whisperer/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare Whisperer build
+        run: |
+          mkdir -p whisperer-build/app/whisperer
+
+          # Copy the whisperer page
+          cp -r web/app/whisperer/* whisperer-build/app/whisperer/
+
+          # Create minimal layout
+          cat > whisperer-build/app/layout.tsx << 'LAYOUT'
+          import type { Metadata } from 'next'
+
+          export const metadata: Metadata = {
+            title: 'Home Whisperer',
+            description: 'A smart camera, quietly watching',
+          }
+
+          export default function RootLayout({ children }: { children: React.ReactNode }) {
+            return (
+              <html lang="en">
+                <body style={{ margin: 0 }}>{children}</body>
+              </html>
+            )
+          }
+          LAYOUT
+
+          # Create root page that redirects to /whisperer
+          cat > whisperer-build/app/page.tsx << 'PAGE'
+          import { redirect } from 'next/navigation'
+          export default function Home() {
+            redirect('/whisperer')
+          }
+          PAGE
+
+          # Create package.json
+          cat > whisperer-build/package.json << 'PKG'
+          {
+            "name": "whisperer",
+            "version": "1.0.0",
+            "private": true,
+            "scripts": {
+              "dev": "next dev",
+              "build": "next build",
+              "start": "next start"
+            },
+            "dependencies": {
+              "next": "^15.1.0",
+              "react": "^19.0.0",
+              "react-dom": "^19.0.0"
+            },
+            "devDependencies": {
+              "@types/node": "^22.0.0",
+              "@types/react": "^19.0.0",
+              "typescript": "^5.7.0"
+            }
+          }
+          PKG
+
+          # Create tsconfig
+          cat > whisperer-build/tsconfig.json << 'TSC'
+          {
+            "compilerOptions": {
+              "target": "ES2017",
+              "lib": ["dom", "dom.iterable", "esnext"],
+              "allowJs": true,
+              "skipLibCheck": true,
+              "strict": false,
+              "noEmit": true,
+              "esModuleInterop": true,
+              "module": "esnext",
+              "moduleResolution": "bundler",
+              "resolveJsonModule": true,
+              "isolatedModules": true,
+              "jsx": "preserve",
+              "incremental": true,
+              "plugins": [{ "name": "next" }],
+              "paths": { "@/*": ["./*"] }
+            },
+            "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+            "exclude": ["node_modules"]
+          }
+          TSC
+
+          # Create next.config
+          cat > whisperer-build/next.config.js << 'NEXT'
+          /** @type {import('next').NextConfig} */
+          const nextConfig = {}
+          module.exports = nextConfig
+          NEXT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy to Vercel
+        run: |
+          cd whisperer-build
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WHISPERER_PROJECT_ID }}
