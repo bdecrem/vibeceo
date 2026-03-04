@@ -35,6 +35,7 @@ const nextConfig = {
       { source: '/jt90/:path*', headers: corsHeaders },
       { source: '/jb01/:path*', headers: corsHeaders },
       { source: '/jb202/:path*', headers: corsHeaders },
+      { source: '/jt10/:path*', headers: corsHeaders },
     ]
   },
   // Rewrites for static HTML apps in public/

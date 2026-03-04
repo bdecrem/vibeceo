@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DK003 — das kollektiv</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬛</text></svg>">
+<meta property="og:title" content="DK003">
+<meta property="og:description" content="Plastikman-style minimal. JB01 + JT10. Filter sweep. 126 BPM. G minor.">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #030305; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.3);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.05); z-index: 10;
+  }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.06); z-index: 10;
+  }
+  #hud {
+    position: fixed; bottom: 40px; left: 0; right: 0;
+    text-align: center; z-index: 10; pointer-events: none;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .section-label {
+    font-size: 9px; letter-spacing: 6px;
+    color: rgba(255,255,255,0.0);
+    transition: color 1.2s ease;
+  }
+  .section-label.visible { color: rgba(255,255,255,0.1); }
+  .bar-count {
+    font-size: 8px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.05);
+  }
+  /* Filter readout — the sweep is the story */
+  #filter-readout {
+    position: fixed; top: 50%; right: 30px;
+    transform: translateY(-50%);
+    font-size: 9px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.0);
+    z-index: 10; pointer-events: none;
+    transition: color 0.3s;
+    writing-mode: vertical-rl;
+    font-variant-numeric: tabular-nums;
+  }
+  #restart-zone {
+    position: fixed; inset: 0; z-index: 9;
+    cursor: pointer; display: none;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="overlay"><button id="play-btn">▶</button></div>
+<div id="filter-readout"></div>
+<div id="hud">
+  <div class="section-label" id="section-label"></div>
+  <div class="bar-count" id="bar-count"></div>
+</div>
+<div id="title">DK003</div>
+<div id="credits">HALLMAN × MARG · JB01 · JT10 · 126 BPM · G MINOR</div>
+<div id="restart-zone"></div>
+
+<script type="module">
+import { JB01Engine } from 'https://kochi.to/jb01/dist/machines/jb01/engine.js';
+import { JT10Engine } from 'https://kochi.to/jt10/dist/machines/jt10/engine.js';
+
+// ══════════════════════════════════════════
+// HALLMAN × HAWTIN 01
+// Plastikman-style minimal. Filter sweep IS the composition.
+// ══════════════════════════════════════════
+
+const BPM = 126;
+const STEP_DUR = 60 / BPM / 4;
+
+// ── ARRANGEMENT: 32 bars ──
+// Bars 1-2:   Kick only
+// Bars 3-4:   Kick + 16th hats (function pattern)
+// Bars 5-31:  + acid bass, filter sweeps open
+// Bar 32:     Ghost bar — kick drops
+
+// Acid pattern: G1 G1 G2 G1 Bb1 G1 C2→G1(slide) | G1 . G2 G1 Bb1 . G1 .
+const acidNotes = [
+  'G1','G1','G2','G1','Bb1','G1','C2','G1',
+  'G1', null,'G2','G1','Bb1', null,'G1', null
+];
+
+// Hat velocity shaping — offbeats punch, kick-steps ghosted
+function hatVelocity(step, bar) {
+  const baseVel = bar < 8 ? 0.4 + ((bar - 2) / 5) * 0.2 : bar < 28 ? 0.6 : 0.67;
+  if ([2,6,10,14].includes(step)) return baseVel + 0.14; // offbeat punch
+  if ([0,4,8,12].includes(step)) return baseVel - 0.16;  // ghost on kicks
+  return baseVel;
+}
+
+// Filter cutoff automation (Hz)
+// Opens gradually from 200→3000Hz, then pulls back
+function cutoffAtBar(bar) {
+  if (bar < 4) return 200;
+  if (bar < 20) return 200 + ((bar - 4) / 15) * 2800;  // 200→3000 over 16 bars
+  if (bar < 28) return 3000 - ((bar - 20) / 7) * 1800;  // 3000→1200 pullback
+  if (bar < 31) return 800;  // tension
+  return 400; // ghost
+}
+
+// CH decay automation (0-100 producer scale)
+function chDecayAtBar(bar) {
+  if (bar < 2) return 12;
+  if (bar < 28) return 12 + ((bar - 2) / 25) * 43; // 12→55
+  return 55;
+}
+
+// Section labels
+function sectionForBar(bar) {
+  if (bar < 2) return 'KICK';
+  if (bar < 4) return 'HATS';
+  if (bar < 8) return 'ACID';
+  if (bar < 16) return 'SWEEP';
+  if (bar < 24) return 'OPEN';
+  if (bar < 28) return 'PEAK';
+  if (bar < 31) return 'TENSION';
+  return 'GHOST';
+}
+
+function energyForBar(bar) {
+  if (bar < 2) return 0.08;
+  if (bar < 4) return 0.15;
+  if (bar < 8) return 0.25;
+  if (bar < 16) return 0.4;
+  if (bar < 24) return 0.65;
+  if (bar < 28) return 0.85;
+  if (bar < 31) return 0.5;
+  return 0.1;
+}
+
+// ══════════════════════════════════════════
+// CANVAS
+// ══════════════════════════════════════════
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ══════════════════════════════════════════
+// COLOR ENGINE
+// Monochrome base + filter cutoff drives warmth
+// Low cutoff (100Hz) = cold blue-grey
+// High cutoff (500Hz) = warm amber
+// ══════════════════════════════════════════
+
+function cutoffToRGB(cutoffHz, brightness = 1) {
+  const t = Math.min(1, Math.max(0, (cutoffHz - 100) / 400));
+  const b = brightness;
+  // 0 = cold grey-blue (120, 130, 150)
+  // 1 = warm amber (240, 180, 100)
+  const r = Math.min(255, Math.floor((120 + t * 120) * b));
+  const g = Math.min(255, Math.floor((130 + t * 50) * b));
+  const bl = Math.min(255, Math.floor((150 - t * 50) * b));
+  return [r, g, bl];
+}
+
+// ══════════════════════════════════════════
+// VISUAL STATE
+// ══════════════════════════════════════════
+const V = {
+  cutoff: 100,
+  smoothCutoff: 100,
+  chDecay: 12,
+  smoothDecay: 12,
+  energy: 0.08,
+  targetEnergy: 0.08,
+  kickHit: 0,
+  chHit: 0,
+  acidHit: 0,
+  acidNote: null,
+  playing: false,
+  step: 0,
+  bar: 0,
+  globalStep: 0,
+  section: '',
+  noKick: false,
+  hasAcid: false,
+  hasHats: false,
+};
+
+// ══════════════════════════════════════════
+// GEOMETRY
+// ══════════════════════════════════════════
+
+// ── 1. FILTER SWEEP LINE: horizontal line at center ──
+// Width = cutoff frequency. THE central visual.
+// As filter opens, the line extends across the screen.
+function drawFilterLine() {
+  const t = (V.smoothCutoff - 100) / 400; // 0-1
+  const [r, g, b] = cutoffToRGB(V.smoothCutoff);
+  const energy = V.energy;
+
+  // Line width maps to cutoff — 100Hz = short, 500Hz = full screen
+  const lineW = W * 0.05 + t * W * 0.9;
+  const alpha = 0.06 + energy * 0.08 + t * 0.04;
+
+  // Main line
+  ctx.beginPath();
+  ctx.moveTo(cx - lineW / 2, cy);
+  ctx.lineTo(cx + lineW / 2, cy);
+  ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Glow
+  ctx.strokeStyle = `rgba(${r},${g},${b},${alpha * 0.3})`;
+  ctx.lineWidth = 4 + t * 4;
+  ctx.stroke();
+
+  // Soft vertical gradient behind the line — filter "presence"
+  if (t > 0.05) {
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, H * 0.3 * t);
+    grad.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.5})`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
+// ── 2. KICK RINGS: concentric, centered, cold ──
+const kickRings = [];
+class KickRing {
+  constructor() {
+    this.r = 0;
+    this.life = 1;
+  }
+  update() {
+    this.r += 3 + (1 - this.life) * 2;
+    this.life *= 0.96;
+    return this.life > 0.01;
+  }
+  draw() {
+    const [r, g, b] = cutoffToRGB(V.smoothCutoff, 0.4);
+    ctx.beginPath();
+    ctx.arc(cx, cy, this.r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * 0.08})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+// ── 3. HAT DUST: 16th-note scatter, density = energy ──
+const hatDust = [];
+class HatDust {
+  constructor(decay01, cutoffHz) {
+    const [r, g, b] = cutoffToRGB(cutoffHz);
+    this.color = [r, g, b];
+    // Scatter along the filter line
+    const t = (cutoffHz - 100) / 400;
+    const lineW = W * 0.05 + t * W * 0.9;
+    this.x = cx + (Math.random() - 0.5) * lineW;
+    this.y = cy + (Math.random() - 0.5) * 20;
+    this.vy = (Math.random() - 0.5) * 0.5;
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.size = 0.3 + decay01 * 2;
+    this.life = 1;
+    this.maxLife = 40 + Math.random() * 60;
+    this.age = 0;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy - 0.1; // slight drift up
+    this.age++;
+    if (this.age > this.maxLife * 0.5) this.life *= 0.96;
+    return this.age < this.maxLife && this.life > 0.01;
+  }
+  draw() {
+    const [r, g, b] = this.color;
+    ctx.fillStyle = `rgba(${r},${g},${b},${this.life * 0.15})`;
+    ctx.fillRect(this.x, this.y, this.size, this.size);
+  }
+}
+
+// ── 4. ACID PULSES: vertical lines from the center, one per note ──
+// Height = note pitch. Accent = brighter. Slide = the line bends.
+const acidPulses = [];
+
+const noteToY = {
+  'G1': 0, 'Bb1': -0.15, 'C2': -0.3, 'G2': -0.5,
+};
+
+class AcidPulse {
+  constructor(note, accent, slide, cutoffHz) {
+    const pitch = noteToY[note] || 0;
+    const [r, g, b] = cutoffToRGB(cutoffHz, accent ? 1.3 : 0.8);
+    this.color = [r, g, b];
+    // Vertical line from center
+    this.x = cx + (Math.random() - 0.5) * 6;
+    this.topY = cy + pitch * H * 0.3;
+    this.bottomY = cy + 10;
+    this.alpha = accent ? 0.2 : 0.1;
+    this.life = 1;
+    this.slide = slide;
+    this.slideOffset = 0;
+  }
+  update() {
+    this.life *= 0.93;
+    if (this.slide) this.slideOffset += 2;
+    return this.life > 0.01;
+  }
+  draw() {
+    const [r, g, b] = this.color;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.bottomY);
+    ctx.lineTo(this.x + this.slideOffset * 0.5, this.topY - this.slideOffset);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * this.alpha})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Glow
+    ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * this.alpha * 0.3})`;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+  }
+}
+
+// ── 5. GHOST EMBERS: bar 32, kick gone ──
+const embers = [];
+class Ember {
+  constructor() {
+    this.x = cx + (Math.random() - 0.5) * 80;
+    this.y = cy;
+    this.vy = -(0.2 + Math.random() * 0.5);
+    this.vx = (Math.random() - 0.5) * 0.2;
+    this.life = 1;
+    this.size = 0.5 + Math.random() * 1;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.life -= 0.008;
+    return this.life > 0;
+  }
+  draw() {
+    const [r, g, b] = cutoffToRGB(V.smoothCutoff, 0.3);
+    ctx.fillStyle = `rgba(${r},${g},${b},${this.life * 0.1})`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// ══════════════════════════════════════════
+// RENDER LOOP
+// ══════════════════════════════════════════
+let frame = 0;
+const filterReadout = document.getElementById('filter-readout');
+const sectionLabelEl = document.getElementById('section-label');
+const barCountEl = document.getElementById('bar-count');
+let lastSection = '';
+
+function render() {
+  requestAnimationFrame(render);
+  frame++;
+
+  V.energy += (V.targetEnergy - V.energy) * 0.02;
+  V.smoothCutoff += (V.cutoff - V.smoothCutoff) * 0.08; // slow sweep
+  V.smoothDecay += (V.chDecay - V.smoothDecay) * 0.2;
+  V.kickHit *= 0.9;
+  V.chHit *= 0.9;
+  V.acidHit *= 0.92;
+
+  // Background fade
+  const fade = V.noKick ? 0.03 : 0.05;
+  ctx.fillStyle = `rgba(3,3,5,${fade})`;
+  ctx.fillRect(0, 0, W, H);
+
+  if (!V.playing && kickRings.length === 0 && acidPulses.length === 0) {
+    const breath = Math.sin(frame * 0.006) * 0.5 + 0.5;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 25);
+    grad.addColorStop(0, `rgba(120,130,150,${0.008 + breath * 0.008})`);
+    grad.addColorStop(1, 'rgba(120,130,150,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(cx - 25, cy - 25, 50, 50);
+    return;
+  }
+
+  // ═══ LAYERS ═══
+
+  // 1. Filter sweep line (always present once playing)
+  drawFilterLine();
+
+  // 2. Kick rings
+  for (let i = kickRings.length - 1; i >= 0; i--) {
+    kickRings[i].draw();
+    if (!kickRings[i].update()) kickRings.splice(i, 1);
+  }
+
+  // 3. Acid pulses
+  for (let i = acidPulses.length - 1; i >= 0; i--) {
+    acidPulses[i].draw();
+    if (!acidPulses[i].update()) acidPulses.splice(i, 1);
+  }
+
+  // 4. Hat dust
+  for (let i = hatDust.length - 1; i >= 0; i--) {
+    hatDust[i].draw();
+    if (!hatDust[i].update()) hatDust.splice(i, 1);
+  }
+
+  // 5. Ghost embers
+  if (V.noKick && frame % 3 === 0) embers.push(new Ember());
+  for (let i = embers.length - 1; i >= 0; i--) {
+    embers[i].draw();
+    if (!embers[i].update()) embers.splice(i, 1);
+  }
+
+  // Filter readout
+  if (V.hasAcid) {
+    const hz = Math.round(V.smoothCutoff);
+    filterReadout.style.color = `rgba(255,255,255,${0.03 + V.energy * 0.04})`;
+    filterReadout.textContent = `${hz} HZ`;
+  }
+}
+render();
+
+// ══════════════════════════════════════════
+// PLAYBACK — JB01 for drums, JT10 for acid bass
+// ══════════════════════════════════════════
+let audioCtx = null;
+let engine = null;
+let acidEngine = null;
+let playing = false;
+let nextStepTime = 0;
+let currentStep = 0;
+let currentBar = 0;
+let schedulerTimer = null;
+const SCHEDULE_AHEAD = 0.1;
+const LOOKAHEAD = 25;
+
+function scheduleStep(time) {
+  const stepInBar = currentStep % 16;
+  const bar = currentBar;
+
+  const cutoff = cutoffAtBar(bar);
+  const decay = chDecayAtBar(bar);
+  const section = sectionForBar(bar);
+  const energy = energyForBar(bar);
+
+  // Hat voice active?
+  const hasHats = bar >= 2;
+  // Acid active?
+  const hasAcid = bar >= 4 && bar < 32;
+  // Kick active?
+  const hasKick = bar < 31;
+
+  // Set hat decay on engine
+  const decayEngine = decay / 50; // rough producer→engine scale
+
+  const delay = Math.max(0, (time - audioCtx.currentTime) * 1000);
+
+  setTimeout(() => {
+    // Update engine params
+    engine.setVoiceParam('ch', 'decay', decayEngine);
+
+    // Trigger kick
+    if (hasKick && [0,4,8,12].includes(stepInBar)) {
+      const kickVel = (110 + Math.floor(bar / 8) * 2) / 127;
+      engine.trigger('kick', kickVel, audioCtx.currentTime);
+      V.kickHit = 1;
+      kickRings.push(new KickRing());
+    }
+
+    // Trigger hats
+    if (hasHats) {
+      const vel = hatVelocity(stepInBar, bar);
+      engine.trigger('ch', vel, audioCtx.currentTime);
+      V.chHit = 1;
+      // Dust
+      const count = 1 + Math.floor(V.energy * 4);
+      for (let i = 0; i < count; i++) {
+        hatDust.push(new HatDust(decay / 55, cutoff));
+      }
+    }
+
+    // Acid bass — JT10 audio + visualization
+    if (hasAcid) {
+      // Update filter cutoff on acid engine (Hz → 0-1 log scale)
+      const cutoffNorm = Math.min(1, Math.max(0, Math.log(cutoff / 20) / Math.log(16000 / 20)));
+      acidEngine.setParameter('cutoff', cutoffNorm);
+
+      const note = acidNotes[stepInBar];
+      const nextNote = acidNotes[(stepInBar + 1) % 16];
+      const isAccent = [0,4].includes(stepInBar);
+      const isSlide = stepInBar === 6;
+
+      if (note) {
+        const vel = isAccent ? 1.0 : 0.7;
+        acidEngine.playNote(note, vel, isSlide);
+        V.acidHit = 1;
+        V.acidNote = note;
+        acidPulses.push(new AcidPulse(note, isAccent, isSlide, cutoff));
+      } else {
+        acidEngine.noteOff();
+      }
+    } else if (acidEngine) {
+      acidEngine.noteOff();
+    }
+
+    // Update state
+    V.cutoff = cutoff;
+    V.chDecay = decay;
+    V.targetEnergy = energy;
+    V.step = stepInBar;
+    V.bar = bar;
+    V.noKick = !hasKick;
+    V.hasAcid = hasAcid;
+    V.hasHats = hasHats;
+    V.globalStep++;
+
+    // Section label
+    if (section !== lastSection) {
+      sectionLabelEl.textContent = section;
+      sectionLabelEl.classList.add('visible');
+      setTimeout(() => sectionLabelEl.classList.remove('visible'), 2500);
+      lastSection = section;
+    }
+
+    barCountEl.textContent = `${bar + 1} / 32`;
+  }, delay);
+}
+
+function advanceStep() {
+  currentStep++;
+  if (currentStep % 16 === 0) {
+    currentBar++;
+    if (currentBar >= 32) { stop(); return false; }
+  }
+  return true;
+}
+
+function scheduler() {
+  while (nextStepTime < audioCtx.currentTime + SCHEDULE_AHEAD) {
+    scheduleStep(nextStepTime);
+    nextStepTime += STEP_DUR;
+    if (!advanceStep()) return;
+  }
+  schedulerTimer = setTimeout(scheduler, LOOKAHEAD);
+}
+
+function start() {
+  if (!audioCtx) {
+    audioCtx = new AudioContext({ sampleRate: 44100 });
+    engine = new JB01Engine({ context: audioCtx, bpm: BPM });
+    engine.connectOutput(audioCtx.destination);
+
+    // Kick: tight, tuned down
+    engine.setVoiceParam('kick', 'decay', 0.3);
+    engine.setVoiceParam('kick', 'tune', -0.25);
+    engine.setVoiceParam('kick', 'level', 0.8);
+    engine.setVoiceParam('kick', 'attack', 0.65);
+
+    // Hats
+    engine.setVoiceParam('ch', 'level', 0.55);
+    engine.setVoiceParam('ch', 'tone', 0.4);
+    engine.setVoiceParam('ch', 'decay', 0.24);
+
+    // Acid bass — JT10
+    acidEngine = new JT10Engine({ context: audioCtx, sampleRate: 44100 });
+    // Fat Bass preset from JT-10 UI
+    acidEngine.setParameter('sawLevel', 0.6);
+    acidEngine.setParameter('pulseLevel', 0.4);
+    acidEngine.setParameter('pulseWidth', 0.4);
+    acidEngine.setParameter('subLevel', 0.5);
+    acidEngine.setParameter('subMode', 0);           // OFF
+    acidEngine.setParameter('cutoff', 0.35);          // ~208Hz
+    acidEngine.setParameter('resonance', 0.05);
+    acidEngine.setParameter('envMod', 0.25);
+    acidEngine.setParameter('attack', 0.02);
+    acidEngine.setParameter('decay', 0.25);
+    acidEngine.setParameter('sustain', 0.2);
+    acidEngine.setParameter('release', 0.85);
+    acidEngine.setParameter('glideTime', 0.15);
+    acidEngine.setParameter('level', 0.34);         // 0.85 minus ~8dB
+  }
+
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  // Reset
+  currentStep = 0; currentBar = 0;
+  V.cutoff = 100; V.smoothCutoff = 100;
+  V.chDecay = 12; V.smoothDecay = 12;
+  V.playing = true; V.globalStep = 0;
+  lastSection = '';
+  kickRings.length = 0; hatDust.length = 0;
+  acidPulses.length = 0; embers.length = 0;
+
+  ctx.fillStyle = '#030305';
+  ctx.fillRect(0, 0, W, H);
+
+  nextStepTime = audioCtx.currentTime + 0.05;
+  playing = true;
+  document.getElementById('play-btn').classList.add('playing');
+  document.getElementById('restart-zone').style.display = 'none';
+  scheduler();
+}
+
+function stop() {
+  playing = false; V.playing = false; V.targetEnergy = 0;
+  if (schedulerTimer) clearTimeout(schedulerTimer);
+  document.getElementById('play-btn').classList.remove('playing');
+  sectionLabelEl.textContent = '';
+  sectionLabelEl.classList.remove('visible');
+  barCountEl.textContent = '';
+  filterReadout.style.color = 'rgba(255,255,255,0)';
+  document.getElementById('restart-zone').style.display = 'block';
+}
+
+document.getElementById('play-btn').addEventListener('click', () => {
+  if (playing) stop(); else start();
+});
+document.getElementById('restart-zone').addEventListener('click', start);
+</script>
+</body>
+</html>
