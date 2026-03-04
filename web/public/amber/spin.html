@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SPIN — Rotating drum sequencer</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="SPIN">
+  <meta property="og:description" content="Rotating drum sequencer — Place beats on spinning circles, watch the playhead trigger them">
+  <meta property="og:image" content="https://intheamber.com/amber/spin-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/spin.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SPIN">
+  <meta name="twitter:description" content="Rotating drum sequencer — Place beats on spinning circles, watch the playhead trigger them">
+  <meta name="twitter:image" content="https://intheamber.com/amber/spin-og.png">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+    
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    
+    #title {
+      font-size: clamp(2rem, 8vw, 4rem);
+      color: #FFD700;
+      letter-spacing: 0.3em;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 40px rgba(255, 215, 0, 0.4);
+      font-weight: 700;
+    }
+    
+    #subtitle {
+      font-size: clamp(0.6rem, 2vw, 0.8rem);
+      opacity: 0.5;
+      letter-spacing: 0.2em;
+      margin-bottom: 1.5rem;
+    }
+    
+    #canvasContainer {
+      position: relative;
+      width: min(90vw, 90vh, 600px);
+      height: min(90vw, 90vh, 600px);
+      margin: 1rem auto;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      touch-action: none;
+    }
+    
+    #controls {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    button {
+      background: rgba(212, 165, 116, 0.1);
+      color: #FFD700;
+      border: 2px solid #FFD700;
+      padding: 0.8rem 1.5rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.2em;
+      transition: all 0.3s ease;
+      min-width: 100px;
+    }
+    
+    button:hover {
+      background: rgba(255, 215, 0, 0.2);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+    
+    button.playing {
+      background: #FFD700;
+      color: #000;
+    }
+    
+    #bpm {
+      color: #2D9596;
+      font-size: 0.9rem;
+      letter-spacing: 0.1em;
+    }
+    
+    #stats {
+      margin-top: 1rem;
+      font-size: 0.7rem;
+      opacity: 0.4;
+      letter-spacing: 0.1em;
+      text-align: center;
+    }
+    
+    #legend {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+      margin-top: 1rem;
+      font-size: 0.7rem;
+      max-width: 300px;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      opacity: 0.6;
+    }
+    
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    @media (max-width: 600px) {
+      #title { margin-top: 1rem; }
+      #legend { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="title">SPIN</div>
+  <div id="subtitle">TAP TO PLACE BEATS • WATCH THEM ROTATE</div>
+  
+  <div id="canvasContainer">
+    <canvas id="canvas"></canvas>
+  </div>
+  
+  <div id="controls">
+    <button id="playBtn">START</button>
+    <button id="clearBtn">CLEAR</button>
+    <div id="bpm">135 BPM</div>
+  </div>
+  
+  <div id="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #FFD700; box-shadow: 0 0 10px #FFD700;"></div>
+      <span>KICK (inner)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #D4A574; box-shadow: 0 0 10px #D4A574;"></div>
+      <span>SNARE</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #2D9596; box-shadow: 0 0 10px #2D9596;"></div>
+      <span>CLOSED HAT</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #7B68EE; box-shadow: 0 0 10px #7B68EE;"></div>
+      <span>OPEN HAT (outer)</span>
+    </div>
+  </div>
+  
+  <div id="stats">NOTES: 0 • HITS: 0</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const playBtn = document.getElementById('playBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const stats = document.getElementById('stats');
+    
+    // Set canvas size
+    const size = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9, 600);
+    canvas.width = size;
+    canvas.height = size;
+    const cx = size / 2;
+    const cy = size / 2;
+    
+    // Config
+    const BPM = 135;
+    const ROTATION_SPEED = (BPM / 60) * (Math.PI * 2) / 16; // 16th notes
+    
+    // Drum voices (from innermost to outermost)
+    const voices = [
+      { id: 'kick', color: '#FFD700', radius: size * 0.15 },
+      { id: 'snare', color: '#D4A574', radius: size * 0.25 },
+      { id: 'ch', color: '#2D9596', radius: size * 0.35 },
+      { id: 'oh', color: '#7B68EE', radius: size * 0.45 }
+    ];
+    
+    // Notes storage: { voiceIndex, angle }
+    let notes = [];
+    let playheadAngle = -Math.PI / 2; // Start at top (12 o'clock)
+    let isPlaying = false;
+    let audioCtx = null;
+    let lastTriggeredNotes = new Set();
+    let totalHits = 0;
+    let particles = [];
+    
+    // Audio synthesis
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
+    
+    // Drum synthesis
+    function playKick() {
+      const ctx = audioCtx;
+      const now = ctx.currentTime;
+      
+      // Pitch envelope: high to low
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.5);
+      
+      gain.gain.setValueAtTime(1, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(now);
+      osc.stop(now + 0.5);
+    }
+    
+    function playSnare() {
+      const ctx = audioCtx;
+      const now = ctx.currentTime;
+      
+      // Noise burst
+      const noise = ctx.createBufferSource();
+      const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < output.length; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      noise.buffer = noiseBuffer;
+      
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'highpass';
+      noiseFilter.frequency.value = 1000;
+      
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.6, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+      
+// Tone
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = 180;
+      
+      const toneGain = ctx.createGain();
+      toneGain.gain.setValueAtTime(0.5, now);
+      toneGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+      
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      
+      osc.connect(toneGain);
+      toneGain.connect(ctx.destination);
+      
+      noise.start(now);
+      noise.stop(now + 0.2);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    }
+    
+    function playClosedHat() {
+      const ctx = audioCtx;
+      const now = ctx.currentTime;
+      
+      // Filtered noise
+      const noise = ctx.createBufferSource();
+      const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < output.length; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      noise.buffer = noiseBuffer;
+      
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 7000;
+      
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+      
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      
+      noise.start(now);
+      noise.stop(now + 0.05);
+    }
+    
+    function playOpenHat() {
+      const ctx = audioCtx;
+      const now = ctx.currentTime;
+      
+      // Filtered noise - longer decay
+      const noise = ctx.createBufferSource();
+      const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < output.length; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      noise.buffer = noiseBuffer;
+      
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 6000;
+      
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      
+      noise.start(now);
+      noise.stop(now + 0.3);
+    }
+    
+    function triggerVoice(voiceId, x, y, color) {
+      if (!audioCtx) return;
+      
+      switch(voiceId) {
+        case 'kick': playKick(); break;
+        case 'snare': playSnare(); break;
+        case 'ch': playClosedHat(); break;
+        case 'oh': playOpenHat(); break;
+      }
+      
+      totalHits++;
+      updateStats();
+      
+      // Spawn particles at hit position
+      for (let i = 0; i < 8; i++) {
+        const angle = (Math.PI * 2 * i) / 8;
+        particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * 3,
+          vy: Math.sin(angle) * 3,
+          life: 1,
+          color: color
+        });
+      }
+    }
+    
+    // Add note on tap
+    function addNote(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const x = ((clientX - rect.left) / rect.width) * canvas.width;
+      const y = ((clientY - rect.top) / rect.height) * canvas.height;
+      
+      const dx = x - cx;
+      const dy = y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx);
+      
+      // Find closest voice circle
+      let closestVoice = 0;
+      let minDiff = Infinity;
+      voices.forEach((voice, i) => {
+        const diff = Math.abs(dist - voice.radius);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestVoice = i;
+        }
+      });
+      
+      // Only add if within reasonable range
+      const maxRadius = voices[voices.length - 1].radius;
+      if (dist > maxRadius + 30 || dist < voices[0].radius - 30) return;
+      
+      notes.push({ voiceIndex: closestVoice, angle: angle });
+      updateStats();
+      
+      // Spawn placement particles
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI * 2 * i) / 6;
+        particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(a) * 2,
+          vy: Math.sin(a) * 2,
+          life: 1,
+          color: voices[closestVoice].color
+        });
+      }
+    }
+    
+    function updateStats() {
+      stats.textContent = `NOTES: ${notes.length} • HITS: ${totalHits}`;
+    }
+    
+    // Input handlers
+    canvas.addEventListener('click', (e) => {
+      if (!audioCtx) initAudio();
+      addNote(e.clientX, e.clientY);
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (!audioCtx) initAudio();
+      const touch = e.touches[0];
+      addNote(touch.clientX, touch.clientY);
+    });
+    
+    playBtn.addEventListener('click', () => {
+      if (!audioCtx) initAudio();
+      
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      isPlaying = !isPlaying;
+      playBtn.textContent = isPlaying ? 'STOP' : 'START';
+      playBtn.classList.toggle('playing', isPlaying);
+    });
+    
+    clearBtn.addEventListener('click', () => {
+      notes = [];
+      totalHits = 0;
+      updateStats();
+    });
+    
+    // Animation loop
+    function draw() {
+      // Fade effect for trails
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw circles
+      voices.forEach((voice, i) => {
+        ctx.strokeStyle = voice.color;
+        ctx.globalAlpha = 0.2;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, voice.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+      
+      ctx.globalAlpha = 1;
+      
+      // Draw playhead
+      const playheadX = cx + Math.cos(playheadAngle) * voices[voices.length - 1].radius * 1.1;
+      const playheadY = cy + Math.sin(playheadAngle) * voices[voices.length - 1].radius * 1.1;
+      
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(playheadX, playheadY);
+      ctx.stroke();
+      
+      // Draw playhead tip
+      ctx.fillStyle = '#FFD700';
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(playheadX, playheadY, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      
+      // Draw notes
+      const currentTriggered = new Set();
+      
+      notes.forEach((note, idx) => {
+        const voice = voices[note.voiceIndex];
+        const noteX = cx + Math.cos(note.angle) * voice.radius;
+        const noteY = cy + Math.sin(note.angle) * voice.radius;
+        
+        // Check if playhead is hitting this note
+        const angleDiff = Math.abs(((playheadAngle - note.angle + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+        const isHit = angleDiff < 0.1;
+        
+        if (isHit && isPlaying) {
+          const noteId = `${note.voiceIndex}-${idx}`;
+          if (!lastTriggeredNotes.has(noteId)) {
+            triggerVoice(voice.id, noteX, noteY, voice.color);
+            currentTriggered.add(noteId);
+          }
+        }
+        
+        // Draw note
+        const size = isHit && isPlaying ? 10 : 6;
+        ctx.fillStyle = voice.color;
+        ctx.shadowBlur = isHit && isPlaying ? 30 : 15;
+        ctx.shadowColor = voice.color;
+        ctx.beginPath();
+        ctx.arc(noteX, noteY, size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+      
+      lastTriggeredNotes = currentTriggered;
+      
+      // Update and draw particles
+      particles = particles.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.03;
+        
+        if (p.life <= 0) return false;
+        
+        ctx.globalAlpha = p.life * 0.8;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+ctx.fill();
+        
+        return true;
+      });
+      
+      ctx.globalAlpha = 1;
+      
+      // Update playhead rotation
+      if (isPlaying) {
+        playheadAngle += ROTATION_SPEED;
+        if (playheadAngle > Math.PI) playheadAngle -= Math.PI * 2;
+      }
+      
+      requestAnimationFrame(draw);
+    }
+    
+    // Start animation
+    draw();
+    updateStats();
+  </script>
+</body>
+</html>
