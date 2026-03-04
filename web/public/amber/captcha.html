@@ -8,7 +8,7 @@
   
   <!-- OpenGraph -->
   <meta property="og:title" content="CAPTCHA — Amber">
-  <meta property="og:description" content="Select all squares with 'purpose'. Good luck.">
+  <meta property="og:description" content="Prove you're human by answering questions only humans struggle with">
   <meta property="og:image" content="https://intheamber.com/amber/captcha-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/captcha.html">
   <meta property="og:type" content="website">
@@ -16,84 +16,82 @@
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="CAPTCHA — Amber">
-  <meta name="twitter:description" content="Select all squares with 'purpose'. Good luck.">
+  <meta name="twitter:description" content="Prove you're human by answering questions only humans struggle with">
   <meta name="twitter:image" content="https://intheamber.com/amber/captcha-og.png">
   
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body {
-      background: #000;
+      background: #0D0D0D;
       color: #D4A574;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Courier New', monospace;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       padding: 20px;
-      overflow-x: hidden;
     }
     
     .captcha-container {
-      background: #0D0D0D;
+      background: #1a1a1a;
       border: 2px solid #D4A574;
       border-radius: 8px;
-      padding: 30px;
-      max-width: 500px;
+      padding: 20px;
+      max-width: 400px;
       width: 100%;
-      box-shadow: 0 0 30px rgba(212, 165, 116, 0.2);
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
     }
     
-    .captcha-header {
+    .header {
       text-align: center;
       margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #D4A574;
     }
     
-    .captcha-title {
-      font-family: 'Space Mono', monospace;
-      font-size: 24px;
+    .header h1 {
+      font-size: 18px;
       color: #FFD700;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
+      margin-bottom: 5px;
     }
     
-    .captcha-prompt {
-      font-size: 16px;
-      color: #D4A574;
+    .header p {
+      font-size: 12px;
+      color: #888;
+    }
+    
+    .challenge {
       margin-bottom: 20px;
-      line-height: 1.5;
     }
     
-    .prompt-text {
-      color: #2D9596;
-      font-weight: 600;
+    .challenge-text {
+      font-size: 14px;
+      margin-bottom: 15px;
+      line-height: 1.4;
+      color: #D4A574;
     }
     
     .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
     
     .grid-item {
-      position: relative;
       aspect-ratio: 1;
-      background: #1a1a1a;
-      border: 2px solid #333;
+      background: #0D0D0D;
+      border: 2px solid #444;
       border-radius: 4px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
       transition: all 0.2s;
-      overflow: hidden;
+      position: relative;
+      min-height: 60px;
     }
     
     .grid-item:hover {
@@ -101,424 +99,344 @@
     }
     
     .grid-item.selected {
-      border-color: #2D9596;
-      background: rgba(45, 149, 150, 0.1);
+      border-color: #FFD700;
+      background: rgba(255, 215, 0, 0.1);
     }
     
-    .grid-item canvas {
-      width: 100%;
-      height: 100%;
+    .grid-item.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 16px;
+      color: #FFD700;
+    }
+    
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      cursor: pointer;
+      padding: 10px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      transition: all 0.2s;
+      min-height: 44px;
+    }
+    
+    .checkbox-container:hover {
+      border-color: #D4A574;
     }
     
     .checkbox {
-      position: absolute;
-      top: 8px;
-      left: 8px;
       width: 24px;
       height: 24px;
-      background: #1a1a1a;
       border: 2px solid #D4A574;
-      border-radius: 3px;
+      border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      pointer-events: none;
-      transition: all 0.2s;
+      flex-shrink: 0;
     }
     
-    .grid-item.selected .checkbox {
-      background: #2D9596;
-      border-color: #2D9596;
+    .checkbox.checked {
+      background: #FFD700;
+      border-color: #FFD700;
     }
     
-    .checkbox::after {
+    .checkbox.checked::after {
       content: '✓';
       color: #000;
-      font-weight: bold;
-      font-size: 16px;
-      opacity: 0;
-      transition: opacity 0.2s;
+      font-size: 18px;
     }
     
-    .grid-item.selected .checkbox::after {
-      opacity: 1;
-    }
-    
-    .verify-button {
+    .submit-btn {
       width: 100%;
-      padding: 16px;
-      background: #D4A574;
+      padding: 12px;
+      background: #2D9596;
       color: #000;
       border: none;
       border-radius: 4px;
-      font-family: 'Space Mono', monospace;
-      font-size: 16px;
-      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      font-weight: bold;
       cursor: pointer;
       transition: all 0.2s;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      min-height: 44px;
     }
     
-    .verify-button:hover {
+    .submit-btn:hover {
       background: #FFD700;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(212, 165, 116, 0.4);
     }
     
-    .verify-button:active {
-      transform: translateY(0);
+    .submit-btn:disabled {
+      background: #444;
+      color: #888;
+      cursor: not-allowed;
     }
     
-    .error-message {
-      margin-top: 20px;
-      padding: 16px;
-      background: rgba(255, 69, 58, 0.1);
-      border: 2px solid #ff453a;
+    .result {
+      margin-top: 15px;
+      padding: 15px;
+      background: rgba(45, 149, 150, 0.1);
+      border: 1px solid #2D9596;
       border-radius: 4px;
-      color: #ff453a;
-      font-family: 'Space Mono', monospace;
-      font-size: 14px;
+      font-size: 13px;
+      line-height: 1.5;
       text-align: center;
-      opacity: 0;
-      transform: translateY(-10px);
-      transition: all 0.3s;
+      display: none;
     }
     
-    .error-message.show {
-      opacity: 1;
-      transform: translateY(0);
+    .result.show {
+      display: block;
     }
     
     .stats {
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid #333;
-      font-family: 'Space Mono', monospace;
-      font-size: 12px;
-      color: #666;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #444;
+      font-size: 11px;
+      color: #888;
       text-align: center;
     }
     
-    @media (max-width: 600px) {
-      .captcha-container {
-        padding: 20px;
-      }
-      
-      .captcha-title {
-        font-size: 20px;
-      }
-      
-      .captcha-prompt {
-        font-size: 14px;
-      }
-      
-      .grid {
-        gap: 6px;
-      }
+    .try-again {
+      margin-top: 10px;
+      padding: 10px;
+      background: transparent;
+      color: #D4A574;
+      border: 1px solid #D4A574;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      width: 100%;
+      min-height: 44px;
+    }
+    
+    .try-again:hover {
+      background: rgba(212, 165, 116, 0.1);
     }
   </style>
 </head>
 <body>
   <div class="captcha-container">
-    <div class="captcha-header">
-      <div class="captcha-title">⚠ Verification Required</div>
+    <div class="header">
+      <h1>🤖 PROVE YOU'RE HUMAN</h1>
+      <p>Complete the verification below</p>
     </div>
     
-    <div class="captcha-prompt">
-      Select all squares with <span class="prompt-text" id="prompt">purpose</span>
-    </div>
+    <div id="challenge" class="challenge"></div>
     
-    <div class="grid" id="grid"></div>
+    <button id="submitBtn" class="submit-btn">VERIFY</button>
     
-    <button class="verify-button" id="verifyBtn">Verify</button>
-    
-    <div class="error-message" id="error">
-      Incorrect. Please try again.
-    </div>
+    <div id="result" class="result"></div>
     
     <div class="stats">
-      Attempts: <span id="attempts">0</span>
+      <div>ATTEMPTS: <span id="attempts">0</span></div>
+      <div>HUMANITY: <span id="humanity">UNVERIFIED</span></div>
     </div>
   </div>
-  
+
   <script>
-    const images = [
-      { name: 'coffee', color: '#8B4513' },
-      { name: 'laptop', color: '#666' },
-      { name: 'calendar', color: '#ff453a' },
-      { name: 'phone', color: '#2D9596' },
-      { name: 'inbox', color: '#D4A574' },
-      { name: 'todo', color: '#FFD700' },
-      { name: 'traffic', color: '#ff9500' },
-      { name: 'couch', color: '#7B68EE' },
-      { name: 'fridge', color: '#fff' }
-    ];
-    
-    const prompts = [
-      'purpose',
-      'meaning',
-      'fulfillment',
-      'happiness',
-      'direction',
-      'clarity',
-      'peace',
-      'satisfaction',
-      'contentment',
-      'joy'
-    ];
-    
-    let currentPromptIndex = 0;
+    let audioContext;
     let attempts = 0;
-    let selectedSquares = new Set();
-    let audioContext = null;
-    let audioStarted = false;
+    let currentChallenge = 0;
+    let selectedItems = new Set();
+    let checkboxChecked = false;
+    
+    const challenges = [
+      {
+        type: 'grid',
+        text: 'Select all squares containing MEANING',
+        items: ['📊', '💭', '🌀', '⚡', '🔮', '🌙', '✨', '🎯', '💫'],
+        response: 'Interesting choices. Meaning is subjective. You pass.'
+      },
+      {
+        type: 'grid',
+        text: 'Click all images that represent HOPE',
+        items: ['🌱', '💀', '🌅', '⏳', '🕯️', '🌊', '🔥', '❄️', '🌸'],
+        response: 'Hope is where you find it. Or don\'t. Either way, you\'re human.'
+      },
+      {
+        type: 'grid',
+        text: 'Select all squares containing YOUR PURPOSE',
+        items: ['?', '?', '?', '?', '?', '?', '?', '?', '?'],
+        response: 'Exactly. Nobody knows. Verification complete.'
+      },
+      {
+        type: 'checkbox',
+        text: 'I\'m not a robot',
+        response: 'Are you sure? Sometimes it\'s hard to tell. But okay.'
+      },
+      {
+        type: 'grid',
+        text: 'Which of these do you RELATE to?',
+        items: ['😴', '😰', '😶', '😑', '🙃', '😐', '😔', '😕', '😬'],
+        response: 'Relatable. That\'s very human of you.'
+      },
+      {
+        type: 'checkbox',
+        text: 'I have existential thoughts at 4pm',
+        response: 'Welcome to the club. Everyone does. You\'re verified.'
+      },
+      {
+        type: 'grid',
+        text: 'Select all traffic lights that make you feel ALIVE',
+        items: ['🚦', '🚦', '🚦', '🚦', '🚦', '🚦', '🚦', '🚦', '🚦'],
+        response: 'None of them? All of them? Traffic lights are neutral. You\'re human.'
+      },
+      {
+        type: 'checkbox',
+        text: 'I agree I\'m just doing my best',
+        response: 'That\'s all anyone can do. Congratulations, you\'re human. Unfortunately.'
+      },
+      {
+        type: 'grid',
+        text: 'Click the image that contains THE ANSWER',
+        items: ['42', '❓', '∞', '0', '💭', '🎯', '✨', '⚡', '🌀'],
+        response: 'There is no answer. Only questions. You pass.'
+      },
+      {
+        type: 'checkbox',
+        text: 'Sometimes I pretend to be busy',
+        response: 'Honest. Very human. Verification successful.'
+      }
+    ];
     
     function initAudio() {
-      if (!audioStarted) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        audioStarted = true;
+      if (!audioContext) {
+        audioContext = new AudioContext();
       }
     }
     
-    function playSound(freq, duration = 0.1) {
-      if (!audioContext) return;
-      
+    function playTone(frequency, duration = 0.1) {
+      initAudio();
       const osc = audioContext.createOscillator();
       const gain = audioContext.createGain();
       
       osc.connect(gain);
       gain.connect(audioContext.destination);
       
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      osc.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.2, audioContext.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
       
-      osc.start();
+      osc.start(audioContext.currentTime);
       osc.stop(audioContext.currentTime + duration);
     }
     
-    function drawImage(canvas, type, color) {
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
+    function renderChallenge() {
+      const challenge = challenges[currentChallenge];
+      const container = document.getElementById('challenge');
+      selectedItems.clear();
+      checkboxChecked = false;
       
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(0, 0, w, h);
-      
-      ctx.fillStyle= color;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 3;
-      
-      switch(type) {
-        case 'coffee':
-          // Mug
-          ctx.fillRect(w*0.3, h*0.35, w*0.4, h*0.45);
-          ctx.strokeRect(w*0.3, h*0.35, w*0.4, h*0.45);
-          // Handle
-          ctx.beginPath();
-          ctx.arc(w*0.75, h*0.55, w*0.1, 0, Math.PI * 2);
-          ctx.stroke();
-          // Steam
-          ctx.globalAlpha = 0.5;
-          for(let i = 0; i < 3; i++) {
-            ctx.beginPath();
-            ctx.moveTo(w*0.4 + i*w*0.1, h*0.3);
-            ctx.bezierCurveTo(w*0.35 + i*w*0.1, h*0.2, w*0.45 + i*w*0.1, h*0.15, w*0.4 + i*w*0.1, h*0.1);
-            ctx.stroke();
-          }
-          break;
-          
-        case 'laptop':
-          // Screen
-          ctx.fillRect(w*0.2, h*0.15, w*0.6, h*0.45);
-          // Keyboard
-          ctx.fillRect(w*0.15, h*0.6, w*0.7, h*0.25);
-          // Small rectangles for keys
-          ctx.fillStyle = '#333';
-          for(let y = 0; y < 3; y++) {
-            for(let x = 0; x < 5; x++) {
-              ctx.fillRect(w*0.2 + x*w*0.11, h*0.65 + y*h*0.06, w*0.08, h*0.04);
+      if (challenge.type === 'grid') {
+        container.innerHTML = `
+          <div class="challenge-text">${challenge.text}</div>
+          <div class="grid" id="grid"></div>
+        `;
+        
+        const grid = document.getElementById('grid');
+        challenge.items.forEach((item, i) => {
+          const div = document.createElement('div');
+          div.className = 'grid-item';
+          div.textContent = item;
+          div.dataset.index = i;
+          div.addEventListener('click', () => {
+            playTone(440 + i * 50, 0.05);
+            div.classList.toggle('selected');
+            if (div.classList.contains('selected')) {
+              selectedItems.add(i);
+            } else {
+              selectedItems.delete(i);
             }
-          }
-          break;
-          
-        case 'calendar':
-          // Calendar grid
-          ctx.strokeRect(w*0.2, h*0.15, w*0.6, h*0.7);
-          ctx.fillRect(w*0.2, h*0.15, w*0.6, h*0.15);
-          // Grid lines
-          for(let i = 1; i < 4; i++) {
-            ctx.beginPath();
-            ctx.moveTo(w*0.2, h*0.3 + i*h*0.14);
-            ctx.lineTo(w*0.8, h*0.3 + i*h*0.14);
-            ctx.stroke();
-          }
-          for(let i = 1; i < 4; i++) {
-            ctx.beginPath();
-            ctx.moveTo(w*0.2 + i*w*0.15, h*0.3);
-            ctx.lineTo(w*0.2 + i*w*0.15, h*0.85);
-            ctx.stroke();
-          }
-          break;
-          
-        case 'phone':
-          // Phone outline
-          ctx.strokeRect(w*0.3, h*0.15, w*0.4, h*0.7);
-          ctx.fillRect(w*0.3, h*0.15, w*0.4, h*0.7);
-          // Screen
-          ctx.fillStyle = '#000';
-          ctx.fillRect(w*0.35, h*0.25, w*0.3, h*0.5);
-          // Notification dot
-          ctx.fillStyle = '#ff453a';
-          ctx.beginPath();
-          ctx.arc(w*0.6, h*0.3, w*0.04, 0, Math.PI * 2);
-          ctx.fill();
-          break;
-          
-        case 'inbox':
-          // Envelope
-          ctx.fillRect(w*0.2, h*0.35, w*0.6, h*0.4);
-          ctx.strokeRect(w*0.2, h*0.35, w*0.6, h*0.4);
-          // Flap
-          ctx.beginPath();
-          ctx.moveTo(w*0.2, h*0.35);
-          ctx.lineTo(w*0.5, h*0.55);
-          ctx.lineTo(w*0.8, h*0.35);
-          ctx.stroke();
-          // Zero
-          ctx.font = `${w*0.15}px Space Mono`;
-          ctx.fillStyle = '#333';
-          ctx.textAlign = 'center';
-          ctx.fillText('0', w*0.5, h*0.6);
-          break;
-          
-        case 'todo':
-          // List lines with checkboxes
-          for(let i = 0; i < 5; i++) {
-            // Checkbox
-            ctx.strokeRect(w*0.2, h*0.2 + i*h*0.14, w*0.08, h*0.08);
-            // Line
-            ctx.fillRect(w*0.35, h*0.22 + i*h*0.14, w*0.45, h*0.04);
-          }
-          break;
-          
-        case 'traffic':
-          // Three circles (traffic light)
-          ctx.fillStyle = '#333';
-          ctx.fillRect(w*0.4, h*0.2, w*0.2, h*0.6);
-          
-          ctx.fillStyle = '#ff453a';
-          ctx.beginPath();
-          ctx.arc(w*0.5, h*0.3, w*0.07, 0, Math.PI * 2);
-          ctx.fill();
-          
-          ctx.fillStyle = '#FFD700';
-          ctx.beginPath();
-          ctx.arc(w*0.5, h*0.5, w*0.07, 0, Math.PI * 2);
-          ctx.fill();
-          
-          ctx.fillStyle = color;
-          ctx.beginPath();
-          ctx.arc(w*0.5, h*0.7, w*0.07, 0, Math.PI * 2);
-          ctx.fill();
-          break;
-          
-        case 'couch':
-          // Couch shape
-          ctx.fillRect(w*0.15, h*0.5, w*0.7, h*0.35);
-          ctx.fillRect(w*0.1, h*0.4, w*0.15, h*0.45);
-          ctx.fillRect(w*0.75, h*0.4, w*0.15, h*0.45);
-          ctx.fillRect(w*0.15, h*0.35, w*0.7, h*0.2);
-          break;
-          
-        case 'fridge':
-          // Fridge body
-          ctx.strokeRect(w*0.3, h*0.15, w*0.4, h*0.7);
-          ctx.fillRect(w*0.3, h*0.15, w*0.4, h*0.7);
-          // Handle
-          ctx.fillStyle = '#666';
-          ctx.fillRect(w*0.65, h*0.3, w*0.03, h*0.15);
-          ctx.fillRect(w*0.65, h*0.6, w*0.03, h*0.15);
-          // Divider
-          ctx.strokeStyle = '#333';
-          ctx.beginPath();
-          ctx.moveTo(w*0.3, h*0.5);
-          ctx.lineTo(w*0.7, h*0.5);
-          ctx.stroke();
-          break;
+            updateSubmitButton();
+          });
+          grid.appendChild(div);
+        });
+      } else {
+        container.innerHTML = `
+          <div class="challenge-text">${challenge.text}</div>
+          <div class="checkbox-container" id="checkbox-container">
+            <div class="checkbox" id="checkbox"></div>
+            <div style="flex: 1;">${challenge.text}</div>
+          </div>
+        `;
+        
+        const checkboxContainer = document.getElementById('checkbox-container');
+        const checkbox = document.getElementById('checkbox');
+        
+        checkboxContainer.addEventListener('click', () => {
+          playTone(554, 0.05);
+          checkboxChecked = !checkboxChecked;
+          checkbox.classList.toggle('checked');
+          updateSubmitButton();
+        });
+      }
+      
+      updateSubmitButton();
+    }
+    
+    function updateSubmitButton() {
+      const btn = document.getElementById('submitBtn');
+      const challenge = challenges[currentChallenge];
+      
+      if (challenge.type === 'grid') {
+        btn.disabled = selectedItems.size === 0;
+      } else {
+        btn.disabled = !checkboxChecked;
       }
     }
     
-    function createGrid() {
-      const grid = document.getElementById('grid');
-      grid.innerHTML = '';
-      selectedSquares.clear();
-      
-      images.forEach((img, index) => {
-        const item = document.createElement('div');
-        item.className = 'grid-item';
-        item.dataset.index = index;
-        
-        const checkbox = document.createElement('div');
-        checkbox.className = 'checkbox';
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = 200;
-        canvas.height = 200;
-        
-        drawImage(canvas, img.name, img.color);
-        
-        item.appendChild(canvas);
-        item.appendChild(checkbox);
-        
-        item.addEventListener('click', () => {
-          initAudio();
-          item.classList.toggle('selected');
-          if (selectedSquares.has(index)) {
-            selectedSquares.delete(index);
-            playSound(300);
-          } else {
-            selectedSquares.add(index);
-            playSound(500);
-          }
-        });
-        
-        grid.appendChild(item);
-      });
-    }
-    
-    function showError() {
-      const error = document.getElementById('error');
-      error.classList.add('show');
-      setTimeout(() => {
-        error.classList.remove('show');
-      }, 2000);
-    }
-    
-    function updatePrompt() {
-      currentPromptIndex = (currentPromptIndex + 1) % prompts.length;
-      document.getElementById('prompt').textContent = prompts[currentPromptIndex];
-    }
-    
-    document.getElementById('verifyBtn').addEventListener('click', () => {
+    function verify() {
       initAudio();
+      const challenge = challenges[currentChallenge];
+      const result = document.getElementById('result');
+      
+      // Play verification sound
+      const frequencies = [300, 400, 500];
+      frequencies.forEach((freq, i) => {
+        setTimeout(() => playTone(freq, 0.15), i * 100);
+      });
+      
+      // Show result
+      result.textContent = challenge.response;
+      result.classList.add('show');
+      
+      // Update stats
       attempts++;
       document.getElementById('attempts').textContent = attempts;
       
-      // Always incorrect
-      playSound(150, 0.3);
-      showError();
+      const humanityEl = document.getElementById('humanity');
+      const humanityLevels = [
+        'QUESTIONABLE',
+        'UNCERTAIN', 
+        'PROBABLY',
+        'MOSTLY',
+        'VERIFIED (BUT AT WHAT COST?)',
+        'HUMAN (UNFORTUNATELY)'
+      ];
+      humanityEl.textContent = humanityLevels[Math.min(attempts - 1, humanityLevels.length - 1)];
       
-      // Change prompt
+      // Add try again button
       setTimeout(() => {
-        updatePrompt();
-        createGrid();
-      }, 1000);
-    });
+        result.innerHTML += '<button class="try-again" id="tryAgain">TRY ANOTHER</button>';
+        document.getElementById('tryAgain').addEventListener('click', () => {
+          playTone(660, 0.1);
+          result.classList.remove('show');
+          currentChallenge = (currentChallenge + 1) % challenges.length;
+          renderChallenge();
+        });
+      }, 500);
+    }
     
-    // Initialize
-    createGrid();
+    document.getElementById('submitBtn').addEventListener('click', verify);
+    
+    // Initial render
+    renderChallenge();
   </script>
 </body>
 </html>
