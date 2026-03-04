@@ -89,7 +89,7 @@ export default function WhispererPage() {
         }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/whisperer/latest.jpg"
+            src="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/whisperer/latest.jpg"
             alt="Latest snapshot from the home camera"
             style={{
               width: '100%',
