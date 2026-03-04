@@ -19,13 +19,20 @@ const TOM_FREQUENCIES = {
   high: 160
 };
 
+// Default tune in cents (semitones * 100) — matches jt90-params.json
+const TOM_DEFAULT_TUNE = {
+  low: -1200,   // -12 semitones
+  mid: -500,    // -5 semitones
+  high: -1200,  // -12 semitones
+};
+
 export class TomVoice {
   constructor(sampleRate = 44100, type = 'low') {
     this.sampleRate = sampleRate;
     this.type = type;
 
     // Parameters
-    this.tune = 0;
+    this.tune = TOM_DEFAULT_TUNE[type] ?? 0;
     this.decay = 0.5;
     this.level = 1.0;
 
