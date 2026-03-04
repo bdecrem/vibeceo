@@ -87,6 +87,7 @@
 
 <script type="module">
 import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+import { JT10Engine } from '/jt10/dist/machines/jt10/engine.js';
 
 // ══════════════════════════════════════════
 // HALLMAN × HAWTIN 01
@@ -117,11 +118,13 @@ function hatVelocity(step, bar) {
 }
 
 // Filter cutoff automation (Hz)
+// Opens gradually from 200→3000Hz, then pulls back
 function cutoffAtBar(bar) {
-  if (bar < 4) return 100;
-  if (bar < 28) return 100 + ((bar - 4) / 23) * 400; // 100→500
-  if (bar < 31) return 350; // tension pullback
-  return 200; // ghost
+  if (bar < 4) return 200;
+  if (bar < 20) return 200 + ((bar - 4) / 15) * 2800;  // 200→3000 over 16 bars
+  if (bar < 28) return 3000 - ((bar - 20) / 7) * 1800;  // 3000→1200 pullback
+  if (bar < 31) return 800;  // tension
+  return 400; // ghost
 }
 
 // CH decay automation (0-100 producer scale)
@@ -447,11 +450,11 @@ function render() {
 render();
 
 // ══════════════════════════════════════════
-// PLAYBACK — JB01 for drums (no JT10 in browser,
-// so we visualize the acid pattern without audio)
+// PLAYBACK — JB01 for drums, JT10 for acid bass
 // ══════════════════════════════════════════
 let audioCtx = null;
 let engine = null;
+let acidEngine = null;
 let playing = false;
 let nextStepTime = 0;
 let currentStep = 0;
@@ -505,16 +508,28 @@ function scheduleStep(time) {
       }
     }
 
-    // Acid visualization (no audio — JT10 not available in browser)
+    // Acid bass — JT10 audio + visualization
     if (hasAcid) {
+      // Update filter cutoff on acid engine (Hz → 0-1 log scale)
+      const cutoffNorm = Math.min(1, Math.max(0, Math.log(cutoff / 20) / Math.log(16000 / 20)));
+      acidEngine.setParameter('cutoff', cutoffNorm);
+
       const note = acidNotes[stepInBar];
+      const nextNote = acidNotes[(stepInBar + 1) % 16];
+      const isAccent = [0,4].includes(stepInBar);
+      const isSlide = stepInBar === 6;
+
       if (note) {
+        const vel = isAccent ? 1.0 : 0.7;
+        acidEngine.playNote(note, vel, isSlide);
         V.acidHit = 1;
         V.acidNote = note;
-        const isAccent = [0,4].includes(stepInBar);
-        const isSlide = stepInBar === 6;
         acidPulses.push(new AcidPulse(note, isAccent, isSlide, cutoff));
+      } else {
+        acidEngine.noteOff();
       }
+    } else if (acidEngine) {
+      acidEngine.noteOff();
     }
 
     // Update state
@@ -562,7 +577,7 @@ function start() {
   if (!audioCtx) {
     audioCtx = new AudioContext({ sampleRate: 44100 });
     engine = new JB01Engine({ context: audioCtx, bpm: BPM });
-    engine.output.connect(audioCtx.destination);
+    engine.connectOutput(audioCtx.destination);
 
     // Kick: tight, tuned down
     engine.setVoiceParam('kick', 'decay', 0.3);
@@ -574,6 +589,24 @@ function start() {
     engine.setVoiceParam('ch', 'level', 0.55);
     engine.setVoiceParam('ch', 'tone', 0.4);
     engine.setVoiceParam('ch', 'decay', 0.24);
+
+    // Acid bass — JT10
+    acidEngine = new JT10Engine({ context: audioCtx, sampleRate: 44100 });
+    // Fat Bass preset from JT-10 UI
+    acidEngine.setParameter('sawLevel', 0.6);
+    acidEngine.setParameter('pulseLevel', 0.4);
+    acidEngine.setParameter('pulseWidth', 0.4);
+    acidEngine.setParameter('subLevel', 0.5);
+    acidEngine.setParameter('subMode', 0);           // OFF
+    acidEngine.setParameter('cutoff', 0.35);          // ~208Hz
+    acidEngine.setParameter('resonance', 0.05);
+    acidEngine.setParameter('envMod', 0.25);
+    acidEngine.setParameter('attack', 0.02);
+    acidEngine.setParameter('decay', 0.25);
+    acidEngine.setParameter('sustain', 0.2);
+    acidEngine.setParameter('release', 0.85);
+    acidEngine.setParameter('glideTime', 0.15);
+    acidEngine.setParameter('level', 0.34);         // 0.85 minus ~8dB
   }
 
   if (audioCtx.state === 'suspended') audioCtx.resume();
