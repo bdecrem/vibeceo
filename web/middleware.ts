@@ -12,8 +12,8 @@ export function middleware(request: NextRequest) {
 
   log(`[Middleware] Processing: ${pathname}`)
 
-  // CORS for /jt90/* — allows daskollektiv.rip to load engine + samples
-  if (pathname.startsWith('/jt90/')) {
+  // CORS for synth engines — allows daskollektiv.rip to load engines + samples + shared DSP
+  if (pathname.startsWith('/jt90/') || pathname.startsWith('/jb01/') || pathname.startsWith('/jb202/')) {
     const response = NextResponse.next()
     response.headers.set('Access-Control-Allow-Origin', 'https://daskollektiv.rip')
     return response

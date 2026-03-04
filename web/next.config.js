@@ -26,15 +26,15 @@ const nextConfig = {
   // Ensure trailing slashes are handled correctly
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
-  // CORS headers for JT90 engine + samples (used by daskollektiv.rip)
+  // CORS headers for synth engines (used by daskollektiv.rip)
   async headers() {
+    const corsHeaders = [
+      { key: 'Access-Control-Allow-Origin', value: 'https://daskollektiv.rip' },
+    ]
     return [
-      {
-        source: '/jt90/:path*',
-        headers: [
-          { key: 'Access-Control-Allow-Origin', value: 'https://daskollektiv.rip' },
-        ],
-      },
+      { source: '/jt90/:path*', headers: corsHeaders },
+      { source: '/jb01/:path*', headers: corsHeaders },
+      { source: '/jb202/:path*', headers: corsHeaders },
     ]
   },
   // Rewrites for static HTML apps in public/
