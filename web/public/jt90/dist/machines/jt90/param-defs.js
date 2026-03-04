@@ -54,7 +54,7 @@ export const VOICE_PARAM_DEFS = {
     { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
   ],
   ltom: [
-    { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
+    { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -12, unit: 'semitones' },
     { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 1 },
     { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
   ],
@@ -64,7 +64,7 @@ export const VOICE_PARAM_DEFS = {
     { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
   ],
   htom: [
-    { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -5, unit: 'semitones' },
+    { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -12, unit: 'semitones' },
     { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.55 },
     { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
   ],

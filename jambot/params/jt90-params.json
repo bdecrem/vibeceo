@@ -41,7 +41,7 @@
   },
   "lowtom": {
     "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "low tom level" },
-    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "low tom pitch" },
+    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": -12, "hint": "low tom pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "low tom decay" }
   },
   "midtom": {
@@ -51,7 +51,7 @@
   },
   "hitom": {
     "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "high tom level" },
-    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": -5, "hint": "high tom pitch" },
+    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": -12, "hint": "high tom pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 55, "hint": "high tom decay" }
   },
   "ch": {
