@@ -14,8 +14,12 @@ export function middleware(request: NextRequest) {
 
   // CORS for synth engines — allows daskollektiv.rip to load engines + samples + shared DSP
   if (pathname.startsWith('/jt90/') || pathname.startsWith('/jb01/') || pathname.startsWith('/jb202/')) {
+    const origin = request.headers.get('origin') || ''
+    const allowed = origin === 'https://daskollektiv.rip' || origin === 'https://www.daskollektiv.rip'
     const response = NextResponse.next()
-    response.headers.set('Access-Control-Allow-Origin', 'https://daskollektiv.rip')
+    if (allowed) {
+      response.headers.set('Access-Control-Allow-Origin', origin)
+    }
     return response
   }
 
