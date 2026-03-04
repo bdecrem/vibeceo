@@ -294,6 +294,43 @@ JB-S (Sampler) uses local files:
 
 **Do NOT duplicate synth code** - always import from web/public/ (except JB-S which is local).
 
+### Cross-Origin Usage (External Domains Loading Jambot Engines)
+
+When a web page on another domain (e.g., `daskollektiv.rip` on Vercel) imports Jambot engines from `kochi.to`, CORS headers are required. Without them, the browser blocks the ES module imports.
+
+**How it works now:**
+
+`web/middleware.ts` checks if the request path starts with a synth engine prefix (`/jt90/`, `/jb01/`, `/jb202/`) and sets `Access-Control-Allow-Origin` to the requesting origin if it's in the allowlist.
+
+**When building a page on an external domain that uses Jambot engines:**
+
+1. **Use absolute URLs** for all engine imports:
+   ```javascript
+   // CORRECT — works from any domain
+   import { JT90Engine } from 'https://kochi.to/jt90/dist/machines/jt90/engine.js';
+
+   // WRONG — resolves to the hosting domain, not kochi.to
+   import { JT90Engine } from '/jt90/dist/machines/jt90/engine.js';
+   ```
+
+2. **Add the external domain to the CORS allowlist** in `web/middleware.ts`:
+   ```typescript
+   const allowed = origin === 'https://yourdomain.com' || origin === 'https://www.yourdomain.com'
+   ```
+   Always include both bare domain and `www.` — CORS requires an exact origin match.
+
+3. **Cover all engine path prefixes the page needs.** Engines have internal cross-imports:
+   - JT90 voices import shared DSP from `/jb202/dist/dsp/` — so `/jb202/*` needs CORS too
+   - JT90 loads samples via fetch from `/jt90/samples/` — same CORS rule covers it
+   - JB01 is self-contained (no cross-engine imports)
+   - JP9000, JT10, JT30 also import from `/jb202/dist/dsp/`
+
+   **Currently covered prefixes:** `/jt90/*`, `/jb01/*`, `/jb202/*`
+
+   **If you add a page using JT10, JT30, or JP9000** from an external domain, add their prefixes to the middleware CORS block too (e.g., `/jt10/*`, `/jt30/*`, `/jp9000/*`).
+
+4. **`next.config.js` also has CORS headers** as a belt-and-suspenders backup, but the middleware runs first and returns early, so it's the middleware that matters.
+
 ### Shared DSP Library
 
 **Location:** `web/public/jb202/dist/dsp/`
