@@ -39,8 +39,10 @@ const genericTools = {
     const descriptor = session.getDescriptor(path);
 
     if (descriptor) {
-      // Convert engine value back to producer units
-      const producerValue = fromEngine(value, descriptor);
+      // Node-level 'level' already returns dB from getLevel() — skip fromEngine
+      const segs = path.split('.');
+      const isNodeLevel = segs.length === 2 && segs[1] === 'level';
+      const producerValue = isNodeLevel ? value : fromEngine(value, descriptor);
       return `${path} = ${formatValue(producerValue, descriptor)}`;
     }
 
@@ -90,6 +92,11 @@ const genericTools = {
     // Get descriptor for unit conversion
     const descriptor = session.getDescriptor(path);
 
+    // Node-level 'level' (e.g. 'jt10.level') — setLevel() works in dB directly,
+    // so skip toEngine/fromEngine to avoid double-conversion
+    const segments = path.split('.');
+    const isNodeLevel = segments.length === 2 && segments[1] === 'level';
+
     let finalProducerValue;
 
     if (delta !== undefined) {
@@ -99,7 +106,7 @@ const genericTools = {
         return `Error: Cannot apply delta - ${path} has no current value`;
       }
       // Convert current engine value back to producer units
-      const currentProducerValue = descriptor ? fromEngine(currentEngineValue, descriptor) : currentEngineValue;
+      const currentProducerValue = (descriptor && !isNodeLevel) ? fromEngine(currentEngineValue, descriptor) : currentEngineValue;
       finalProducerValue = currentProducerValue + delta;
       // Clamp to valid range if we have a descriptor
       if (descriptor) {
@@ -108,9 +115,7 @@ const genericTools = {
     } else {
       finalProducerValue = value;
     }
-
-    // Convert producer units to engine units if descriptor exists
-    const engineValue = descriptor ? toEngine(finalProducerValue, descriptor) : finalProducerValue;
+    const engineValue = (descriptor && !isNodeLevel) ? toEngine(finalProducerValue, descriptor) : finalProducerValue;
 
     const success = session.set(path, engineValue);
 
@@ -142,8 +147,10 @@ const genericTools = {
       // Get descriptor for unit conversion
       const descriptor = session.getDescriptor(path);
 
-      // Convert producer units to engine units if descriptor exists
-      const engineValue = descriptor ? toEngine(value, descriptor) : value;
+      // Node-level 'level' (e.g. 'jt10.level') goes straight to setLevel(dB)
+      const segments = path.split('.');
+      const isNodeLevel = segments.length === 2 && segments[1] === 'level';
+      const engineValue = (descriptor && !isNodeLevel) ? toEngine(value, descriptor) : value;
 
       const success = session.set(path, engineValue);
       if (success) {
