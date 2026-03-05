@@ -63,6 +63,7 @@
 
 <script type="module">
 import { JT10Engine } from '/jt10/dist/machines/jt10/engine.js';
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
 
 const BPM = 118;
 const STEP_DUR = 60 / BPM / 4;
@@ -169,6 +170,8 @@ render();
 // ── JT10 ENGINE ──
 
 let engine = null;
+let kickEngine = null;
+let kickGain = null;  // separate gain for kick fade-out
 let dryGain = null;
 let wetGain = null;
 
@@ -215,6 +218,9 @@ const variations = [
   null,                                         // bars 53-56: pure
   { step: 11, note: 'G3', slide: true },        // bars 57-60: 7th on return
   null,                                         // bars 61-64: pure — resolve home
+  null,                                         // bars 65-68: kick section, keep pure
+  { step: 5,  note: 'D3', slide: false },       // bars 69-72: 4th with kick
+  null,                                         // bars 73-76: pure — ending
 ];
 
 function getArpForBar(bar) {
@@ -231,7 +237,16 @@ function getArpForBar(bar) {
 }
 
 // ── ARRANGEMENT ──
-const TOTAL_STEPS = 64 * 16;
+// 76 bars total (~154 seconds at 118 BPM)
+//
+// RISE (bars 0-15):      Full arp, filter opens, reverb builds
+// PEAK (bars 16-23):     Full arp, full brightness
+// DISSOLVE (bars 24-39): Notes thin out
+// DRIFT (bars 40-55):    Sparse, near-black
+// RETURN (bars 56-63):   Notes come back + kick enters at bar 57
+// KICK (bars 64-70):     Full kick + full arp
+// FADEOUT (bars 71-75):  Kick fades out, arp continues then ends
+const TOTAL_STEPS = 76 * 16;
 
 function getSection(step) {
   const bar = Math.floor(step / 16);
@@ -239,7 +254,9 @@ function getSection(step) {
   if (bar < 24) return 'peak';
   if (bar < 40) return 'dissolve';
   if (bar < 56) return 'drift';
-  return 'return';
+  if (bar < 64) return 'return';
+  if (bar < 71) return 'kick';
+  return 'fadeout';
 }
 
 function getNoteProbability(step) {
@@ -255,6 +272,12 @@ function getNoteProbability(step) {
   if (section === 'return') {
     const progress = (bar - 56) / 7;
     return 0.12 + progress * 0.88;
+  }
+  if (section === 'kick') return 1.0;
+  if (section === 'fadeout') {
+    // Arp thins out as kick fades
+    const progress = (bar - 71) / 4;
+    return 1.0 - progress * 0.5;
   }
   return 1.0;
 }
@@ -272,6 +295,11 @@ function getCutoff(step) {
   if (section === 'return') {
     const progress = (bar - 56) / 7;
     return 0.15 + progress * 0.20;
+  }
+  if (section === 'kick') return 0.35;
+  if (section === 'fadeout') {
+    const progress = (bar - 71) / 4;
+    return 0.35 - progress * 0.15;  // close down gently
   }
   return 0.35;
 }
@@ -295,10 +323,11 @@ function getReverbMix(step) {
   }
   if (section === 'drift') return { wet: 0.90, dry: 0.20 };
   if (section === 'return') {
-    // Pull back to normal
     const progress = (bar - 56) / 7;
     return { wet: 0.90 - progress * 0.25, dry: 0.20 + progress * 0.20 };
   }
+  if (section === 'kick') return { wet: 0.45, dry: 0.55 };  // drier for kick clarity
+  if (section === 'fadeout') return { wet: 0.50, dry: 0.50 };
   return { wet: 0.65, dry: 0.40 };
 }
 
@@ -316,6 +345,11 @@ function getVizBrightness(step) {
   if (section === 'return') {
     const progress = (bar - 56) / 7;
     return 0.08 + progress * 0.92;
+  }
+  if (section === 'kick') return 1.0;
+  if (section === 'fadeout') {
+    const progress = (bar - 71) / 4;
+    return 1.0 - progress * 0.7;
   }
   return 1.0;
 }
@@ -396,6 +430,27 @@ async function start() {
     engine._scriptNode.connect(convolver);
   }
 
+  // ── JB01 KICK ──
+  kickEngine = new JB01Engine({ context: engine.context });
+  // Tight kick — short decay, slightly detuned down
+  kickEngine.setVoiceParam('kick', 'decay', 0.3);   // tight
+  kickEngine.setVoiceParam('kick', 'tune', -0.2);
+  kickEngine.setVoiceParam('kick', 'attack', 0.6);
+  kickEngine.setVoiceParam('kick', 'level', 0.75);
+
+  // Kick gets its own gain node for fade-out control
+  kickGain = engine.context.createGain();
+  kickGain.gain.value = 0;  // starts silent
+  kickEngine.connectOutput(kickGain);
+  // Kick goes mostly dry — just a touch of reverb
+  const kickDry = engine.context.createGain();
+  const kickWet = engine.context.createGain();
+  kickDry.gain.value = 0.85;
+  kickWet.gain.value = 0.15;
+  kickGain.connect(kickDry);
+  kickGain.connect(convolver);  // tiny bit of reverb on kick
+  kickDry.connect(engine.context.destination);
+
   // ── SEQUENCER ──
   let step = 0;
 
@@ -419,6 +474,27 @@ async function start() {
 
     // Section label
     sectionEl.textContent = section.toUpperCase();
+
+    // ── KICK ──
+    // Enters at bar 57 (one bar into RETURN), 4x4 pattern
+    const kickActive = bar >= 57 && bar < 76;
+    if (kickActive && stepInBar % 4 === 0) {
+      // Kick gain envelope
+      if (bar < 59) {
+        // Fade in over 2 bars
+        const fadeIn = (bar - 57 + stepInBar / 16) / 2;
+        kickGain.gain.value = Math.min(fadeIn, 1.0);
+      } else if (bar >= 71) {
+        // Fade out over 5 bars (71-75)
+        const fadeOut = 1.0 - (bar - 71 + stepInBar / 16) / 5;
+        kickGain.gain.value = Math.max(fadeOut, 0);
+      } else {
+        kickGain.gain.value = 1.0;
+      }
+
+      const kickVel = 0.8 + (Math.random() - 0.5) * 0.06;  // slight humanization
+      kickEngine.trigger('kick', kickVel);
+    }
 
     // Get the arp pattern for this bar (with possible variation)
     const arp = getArpForBar(bar);
