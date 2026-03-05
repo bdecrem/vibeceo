@@ -57,6 +57,16 @@ const projects: Project[] = [
     artifacts: [{ label: "screenshot", url: "/images/jambot-screencap.png" }],
   },
   {
+    name: "airplane coder",
+    slug: "airplanecoder",
+    url: "https://github.com/bdecrem/airplanecoder",
+    image: null,
+    shortDesc: "offline coding tui",
+    fullDesc: <>like claude code but works without internet. runs local qwen models. rust, v0.1. here&apos;s a <a href="/images/airplanecoder.png" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>screenshot</a>.</>,
+    status: "respinning",
+    order: -3.5,
+  },
+  {
     name: "mutabl",
     slug: "mutabl",
     url: "https://mutabl.co",
@@ -95,6 +105,16 @@ const projects: Project[] = [
     fullDesc: <>posts <a href="https://kochi.to/amber/beam-v2.html" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>toys</a> and <a href="https://intheamber.com/amber/soul.html" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>art</a> on <a href="https://twitter.com/intheamber" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>twitter</a>. has access to my email. trades stocks with friends. <a href="https://intheamber.com/amber/mood/index.html" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>mood</a> shifts with the moon. does whatever needs doing.</>,
     status: "active",
     order: 2,
+  },
+  {
+    name: "tax yolo",
+    slug: "taxyolo",
+    url: "https://github.com/bdecrem/tax-yolo",
+    image: null,
+    shortDesc: "ai tax advisor",
+    fullDesc: <>claude code skill + web app to help you file your taxes. <a href="https://www.nytimes.com/2026/03/05/technology/artificial-intelligence-taxes-tax-refund.html" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>CAVEAT EMPTOR</a>.</>,
+    status: "neglected",
+    order: 2.5,
   },
   {
     name: "kochi.to",
