@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>DROP — Amber</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='28' font-size='28'>🫧</text></svg>">
+<meta property="og:title" content="DROP">
+<meta property="og:description" content="tap to drop. watch them bounce.">
+<meta property="og:image" content="https://intheamber.com/amber/og/drop.png">
+<meta property="og:url" content="https://intheamber.com/amber/drop.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@intheamber">
+<meta name="twitter:title" content="DROP">
+<meta name="twitter:description" content="tap to drop. watch them bounce.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/drop.png">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0a;touch-action:none;user-select:none;font-family:'Courier New',monospace}
+canvas{display:block;width:100%;height:100%}
+#score{position:fixed;top:16px;left:50%;transform:translateX(-50%);color:#FFD700;font-size:14px;opacity:0.6;pointer-events:none;z-index:10}
+#hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);color:#FFD700;font-size:13px;opacity:0.4;pointer-events:none;z-index:10;transition:opacity 0.5s}
+</style>
+</head>
+<body>
+<div id="score">0 balls</div>
+<div id="hint">tap to drop</div>
+<canvas id="c"></canvas>
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('score');
+const hintEl=document.getElementById('hint');
+
+let W,H,dpr;
+function resize(){
+  dpr=window.devicePixelRatio||1;
+  W=window.innerWidth;H=window.innerHeight;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  ctx.scale(dpr,dpr);
+}
+resize();
+window.addEventListener('resize',resize);
+
+const GRAVITY=0.4;
+const BOUNCE=0.7;
+const FRICTION=0.99;
+const COLORS=['#FFD700','#FFA500','#FF6B6B','#ec4899','#2D9596','#45B7D1','#98FB98','#DDA0DD','#F0E68C','#FF7F50'];
+
+let balls=[];
+let audioCtx=null;
+let hintShown=true;
+
+class Ball{
+  constructor(x,y){
+    this.x=x;this.y=y;
+    this.vx=(Math.random()-0.5)*4;
+    this.vy=0;
+    this.r=12+Math.random()*20;
+    this.color=COLORS[Math.floor(Math.random()*COLORS.length)];
+    this.mass=this.r*this.r;
+    this.alpha=1;
+    this.born=Date.now();
+  }
+  update(){
+    this.vy+=GRAVITY;
+    this.vx*=FRICTION;
+    this.x+=this.vx;
+    this.y+=this.vy;
+    // floor
+    if(this.y+this.r>H){
+      this.y=H-this.r;
+      if(Math.abs(this.vy)>2)playBonk(this.r);
+      this.vy*=-BOUNCE;
+    }
+    // walls
+    if(this.x-this.r<0){this.x=this.r;this.vx*=-BOUNCE;}
+    if(this.x+this.r>W){this.x=W-this.r;this.vx*=-BOUNCE;}
+    // ceiling
+    if(this.y-this.r<0){this.y=this.r;this.vy*=-BOUNCE;}
+  }
+  draw(){
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+    // gradient
+    const g=ctx.createRadialGradient(this.x-this.r*0.3,this.y-this.r*0.3,this.r*0.1,this.x,this.y,this.r);
+    g.addColorStop(0,'rgba(255,255,255,0.3)');
+    g.addColorStop(0.5,this.color);
+    g.addColorStop(1,this.color+'88');
+    ctx.fillStyle=g;
+    ctx.fill();
+    // glow
+    ctx.shadowColor=this.color;
+    ctx.shadowBlur=12;
+    ctx.fill();
+    ctx.shadowBlur=0;
+  }
+}
+
+function initAudio(){
+  if(audioCtx)return;
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+}
+
+function playBonk(radius){
+  if(!audioCtx)return;
+  const osc=audioCtx.createOscillator();
+  const gain=audioCtx.createGain();
+  const freq=800-radius*10+Math.random()*100;
+  osc.type='sine';
+  osc.frequency.setValueAtTime(Math.max(freq,200),audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(100,audioCtx.currentTime+0.15);
+  gain.gain.setValueAtTime(0.15,audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.15);
+  osc.connect(gain);gain.connect(audioCtx.destination);
+  osc.start();osc.stop(audioCtx.currentTime+0.15);
+}
+
+function playPop(){
+  if(!audioCtx)return;
+  const osc=audioCtx.createOscillator();
+  const gain=audioCtx.createGain();
+  osc.type='sine';
+  osc.frequency.setValueAtTime(600+Math.random()*400,audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(200,audioCtx.currentTime+0.1);
+  gain.gain.setValueAtTime(0.2,audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.1);
+  osc.connect(gain);gain.connect(audioCtx.destination);
+  osc.start();osc.stop(audioCtx.currentTime+0.1);
+}
+
+function collide(a,b){
+  const dx=b.x-a.x,dy=b.y-a.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  const minDist=a.r+b.r;
+  if(dist<minDist&&dist>0){
+    const nx=dx/dist,ny=dy/dist;
+    const overlap=(minDist-dist)/2;
+    a.x-=nx*overlap;a.y-=ny*overlap;
+    b.x+=nx*overlap;b.y+=ny*overlap;
+    const dvx=a.vx-b.vx,dvy=a.vy-b.vy;
+    const dvn=dvx*nx+dvy*ny;
+    if(dvn>0){
+      const m=2/(a.mass+b.mass);
+      a.vx-=m*b.mass*dvn*nx;
+      a.vy-=m*b.mass*dvn*ny;
+      b.vx+=m*a.mass*dvn*nx;
+      b.vy+=m*a.mass*dvn*ny;
+      if(Math.abs(dvn)>3)playBonk((a.r+b.r)/2);
+    }
+  }
+}
+
+function spawnBall(x,y){
+  initAudio();
+  if(hintShown){hintEl.style.opacity='0';hintShown=false;}
+  playPop();
+  balls.push(new Ball(x,y));
+  if(balls.length>150)balls.shift();
+  scoreEl.textContent=balls.length+' ball'+(balls.length!==1?'s':'');
+}
+
+canvas.addEventListener('pointerdown',e=>{spawnBall(e.clientX,e.clientY);});
+canvas.addEventListener('pointermove',e=>{
+  if(e.buttons>0)spawnBall(e.clientX,e.clientY);
+});
+
+function loop(){
+  ctx.clearRect(0,0,W,H);
+  for(let i=0;i<balls.length;i++){
+    balls[i].update();
+    for(let j=i+1;j<balls.length;j++){
+      collide(balls[i],balls[j]);
+    }
+  }
+  for(const b of balls)b.draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
