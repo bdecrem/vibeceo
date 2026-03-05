@@ -1534,3 +1534,97 @@ The reviewer checks:
 Then updates `jambot/CLAUDE.md` and `PLATFORM-OVERVIEW.md` with new capabilities.
 
 Source: `sms-bot/documentation/subagents/review-jambot.md`
+
+---
+
+## Das Kollektiv Visualizers
+
+DK tracks are self-contained HTML/Canvas/JS pages that pair jambot engines with generative visuals. They live in `web/public/pixelpit/daskollektiv/` and are served from `daskollektiv.rip`.
+
+### Creating a new DK track
+
+**1. File:** `web/public/pixelpit/daskollektiv/dk{NNN}.html`
+
+Single self-contained HTML file. Structure:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Das Kollektiv #{NNN}</title>
+<meta property="og:title" content="Das Kollektiv #{NNN}">
+<meta property="og:description" content="One-line description.">
+<meta property="og:image" content="https://daskollektiv.rip/dk{NNN}-og.png">
+<meta property="og:url" content="https://daskollektiv.rip/dk{NNN}.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Das Kollektiv #{NNN}">
+<meta name="twitter:description" content="Short description.">
+<meta name="twitter:image" content="https://daskollektiv.rip/dk{NNN}-og.png">
+<style>/* inline CSS */</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="title">DAS KOLLEKTIV #{NNN}</div>
+<div id="overlay"><button id="play-btn">▶</button></div>
+<div id="credits">HALLMAN × MARG · {ENGINE}</div>
+<script type="module">
+import { ... } from 'https://kochi.to/{engine}/dist/machines/{engine}/engine.js';
+// ...
+</script>
+</body>
+</html>
+```
+
+**2. Engine imports — MUST use full kochi.to URLs:**
+
+```javascript
+// 909 drum machine
+import { JT90Engine } from 'https://kochi.to/jt90/dist/machines/jt90/engine.js';
+
+// 303 acid bass
+import { JT10Engine } from 'https://kochi.to/jt10/dist/machines/jt10/engine.js';
+
+// Multi-voice drum machine
+import { JB01Engine } from 'https://kochi.to/jb01/dist/machines/jb01/engine.js';
+```
+
+**NEVER use relative paths** like `/jt10/...` — these break on `daskollektiv.rip` which is a different domain from `kochi.to`. The CORS headers are configured in `web/middleware.ts` for cross-origin access.
+
+**3. Aesthetic rules (TASTE):**
+
+- Background: `#050505` (near-black). White and grey only — NO color, ever.
+- Font: `'SF Mono', 'Fira Code', 'Courier New', monospace`
+- Cursor: `crosshair`
+- Elements accumulate and fade slowly (like tree rings). Never hard-cut.
+- Play button: 56px circle, very low opacity, same style as dk001.
+- Title: top-left, 7px, letter-spacing 3px, nearly invisible.
+- Credits: bottom-center, 8px, letter-spacing 4px, nearly invisible.
+- No decorative elements, no borders, no shadows, no emoji.
+- Reference: dk001.html is the benchmark. Study it.
+
+**4. Update `tracks.json`** — add new track at the top of the array:
+
+```json
+{
+  "id": "dk{NNN}",
+  "title": "DK{NNN}",
+  "artists": "HALLMAN × MARG",
+  "description": "Short description. BPM. Key.",
+  "url": "dk{NNN}.html",
+  "date": "YYYY-MM-DD"
+}
+```
+
+**5. OG image:** Add `dk{NNN}-og.png` (1200x630) in the same directory.
+
+### Existing tracks
+
+| Track | Engine(s) | Description |
+|-------|-----------|-------------|
+| DK001 | JT90 | 8 bars of 909. Kick rings + hat dots. Decay ramp. |
+| DK002 | JB01 | 52 bars tribal. Six acts. Decay curves that breathe. |
+| DK003 | JB01 + JT10 | Plastikman-style minimal. Filter sweep composition. |
+| DK004 | JT10 | JT10 arpeggio. 32-bar filter sweep. Square geometry. |
