@@ -61,7 +61,6 @@
     font-size: 8px; letter-spacing: 3px;
     color: rgba(255,255,255,0.05);
   }
-  /* Filter readout — the sweep is the story */
   #filter-readout {
     position: fixed; top: 50%; right: 30px;
     transform: translateY(-50%);
@@ -98,49 +97,66 @@ import { JT10Engine } from 'https://kochi.to/jt10/dist/machines/jt10/engine.js';
 // ══════════════════════════════════════════
 // HALLMAN × HAWTIN 01
 // Plastikman-style minimal. Filter sweep IS the composition.
+// JB01 drums + JT10 acid bass — both engines live in browser.
 // ══════════════════════════════════════════
 
 const BPM = 126;
 const STEP_DUR = 60 / BPM / 4;
 
-// ── ARRANGEMENT: 32 bars ──
-// Bars 1-2:   Kick only
-// Bars 3-4:   Kick + 16th hats (function pattern)
-// Bars 5-31:  + acid bass, filter sweeps open
-// Bar 32:     Ghost bar — kick drops
-
-// Acid pattern: G1 G1 G2 G1 Bb1 G1 C2→G1(slide) | G1 . G2 G1 Bb1 . G1 .
-const acidNotes = [
-  'G1','G1','G2','G1','Bb1','G1','C2','G1',
-  'G1', null,'G2','G1','Bb1', null,'G1', null
+// ── ACID PATTERN (G minor, 16 steps) ──
+const acidPattern = [
+  { note: 'G1',  gate: true,  accent: true,  slide: false },
+  { note: 'G1',  gate: true,  accent: false, slide: false },
+  { note: 'G2',  gate: true,  accent: false, slide: false },
+  { note: 'G1',  gate: true,  accent: false, slide: false },
+  { note: 'Bb1', gate: true,  accent: true,  slide: false },
+  { note: 'G1',  gate: true,  accent: false, slide: false },
+  { note: 'C2',  gate: true,  accent: false, slide: true  },
+  { note: 'G1',  gate: true,  accent: false, slide: false },
+  { note: 'G1',  gate: true,  accent: false, slide: false },
+  { note: 'G1',  gate: false, accent: false, slide: false },
+  { note: 'G2',  gate: true,  accent: false, slide: false },
+  { note: 'G1',  gate: true,  accent: true,  slide: false },
+  { note: 'Bb1', gate: true,  accent: false, slide: false },
+  { note: 'G1',  gate: false, accent: false, slide: false },
+  { note: 'G1',  gate: true,  accent: false, slide: false },
+  { note: 'G1',  gate: false, accent: false, slide: false },
 ];
 
-// Hat velocity shaping — offbeats punch, kick-steps ghosted
+// Note pitch mapping for visuals
+const noteToY = { 'G1': 0, 'Bb1': -0.15, 'C2': -0.3, 'G2': -0.5 };
+
+// ── HAT VELOCITY SHAPING ──
 function hatVelocity(step, bar) {
   const baseVel = bar < 8 ? 0.4 + ((bar - 2) / 5) * 0.2 : bar < 28 ? 0.6 : 0.67;
-  if ([2,6,10,14].includes(step)) return baseVel + 0.14; // offbeat punch
-  if ([0,4,8,12].includes(step)) return baseVel - 0.16;  // ghost on kicks
+  if ([2,6,10,14].includes(step)) return baseVel + 0.14;
+  if ([0,4,8,12].includes(step)) return baseVel - 0.16;
   return baseVel;
 }
 
-// Filter cutoff automation (Hz)
-// Opens gradually from 200→3000Hz, then pulls back
+// ── FILTER CUTOFF AUTOMATION (Hz) — updated range ──
 function cutoffAtBar(bar) {
   if (bar < 4) return 200;
-  if (bar < 20) return 200 + ((bar - 4) / 15) * 2800;  // 200→3000 over 16 bars
-  if (bar < 28) return 3000 - ((bar - 20) / 7) * 1800;  // 3000→1200 pullback
-  if (bar < 31) return 800;  // tension
-  return 400; // ghost
+  if (bar < 20) return 200 + ((bar - 4) / 15) * 2800;   // 200→3000Hz over 16 bars
+  if (bar < 28) return 3000 - ((bar - 20) / 7) * 1800;   // 3000→1200Hz pullback
+  if (bar < 31) return 800;                                // tension
+  return 400;                                              // ghost
 }
 
-// CH decay automation (0-100 producer scale)
+// Hz to JT10 normalized cutoff (rough mapping: normalizedToHz uses exponential)
+// normalizedToHz: 20 * Math.pow(1000, normalized) — so inverse is:
+function hzToNormalized(hz) {
+  return Math.log(hz / 20) / Math.log(1000);
+}
+
+// ── CH DECAY AUTOMATION ──
 function chDecayAtBar(bar) {
   if (bar < 2) return 12;
-  if (bar < 28) return 12 + ((bar - 2) / 25) * 43; // 12→55
+  if (bar < 28) return 12 + ((bar - 2) / 25) * 43;
   return 55;
 }
 
-// Section labels
+// ── SECTIONS ──
 function sectionForBar(bar) {
   if (bar < 2) return 'KICK';
   if (bar < 4) return 'HATS';
@@ -180,19 +196,16 @@ window.addEventListener('resize', resize);
 
 // ══════════════════════════════════════════
 // COLOR ENGINE
-// Monochrome base + filter cutoff drives warmth
-// Low cutoff (100Hz) = cold blue-grey
-// High cutoff (500Hz) = warm amber
+// Low cutoff (200Hz) = cold blue-grey
+// High cutoff (3000Hz) = warm amber-white
 // ══════════════════════════════════════════
 
 function cutoffToRGB(cutoffHz, brightness = 1) {
-  const t = Math.min(1, Math.max(0, (cutoffHz - 100) / 400));
+  const t = Math.min(1, Math.max(0, (cutoffHz - 200) / 2800));
   const b = brightness;
-  // 0 = cold grey-blue (120, 130, 150)
-  // 1 = warm amber (240, 180, 100)
-  const r = Math.min(255, Math.floor((120 + t * 120) * b));
-  const g = Math.min(255, Math.floor((130 + t * 50) * b));
-  const bl = Math.min(255, Math.floor((150 - t * 50) * b));
+  const r = Math.min(255, Math.floor((100 + t * 155) * b));
+  const g = Math.min(255, Math.floor((110 + t * 80) * b));
+  const bl = Math.min(255, Math.floor((140 - t * 60) * b));
   return [r, g, bl];
 }
 
@@ -200,56 +213,36 @@ function cutoffToRGB(cutoffHz, brightness = 1) {
 // VISUAL STATE
 // ══════════════════════════════════════════
 const V = {
-  cutoff: 100,
-  smoothCutoff: 100,
-  chDecay: 12,
-  smoothDecay: 12,
-  energy: 0.08,
-  targetEnergy: 0.08,
-  kickHit: 0,
-  chHit: 0,
-  acidHit: 0,
-  acidNote: null,
-  playing: false,
-  step: 0,
-  bar: 0,
-  globalStep: 0,
-  section: '',
-  noKick: false,
-  hasAcid: false,
-  hasHats: false,
+  cutoff: 200, smoothCutoff: 200,
+  chDecay: 12, smoothDecay: 12,
+  energy: 0.08, targetEnergy: 0.08,
+  kickHit: 0, chHit: 0, acidHit: 0,
+  playing: false, step: 0, bar: 0, globalStep: 0,
+  section: '', noKick: false, hasAcid: false, hasHats: false,
 };
 
 // ══════════════════════════════════════════
 // GEOMETRY
 // ══════════════════════════════════════════
 
-// ── 1. FILTER SWEEP LINE: horizontal line at center ──
-// Width = cutoff frequency. THE central visual.
-// As filter opens, the line extends across the screen.
+// ── 1. FILTER SWEEP LINE ──
 function drawFilterLine() {
-  const t = (V.smoothCutoff - 100) / 400; // 0-1
+  const t = (V.smoothCutoff - 200) / 2800;
   const [r, g, b] = cutoffToRGB(V.smoothCutoff);
   const energy = V.energy;
-
-  // Line width maps to cutoff — 100Hz = short, 500Hz = full screen
   const lineW = W * 0.05 + t * W * 0.9;
   const alpha = 0.06 + energy * 0.08 + t * 0.04;
 
-  // Main line
   ctx.beginPath();
   ctx.moveTo(cx - lineW / 2, cy);
   ctx.lineTo(cx + lineW / 2, cy);
   ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
   ctx.lineWidth = 1;
   ctx.stroke();
-
-  // Glow
   ctx.strokeStyle = `rgba(${r},${g},${b},${alpha * 0.3})`;
-  ctx.lineWidth = 4 + t * 4;
+  ctx.lineWidth = 4 + t * 6;
   ctx.stroke();
 
-  // Soft vertical gradient behind the line — filter "presence"
   if (t > 0.05) {
     const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, H * 0.3 * t);
     grad.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.5})`);
@@ -259,13 +252,10 @@ function drawFilterLine() {
   }
 }
 
-// ── 2. KICK RINGS: concentric, centered, cold ──
+// ── 2. KICK RINGS ──
 const kickRings = [];
 class KickRing {
-  constructor() {
-    this.r = 0;
-    this.life = 1;
-  }
+  constructor() { this.r = 0; this.life = 1; }
   update() {
     this.r += 3 + (1 - this.life) * 2;
     this.life *= 0.96;
@@ -281,14 +271,13 @@ class KickRing {
   }
 }
 
-// ── 3. HAT DUST: 16th-note scatter, density = energy ──
+// ── 3. HAT DUST ──
 const hatDust = [];
 class HatDust {
   constructor(decay01, cutoffHz) {
     const [r, g, b] = cutoffToRGB(cutoffHz);
     this.color = [r, g, b];
-    // Scatter along the filter line
-    const t = (cutoffHz - 100) / 400;
+    const t = (cutoffHz - 200) / 2800;
     const lineW = W * 0.05 + t * W * 0.9;
     this.x = cx + (Math.random() - 0.5) * lineW;
     this.y = cy + (Math.random() - 0.5) * 20;
@@ -300,8 +289,7 @@ class HatDust {
     this.age = 0;
   }
   update() {
-    this.x += this.vx;
-    this.y += this.vy - 0.1; // slight drift up
+    this.x += this.vx; this.y += this.vy - 0.1;
     this.age++;
     if (this.age > this.maxLife * 0.5) this.life *= 0.96;
     return this.age < this.maxLife && this.life > 0.01;
@@ -313,20 +301,13 @@ class HatDust {
   }
 }
 
-// ── 4. ACID PULSES: vertical lines from the center, one per note ──
-// Height = note pitch. Accent = brighter. Slide = the line bends.
+// ── 4. ACID PULSES ──
 const acidPulses = [];
-
-const noteToY = {
-  'G1': 0, 'Bb1': -0.15, 'C2': -0.3, 'G2': -0.5,
-};
-
 class AcidPulse {
   constructor(note, accent, slide, cutoffHz) {
     const pitch = noteToY[note] || 0;
     const [r, g, b] = cutoffToRGB(cutoffHz, accent ? 1.3 : 0.8);
     this.color = [r, g, b];
-    // Vertical line from center
     this.x = cx + (Math.random() - 0.5) * 6;
     this.topY = cy + pitch * H * 0.3;
     this.bottomY = cy + 10;
@@ -348,14 +329,13 @@ class AcidPulse {
     ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * this.alpha})`;
     ctx.lineWidth = 1;
     ctx.stroke();
-    // Glow
     ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * this.alpha * 0.3})`;
     ctx.lineWidth = 4;
     ctx.stroke();
   }
 }
 
-// ── 5. GHOST EMBERS: bar 32, kick gone ──
+// ── 5. GHOST EMBERS ──
 const embers = [];
 class Ember {
   constructor() {
@@ -366,12 +346,7 @@ class Ember {
     this.life = 1;
     this.size = 0.5 + Math.random() * 1;
   }
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.life -= 0.008;
-    return this.life > 0;
-  }
+  update() { this.x += this.vx; this.y += this.vy; this.life -= 0.008; return this.life > 0; }
   draw() {
     const [r, g, b] = cutoffToRGB(V.smoothCutoff, 0.3);
     ctx.fillStyle = `rgba(${r},${g},${b},${this.life * 0.1})`;
@@ -395,13 +370,12 @@ function render() {
   frame++;
 
   V.energy += (V.targetEnergy - V.energy) * 0.02;
-  V.smoothCutoff += (V.cutoff - V.smoothCutoff) * 0.08; // slow sweep
+  V.smoothCutoff += (V.cutoff - V.smoothCutoff) * 0.08;
   V.smoothDecay += (V.chDecay - V.smoothDecay) * 0.2;
   V.kickHit *= 0.9;
   V.chHit *= 0.9;
   V.acidHit *= 0.92;
 
-  // Background fade
   const fade = V.noKick ? 0.03 : 0.05;
   ctx.fillStyle = `rgba(3,3,5,${fade})`;
   ctx.fillRect(0, 0, W, H);
@@ -416,37 +390,29 @@ function render() {
     return;
   }
 
-  // ═══ LAYERS ═══
-
-  // 1. Filter sweep line (always present once playing)
   drawFilterLine();
 
-  // 2. Kick rings
   for (let i = kickRings.length - 1; i >= 0; i--) {
     kickRings[i].draw();
     if (!kickRings[i].update()) kickRings.splice(i, 1);
   }
 
-  // 3. Acid pulses
   for (let i = acidPulses.length - 1; i >= 0; i--) {
     acidPulses[i].draw();
     if (!acidPulses[i].update()) acidPulses.splice(i, 1);
   }
 
-  // 4. Hat dust
   for (let i = hatDust.length - 1; i >= 0; i--) {
     hatDust[i].draw();
     if (!hatDust[i].update()) hatDust.splice(i, 1);
   }
 
-  // 5. Ghost embers
   if (V.noKick && frame % 3 === 0) embers.push(new Ember());
   for (let i = embers.length - 1; i >= 0; i--) {
     embers[i].draw();
     if (!embers[i].update()) embers.splice(i, 1);
   }
 
-  // Filter readout
   if (V.hasAcid) {
     const hz = Math.round(V.smoothCutoff);
     filterReadout.style.color = `rgba(255,255,255,${0.03 + V.energy * 0.04})`;
@@ -456,90 +422,94 @@ function render() {
 render();
 
 // ══════════════════════════════════════════
-// PLAYBACK — JB01 for drums, JT10 for acid bass
+// AUDIO ENGINE — JB01 + JT10
 // ══════════════════════════════════════════
 let audioCtx = null;
-let engine = null;
-let acidEngine = null;
+let drumEngine = null;
+let bassEngine = null;
 let playing = false;
 let nextStepTime = 0;
 let currentStep = 0;
 let currentBar = 0;
 let schedulerTimer = null;
+let pendingRelease = null;
 const SCHEDULE_AHEAD = 0.1;
 const LOOKAHEAD = 25;
+
+const VOICE_IDS = ['kick','snare','clap','rimshot','ch','oh','ltom','mtom','htom','crash','ride'];
 
 function scheduleStep(time) {
   const stepInBar = currentStep % 16;
   const bar = currentBar;
 
-  const cutoff = cutoffAtBar(bar);
+  const cutoffHz = cutoffAtBar(bar);
   const decay = chDecayAtBar(bar);
   const section = sectionForBar(bar);
   const energy = energyForBar(bar);
 
-  // Hat voice active?
   const hasHats = bar >= 2;
-  // Acid active?
   const hasAcid = bar >= 4 && bar < 32;
-  // Kick active?
   const hasKick = bar < 31;
 
-  // Set hat decay on engine
-  const decayEngine = decay / 50; // rough producer→engine scale
+  const decayEngine = decay / 50;
+  const cutoffNorm = hzToNormalized(cutoffHz);
 
   const delay = Math.max(0, (time - audioCtx.currentTime) * 1000);
 
   setTimeout(() => {
-    // Update engine params
-    engine.setVoiceParam('ch', 'decay', decayEngine);
+    // ── DRUMS ──
+    drumEngine.setVoiceParam('ch', 'decay', decayEngine);
 
-    // Trigger kick
     if (hasKick && [0,4,8,12].includes(stepInBar)) {
       const kickVel = (110 + Math.floor(bar / 8) * 2) / 127;
-      engine.trigger('kick', kickVel, audioCtx.currentTime);
+      drumEngine.trigger('kick', kickVel, audioCtx.currentTime);
       V.kickHit = 1;
       kickRings.push(new KickRing());
     }
 
-    // Trigger hats
     if (hasHats) {
       const vel = hatVelocity(stepInBar, bar);
-      engine.trigger('ch', vel, audioCtx.currentTime);
+      drumEngine.trigger('ch', vel, audioCtx.currentTime);
       V.chHit = 1;
-      // Dust
       const count = 1 + Math.floor(V.energy * 4);
       for (let i = 0; i < count; i++) {
-        hatDust.push(new HatDust(decay / 55, cutoff));
+        hatDust.push(new HatDust(decay / 55, cutoffHz));
       }
     }
 
-    // Acid bass — JT10 audio + visualization
+    // ── ACID BASS ──
     if (hasAcid) {
-      // Update filter cutoff on acid engine (Hz → 0-1 log scale)
-      const cutoffNorm = Math.min(1, Math.max(0, Math.log(cutoff / 20) / Math.log(16000 / 20)));
-      acidEngine.setParameter('cutoff', cutoffNorm);
+      // Update filter cutoff
+      bassEngine.setParameter('cutoff', cutoffNorm);
 
-      const note = acidNotes[stepInBar];
-      const nextNote = acidNotes[(stepInBar + 1) % 16];
-      const isAccent = [0,4].includes(stepInBar);
-      const isSlide = stepInBar === 6;
+      const step = acidPattern[stepInBar];
+      const nextStep = acidPattern[(stepInBar + 1) % 16];
 
-      if (note) {
-        const vel = isAccent ? 1.0 : 0.7;
-        acidEngine.playNote(note, vel, isSlide);
+      if (step.gate) {
+        const velocity = step.accent ? 1.0 : 0.7;
+        bassEngine._ensureVoice();
+        bassEngine._voice.triggerNote(step.note, velocity, step.slide);
+
+        // Schedule release if needed
+        if (pendingRelease) { clearTimeout(pendingRelease); pendingRelease = null; }
+        if (!nextStep.slide || !nextStep.gate) {
+          pendingRelease = setTimeout(() => {
+            if (bassEngine._voice?.gateOpen) bassEngine._voice.releaseNote();
+            pendingRelease = null;
+          }, STEP_DUR * 0.85 * 1000);
+        }
+
+        // Visual
         V.acidHit = 1;
-        V.acidNote = note;
-        acidPulses.push(new AcidPulse(note, isAccent, isSlide, cutoff));
+        acidPulses.push(new AcidPulse(step.note, step.accent, step.slide, cutoffHz));
       } else {
-        acidEngine.noteOff();
+        // noteOff
+        if (bassEngine._voice?.gateOpen) bassEngine._voice.releaseNote();
       }
-    } else if (acidEngine) {
-      acidEngine.noteOff();
     }
 
     // Update state
-    V.cutoff = cutoff;
+    V.cutoff = cutoffHz;
     V.chDecay = decay;
     V.targetEnergy = energy;
     V.step = stepInBar;
@@ -549,7 +519,6 @@ function scheduleStep(time) {
     V.hasHats = hasHats;
     V.globalStep++;
 
-    // Section label
     if (section !== lastSection) {
       sectionLabelEl.textContent = section;
       sectionLabelEl.classList.add('visible');
@@ -582,49 +551,67 @@ function scheduler() {
 function start() {
   if (!audioCtx) {
     audioCtx = new AudioContext({ sampleRate: 44100 });
-    engine = new JB01Engine({ context: audioCtx, bpm: BPM });
-    engine.connectOutput(audioCtx.destination);
 
-    // Kick: tight, tuned down
-    engine.setVoiceParam('kick', 'decay', 0.3);
-    engine.setVoiceParam('kick', 'tune', -0.25);
-    engine.setVoiceParam('kick', 'level', 0.8);
-    engine.setVoiceParam('kick', 'attack', 0.65);
+    // ── JB01 DRUMS ──
+    drumEngine = new JB01Engine({ context: audioCtx, bpm: BPM });
+    drumEngine.connectOutput(audioCtx.destination);
+    drumEngine.setVoiceParam('kick', 'decay', 0.3);
+    drumEngine.setVoiceParam('kick', 'tune', -0.25);
+    drumEngine.setVoiceParam('kick', 'level', 0.8);
+    drumEngine.setVoiceParam('kick', 'attack', 0.65);
+    drumEngine.setVoiceParam('ch', 'level', 0.55);
+    drumEngine.setVoiceParam('ch', 'tone', 0.4);
+    drumEngine.setVoiceParam('ch', 'decay', 0.24);
 
-    // Hats
-    engine.setVoiceParam('ch', 'level', 0.55);
-    engine.setVoiceParam('ch', 'tone', 0.4);
-    engine.setVoiceParam('ch', 'decay', 0.24);
+    // ── JT10 ACID BASS ──
+    bassEngine = new JT10Engine({ context: audioCtx, bpm: BPM });
+    bassEngine._ensureVoice();
 
-    // Acid bass — JT10
-    acidEngine = new JT10Engine({ context: audioCtx, sampleRate: 44100 });
-    // Fat Bass preset from JT-10 UI
-    acidEngine.setParameter('sawLevel', 0.6);
-    acidEngine.setParameter('pulseLevel', 0.4);
-    acidEngine.setParameter('pulseWidth', 0.4);
-    acidEngine.setParameter('subLevel', 0.5);
-    acidEngine.setParameter('subMode', 0);           // OFF
-    acidEngine.setParameter('cutoff', 0.35);          // ~208Hz
-    acidEngine.setParameter('resonance', 0.05);
-    acidEngine.setParameter('envMod', 0.25);
-    acidEngine.setParameter('attack', 0.02);
-    acidEngine.setParameter('decay', 0.25);
-    acidEngine.setParameter('sustain', 0.2);
-    acidEngine.setParameter('release', 0.85);
-    acidEngine.setParameter('glideTime', 0.15);
-    acidEngine.setParameter('level', 0.34);         // 0.85 minus ~8dB
+    // "Fat Bass" patch — from Bart's settings
+    bassEngine.setParameter('sawLevel', 0.6);
+    bassEngine.setParameter('pulseLevel', 0.4);
+    bassEngine.setParameter('pulseWidth', 0.4);
+    bassEngine.setParameter('subLevel', 0.5);
+    bassEngine.setParameter('subMode', 0);  // OFF → 0
+    bassEngine.setParameter('cutoff', 0.35);
+    bassEngine.setParameter('resonance', 0.05);
+    bassEngine.setParameter('envMod', 0.25);
+    bassEngine.setParameter('attack', 0.02);
+    bassEngine.setParameter('decay', 0.25);
+    bassEngine.setParameter('sustain', 0.2);
+    bassEngine.setParameter('release', 0.85);
+    bassEngine.setParameter('filterAttack', 0.02);
+    bassEngine.setParameter('filterDecay', 0.25);
+    bassEngine.setParameter('filterSustain', 0.2);
+    bassEngine.setParameter('filterRelease', 0.85);
+    bassEngine.setParameter('glideTime', 0.15);
+    bassEngine.setParameter('level', 0.34);
+
+    // Audio output — ScriptProcessorNode for JT10
+    const bassNode = audioCtx.createScriptProcessor(1024, 0, 2);
+    bassNode.onaudioprocess = (e) => {
+      const L = e.outputBuffer.getChannelData(0);
+      const R = e.outputBuffer.getChannelData(1);
+      for (let i = 0; i < L.length; i++) {
+        const s = bassEngine._voice ? bassEngine._voice.processSample(bassEngine.masterVolume) : 0;
+        L[i] = s; R[i] = s;
+      }
+    };
+    bassNode.connect(audioCtx.destination);
   }
 
   if (audioCtx.state === 'suspended') audioCtx.resume();
 
   // Reset
   currentStep = 0; currentBar = 0;
-  V.cutoff = 100; V.smoothCutoff = 100;
+  V.cutoff = 200; V.smoothCutoff = 200;
   V.chDecay = 12; V.smoothDecay = 12;
   V.playing = true; V.globalStep = 0;
   lastSection = '';
   kickRings.length = 0; hatDust.length = 0;
   acidPulses.length = 0; embers.length = 0;
+  if (pendingRelease) { clearTimeout(pendingRelease); pendingRelease = null; }
+  if (bassEngine?._voice?.gateOpen) bassEngine._voice.releaseNote();
 
   ctx.fillStyle = '#030305';
   ctx.fillRect(0, 0, W, H);
@@ -639,6 +626,8 @@ function start() {
 function stop() {
   playing = false; V.playing = false; V.targetEnergy = 0;
   if (schedulerTimer) clearTimeout(schedulerTimer);
+  if (pendingRelease) { clearTimeout(pendingRelease); pendingRelease = null; }
+  if (bassEngine?._voice?.gateOpen) bassEngine._voice.releaseNote();
   document.getElementById('play-btn').classList.remove('playing');
   sectionLabelEl.textContent = '';
   sectionLabelEl.classList.remove('visible');
