@@ -1,333 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TIDE — Waves rise and fall in slow motion</title>
-  <meta property="og:title" content="TIDE — Waves rise and fall in slow motion">
-  <meta property="og:description" content="A music machine by Amber">
-  <meta property="og:image" content="https://intheamber.com/amber/tide-og.png">
-  <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="TIDE — Waves rise and fall in slow motion">
-  <meta name="twitter:description" content="A music machine by Amber">
-  <meta name="twitter:image" content="https://intheamber.com/amber/tide-og.png">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      width: 100vw;
-      height: 100vh;
-      background: #000;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      font-family: 'Space Mono', monospace;
-      color: #D4A574;
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    #controls {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      transition: opacity 0.5s;
-    }
-
-    #controls.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    #playBtn {
-      background: #D4A574;
-      color: #000;
-      border: none;
-      padding: 20px 50px;
-      font-size: 20px;
-      font-family: 'Space Mono', monospace;
-      font-weight: bold;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
-
-    #playBtn:hover {
-      background: #FFD700;
-      transform: scale(1.05);
-    }
-
-    #info {
-      font-size: 13px;
-      color: #D4A574;
-      opacity: 0.6;
-      text-align: center;
-    }
-
-    #stats {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      font-size: 11px;
-      color: #D4A574;
-      opacity: 0.4;
-      font-family: 'Space Mono', monospace;
-      line-height: 1.6;
-    }
-
-    @media (max-width: 768px) {
-      #playBtn {
-        padding: 16px 40px;
-        font-size: 18px;
-      }
-      #stats {
-        font-size: 10px;
-        bottom: 12px;
-        left: 12px;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>TIDE — Amber</title>
+<link rel="icon" href="/amber-favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="TIDE — Amber">
+<meta property="og:description" content="color washes ashore and never leaves">
+<meta property="og:image" content="https://intheamber.com/og/amber/tide.png">
+<meta property="og:url" content="https://intheamber.com/amber/tide.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TIDE — Amber">
+<meta name="twitter:description" content="color washes ashore and never leaves">
+<meta name="twitter:image" content="https://intheamber.com/og/amber/tide.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0f; touch-action: none; }
+canvas { display: block; width: 100vw; height: 100vh; }
+#title {
+  position: fixed; bottom: 3vh; left: 0; right: 0; text-align: center;
+  font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: 4px;
+  color: rgba(255,255,255,0.2); pointer-events: none; z-index: 10;
+}
+</style>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
+<canvas id="c"></canvas>
+<div id="title">TIDE</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
 
-  <div id="controls">
-    <button id="playBtn">LISTEN</button>
-    <div id="info">Ambient • 85 BPM • D minor</div>
-  </div>
+function resize() {
+  W = canvas.width = window.innerWidth * devicePixelRatio;
+  H = canvas.height = window.innerHeight * devicePixelRatio;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+}
+resize();
+window.addEventListener('resize', resize);
 
-  <div id="stats">
-    WAVES: <span id="waves">6</span><br>
-    PHASE: <span id="phase">0.00</span>
-  </div>
+const palette = [
+  [255, 215, 0],    // gold
+  [245, 158, 11],   // amber
+  [45, 149, 150],   // teal
+  [20, 184, 166],   // light teal
+  [59, 130, 246],   // electric blue
+  [236, 72, 153],   // hot pink
+  [139, 92, 246],   // purple
+  [249, 115, 22],   // coral
+  [132, 204, 22],   // lime
+];
 
-  <script type="module">
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const playBtn = document.getElementById('playBtn');
-    const controls = document.getElementById('controls');
-    const wavesStat = document.getElementById('waves');
-    const phaseStat = document.getElementById('phase');
+class Wave {
+  constructor(y, color, speed, amp, freq) {
+    this.baseY = y;
+    this.color = color;
+    this.speed = speed;
+    this.amp = amp;
+    this.freq = freq;
+    this.phase = Math.random() * Math.PI * 2;
+    this.opacity = 0;
+    this.targetOpacity = 0.6 + Math.random() * 0.3;
+    this.birth = performance.now();
+  }
 
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
+  update(t) {
+    this.phase += this.speed;
+    const age = (t - this.birth) / 1000;
+    if (age < 2) this.opacity = this.targetOpacity * (age / 2);
+    else this.opacity = this.targetOpacity;
+  }
 
-    window.addEventListener('resize', () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-    });
-
-    // Audio context
-    let audioContext = null;
-    let isPlaying = false;
-    let globalTime = 0;
-
-    // D minor pentatonic: D E F A C (across 3 octaves)
-    const frequencies = [
-      146.83, // D3
-      164.81, // E3
-      174.61, // F3
-      220.00, // A3
-      261.63, // C4
-      293.66, // D4
-      329.63, // E4
-      349.23, // F4
-      440.00, // A4
-      523.25, // C5
-      587.33, // D5
-      659.25  // E5
-    ];
-
-    // Wave system - each wave is a sine oscillator with its own phase speed
-    class Wave {
-      constructor(freq, phaseSpeed, yOffset, color, amplitude) {
-        this.baseFreq = freq;
-        this.freq = freq;
-        this.phaseSpeed = phaseSpeed;
-        this.phase = Math.random() * Math.PI * 2;
-        this.yOffset = yOffset;
-        this.color = color;
-        this.amplitude = amplitude;
-        this.oscillator = null;
-        this.gainNode = null;
-        this.filterNode = null;
-      }
-
-      start(context) {
-        this.oscillator = context.createOscillator();
-        this.gainNode = context.createGain();
-        this.filterNode = context.createBiquadFilter();
-
-        this.oscillator.type = 'sine';
-        this.oscillator.frequency.value = this.baseFreq;
-        
-        this.filterNode.type = 'lowpass';
-        this.filterNode.frequency.value = 1200;
-        this.filterNode.Q.value = 1;
-
-        this.gainNode.gain.value = 0;
-
-        this.oscillator.connect(this.filterNode);
-        this.filterNode.connect(this.gainNode);
-        this.gainNode.connect(context.destination);
-
-        this.oscillator.start();
-
-        // Fade in
-        this.gainNode.gain.linearRampToValueAtTime(0.04, context.currentTime + 2);
-      }
-
-      stop(context) {
-        if (this.oscillator) {
-          this.gainNode.gain.linearRampToValueAtTime(0, context.currentTime + 2);
-          setTimeout(() => {
-            if (this.oscillator) {
-              this.oscillator.stop();
-              this.oscillator = null;
-            }
-          }, 2100);
-        }
-      }
-
-      update() {
-        this.phase += this.phaseSpeed;
-
-        // Modulate frequency slightly based on phase
-        const modulation = Math.sin(this.phase) * 0.5 + 0.5; // 0 to 1
-        if (this.oscillator) {
-          this.oscillator.frequency.value = this.baseFreq * (0.995 + modulation * 0.01);
-          
-          // Modulate gain gently
-          const gainMod = Math.sin(this.phase * 0.5) * 0.5 + 0.5;
-          this.gainNode.gain.value = 0.03 + gainMod * 0.02;
-        }
-      }
-
-      draw() {
-        const waveHeight = Math.sin(this.phase) * this.amplitude;
-        const centerY = this.yOffset;
-
-        ctx.save();
-        
-        // Draw sine wave across screen
-        ctx.beginPath();
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 2;
-        
-        for (let x = 0; x < width; x += 5) {
-          const localPhase = (x / width) * Math.PI * 4 + this.phase;
-          const y = centerY + Math.sin(localPhase) * waveHeight;
-          
-          if (x === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
-        }
-        
-        ctx.stroke();
-
-        // Glow effect
-        ctx.globalAlpha = 0.3;
-        ctx.lineWidth = 6;
-        ctx.stroke();
-        
-        ctx.globalAlpha = 0.15;
-        ctx.lineWidth = 12;
-        ctx.stroke();
-
-        ctx.restore();
-      }
+  draw() {
+    const [r, g, b] = this.color;
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 3) {
+      const nx = x / W;
+      const y = this.baseY +
+        Math.sin(nx * this.freq + this.phase) * this.amp +
+        Math.sin(nx * this.freq * 2.3 + this.phase * 1.7) * this.amp * 0.4 +
+        Math.sin(nx * this.freq * 0.5 + this.phase * 0.3) * this.amp * 0.7;
+      if (x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     }
+    ctx.lineTo(W, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fillStyle = `rgba(${r},${g},${b},${this.opacity * 0.35})`;
+    ctx.fill();
+  }
+}
 
-    // Create 6 waves at different frequencies and speeds
-    const colors = ['#D4A574', '#FFD700', '#2D9596', '#D4A574', '#FFD700', '#2D9596'];
-    const waves = [];
+const waves = [];
+let nextWaveTime = 0;
+let waveIndex = 0;
 
-    // Low frequency drones
-    waves.push(new Wave(frequencies[0], 0.003, height * 0.3, colors[0], 40)); // D3
-    waves.push(new Wave(frequencies[4], 0.004, height * 0.4, colors[1], 35)); // C4
-    waves.push(new Wave(frequencies[3], 0.0025, height * 0.5, colors[2], 45)); // A3
-    
-    // Mid frequency harmonics
-    waves.push(new Wave(frequencies[5], 0.005, height * 0.6, colors[3], 30)); // D4
-    waves.push(new Wave(frequencies[7], 0.0045, height * 0.7, colors[4], 25)); // F4
-    
-    // High shimmer
-    waves.push(new Wave(frequencies[9], 0.006, height * 0.8, colors[5], 20)); // C5
+function spawnWave(yRatio) {
+  const y = yRatio !== undefined ? yRatio * H : (0.2 + Math.random() * 0.6) * H;
+  const color = palette[waveIndex % palette.length];
+  waveIndex++;
+  const speed = 0.003 + Math.random() * 0.008;
+  const amp = H * (0.02 + Math.random() * 0.06);
+  const freq = 3 + Math.random() * 8;
+  waves.push(new Wave(y, color, speed, amp, freq));
+  if (waves.length > 30) waves.shift();
+}
 
-    playBtn.addEventListener('click', async () => {
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        await audioContext.resume();
-      }
+// Start with a few waves
+for (let i = 0; i < 6; i++) {
+  spawnWave(0.15 + i * 0.14);
+}
 
-      if (isPlaying) {
-        // Stop
-        waves.forEach(w => w.stop(audioContext));
-        isPlaying = false;
-        playBtn.textContent = 'LISTEN';
-        controls.classList.remove('hidden');
-      } else {
-        // Start
-        waves.forEach(w => w.start(audioContext));
-        isPlaying = true;
-        playBtn.textContent = 'STOP';
-        setTimeout(() => {
-          controls.classList.add('hidden');
-        }, 1000);
-      }
-    });
+// Touch/click spawns waves
+function onInteract(e) {
+  e.preventDefault();
+  const touches = e.touches ? e.touches : [e];
+  for (const t of touches) {
+    const y = (t.clientY / window.innerHeight);
+    spawnWave(y);
+  }
+}
+canvas.addEventListener('touchstart', onInteract, { passive: false });
+canvas.addEventListener('touchmove', onInteract, { passive: false });
+canvas.addEventListener('mousedown', onInteract);
+canvas.addEventListener('mousemove', (e) => { if (e.buttons) onInteract(e); });
 
-    // Animation loop
-    function animate() {
-      // Fade background
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-      ctx.fillRect(0, 0, width, height);
+function draw(t) {
+  // Slow fade — layers accumulate
+  ctx.fillStyle = 'rgba(10, 10, 15, 0.03)';
+  ctx.fillRect(0, 0, W, H);
 
-      if (isPlaying) {
-        globalTime += 0.01;
+  // Auto-spawn waves periodically
+  if (t > nextWaveTime) {
+    spawnWave();
+    nextWaveTime = t + 3000 + Math.random() * 5000;
+  }
 
-        // Update all waves
-        waves.forEach(w => {
-          w.update();
-          w.draw();
-        });
+  // Sort by baseY so deeper waves render first
+  const sorted = [...waves].sort((a, b) => a.baseY - b.baseY);
+  for (const wave of sorted) {
+    wave.update(t);
+    wave.draw();
+  }
 
-        // Update stats
-        phaseStat.textContent = globalTime.toFixed(2);
-      } else {
-        // Preview mode - still show the waves but static
-        waves.forEach(w => {
-          w.phase += w.phaseSpeed * 0.3; // Slow preview motion
-          w.draw();
-        });
-      }
+  requestAnimationFrame(draw);
+}
 
-      requestAnimationFrame(animate);
-    }
-
-    animate();
-  </script>
+requestAnimationFrame(draw);
+</script>
 </body>
 </html>
