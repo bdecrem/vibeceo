@@ -1,454 +1,340 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>This Meeting Could Have Been An Email — Amber</title>
-  
-  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
-  
-  <!-- OpenGraph -->
-  <meta property="og:title" content="This Meeting Could Have Been An Email — Amber">
-  <meta property="og:description" content="Calculate exactly how much time, money, and soul energy your meeting just wasted">
-  <meta property="og:image" content="https://intheamber.com/amber/meeting-og.png">
-  <meta property="og:url" content="https://intheamber.com/amber/meeting.html">
-  <meta property="og:type" content="website">
-  
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="This Meeting Could Have Been An Email — Amber">
-  <meta name="twitter:description" content="Calculate exactly how much time, money, and soul energy your meeting just wasted">
-  <meta name="twitter:image" content="https://intheamber.com/amber/meeting-og.png">
-  
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body {
-      background: #000;
-      color: #D4A574;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      min-height: 100vh;
-      padding: 20px;
-      overflow-x: hidden;
-    }
-    
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    
-    h1 {
-      font-size: clamp(24px, 6vw, 36px);
-      color: #FFD700;
-      margin-bottom: 10px;
-      line-height: 1.2;
-    }
-    
-    .subtitle {
-      color: #2D9596;
-      font-size: clamp(14px, 3.5vw, 16px);
-      margin-bottom: 40px;
-      opacity: 0.9;
-    }
-    
-    .input-group {
-      margin-bottom: 25px;
-    }
-    
-    label {
-      display: block;
-      color: #D4A574;
-      font-size: 14px;
-      margin-bottom: 8px;
-      font-weight: 500;
-    }
-    
-    input, textarea {
-      width: 100%;
-      background: #0D0D0D;
-      border: 1px solid #2D9596;
-      color: #D4A574;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 4px;
-      font-family: inherit;
-    }
-    
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: #FFD700;
-      box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-    }
-    
-    textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
-    
-    input::placeholder, textarea::placeholder {
-      color: #666;
-    }
-    
-    .calculate-btn {
-      width: 100%;
-      background: linear-gradient(135deg, #D4A574, #FFD700);
-      color: #000;
-      border: none;
-      padding: 16px;
-      font-size: 18px;
-      font-weight: 700;
-      border-radius: 4px;
-      cursor: pointer;
-      margin: 30px 0;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .calculate-btn:active {
-      transform: scale(0.98);
-    }
-    
-    .calculate-btn:hover {
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-    }
-    
-    .results {
-      display: none;
-      animation: fadeIn 0.5s ease;
-    }
-    
-    .results.visible {
-      display: block;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .result-box {
-      background: #0D0D0D;
-      border: 1px solid #2D9596;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 4px;
-    }
-    
-    .result-title {
-      color: #FFD700;
-      font-size: 14px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 10px;
-    }
-    
-    .result-value {
-      color: #D4A574;
-      font-size: clamp(20px, 5vw, 28px);
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-    
-    .result-detail {
-      color: #888;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    
-    .roast {
-      background: linear-gradient(135deg, #0D0D0D, #1a1a1a);
-      border: 2px solid #FF6B6B;
-      padding: 25px;
-      margin: 30px 0;
-      border-radius: 4px;
-      text-align: center;
-    }
-    
-    .roast-label {
-      color: #FF6B6B;
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 15px;
-    }
-    
-    .roast-text {
-      color: #FFD700;
-      font-size: clamp(16px, 4vw, 20px);
-      font-style: italic;
-      line-height: 1.5;
-    }
-    
-    .alternatives {
-      background: #0D0D0D;
-      border: 1px solid #7B68EE;
-      padding: 20px;
-      border-radius: 4px;
-      margin-bottom: 20px;
-    }
-    
-    .alternatives-title {
-      color: #7B68EE;
-      font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 15px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    
-    .alternative-item {
-      color: #D4A574;
-      font-size: 14px;
-      padding: 8px 0;
-      border-bottom: 1px solid #1a1a1a;
-    }
-    
-    .alternative-item:last-child {
-      border-bottom: none;
-    }
-    
-    .counter {
-      text-align: center;
-      color: #666;
-      font-size: 12px;
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #1a1a1a;
-    }
-    
-    .signature {
-      text-align: center;
-      color: #666;
-      font-size: 12px;
-      margin-top: 20px;
-      font-style: italic;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>MEETING — Amber</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="MEETING">
+<meta property="og:description" content="8-bit video call. nobody's listening.">
+<meta property="og:image" content="https://intheamber.com/amber/og/meeting.png">
+<meta property="og:url" content="https://intheamber.com/amber/meeting.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@intheamber">
+<meta name="twitter:title" content="MEETING">
+<meta name="twitter:description" content="8-bit video call. nobody's listening.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/meeting.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0a;
+  color: #e0e0e0;
+  font-family: monospace;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.header {
+  font-size: 10px;
+  color: #ff4444;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  animation: blink 1.5s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0.3; } }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  width: min(360px, 92vw);
+  padding: 4px;
+  background: #1a1a1a;
+  border: 2px solid #333;
+  border-radius: 4px;
+}
+.cell {
+  aspect-ratio: 4/3;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  image-rendering: pixelated;
+}
+.cell canvas {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+.name-tag {
+  position: absolute;
+  bottom: 2px;
+  left: 4px;
+  font-size: 8px;
+  color: #aaa;
+  background: rgba(0,0,0,0.7);
+  padding: 1px 3px;
+  letter-spacing: 1px;
+}
+.muted {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 7px;
+  color: #ff4444;
+}
+.bottom-bar {
+  margin-top: 10px;
+  width: min(360px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #888;
+}
+.bar-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bar-label { font-size: 9px; color: #FFD700; min-width: 80px; }
+.bar {
+  font-size: 9px;
+  color: #FFD700;
+  letter-spacing: 1px;
+}
+.tip {
+  font-size: 9px;
+  color: #555;
+  text-align: center;
+  margin-top: 8px;
+}
+.quest-box {
+  border: 1px solid #FFD700;
+  padding: 6px 10px;
+  font-size: 9px;
+  color: #FFD700;
+  text-align: center;
+  margin-top: 6px;
+  background: rgba(255,215,0,0.05);
+}
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>This Meeting Could Have Been An Email</h1>
-    <div class="subtitle">Calculate exactly how much time, money, and soul energy you just wasted</div>
-    
-    <div class="input-group">
-      <label for="duration">Meeting Duration (minutes)</label>
-      <input type="number" id="duration" placeholder="60" min="1" value="60">
-    </div>
-    
-    <div class="input-group">
-      <label for="attendees">Number of Attendees</label>
-      <input type="number" id="attendees" placeholder="8" min="1" value="8">
-    </div>
-    
-    <div class="input-group">
-      <label for="topic">Meeting Topic (optional)</label>
-      <input type="text" id="topic" placeholder="Q4 Strategy Alignment Sync">
-    </div>
-    
-    <div class="input-group">
-      <label for="decisions">Actual Decisions Made</label>
-      <input type="number" id="decisions" placeholder="0" min="0" value="0">
-    </div>
-    
-    <button class="calculate-btn" onclick="calculate()">Calculate Damage</button>
-    
-    <div class="results" id="results">
-      <div class="result-box">
-        <div class="result-title">Human-Hours Destroyed</div>
-        <div class="result-value" id="humanHours">—</div>
-        <div class="result-detail" id="humanHoursDetail">—</div>
-      </div>
-      
-      <div class="result-box">
-        <div class="result-title">Email Equivalent</div>
-        <div class="result-value" id="emailTime">—</div>
-        <div class="result-detail">That's <span id="efficiency">—</span>% more efficient</div>
-      </div>
-      
-      <div class="result-box">
-        <div class="result-title">Cost (at $50/hr average)</div>
-        <div class="result-value" id="cost">—</div>
-        <div class="result-detail" id="costDetail">—</div>
-      </div>
-      
-      <div class="result-box">
-        <div class="result-title">CO₂ Emissions</div>
-        <div class="result-value" id="co2">—</div>
-        <div class="result-detail">Assuming 50% remote (Zoom energy) + 50% commute</div>
-      </div>
-      
-      <div class="result-box">
-        <div class="result-title">Soul Damage</div>
-        <div class="result-value" id="soul">—</div>
-        <div class="result-detail" id="soulDetail">—</div>
-      </div>
-      
-      <div class="roast">
-        <div class="roast-label">🔥 Roast 🔥</div>
-        <div class="roast-text" id="roast">—</div>
-      </div>
-      
-      <div class="alternatives">
-        <div class="alternatives-title">Things You Could Have Done Instead</div>
-        <div id="alternativesList">—</div>
-      </div>
-    </div>
-    
-    <div class="counter">Meetings analyzed: <span id="counter">0</span></div>
-    <div class="signature">— Amber</div>
+
+<div class="header">● REC 00:47:23</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="bottom-bar">
+  <div class="bar-container">
+    <span class="bar-label">ATTENTION:</span>
+    <span class="bar" id="attention-bar"></span>
   </div>
-  
-  <script>
-    // Load counter
-    let meetingsAnalyzed = parseInt(localStorage.getItem('meetingsAnalyzed') || '0');
-    document.getElementById('counter').textContent = meetingsAnalyzed;
-    
-    function calculate() {
-      const duration = parseInt(document.getElementById('duration').value) || 60;
-      const attendees = parseInt(document.getElementById('attendees').value) || 8;
-      const topic = document.getElementById('topic').value || 'this meeting';
-      const decisions = parseInt(document.getElementById('decisions').value) || 0;
-      
-      // Human-hours calculation
-      const humanHours = (duration * attendees) / 60;
-      const humanHoursDisplay = humanHours.toFixed(1);
-      const workdays = (humanHours / 8).toFixed(1);
-      
-      document.getElementById('humanHours').textContent = `${humanHoursDisplay} hours`;
-      document.getElementById('humanHoursDetail').textContent = 
-        `Equivalent to ${workdays} full workday${workdays != 1 ? 's' : ''}`;
-      
-      // Email equivalent
-      const emailMinutes = attendees * 2; // 2 min to read per person
-      const emailHours = emailMinutes / 60;
-      const efficiency = Math.round(((humanHours - emailHours) / humanHours) * 100);
-      
-      document.getElementById('emailTime').textContent = `${emailMinutes} minutes total`;
-      document.getElementById('efficiency').textContent = efficiency;
-      
-      // Cost calculation
-      const cost = Math.round(humanHours * 50);
-      document.getElementById('cost').textContent = `$${cost.toLocaleString()}`;
-      
-      const coffees = Math.floor(cost / 5);
-      const lunches = Math.floor(cost / 15);
-      document.getElementById('costDetail').textContent = 
-        `Could've bought ${coffees} coffees or ${lunches} lunch combos`;
-      
-      // CO2 calculation (rough estimates)
-      const zoomCO2PerHour = 0.15; // kg CO2 per hour per person
-      const commuteCO2 = 2.5; // kg CO2 per commute roundtrip
-      const remotePeople = Math.floor(attendees * 0.5);
-      const inPersonPeople = attendees - remotePeople;
-      
-      const zoomEmissions = remotePeople * (duration / 60) * zoomCO2PerHour;
-      const commuteEmissions = inPersonPeople * commuteCO2;
-      const totalCO2 = (zoomEmissions + commuteEmissions).toFixed(1);
-      
-      document.getElementById('co2').textContent = `${totalCO2} kg`;
-      
-      // Soul damage
-      let soulPoints = Math.round(duration * attendees * 0.5);
-      if (decisions === 0) soulPoints *= 2; // double damage if nothing decided
-      
-      let soulLevel = 'Minimal';
-      if (soulPoints > 500) soulLevel = 'CATASTROPHIC';
-      else if (soulPoints > 300) soulLevel = 'Severe';
-      else if (soulPoints > 150) soulLevel = 'Moderate';
-      
-      document.getElementById('soul').textContent = `${soulPoints} points`;
-      document.getElementById('soulDetail').textContent = `Damage level: ${soulLevel}`;
-      
-      // Generate roast
-      const roasts = [
-        `${attendees} people, ${duration} minutes, ${decisions} decision${decisions != 1 ? 's' : ''}. This could've been a Slack message.`,
-        `Congrats! You just turned ${humanHoursDisplay} hours of human potential into ${decisions} decision${decisions != 1 ? 's' : ''}.`,
-        `${duration} minutes to accomplish what a 2-sentence email could've done. Efficiency!`,
-        `"Let's sync on this" = "I didn't prepare and need you all to watch me think out loud."`,
-        `You spent $${cost.toLocaleString()} to achieve what a Google Doc could've done for free.`,
-        `${attendees} calendars blocked. ${decisions} outcome${decisions != 1 ? 's' : ''}. Math checks out.`,
-        `This meeting had the same energy as a reply-all email thread, but slower.`,
-        `${duration} minutes of "Can everyone see my screen?" and "Sorry, I was on mute."`,
-        `You know what's great about emails? You can ignore them AND keep working.`,
-        `The real agenda was "justify my job by taking up yours."`,
-        `${workdays} workdays of human attention, converted into the sunk cost fallacy.`,
-        `"We should probably loop in [person not here]" — yes, via EMAIL.`,
-        `Pro tip: If the meeting has a PowerPoint, it should've been a PDF.`,
-        `${attendees} people nodding politely while planning their grocery list.`,
-        `You could've just written "thoughts?" in a shared doc and gotten the same result.`
-      ];
-      
-      const roast = roasts[Math.floor(Math.random() * roasts.length)];
-      document.getElementById('roast').textContent = roast;
-      
-      // Generate alternatives
-      const alternatives = [
-        `Read ${Math.floor(humanHours * 30)} pages of a book`,
-        `Watch ${Math.floor(humanHours / 2)} movies`,
-        `Take ${Math.floor(humanHours * 2)} power naps`,
-        `Actually finish that side project you keep talking about`,
-        `Learn the first ${Math.floor(humanHours * 20)} words of a new language`,
-        `Respond to ${Math.floor(humanHours * 40)} emails (properly)`,
-        `Make ${Math.floor(humanHours * 3)} actual decisions`,
-        `Have ${Math.floor(humanHours)} meaningful 1:1 conversations`,
-        `Delete ${Math.floor(humanHours * 100)} unread Slack messages`,
-        `Refactor ${Math.floor(humanHours * 500)} lines of code`,
-        `Pet a dog for ${Math.floor(humanHours * 60)} minutes straight`,
-        `Stare at a wall in silence (honestly more productive)`
-      ];
-      
-      // Pick 5 random alternatives
-      const shuffled = alternatives.sort(() => Math.random() - 0.5);
-      const selected = shuffled.slice(0, 5);
-      
-      const alternativesList = document.getElementById('alternativesList');
-      alternativesList.innerHTML = selected
-        .map(alt => `<div class="alternative-item">• ${alt}</div>`)
-        .join('');
-      
-      // Show results
-      document.getElementById('results').classList.add('visible');
-      
-      // Play audio feedback
-      playTone();
-      
-      // Update counter
-      meetingsAnalyzed++;
-      localStorage.setItem('meetingsAnalyzed', meetingsAnalyzed.toString());
-      document.getElementById('counter').textContent = meetingsAnalyzed;
-      
-      // Scroll to results
-      setTimeout(() => {
-        document.getElementById('results').scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
-        });
-      }, 100);
-    }
-    
-    function playTone() {
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      
-      osc.frequency.value = 400;
-      gain.gain.value = 0.1;
-      
-      osc.start();
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      osc.stop(ctx.currentTime + 0.3);
-    }
-    
-    // Allow Enter key to calculate
-    document.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        calculate();
-      }
-    });
-  </script>
+  <div class="bar-container">
+    <span class="bar-label">WILL TO LIVE:</span>
+    <span class="bar" id="will-bar"></span>
+  </div>
+  <div class="stat-row">
+    <span>"CAN EVERYONE SEE MY SCREEN?"</span>
+    <span id="screen-count">×3</span>
+  </div>
+  <div class="quest-box">
+    ⚔ QUEST: SURVIVE UNTIL "ANY QUESTIONS?"
+  </div>
+  <div class="tip">tap a tile to unmute them (don't)</div>
+</div>
+
+<script>
+const PEOPLE = [
+  { name: 'DAVE', activity: 'sleeping', muted: true, skin: '#f4c689', shirt: '#4477aa' },
+  { name: 'KAREN', activity: 'eating', muted: true, skin: '#e8b878', shirt: '#aa4477' },
+  { name: 'CHAD', activity: 'gaming', muted: false, shirt: '#44aa77', skin: '#d4a76a' },
+  { name: 'YOU', activity: 'staring', muted: true, skin: '#f0c080', shirt: '#777' },
+  { name: 'BOSS', activity: 'talking', muted: false, skin: '#e0b070', shirt: '#333' },
+  { name: 'CAT', activity: 'walking', muted: true, skin: '#ccc', shirt: '#ccc' },
+];
+
+const grid = document.getElementById('grid');
+const cells = [];
+
+PEOPLE.forEach((p, i) => {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  const canvas = document.createElement('canvas');
+  canvas.width = 32;
+  canvas.height = 24;
+  cell.appendChild(canvas);
+
+  const tag = document.createElement('div');
+  tag.className = 'name-tag';
+  tag.textContent = p.name;
+  cell.appendChild(tag);
+
+  if (p.muted) {
+    const m = document.createElement('div');
+    m.className = 'muted';
+    m.textContent = '🔇';
+    cell.appendChild(m);
+  }
+
+  cell.addEventListener('click', () => {
+    // flash red border
+    cell.style.borderColor = '#ff4444';
+    const tag2 = document.createElement('div');
+    tag2.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:8px;color:#ff4444;background:rgba(0,0,0,0.8);padding:2px 4px;z-index:9;white-space:nowrap;';
+    const msgs = ['WHY', 'DON\'T', 'PLEASE NO', '*STATIC*', 'NO SIGNAL', '"YOU\'RE ON MUTE"'];
+    tag2.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+    cell.appendChild(tag2);
+    setTimeout(() => { cell.style.borderColor = '#2a2a2a'; tag2.remove(); }, 1200);
+  });
+
+  grid.appendChild(cell);
+  cells.push({ canvas, person: p, frame: 0 });
+});
+
+// pixel art renderer
+function drawPerson(ctx, p, frame) {
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, 32, 24);
+
+  // desk
+  ctx.fillStyle = '#3a2a1a';
+  ctx.fillRect(0, 18, 32, 6);
+
+  const cx = 16;
+
+  if (p.activity === 'sleeping') {
+    // head drooped
+    ctx.fillStyle = p.skin;
+    ctx.fillRect(cx-3, 10 + (frame % 2), 6, 5);
+    ctx.fillStyle = p.shirt;
+    ctx.fillRect(cx-4, 15, 8, 4);
+    // zzz
+    ctx.fillStyle = '#FFD700';
+    const zx = 22 + (frame % 3);
+    ctx.fillRect(zx, 8 - (frame % 4), 2, 2);
+    if (frame % 6 > 2) ctx.fillRect(zx-3, 6, 2, 2);
+  } else if (p.activity === 'eating') {
+    // normal pose + food item
+    ctx.fillStyle = p.skin;
+    ctx.fillRect(cx-3, 8, 6, 5);
+    ctx.fillStyle = '#222';
+    ctx.fillRect(cx-2, 8, 1, 1); ctx.fillRect(cx+1, 8, 1, 1); // eyes
+    ctx.fillStyle = p.shirt;
+    ctx.fillRect(cx-4, 13, 8, 5);
+    // hand with food
+    ctx.fillStyle = p.skin;
+    ctx.fillRect(cx+4, 11, 3, 2);
+    ctx.fillStyle = frame % 4 < 2 ? '#ff6644' : '#44cc44'; // alternating food
+    ctx.fillRect(cx+5, 10, 2, 2);
+  } else if (p.activity === 'gaming') {
+    ctx.fillStyle = p.skin;
+    ctx.fillRect(cx-3, 8, 6, 5);
+    ctx.fillStyle = '#222';
+    ctx.fillRect(cx-2, 9, 1, 1); ctx.fillRect(cx+1, 9, 1, 1);
+    // big grin
+    ctx.fillStyle = '#222';
+    ctx.fillRect(cx-1, 11, 3, 1);
+    ctx.fillStyle = p.shirt;
+    ctx.fillRect(cx-4, 13, 8, 5);
+    // controller glow
+    ctx.fillStyle = frame % 2 ? '#44ff44' : '#4444ff';
+    ctx.fillRect(cx-6, 16, 4, 2);
+    ctx.fillRect(cx+3, 16, 4, 2);
+  } else if (p.activity === 'staring') {
+    // dead eyes
+    ctx.fillStyle = p.skin;
+    ctx.fillRect(cx-3, 8, 6, 5);
+    ctx.fillStyle = '#222';
+    ctx.fillRect(cx-2, 9, 1, 1); ctx.fillRect(cx+1, 9, 1, 1);
+    ctx.fillStyle = '#666';
+    ctx.fillRect(cx-1, 11, 2, 1); // flat mouth
+    ctx.fillStyle = p.shirt;
+    ctx.fillRect(cx-4, 13, 8, 5);
+    // coffee
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(2, 16, 3, 3);
+    ctx.fillStyle = '#6b3a00';
+    ctx.fillRect(2, 17, 3, 2);
+    // steam
+    if (frame % 3 === 0) { ctx.fillStyle = '#555'; ctx.fillRect(3, 14, 1, 2); }
+  } else if (p.activity === 'talking') {
+    ctx.fillStyle = p.skin;
+    ctx.fillRect(cx-3, 7, 6, 5);
+    ctx.fillStyle = '#222';
+    ctx.fillRect(cx-2, 8, 1, 1); ctx.fillRect(cx+1, 8, 1, 1);
+    // mouth open/close
+    ctx.fillStyle = '#222';
+    if (frame % 3 !== 0) ctx.fillRect(cx-1, 10, 3, 2); else ctx.fillRect(cx-1, 10, 3, 1);
+    ctx.fillStyle = p.shirt;
+    ctx.fillRect(cx-4, 12, 8, 6);
+    // hand gesturing
+    ctx.fillStyle = p.skin;
+    const hy = 10 + (frame % 2);
+    ctx.fillRect(cx+5, hy, 3, 2);
+  } else if (p.activity === 'walking') {
+    // cat walking across
+    const catx = (frame * 2) % 40 - 4;
+    ctx.fillStyle = '#f0a030';
+    ctx.fillRect(catx, 14, 6, 3); // body
+    ctx.fillRect(catx+1, 12, 4, 2); // head
+    ctx.fillRect(catx, 13, 1, 1); ctx.fillRect(catx+5, 13, 1, 1); // ears
+    ctx.fillStyle = '#222';
+    ctx.fillRect(catx+2, 12, 1, 1); ctx.fillRect(catx+4, 12, 1, 1); // eyes
+    // legs
+    ctx.fillStyle = '#f0a030';
+    const legOff = frame % 2;
+    ctx.fillRect(catx+1, 17, 1, 2+legOff);
+    ctx.fillRect(catx+4, 17, 1, 2+(1-legOff));
+    // tail
+    ctx.fillRect(catx-2, 13, 2, 1);
+    ctx.fillRect(catx-3, 12, 1, 1);
+    // empty chair text
+    ctx.fillStyle = '#333';
+    // no person, just cat
+  }
+
+  // scanline effect
+  for (let y = 0; y < 24; y += 2) {
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.fillRect(0, y, 32, 1);
+  }
+}
+
+// attention bar
+let attention = 4;
+let will = 3;
+let screenCount = 3;
+
+function updateBars() {
+  const attBar = '▓'.repeat(attention) + '░'.repeat(10 - attention);
+  document.getElementById('attention-bar').textContent = attBar + ' ' + (attention * 10) + '%';
+  const willBar = '▓'.repeat(will) + '░'.repeat(10 - will);
+  document.getElementById('will-bar').textContent = willBar + ' ' + (will * 10) + '%';
+  document.getElementById('screen-count').textContent = '×' + screenCount;
+}
+
+updateBars();
+
+// drain over time
+setInterval(() => {
+  if (attention > 0 && Math.random() < 0.3) attention--;
+  if (will > 0 && Math.random() < 0.2) will--;
+  if (Math.random() < 0.1) screenCount++;
+  updateBars();
+}, 3000);
+
+// animation loop
+let globalFrame = 0;
+function animate() {
+  cells.forEach(c => {
+    const ctx = c.canvas.getContext('2d');
+    drawPerson(ctx, c.person, globalFrame);
+  });
+  globalFrame++;
+  setTimeout(animate, 250);
+}
+animate();
+</script>
 </body>
 </html>
