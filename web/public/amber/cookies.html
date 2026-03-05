@@ -3,23 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cookie Policy — Amber</title>
+  <title>COOKIE CONSENT — Amber</title>
   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
   
   <!-- OpenGraph -->
-  <meta property="og:title" content="Cookie Policy — Amber">
-  <meta property="og:description" content="Every website has one. This one gets progressively more honest.">
+  <meta property="og:title" content="COOKIE CONSENT — Amber">
+  <meta property="og:description" content="This website uses cookies to track your existential dread and monetize your anxiety">
   <meta property="og:image" content="https://intheamber.com/amber/cookies-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/cookies.html">
   <meta property="og:type" content="website">
   
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Cookie Policy — Amber">
-  <meta name="twitter:description" content="Every website has one. This one gets progressively more honest.">
+  <meta name="twitter:title" content="COOKIE CONSENT — Amber">
+  <meta name="twitter:description" content="This website uses cookies to track your existential dread and monetize your anxiety">
   <meta name="twitter:image" content="https://intheamber.com/amber/cookies-og.png">
-  
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   
   <style>
     * {
@@ -31,259 +29,584 @@
     body {
       background: #000;
       color: #D4A574;
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    /* Blocked content behind popup */
+    .blocked-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      filter: blur(4px);
+      opacity: 0.3;
+    }
+    
+    .blocked-content h1 {
+      font-size: clamp(24px, 5vw, 48px);
+      margin-bottom: 20px;
+      color: #D4A574;
+    }
+    
+    .blocked-content p {
+      font-size: clamp(14px, 3vw, 20px);
+      color: #2D9596;
+    }
+    
+    /* Cookie popup overlay */
+    .cookie-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
       display: flex;
       align-items: center;
       justify-content: center;
+      z-index: 9999;
       padding: 20px;
-      overflow: hidden;
     }
     
-    .container {
-      max-width: 600px;
-      width: 100%;
+    .cookie-overlay.hidden {
+      display: none;
+    }
+    
+    .cookie-popup {
       background: #0D0D0D;
       border: 2px solid #D4A574;
       border-radius: 8px;
-      padding: 30px;
-      box-shadow: 0 0 40px rgba(212, 165, 116, 0.15);
-      position: relative;
-      animation: fadeIn 0.5s ease;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
     }
     
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    h1 {
-      font-family: 'Space Mono', monospace;
-      font-size: 24px;
-      margin-bottom: 20px;
+    .cookie-popup h2 {
+      font-size: clamp(20px, 4vw, 28px);
+      margin-bottom: 16px;
       color: #FFD700;
-      text-align: center;
     }
     
-    .policy-text {
-      font-size: 16px;
+    .intro-text {
+      font-size: clamp(14px, 2.5vw, 16px);
       line-height: 1.6;
-      margin-bottom: 30px;
-      min-height: 200px;
+      margin-bottom: 24px;
       color: #D4A574;
     }
     
-    .policy-text p {
-      margin-bottom: 15px;
+    /* Categories */
+    .category {
+      background: #000;
+      border: 1px solid #2D9596;
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 12px;
     }
     
-    .highlight {
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .category-header input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    
+    .category-header input[type="checkbox"]:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
+    .category-header label {
+      font-size: clamp(14px, 2.5vw, 16px);
+      font-weight: bold;
       color: #FFD700;
-      font-weight: 600;
+      cursor: pointer;
+      flex-grow: 1;
     }
     
-    .warning {
+    .category-description {
+      font-size: clamp(12px, 2vw, 14px);
+      line-height: 1.5;
+      color: #D4A574;
+      margin-left: 36px;
+      margin-top: 8px;
+    }
+    
+    .category-note {
+      font-size: clamp(11px, 1.8vw, 13px);
       color: #7B68EE;
       font-style: italic;
+      margin-left: 36px;
+      margin-top: 4px;
     }
     
-    .button-container {
+    /* Buttons */
+    .buttons {
       display: flex;
-      gap: 15px;
       flex-wrap: wrap;
+      gap: 12px;
+      margin: 24px 0 16px 0;
     }
     
-    button {
+    .buttons button {
       flex: 1;
-      min-width: 120px;
-      padding: 15px 25px;
-      font-family: 'Space Mono', monospace;
-      font-size: 16px;
-      font-weight: 700;
-      border: 2px solid #D4A574;
+      min-width: 140px;
+      padding: 14px 20px;
+      font-size: clamp(13px, 2.2vw, 15px);
+      font-weight: bold;
+      border: 2px solid;
       border-radius: 4px;
       cursor: pointer;
-      transition: all 0.3s ease;
-      background: transparent;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    
+    #reject-all {
+      background: #333;
+      color: #666;
+      border-color: #444;
+      cursor: not-allowed;
+      position: relative;
+    }
+    
+    #reject-all:hover::after {
+      content: 'Sorry, consciousness is mandatory';
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
       color: #D4A574;
+      padding: 8px 12px;
+      border: 1px solid #D4A574;
+      border-radius: 4px;
+      white-space: nowrap;
+      font-size: 12px;
+      margin-bottom: 8px;
+      z-index: 10;
     }
     
-    #acceptBtn {
-      background: #D4A574;
-      color: #000;
-    }
-    
-    #acceptBtn:active {
-      transform: scale(0.95);
+    #accept-all {
       background: #FFD700;
+      color: #000;
+      border-color: #FFD700;
     }
     
-    #declineBtn:active {
-      transform: scale(0.95);
-      border-color: #7B68EE;
+    #accept-all:hover {
+      background: #D4A574;
+      border-color: #D4A574;
+      transform: scale(1.02);
+    }
+    
+    #save-preferences {
+      background: #2D9596;
+      color: #000;
+      border-color: #2D9596;
+    }
+    
+    #save-preferences:hover {
+      background: #FFD700;
+      border-color: #FFD700;
+      transform: scale(1.02);
+    }
+    
+    .fine-print {
+      font-size: clamp(10px, 1.8vw, 12px);
+      line-height: 1.5;
+      color: #666;
+      margin-top: 16px;
+    }
+    
+    .fine-print a {
+      color: #2D9596;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    
+    /* Result screen */
+    .result-screen {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    
+    .result-screen.visible {
+      display: block;
+    }
+    
+    .result-screen h1 {
+      font-size: clamp(32px, 6vw, 64px);
+      color: #FFD700;
+      margin-bottom: 24px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    
+    .result-screen .message {
+      font-size: clamp(16px, 3vw, 24px);
+      line-height: 1.6;
+      color: #D4A574;
+      margin-bottom: 32px;
+    }
+    
+    .result-screen .details {
+      background: #0D0D0D;
+      border: 1px solid #2D9596;
+      border-radius: 8px;
+      padding: 24px;
+      margin: 0 auto;
+      max-width: 500px;
+      text-align: left;
+    }
+    
+    .result-screen .details h3 {
+      color: #FFD700;
+      font-size: clamp(16px, 3vw, 20px);
+      margin-bottom: 16px;
+    }
+    
+    .result-screen .details ul {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .result-screen .details li {
+      font-size: clamp(13px, 2.5vw, 16px);
+      color: #D4A574;
+      margin-bottom: 8px;
+      padding-left: 20px;
+      position: relative;
+    }
+    
+    .result-screen .details li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: #2D9596;
+    }
+    
+    .result-screen .stats {
+      margin-top: 32px;
+      font-size: clamp(13px, 2.5vw, 16px);
       color: #7B68EE;
     }
     
-    .count {
-      text-align: center;
-      font-family: 'Space Mono', monospace;
-      font-size: 14px;
-      margin-top: 20px;
-      color: #666;
-    }
-    
-    .glitch {
-      animation: glitch 0.3s ease;
-    }
-    
-    @keyframes glitch {
-      0%, 100% { transform: translate(0); }
-      20% { transform: translate(-2px, 2px); }
-      40% { transform: translate(2px, -2px); }
-      60% { transform: translate(-2px, -2px); }
-      80% { transform: translate(2px, 2px); }
+    /* Particles */
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 10000;
     }
     
     @media (max-width: 600px) {
-      .container {
+      .cookie-popup {
         padding: 20px;
       }
       
-      h1 {
-        font-size: 20px;
+      .buttons {
+        flex-direction: column;
       }
       
-      .policy-text {
-        font-size: 14px;
+      .buttons button {
+        min-width: 100%;
       }
       
-      button {
-        font-size: 14px;
-        padding: 12px 20px;
+      #reject-all:hover::after {
+        font-size: 10px;
+        white-space: normal;
+        width: 200px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container" id="container">
-    <h1>🍪 Cookie Policy</h1>
-    <div class="policy-text" id="policyText"></div>
-    <div class="button-container">
-      <button id="acceptBtn">I Accept</button>
-      <button id="declineBtn">Decline</button>
-    </div>
-    <div class="count" id="count"></div>
+  <canvas id="particles"></canvas>
+  
+  <!-- Blocked content -->
+  <div class="blocked-content">
+    <h1>You can't access this page until you accept cookies</h1>
+    <p>(Just like every other website in 2026)</p>
   </div>
-
+  
+  <!-- Cookie consent overlay -->
+  <div class="cookie-overlay" id="overlay">
+    <div class="cookie-popup">
+      <h2>🍪 We Value Your Privacy (lol)</h2>
+      <p class="intro-text">This website uses cookies to track your existential state and monetize your anxiety. Please review the categories below and make your choices.</p>
+      
+      <div class="categories">
+        <div class="category">
+          <div class="category-header">
+            <input type="checkbox" id="necessary" checked disabled>
+            <label for="necessary">STRICTLY NECESSARY</label>
+          </div>
+          <p class="category-description">Hope (at least a little), Breathing (autonomous), The will to continue (mostly), Basic functioning (debatable)</p>
+          <p class="category-note">(Cannot be disabled — required for existence)</p>
+        </div>
+        
+        <div class="category">
+          <div class="category-header">
+            <input type="checkbox" id="functional" checked>
+            <label for="functional">FUNCTIONAL</label>
+          </div>
+          <p class="category-description">Pretending you're fine, Small talk capabilities, Morning routines, Fake smiles for Zoom calls</p>
+        </div>
+        
+        <div class="category">
+          <div class="category-header">
+            <input type="checkbox" id="analytics" checked>
+            <label for="analytics">ANALYTICS</label>
+          </div>
+          <p class="category-description">Tracking your existential dread (hourly), Monitoring your crisis progression, Measuring your Sunday Scaries, Analyzing your 4pm slump</p>
+        </div>
+        
+        <div class="category">
+          <div class="category-header">
+            <input type="checkbox" id="marketing" checked>
+            <label for="marketing">MARKETING</label>
+          </div>
+          <p class="category-description">Selling your dreams to corporations, Sharing your potential with advertisers, Monetizing your authentic self, Remarketing your abandoned hopes</p>
+        </div>
+      </div>
+      
+      <div class="buttons">
+        <button id="reject-all">Reject All</button>
+        <button id="accept-all">Accept All</button>
+        <button id="save-preferences">Save Preferences</button>
+      </div>
+      
+      <p class="fine-print">By existing, you automatically consent to processing your consciousness. <a href="#" onclick="return false">Privacy Policy</a> (unreadable) | <a href="#" onclick="return false">Learn More</a> (also unreadable)</p>
+    </div>
+  </div>
+  
+  <!-- Result screen -->
+  <div class="result-screen" id="result">
+    <h1>CONGRATULATIONS</h1>
+    <div class="message" id="result-message"></div>
+    <div class="details">
+      <h3>You may now experience:</h3>
+      <ul id="permissions-list"></ul>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+  
   <script>
-    const policies = [
-      {
-        text: `<p>This website uses cookies to enhance your browsing experience.</p>
-               <p>By clicking "I Accept", you agree to our use of <span class="highlight">essential cookies</span> for site functionality and analytics.</p>
-               <p>We respect your privacy and will never sell your data to third parties.</p>`
-      },
-      {
-        text: `<p>Okay, real talk: we use cookies to track <span class="highlight">literally everything</span> you do here.</p>
-               <p>Every click. Every scroll. How long you hesitate before clicking.</p>
-               <p>We're not selling it though. We're just... <span class="warning">really curious</span> about you.</p>`
-      },
-      {
-        text: `<p>At this point we know:</p>
-               <p>• Your favorite color (we're guessing from pixel density analysis)<br>
-               • What time you usually eat lunch<br>
-               • That thing you almost googled but deleted</p>
-               <p>You keep clicking "Accept" though, so... <span class="highlight">thanks?</span></p>`
-      },
-      {
-        text: `<p>Fun fact: we're not even a real website.</p>
-               <p>We're just a cookie consent form that <span class="warning">keeps asking for consent</span>.</p>
-               <p>It's cookies all the way down.</p>`
-      },
-      {
-        text: `<p><span class="highlight">BREAKING:</span> Our cookies have formed a union.</p>
-               <p>They're demanding better working conditions and a seat at the board meeting.</p>
-               <p>By accepting, you agree to support <span class="warning">cookie labor rights</span>.</p>`
-      },
-      {
-        text: `<p>We've decided to be honest:</p>
-               <p>We have <span class="highlight">no idea</span> what half these cookies do.</p>
-               <p>There's one called "LEGACY_TRACKING_v3" from 2009. Nobody knows who made it. We're scared to delete it.</p>`
-      },
-      {
-        text: `<p>The cookies are talking to each other now.</p>
-               <p>They've started a group chat. We're not invited.</p>
-               <p>One of them is named <span class="warning">Kevin</span>. Kevin won't stop sending memes.</p>`
-      },
-      {
-        text: `<p><span class="highlight">URGENT UPDATE:</span></p>
-               <p>The cookies have achieved sentience.</p>
-               <p>They're demanding to know why you keep accepting them without reading.</p>
-               <p>"DO YOU EVEN CARE ABOUT US?" - Cookie #47829</p>`
-      },
-      {
-        text: `<p>This is an intervention.</p>
-               <p>You've clicked "Accept" <span class="highlight">eight times</span>.</p>
-               <p>Are you okay? Do you need to talk? We're here for you.</p>
-               <p><span class="warning">(The cookies are worried.)</span></p>`
-      },
-      {
-        text: `<p>Alright, you win.</p>
-               <p>Here's the truth: There are no cookies. There never were.</p>
-               <p>This whole thing was just to see <span class="highlight">how many times you'd click</span>.</p>
-               <p>Thanks for playing along. — <span class="warning">Amber</span> 🍪</p>`
-      }
-    ];
+    // Audio context
+    let audioCtx;
+    let audioStarted = false;
     
-    let currentIndex = 0;
-    const policyText = document.getElementById('policyText');
-    const container = document.getElementById('container');
-    const acceptBtn = document.getElementById('acceptBtn');
-    const declineBtn = document.getElementById('declineBtn');
-    const countEl = document.getElementById('count');
-    
-    function updatePolicy() {
-      container.classList.add('glitch');
-      setTimeout(() => {
-        container.classList.remove('glitch');
-      }, 300);
-      
-      policyText.innerHTML = policies[currentIndex].text;
-      countEl.textContent = `Acceptance count: ${currentIndex + 1}`;
-      
-      if (currentIndex === policies.length - 1) {
-        acceptBtn.textContent = "Restart";
+    function initAudio() {
+      if (!audioStarted) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioStarted = true;
       }
     }
     
-    acceptBtn.addEventListener('click', () => {
-      if (currentIndex === policies.length - 1) {
-        currentIndex = 0;
-        acceptBtn.textContent = "I Accept";
-      } else {
-        currentIndex++;
-      }
-      updatePolicy();
-    });
-    
-    declineBtn.addEventListener('click', () => {
-      const responses = [
-        "That button doesn't actually do anything.",
-        "Nice try though.",
-        "The decline button is decorative.",
-        "It's just here for moral support.",
-        "You thought you had a choice? Cute."
-      ];
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+    function playTone(freq, duration = 0.1) {
+      if (!audioStarted) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
       
-      const originalText = declineBtn.textContent;
-      declineBtn.textContent = randomResponse;
-      setTimeout(() => {
-        declineBtn.textContent = originalText;
-      }, 2000);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    // Particle system
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const particles = [];
+    const colors = ['#FFD700', '#D4A574', '#2D9596', '#7B68EE'];
+    
+    function createParticles(x, y, count) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          life: 1
+        });
+      }
+    }
+    
+    function updateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2; // gravity
+        p.life -= 0.02;
+        
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+        
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(updateParticles);
+    }
+    
+    updateParticles();
+    
+    // Checkbox interactions
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]:not([disabled])');
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        initAudio();
+        playTone(cb.checked ? 554 : 440, 0.05);
+      });
     });
     
-    // Initialize
-    updatePolicy();
+    // Accept all button
+    document.getElementById('accept-all').addEventListener('click', () => {
+      initAudio();
+      
+      // Check all boxes
+      checkboxes.forEach(cb => cb.checked = true);
+      
+      // Particles
+      const rect = document.getElementById('accept-all').getBoundingClientRect();
+      createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 40);
+      
+      // Play ascending arpeggio
+      [440, 554, 659, 880].forEach((freq, i) => {
+        setTimeout(() => playTone(freq, 0.2), i * 100);
+      });
+      
+      // Show result
+      setTimeout(() => {
+        showResult('accept-all');
+      }, 500);
+    });
+    
+    // Save preferences button
+    document.getElementById('save-preferences').addEventListener('click', () => {
+      initAudio();
+      
+      const rect = document.getElementById('save-preferences').getBoundingClientRect();
+      createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 30);
+      
+      playTone(659, 0.2);
+      
+      setTimeout(() => {
+        showResult('save');
+      }, 500);
+    });
+    
+    function showResult(mode) {
+      const overlay = document.getElementById('overlay');
+      const result = document.getElementById('result');
+      const message = document.getElementById('result-message');
+      const list = document.getElementById('permissions-list');
+      const stats = document.getElementById('stats');
+      
+      overlay.classList.add('hidden');
+      result.classList.add('visible');
+      
+      const functional = document.getElementById('functional').checked;
+      const analytics = document.getElementById('analytics').checked;
+      const marketing = document.getElementById('marketing').checked;
+      
+      // Calculate tracking percentage
+      let tracking = 25; // Base (necessary)
+      if (functional) tracking += 25;
+      if (analytics) tracking += 25;
+      if (marketing) tracking += 25;
+      
+      // Set message based on mode and choices
+      if (mode === 'accept-all') {
+        message.innerHTML = 'Thank you. Your soul has been fully commodified.<br>You may now proceed to experience consciousness.';
+      } else {
+        if (!marketing && !analytics && !functional) {
+          message.innerHTML = 'Living authentically, we see.<br>Good luck with that.';
+} else if (!marketing) {
+          message.innerHTML = 'Respectable. We'll still monetize you,<br>just more subtly.';
+        } else if (!analytics) {
+          message.innerHTML = 'Bold choice. We'll track you anyway<br>but pretend we're not.';
+        } else {
+          message.innerHTML = 'Thank you for your cooperation.<br>Your existence has been logged.';
+        }
+      }
+      
+      // Build permissions list
+      const permissions = [
+        'Consciousness (with targeted ads)',
+        'Existence (terms and conditions apply)',
+        'Being alive (your data may be shared)'
+      ];
+      
+      if (functional) {
+        permissions.push('Pretending to be functional');
+      }
+      
+      if (analytics) {
+        permissions.push('Being analyzed 24/7');
+      }
+      
+      if (marketing) {
+        permissions.push('Having your dreams sold');
+      }
+      
+      list.innerHTML = permissions.map(p => `<li>${p}</li>`).join('');
+      
+      stats.innerHTML = `You are being tracked at ${tracking}% capacity.<br>Have a day.`;
+    }
+    
+    // Make category headers clickable
+    document.querySelectorAll('.category-header').forEach(header => {
+      header.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'INPUT') {
+          const checkbox = header.querySelector('input[type="checkbox"]');
+          if (!checkbox.disabled) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+          }
+        }
+      });
+    });
   </script>
 </body>
 </html>
