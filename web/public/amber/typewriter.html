@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TYPEWRITER — Amber</title>
+
+  <!-- OG Tags -->
+  <meta property="og:title" content="TYPEWRITER" />
+  <meta property="og:description" content="Mechanical writing machine" />
+  <meta property="og:image" content="https://intheamber.com/amber/typewriter-og.png" />
+  <meta property="og:url" content="https://intheamber.com/amber/typewriter.html" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="TYPEWRITER" />
+  <meta name="twitter:description" content="Mechanical writing machine" />
+  <meta name="twitter:image" content="https://intheamber.com/amber/typewriter-og.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+background: #0D0D0D;
+      color: #FFD700;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      touch-action: none;
+      user-select: none;
+    }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    #paper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background: linear-gradient(180deg, #1a1a1a 0%, #0D0D0D 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #paper::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 29px,
+        rgba(255, 215, 0, 0.03) 29px,
+        rgba(255, 215, 0, 0.03) 30px
+      );
+      pointer-events: none;
+    }
+
+    #text-display {
+      font-family: 'Special Elite', monospace;
+      font-size: clamp(18px, 3vw, 28px);
+      color: #FFD700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      letter-spacing: 0.05em;
+      line-height: 1.8;
+      max-width: 90%;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      min-height: 2em;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.2em;
+      background: #FFD700;
+      animation: blink 1s infinite;
+      margin-left: 2px;
+      vertical-align: text-bottom;
+    }
+
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    #keyboard {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      background: #1a1a1a;
+      border-top: 2px solid #333;
+    }
+
+    .key-row {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .key {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 8px;
+      border-radius: 6px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .key:active,
+    .key.pressed {
+      transform: translateY(4px);
+      box-shadow: 0 0 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .key.space {
+      min-width: 200px;
+    }
+
+    .key.enter,
+    .key.backspace {
+      min-width: 80px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .key {
+        min-width: 32px;
+        min-height: 38px;
+        font-size: 14px;
+        padding: 6px;
+      }
+      .key.space {
+        min-width: 140px;
+      }
+      .key.enter,
+      .key.backspace {
+        min-width: 60px;
+        font-size: 10px;
+      }
+      #keyboard {
+        padding: 12px;
+        gap: 6px;
+      }
+      .key-row {
+        gap: 4px;
+      }
+    }
+
+    #info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 12px;
+      color: #2D9596;
+      font-weight: 400;
+      z-index: 10;
+      text-align: left;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      #info {
+        font-size: 10px;
+        top: 10px;
+        left: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div id="info">
+    TYPEWRITER<br>
+    TAP KEYS OR TYPE
+  </div>
+
+  <div id="paper">
+    <div id="text-display"><span class="cursor"></span></div>
+  </div>
+
+  <div id="keyboard">
+    <!-- Will be populated by JS -->
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const textDisplay = document.getElementById('text-display');
+    const cursor = document.querySelector('.cursor');
+    const keyboard = document.getElementById('keyboard');
+
+    // Resize canvas
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Audio context
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    // Typewriter click sound
+    function playClick() {
+      initAudio();
+      const now = audioCtx.currentTime;
+
+      // Noise burst
+      const bufferSize = audioCtx.sampleRate * 0.05;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / bufferSize * 10);
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const noiseFilter = audioCtx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.value = 2000;
+      noiseFilter.Q.value = 2;
+
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(0.3, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(audioCtx.destination);
+      noise.start(now);
+      noise.stop(now + 0.05);
+
+      // Tone click
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.03);
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.03);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.03);
+    }
+
+    // Carriage return bell
+    function playBell() {
+      initAudio();
+      const now = audioCtx.currentTime;
+
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1200, now);
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.4);
+    }
+
+    // Backspace thunk
+    function playThunk() {
+      initAudio();
+      const now = audioCtx.currentTime;
+
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, now);
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    }
+
+    // Particles
+    const particles = [];
+
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4 - 2;
+        this.life = 1;
+        this.decay = 0.02;
+        this.color = color;
+        this.size = Math.random() * 3 + 2;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.1; // gravity
+        this.life -= this.decay;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function createParticleBurst(x, y, color, count = 15) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    }
+
+    // Animation loop
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw();
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Text state
+    let text = '';
+
+    function updateDisplay() {
+      textDisplay.innerHTML = text + '<span class="cursor"></span>';
+    }
+
+    // Key colors from full palette
+    const colors = [
+      '#FFD700', // gold
+      '#2D9596', // teal
+      '#ec4899', // hot pink
+      '#8b5cf6', // purple
+      '#f97316', // coral
+      '#3b82f6', // electric blue
+      '#84cc16', // lime
+      '#f59e0b', // amber
+    ];
+
+    // Keyboard layout
+    const layout = [
+      ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+      ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+      ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+      ['BACKSPACE', 'SPACE', 'ENTER']
+    ];
+
+    const keyElements = {};
+
+    function createKeyboard() {
+      let colorIndex = 0;
+
+      layout.forEach((row, rowIndex) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'key-row';
+
+        row.forEach(char => {
+          const key = document.createElement('div');
+          key.className = 'key';
+
+          if (char === 'SPACE') {
+            key.classList.add('space');
+            key.textContent = 'SPACE';
+          } else if (char === 'ENTER') {
+            key.classList.add('enter');
+            key.textContent = 'ENTER';
+          } else if (char === 'BACKSPACE') {
+            key.classList.add('backspace');
+            key.textContent = '←';
+          } else {
+            key.textContent = char;
+          }
+
+          // Assign color
+          const color = colors[colorIndex % colors.length];
+          key.style.background = color;
+          key.style.color = '#0D0D0D';
+          key.dataset.color = color;
+          key.dataset.char = char;
+
+          colorIndex++;
+
+          // Click handler
+          key.addEventListener('click', () => handleKeyPress(char, key));
+          key.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleKeyPress(char, key);
+          });
+
+          keyElements[char] = key;
+          rowDiv.appendChild(key);
+        });
+
+        keyboard.appendChild(rowDiv);
+      });
+    }
+
+    createKeyboard();
+
+    function handleKeyPress(char, keyElement) {
+      // Visual feedback
+      keyElement.classList.add('pressed');
+      setTimeout(() => keyElement.classList.remove('pressed'), 100);
+
+      // Get key position for particles
+      const rect = keyElement.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const color = keyElement.dataset.color;
+
+      if (char === 'SPACE') {
+        text += ' ';
+        playClick();
+        createParticleBurst(x, y, color, 20);
+      } else if (char === 'ENTER') {
+        text += '\n';
+        playBell();
+        createParticleBurst(x, y, color, 25);
+      } else if (char === 'BACKSPACE') {
+        if (text.length > 0) {
+          text = text.slice(0, -1);
+          playThunk();
+          createParticleBurst(x, y, color, 12);
+        }
+      } else {
+        text += char;
+        playClick();
+        createParticleBurst(x, y, color, 15);
+      }
+
+      updateDisplay();
+    }
+
+    // Keyboard event listener
+    document.addEventListener('keydown', (e) => {
+      const char = e.key.toUpperCase();
+
+      if (char === ' ') {
+        e.preventDefault();
+        if (keyElements['SPACE']) {
+          handleKeyPress('SPACE', keyElements['SPACE']);
+        }
+      } else if (char === 'ENTER') {
+        e.preventDefault();
+        if (keyElements['ENTER']) {
+          handleKeyPress('ENTER', keyElements['ENTER']);
+        }
+      } else if (char === 'BACKSPACE') {
+        e.preventDefault();
+        if (keyElements['BACKSPACE']) {
+          handleKeyPress('BACKSPACE', keyElements['BACKSPACE']);
+        }
+      } else if (keyElements[char]) {
+        e.preventDefault();
+        handleKeyPress(char, keyElements[char]);
+      }
+    });
+
+    // Initial display
+    updateDisplay();
+  </script>
+</body>
+</html>
