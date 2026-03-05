@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 const AWAY_ADVENTURES = [
   'probably sniffing something suspicious in the yard',
@@ -33,9 +33,126 @@ function useGlimmerStatus(isRelaxing: boolean) {
   return adventure
 }
 
+const SETUP_ITEMS = [
+  { icon: '🎥', text: 'Reolink E1 Zoom — 4K PTZ camera on local network via RTSP' },
+  { icon: '🧠', text: 'Qwen 3.5 4B — local vision AI via Ollama, zero cloud cost' },
+  { icon: '📦', text: 'Supabase Storage — image uploaded every ~5 min' },
+  { icon: '🎵', text: 'Apple Music → HomePod — plays calming music when pillow detected' },
+  { icon: '🐾', text: 'OpenClaw — agent framework tying it all together' },
+]
+
+function HowItWorks() {
+  const [open, setOpen] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState(0)
+
+  const measure = useCallback(() => {
+    if (contentRef.current) {
+      setHeight(contentRef.current.scrollHeight)
+    }
+  }, [])
+
+  useEffect(() => {
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [measure])
+
+  return (
+    <div style={{ width: '100%', maxWidth: 640, marginTop: 24, textAlign: 'center' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: 13,
+          color: '#B0A898',
+          fontFamily: 'inherit',
+          padding: '4px 8px',
+          transition: 'color 0.2s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.color = '#8A8078')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#B0A898')}
+      >
+        {open ? 'close' : 'how this works'}
+      </button>
+
+      <div style={{
+        overflow: 'hidden',
+        transition: 'height 0.35s ease, opacity 0.3s ease',
+        height: open ? height : 0,
+        opacity: open ? 1 : 0,
+      }}>
+        <div ref={contentRef} style={{
+          backgroundColor: '#EDE8E1',
+          borderRadius: 10,
+          padding: '20px 24px',
+          marginTop: 8,
+          textAlign: 'left',
+        }}>
+          <p style={{
+            fontSize: 13,
+            color: '#8A8078',
+            margin: '0 0 16px',
+            lineHeight: 1.5,
+          }}>
+            This page is powered by a local AI that watches a camera and plays music for our dog Glimmer.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {SETUP_ITEMS.map((item, i) => (
+              <div key={i} style={{
+                fontSize: 13,
+                color: '#8A8078',
+                lineHeight: 1.5,
+              }}>
+                <span style={{ marginRight: 8 }}>{item.icon}</span>
+                {item.text}
+              </div>
+            ))}
+          </div>
+
+          <p style={{
+            fontSize: 12,
+            color: '#B0A898',
+            margin: '16px 0 0',
+            fontStyle: 'italic',
+          }}>
+            built with love and open protocols
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const IMAGE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/whisperer/latest.jpg'
+const REFRESH_INTERVAL = 60_000 // 1 minute
+
 export default function WhispererPage() {
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [cacheBust, setCacheBust] = useState(0)
+  const [lastUpdated, setLastUpdated] = useState('')
   const status = useGlimmerStatus(imageLoaded)
+
+  useEffect(() => {
+    function refresh() {
+      setCacheBust(Date.now())
+      fetch(IMAGE_URL, { method: 'HEAD' })
+        .then(r => {
+          const lm = r.headers.get('last-modified')
+          if (lm) {
+            const d = new Date(lm)
+            setLastUpdated(d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))
+          }
+        })
+        .catch(() => {})
+    }
+    refresh()
+    const id = setInterval(refresh, REFRESH_INTERVAL)
+    return () => clearInterval(id)
+  }, [])
 
   return (
     <>
@@ -88,8 +205,8 @@ export default function WhispererPage() {
           position: 'relative',
         }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/whisperer/latest.jpg"
+          {cacheBust > 0 && <img
+            src={`${IMAGE_URL}?t=${cacheBust}`}
             alt="Latest snapshot from the home camera"
             style={{
               width: '100%',
@@ -108,7 +225,7 @@ export default function WhispererPage() {
                 if (placeholder) placeholder.style.display = 'flex'
               }
             }}
-          />
+          />}
           <div
             data-placeholder=""
             style={{
@@ -149,7 +266,7 @@ export default function WhispererPage() {
             display: 'inline-block',
             animation: 'pulse 2s ease-in-out infinite',
           }} />
-          <span>updated just now</span>
+          <span>{lastUpdated ? `updated ${lastUpdated}` : 'loading...'}</span>
         </div>
 
         <p style={{
@@ -171,6 +288,8 @@ export default function WhispererPage() {
         }}>
           ♪ playing: Relaxing Dog Music
         </p>
+
+        <HowItWorks />
 
         <style>{`
           @keyframes pulse {

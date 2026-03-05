@@ -4128,6 +4128,188 @@
         "Electronic Groove — Studio tips by Hannes Bieger",
         "Aulart — Kick & bass tips with Hannes Bieger"
       ]
+    },
+    "richie_hawtin": {
+      "name": "Richie Hawtin (Plastikman)",
+      "genre": "minimal_techno",
+      "bpm": [
+        120,
+        132
+      ],
+      "swing": 55,
+      "description": "Clinical, hypnotic minimal techno built on dry, repetitive drum foundations and single, highly-automated synth lines. The magic is in the filter movement, not the notes. Ghost notes create forward motion. Subtraction creates energy. Every change is deliberate and microscopic.",
+      "philosophy": "The '1% Rule' — every 8 bars, change ONE tiny thing. If the listener notices the change immediately, it's too big. Subtraction is addition — don't add a new sound, delete two notes from an existing pattern. The new gap creates more energy than a new melody. Slow burn arrangement — no big drops, just gradual evolution of a single sound. Hypnotic tension through filter automation over 32-64 bars.",
+      "drums": {
+        "kick": {
+          "pattern": [
+            0,
+            4,
+            8,
+            12
+          ],
+          "decay": 0.2,
+          "tune": -0.15,
+          "level": 0.85,
+          "notes": "Four-on-the-floor, very short decay, tuned low (~55Hz). Dry. Often muted for 'ghost bars' to create tension."
+        },
+        "ch": {
+          "pattern": [
+            2,
+            6,
+            10,
+            14
+          ],
+          "decay": 0.15,
+          "level": 0.4,
+          "notes": "Offbeat pattern, NOT on every 16th. Enters at 40% volume, slowly increases. Swing applied (54-58% MPC-style)."
+        },
+        "rimshot": {
+          "pattern": [
+            7,
+            15
+          ],
+          "level": 0.45,
+          "notes": "On the 'and' of beats 2 and 4. Occasional tiny reverb applied then snapped back to dry."
+        }
+      },
+      "ghost_percussion": {
+        "pattern": [
+          1,
+          5,
+          9,
+          13
+        ],
+        "level": 0.25,
+        "notes": "Very quiet hits on every other 16th — creates forward motion without being distracting. The soul of the minimal groove."
+      },
+      "bass": {
+        "type": "303-style acid",
+        "waveform": "sawtooth",
+        "filter": "24dB lowpass",
+        "cutoff_start": 0.15,
+        "resonance": 0.78,
+        "env_decay": 0.4,
+        "env_sustain": 0.0,
+        "notes": "Single saw osc through resonant lowpass. The filter IS the instrument. Cutoff starts at 15%, automated to 65% over 64 bars then snaps back. High resonance (75-80%) is crucial for the 'liquid' sound."
+      },
+      "patterns": {
+        "ghost_groove": {
+          "name": "The Ghost Groove",
+          "description": "Foundation pattern — dry kick, offbeat hats, rimshot accents, ghost percussion",
+          "kick": [
+            0,
+            4,
+            8,
+            12
+          ],
+          "ch": [
+            2,
+            6,
+            10,
+            14
+          ],
+          "rimshot": [
+            7,
+            15
+          ]
+        },
+        "stripped_foundation": {
+          "name": "The Foundation",
+          "description": "Bars 1-8: Kick and rimshot only, maximum space",
+          "kick": [
+            0,
+            4,
+            8,
+            12
+          ],
+          "rimshot": [
+            7,
+            15
+          ]
+        },
+        "ghost_bar": {
+          "name": "The Ghost Bar",
+          "description": "Mute the kick. Ghost percussion and delay tails only. Total silence on beat 4.",
+          "kick": [],
+          "ch": [
+            2,
+            6,
+            10,
+            14
+          ]
+        }
+      },
+      "acid_pattern": {
+        "notes": [
+          "G1",
+          "G1",
+          "G2",
+          "G1",
+          "Bb1",
+          "G1",
+          "C2",
+          "G1"
+        ],
+        "rhythm": "all 16th notes",
+        "accents": [
+          0,
+          4,
+          11
+        ],
+        "slides": [
+          [
+            6,
+            7
+          ]
+        ],
+        "notes_text": "Hypnotic root (G1) pulse with octave jumps and minor intervals. Accents on 1st, 5th, 12th steps. Slide from 7th to 8th note."
+      },
+      "atmosphere": {
+        "technique": "feedback_ping",
+        "sound": "Short high-pitched sine wave or beep",
+        "delay": "dotted quarter note, 60% feedback",
+        "modulation": "Random LFO on reverb dry/wet — occasionally washes out then goes dry again"
+      },
+      "arrangement_blueprint": {
+        "bars_1_8": "Kick & rimshot only. Every 4th bar, add tiny reverb to rimshot then snap back to dry.",
+        "bars_9_16": "Enter closed hats at 40% volume. Slowly increase velocity to full by bar 16.",
+        "bars_17_24": "Enter 303 pattern with filter cutoff at 5% — barely audible muffled thumping.",
+        "bars_25_28": "Gradually open filter cutoff from 5% to 40%. Acid character starts to bite.",
+        "bars_29_31": "Increase delay feedback on synth. Notes overlap into wall of sound.",
+        "bar_32": "The Ghost Bar — mute the kick. Ghost percussion and delay tail only. Silence on beat 4."
+      },
+      "programmingPrinciples": [
+        "The 1% Rule: every 8 bars, change one tiny thing — kick decay 10ms longer, hat panning, etc.",
+        "Subtraction is addition: delete notes from existing patterns rather than adding new sounds",
+        "Ghost notes are the soul: very quiet hits create forward motion without distraction",
+        "Filter automation over 32-64 bars is the 'melody'",
+        "Slow LFO (16 bars) on percussion attack makes drums feel organic, breathing",
+        "Sidechain compression on synth/atmosphere triggered by kick (4:1 ratio, -15 to -20dB threshold, ~100ms release at 126 BPM)",
+        "If it sounds stuck, remove elements — the gap creates more energy than adding would",
+        "Swing on hats and ghost percussion (54-58% MPC-style) but NOT on kick"
+      ],
+      "keywords": [
+        "clinical",
+        "hypnotic",
+        "liquid",
+        "minimal",
+        "ghostly",
+        "precise",
+        "acid",
+        "dry",
+        "sparse",
+        "surgical",
+        "automated",
+        "subtraction",
+        "Plastikman"
+      ],
+      "references": [
+        "Sheet One",
+        "Consumed",
+        "Concept 1 (96:12)",
+        "Gak",
+        "Spastik"
+      ]
     }
   }
 }

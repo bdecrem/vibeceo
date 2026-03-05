@@ -173,24 +173,24 @@ def main():
             vision_time = time.time() - t0
             ts = datetime.now().strftime("%H:%M:%S")
 
-            if target_present:
-                # Upload compressed snap to Supabase
-                upload_latest(raw_frame)
+            # Always upload latest snap
+            upload_latest(raw_frame)
 
+            if target_present:
                 if not music_on:
                     play_music()
                     music_on = True
                     notify(f"🐕 Poop pillow spotted! Playing {PLAYLIST} for Glimmer 🎵")
 
                 print(f"[{ts}] #{check_count} 💩 target spotted — music on — "
-                      f"uploaded latest.jpg ({vision_time:.0f}s)")
+                      f"uploaded ({vision_time:.0f}s)")
             else:
                 if music_on:
                     stop_music()
                     music_on = False
                     notify("🐕 Poop pillow gone — music paused")
 
-                print(f"[{ts}] #{check_count} no target ({vision_time:.0f}s) — "
+                print(f"[{ts}] #{check_count} no target — uploaded ({vision_time:.0f}s) — "
                       f"{description[:80]}")
 
         except requests.exceptions.ConnectionError:
