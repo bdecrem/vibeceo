@@ -2,111 +2,291 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>ECHO — Tap. Listen. Fade.</title>
-  
-  <!-- OG tags -->
-  <meta property="og:title" content="ECHO — Tap. Listen. Fade.">
-  <meta property="og:description" content="A minimal echo machine. Each tap creates a tone that repeats and fades into silence.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ECHO - Repeat what you hear</title>
+
+  <!-- OG Tags -->
+  <meta property="og:title" content="ECHO - Repeat what you hear">
+  <meta property="og:description" content="A sound-based memory game. Listen to the sequence, then tap to echo it back.">
   <meta property="og:image" content="https://intheamber.com/amber/echo-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/echo.html">
   <meta name="twitter:card" content="summary_large_image">
-  
+
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
 
     body {
       background: #000;
-      overflow: hidden;
-      font-family: 'Space Mono', monospace;
       color: #D4A574;
-      touch-action: none;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     #canvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
-      cursor: crosshair;
-    }
-
-    #ui {
       position: fixed;
-      top: 20px;
-      left: 20px;
-      pointer-events: none;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    .ui {
+      position: relative;
       z-index: 10;
+      text-align: center;
+      width: 100%;
+      max-width: 500px;
+      padding: 20px;
     }
 
-    #title {
-      font-size: 24px;
+    .title {
+      font-size: 32px;
       font-weight: bold;
-      color: #D4A574;
-      margin-bottom: 8px;
-      letter-spacing: 2px;
+      color: #FFD700;
+      margin-bottom: 10px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
     }
 
-    #subtitle {
+    .subtitle {
       font-size: 14px;
-      color: rgba(212, 165, 116, 0.6);
+      color: #D4A574;
       margin-bottom: 20px;
+      opacity: 0.8;
     }
 
-    #instructions {
+    .score-display {
+      font-size: 18px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+    }
+
+    .score-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .score-label {
       font-size: 12px;
-      color: rgba(212, 165, 116, 0.4);
+      color: #2D9596;
+      text-transform: uppercase;
+    }
+
+    .score-value {
+      font-size: 24px;
+      color: #FFD700;
+      font-weight: bold;
+    }
+
+    .status {
+      font-size: 16px;
+      margin-bottom: 20px;
+      height: 30px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      color: #FFD700;
     }
 
-    #status {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: rgba(212, 165, 116, 0.3);
-      transition: background 0.3s;
+    .status.computer {
+      color: #2D9596;
     }
 
-    #status.active {
-      background: #2D9596;
-      box-shadow: 0 0 10px #2D9596;
+    .status.your-turn {
+      color: #FFD700;
     }
 
-    @media (max-width: 768px) {
-      #title { font-size: 20px; }
-      #subtitle { font-size: 12px; }
-      #instructions { font-size: 11px; }
+    .status.correct {
+      color: #00ff00;
+    }
+
+    .status.wrong {
+      color: #ff0000;
+    }
+
+    .pad-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .pad {
+      width: 100%;
+      aspect-ratio: 1;
+      border: 3px solid;
+      border-radius: 12px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.1s;
+      font-size: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pad:active {
+      transform: scale(0.95);
+    }
+
+    .pad.disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .pad.active {
+      box-shadow: 0 0 30px currentColor;
+      transform: scale(1.05);
+    }
+
+    .pad-0 {
+      background: rgba(212, 165, 116, 0.1);
+      border-color: #D4A574;
+      color: #D4A574;
+    }
+
+    .pad-1 {
+      background: rgba(255, 215, 0, 0.1);
+      border-color: #FFD700;
+      color: #FFD700;
+    }
+
+    .pad-2 {
+      background: rgba(45, 149, 150, 0.1);
+      border-color: #2D9596;
+      color: #2D9596;
+    }
+
+    .pad-3 {
+      background: rgba(123, 104, 238, 0.1);
+      border-color: #7B68EE;
+      color: #7B68EE;
+    }
+
+    button {
+      background: rgba(255, 215, 0, 0.1);
+      border: 2px solid #FFD700;
+      color: #FFD700;
+      padding: 15px 40px;
+      font-size: 18px;
+      font-family: 'Space Mono', monospace;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s;
+      min-width: 180px;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: rgba(255, 215, 0, 0.2);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .game-over {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .game-over.visible {
+      display: flex;
+    }
+
+    .game-over-title {
+      font-size: 28px;
+      color: #ff6b6b;
+    }
+
+    .game-over-score {
+      font-size: 20px;
+      color: #D4A574;
+    }
+
+    @media (max-width: 480px) {
+      .title {
+        font-size: 24px;
+      }
+
+      .pad {
+        font-size: 36px;
+      }
+
+      .pad-grid {
+        gap: 10px;
+      }
     }
   </style>
 </head>
 <body>
   <canvas id="canvas"></canvas>
-  
-  <div id="ui">
-    <div id="title">ECHO</div>
-    <div id="subtitle">Tap. Listen. Fade.</div>
-    <div id="instructions">
-      <div id="status"></div>
-      <span id="instructionText">Tap anywhere to start</span>
+
+  <div class="ui">
+    <div class="title">ECHO</div>
+    <div class="subtitle">Listen. Remember. Repeat.</div>
+
+    <div class="score-display">
+      <div class="score-item">
+        <div class="score-label">Round</div>
+        <div class="score-value" id="round">0</div>
+      </div>
+      <div class="score-item">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="best">0</div>
+      </div>
+    </div>
+
+    <div class="status" id="status">Press START to begin</div>
+
+    <div id="game-area">
+      <div class="pad-grid" id="pad-grid">
+        <div class="pad pad-0 disabled" data-index="0">♪</div>
+        <div class="pad pad-1 disabled" data-index="1">♫</div>
+        <div class="pad pad-2 disabled" data-index="2">♩</div>
+        <div class="pad pad-3 disabled" data-index="3">♬</div>
+      </div>
+
+      <button id="start-btn">START</button>
+    </div>
+
+    <div class="game-over" id="game-over">
+      <div class="game-over-title">Nice try!</div>
+      <div class="game-over-score">You made it to round <span id="final-round">0</span></div>
+      <button id="retry-btn">PLAY AGAIN</button>
     </div>
   </div>
 
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const status = document.getElementById('status');
-    const instructionText = document.getElementById('instructionText');
 
-    let audioContext = null;
-    let audioStarted = false;
-    
-    // Canvas setup
+    // Resize canvas
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -114,182 +294,275 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Ring objects
-    const rings = [];
+    // Audio context
+    let audioContext = null;
 
-    class Ring {
-      constructor(x, y, color, maxRadius) {
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    // Frequencies for each pad (D minor pentatonic)
+    const frequencies = [
+      293.66, // D4
+      349.23, // F4
+      440.00, // A4
+      523.25  // C5
+    ];
+
+    // Colors for particles
+    const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE'];
+
+    // Particles
+    const particles = [];
+
+    class Particle {
+      constructor(x, y, color) {
         this.x = x;
         this.y = y;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4 - 2;
+        this.life = 1;
+        this.decay = 0.015;
+        this.size = Math.random() * 4 + 2;
         this.color = color;
-        this.radius = 0;
-        this.maxRadius = maxRadius;
-        this.alpha = 1;
-        this.speed = 2; // pixels per frame
-        this.lineWidth = 2;
       }
 
       update() {
-        this.radius += this.speed;
-        
-        // Fade as it expands
-        this.alpha = 1 - (this.radius / this.maxRadius);
-        
-        // Fade out completely when near max
-        if (this.radius > this.maxRadius * 0.8) {
-          this.alpha *= (this.maxRadius - this.radius) / (this.maxRadius * 0.2);
-        }
-        
-        return this.radius < this.maxRadius;
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.1; // gravity
+        this.life -= this.decay;
       }
 
       draw() {
-        ctx.save();
-        ctx.strokeStyle = this.color;
-        ctx.globalAlpha = Math.max(0, this.alpha);
-        ctx.lineWidth = this.lineWidth;
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
       }
     }
 
-    // Audio setup
-    function initAudio() {
-      if (!audioContext) {
-        audioContext = new AudioContext();
-        
-        // Create global delay node for echo effect
-        window.delayNode = audioContext.createDelay(2.0);
-        delayNode.delayTime.value = 0.3; // 300ms echo
-        
-        window.feedbackGain = audioContext.createGain();
-        feedbackGain.gain.value = 0.5; // 50% feedback
-        
-        window.wetGain = audioContext.createGain();
-        wetGain.gain.value = 0.7; // Echo volume
-        
-        window.dryGain = audioContext.createGain();
-        dryGain.gain.value = 0.8; // Direct signal volume
-        
-        // Create feedback loop: delay -> feedback -> delay
-        delayNode.connect(feedbackGain);
-        feedbackGain.connect(delayNode);
-        delayNode.connect(wetGain);
-        wetGain.connect(audioContext.destination);
-      }
-      
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
+    function createParticleBurst(x, y, color) {
+      for (let i = 0; i < 20; i++) {
+        particles.push(new Particle(x, y, color));
       }
     }
 
-    // Play note with echo visualization
-    function playNote(x, y) {
-      if (!audioContext) return;
-      
-      // Map Y position to frequency (top = high, bottom = low)
-      const minFreq = 200;  // Low note
-      const maxFreq = 800;  // High note
-      const freq = maxFreq - ((y / canvas.height) * (maxFreq - minFreq));
-      
-      // Map X position to color
-      const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE'];
-      const colorIndex = Math.floor((x / canvas.width) * colors.length);
-      const color = colors[colorIndex];
-      
-      // Create oscillator
+    // Game state
+    let sequence = [];
+    let playerInput = [];
+    let round = 0;
+    let bestScore = parseInt(localStorage.getItem('echo-best')) || 0;
+    let isPlaying = false;
+    let isPlayerTurn = false;
+
+    // DOM elements
+    const pads = document.querySelectorAll('.pad');
+    const startBtn = document.getElementById('start-btn');
+    const retryBtn = document.getElementById('retry-btn');
+    const status = document.getElementById('status');
+    const roundDisplay = document.getElementById('round');
+    const bestDisplay = document.getElementById('best');
+    const gameArea = document.getElementById('game-area');
+    const gameOver = document.getElementById('game-over');
+    const finalRound = document.getElementById('final-round');
+
+    bestDisplay.textContent = bestScore;
+
+    // Sound functions
+    function playTone(freq, duration = 300, type = 'sine') {
+      initAudio();
       const osc = audioContext.createOscillator();
       const gain = audioContext.createGain();
-      
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      
-      // Envelope
-      const now = audioContext.currentTime;
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-      
-      // Route through dry and delay
+
       osc.connect(gain);
-      gain.connect(dryGain);
-      gain.connect(delayNode);
-      
-      dryGain.connect(audioContext.destination);
-      
-      osc.start(now);
-      osc.stop(now + 0.5);
-      
-      // Create visual rings for the initial tap and echoes
-      spawnEchoRings(x, y, color, freq);
+      gain.connect(audioContext.destination);
+
+      osc.type = type;
+      osc.frequency.value = freq;
+
+      gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+
+      osc.start();
+      osc.stop(audioContext.currentTime + duration / 1000);
     }
 
-    // Spawn rings for initial hit and echoes
-    function spawnEchoRings(x, y, color, freq) {
-      const echoCount = 5; // Number of echoes to visualize
-      const echoDelay = 300; // ms, matches audio delay
-      const maxRadius = 300;
-      
-      // Initial ring (largest)
-      rings.push(new Ring(x, y, color, maxRadius));
-      
-      // Echo rings (spawn with delay)
-      for (let i = 1; i <= echoCount; i++) {
+    function playSuccess() {
+      initAudio();
+      const notes = [440, 554, 659, 880];
+      notes.forEach((freq, i) => {
+        setTimeout(() => playTone(freq, 200), i * 100);
+      });
+    }
+
+    function playFailure() {
+      initAudio();
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(300, audioContext.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.5);
+
+      gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+      osc.start();
+      osc.stop(audioContext.currentTime + 0.5);
+    }
+
+    // Light up a pad
+    function lightPad(index, duration = 300) {
+      const pad = pads[index];
+      pad.classList.add('active');
+
+      const rect = pad.getBoundingClientRect();
+      createParticleBurst(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+        colors[index]
+      );
+
+      setTimeout(() => {
+        pad.classList.remove('active');
+      }, duration);
+    }
+
+    // Play sequence
+    async function playSequence() {
+      isPlaying = true;
+      status.textContent = '🎵 LISTEN...';
+      status.className = 'status computer';
+      pads.forEach(p => p.classList.add('disabled'));
+
+      for (let i = 0; i < sequence.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        const index = sequence[i];
+        lightPad(index, 400);
+        playTone(frequencies[index], 400, 'triangle');
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      isPlaying = false;
+      isPlayerTurn = true;
+      status.textContent = '🎹 YOUR TURN';
+      status.className = 'status your-turn';
+      pads.forEach(p => p.classList.remove('disabled'));
+    }
+
+    // Start game
+    function startGame() {
+      sequence = [];
+      playerInput = [];
+      round = 0;
+      nextRound();
+      gameArea.style.display = 'block';
+      gameOver.classList.remove('visible');
+      startBtn.style.display = 'none';
+    }
+
+    // Next round
+    function nextRound() {
+      round++;
+      roundDisplay.textContent = round;
+      playerInput = [];
+
+      // Add random note to sequence
+      const randomPad = Math.floor(Math.random() * 4);
+      sequence.push(randomPad);
+
+      playSequence();
+    }
+
+    // Check input
+    function checkInput(index) {
+      const correctIndex = sequence[playerInput.length];
+
+      if (index === correctIndex) {
+        playerInput.push(index);
+
+        if (playerInput.length === sequence.length) {
+          // Round complete!
+          isPlayerTurn = false;
+          status.textContent = '✓ CORRECT!';
+          status.className = 'status correct';
+          playSuccess();
+
+          if (round > bestScore) {
+            bestScore = round;
+            bestDisplay.textContent = bestScore;
+            localStorage.setItem('echo-best', bestScore);
+          }
+
+          setTimeout(() => {
+            nextRound();
+          }, 1500);
+        }
+      } else {
+        // Wrong!
+        isPlayerTurn = false;
+        pads.forEach(p => p.classList.add('disabled'));
+        status.textContent = '✗ WRONG';
+        status.className = 'status wrong';
+        playFailure();
+
         setTimeout(() => {
-          const echoAlpha = Math.pow(0.5, i); // Fade each echo
-          const echoColor = color + Math.floor(echoAlpha * 255).toString(16).padStart(2, '0');
-          const echoMaxRadius = maxRadius * (1 - i * 0.1); // Smaller rings
-          rings.push(new Ring(x, y, echoColor, echoMaxRadius));
-        }, i * echoDelay);
+          endGame();
+        }, 1500);
       }
     }
+
+    // End game
+    function endGame() {
+      gameArea.style.display = 'none';
+      gameOver.classList.add('visible');
+      finalRound.textContent = round;
+    }
+
+    // Pad click handlers
+    pads.forEach((pad, index) => {
+      pad.addEventListener('click', () => {
+        if (!isPlayerTurn || isPlaying) return;
+
+        initAudio();
+        lightPad(index, 300);
+        playTone(frequencies[index], 300);
+        checkInput(index);
+      });
+    });
+
+    // Button handlers
+    startBtn.addEventListener('click', startGame);
+    retryBtn.addEventListener('click', startGame);
 
     // Animation loop
     function animate() {
-      // Dark fade instead of clear for trails
       ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Update and draw rings
-      for (let i = rings.length - 1; i >= 0; i--) {
-        const ring = rings[i];
-        const alive = ring.update();
-        ring.draw();
-        
-        if (!alive) {
-          rings.splice(i, 1);
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+
+        if (particles[i].life <= 0) {
+          particles.splice(i, 1);
         }
       }
-      
+
       requestAnimationFrame(animate);
     }
-
-    // Start animation immediately (visual works before audio)
     animate();
-
-    // Interaction
-    function handleTap(e) {
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
-      const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
-      
-      // Initialize audio on first tap
-      if (!audioStarted) {
-        initAudio();
-        audioStarted = true;
-        status.classList.add('active');
-        instructionText.textContent = 'Tap anywhere';
-      }
-      
-      playNote(x, y);
-    }
-
-    canvas.addEventListener('click', handleTap);
-    canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      handleTap(e);
-    });
   </script>
 </body>
 </html>
