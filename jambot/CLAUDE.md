@@ -1628,3 +1628,4 @@ import { JB01Engine } from 'https://kochi.to/jb01/dist/machines/jb01/engine.js';
 | DK002 | JB01 | 52 bars tribal. Six acts. Decay curves that breathe. |
 | DK003 | JB01 + JT10 | Plastikman-style minimal. Filter sweep composition. |
 | DK004 | JT10 | JT10 arpeggio. 32-bar filter sweep. Square geometry. |
+| DK005 | JT10 + JB01 | Drift. 80-bar arc: rise, peak, dissolve, drift, return with kick. 118 BPM. |
