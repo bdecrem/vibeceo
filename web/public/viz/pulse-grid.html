@@ -223,7 +223,7 @@ async function start() {
   // ── REVERB: algorithmic via ConvolverNode ──
   const actx = engine.context;
   const sampleRate = actx.sampleRate;
-  const reverbTime = 3.5; // seconds — long, ethereal tail
+  const reverbTime = 5.0; // seconds — big wash
   const irLength = sampleRate * reverbTime;
   const irBuffer = actx.createBuffer(2, irLength, sampleRate);
   for (let ch = 0; ch < 2; ch++) {
@@ -239,13 +239,13 @@ async function start() {
   // Wet/dry mix: 40% wet
   const dryGain = actx.createGain();
   const wetGain = actx.createGain();
-  dryGain.gain.value = 0.65;
-  wetGain.gain.value = 0.35;
+  dryGain.gain.value = 0.4;
+  wetGain.gain.value = 0.7;
 
   // Highpass on wet signal to keep low end clean
   const reverbHP = actx.createBiquadFilter();
   reverbHP.type = 'highpass';
-  reverbHP.frequency.value = 200;
+  reverbHP.frequency.value = 120;
 
   convolver.connect(reverbHP);
   reverbHP.connect(wetGain);
