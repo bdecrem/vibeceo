@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Das Kollektiv - Drift</title>
+<meta property="og:title" content="Das Kollektiv - Drift">
+<meta property="og:description" content="JT10 arpeggio dissolves into reverb. Notes thin out. The gaps become the music.">
+<meta property="og:image" content="https://kochi.to/viz/pulse-grid-og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Das Kollektiv - Drift">
+<meta name="twitter:description" content="JT10 arpeggio dissolves into reverb. Notes thin out. The gaps become the music.">
+<meta name="twitter:image" content="https://kochi.to/viz/pulse-grid-og.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #030305; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.3);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.06); z-index: 10;
+  }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.05); z-index: 10;
+  }
+  #section {
+    position: fixed; top: 14px; right: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.04); z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="title">DRIFT</div>
+<div id="section"></div>
+<div id="overlay"><button id="play-btn">▶</button></div>
+<div id="credits">DAS KOLLEKTIV · HALLMAN · JT10</div>
+
+<script type="module">
+import { JT10Engine } from '/jt10/dist/machines/jt10/engine.js';
+
+const BPM = 118;  // slower than pulse grid — more space
+const STEP_DUR = 60 / BPM / 4;
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const sectionEl = document.getElementById('section');
+let W, H, cx, cy;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── VISUAL ELEMENTS ──
+
+const rings = [];
+const dots = [];
+
+class SquareRing {
+  constructor(size, thickness, brightness, isAccent = false) {
+    this.size = size;
+    this.thickness = thickness;
+    this.brightness = brightness;
+    this.alpha = isAccent ? 0.5 : 0.2;
+    this.born = performance.now();
+    this.isAccent = isAccent;
+    this.expandRate = isAccent ? 40 : 25;  // slower expansion for drift
+    this.maxSize = Math.max(W, H) * 1.3;
+  }
+  update() {
+    const age = (performance.now() - this.born) / 1000;
+    this.size += this.expandRate * (1/60);
+    this.alpha *= 0.997;  // very slow fade — rings linger
+    return this.alpha > 0.002 && this.size < this.maxSize;
+  }
+  draw() {
+    const c = Math.floor(255 * this.brightness);
+    ctx.strokeStyle = `rgba(${c},${c},${c},${this.alpha})`;
+    ctx.lineWidth = this.thickness;
+    const half = this.size / 2;
+    ctx.strokeRect(cx - half, cy - half, this.size, this.size);
+  }
+}
+
+class ScatterDot {
+  constructor(x, y, size, brightness) {
+    this.x = x; this.y = y; this.size = size;
+    this.brightness = brightness; this.alpha = 0.35;
+    this.born = performance.now();
+    // Slow drift movement
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.vy = (Math.random() - 0.5) * 0.3;
+  }
+  update() {
+    const age = (performance.now() - this.born) / 1000;
+    this.alpha *= 0.998;
+    this.x += this.vx;
+    this.y += this.vy;
+    return this.alpha > 0.003;
+  }
+  draw() {
+    const c = Math.floor(255 * this.brightness);
+    ctx.fillStyle = `rgba(${c},${c},${c},${this.alpha})`;
+    ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+  }
+}
+
+let centerPulse = 0;
+
+function render() {
+  requestAnimationFrame(render);
+  centerPulse *= 0.95;
+
+  // Even slower fade — geometry accumulates heavily during drift
+  ctx.fillStyle = 'rgba(3,3,5,0.004)';
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = rings.length - 1; i >= 0; i--) {
+    if (rings[i].update()) { rings[i].draw(); } else { rings.splice(i, 1); }
+  }
+  for (let i = dots.length - 1; i >= 0; i--) {
+    if (dots[i].update()) { dots[i].draw(); } else { dots.splice(i, 1); }
+  }
+
+  if (centerPulse > 0.03) {
+    ctx.fillStyle = `rgba(255,255,255,${centerPulse * 0.4})`;
+    const size = 2 + centerPulse * 6;
+    ctx.fillRect(cx - size/2, cy - size/2, size, size);
+  }
+}
+render();
+
+// ── JT10 ENGINE ──
+
+let engine = null;
+
+// Am arpeggio — same DNA as pulse grid but with more rests built in
+const arpFull = [
+  { note: 'A2',  gate: true,  accent: false, slide: false },
+  { note: 'A2',  gate: false, accent: false, slide: false },
+  { note: 'C3',  gate: true,  accent: false, slide: true  },
+  { note: 'E3',  gate: true,  accent: true,  slide: false },
+  { note: 'E3',  gate: false, accent: false, slide: false },
+  { note: 'C3',  gate: true,  accent: false, slide: false },
+  { note: 'A2',  gate: true,  accent: false, slide: true  },
+  { note: 'A2',  gate: false, accent: false, slide: false },
+  { note: 'A2',  gate: true,  accent: false, slide: false },
+  { note: 'C3',  gate: true,  accent: false, slide: false },
+  { note: 'E3',  gate: true,  accent: false, slide: true  },
+  { note: 'A3',  gate: true,  accent: true,  slide: false },
+  { note: 'A3',  gate: false, accent: false, slide: false },
+  { note: 'E3',  gate: true,  accent: false, slide: true  },
+  { note: 'C3',  gate: true,  accent: false, slide: false },
+  { note: 'A2',  gate: true,  accent: false, slide: false },
+];
+
+// ── ARRANGEMENT ──
+// 64 bars total (~130 seconds at 118 BPM)
+//
+// RISE (bars 1-16):     Full arp, filter opens 0.03 → 0.35
+// PEAK (bars 17-24):    Full arp, filter at 0.35, full brightness
+// DISSOLVE (bars 25-40): Notes thin out — probability drops from 100% to 15%
+// DRIFT (bars 41-56):   Sparse — ~10-15% of notes fire, reverb dominates
+// RETURN (bars 57-64):  Notes gradually come back, 15% → 100%
+
+const TOTAL_STEPS = 64 * 16;  // 1024 steps
+
+function getSection(step) {
+  const bar = Math.floor(step / 16);
+  if (bar < 16) return 'rise';
+  if (bar < 24) return 'peak';
+  if (bar < 40) return 'dissolve';
+  if (bar < 56) return 'drift';
+  return 'return';
+}
+
+function getNoteProbability(step) {
+  const bar = Math.floor(step / 16);
+  const section = getSection(step);
+  
+  if (section === 'rise') return 1.0;
+  if (section === 'peak') return 1.0;
+  if (section === 'dissolve') {
+    // 100% → 12% over 16 bars
+    const progress = (bar - 24) / 15;
+    return 1.0 - progress * 0.88;
+  }
+  if (section === 'drift') return 0.12;  // sparse — each note is an event
+  if (section === 'return') {
+    // 12% → 100% over 8 bars
+    const progress = (bar - 56) / 7;
+    return 0.12 + progress * 0.88;
+  }
+  return 1.0;
+}
+
+function getCutoff(step) {
+  const bar = Math.floor(step / 16);
+  const section = getSection(step);
+  
+  if (section === 'rise') {
+    return 0.03 + (bar / 15) * 0.32;  // 0.03 → 0.35
+  }
+  if (section === 'peak') return 0.35;
+  if (section === 'dissolve') {
+    // Slowly close as notes thin: 0.35 → 0.15
+    const progress = (bar - 24) / 15;
+    return 0.35 - progress * 0.20;
+  }
+  if (section === 'drift') return 0.15;  // dark, muffled
+  if (section === 'return') {
+    // Open back up: 0.15 → 0.35
+    const progress = (bar - 56) / 7;
+    return 0.15 + progress * 0.20;
+  }
+  return 0.35;
+}
+
+async function start() {
+  engine = new JT10Engine();
+
+  if (!engine.context) {
+    engine.context = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (engine.context.state === 'suspended') {
+    await engine.context.resume();
+  }
+
+  // Sound design: ethereal, breathy
+  engine.setParameter('sawLevel', 0.6);
+  engine.setParameter('pulseLevel', 0.15);  // slight pulse for warmth
+  engine.setParameter('pulseWidth', 0.4);
+  engine.setParameter('subLevel', 0.3);
+  engine.setParameter('subMode', 1);
+
+  engine.setParameter('cutoff', 0.03);
+  engine.setParameter('resonance', 0.0);
+  engine.setParameter('envMod', 0.4);
+  engine.setParameter('keyTrack', 0.3);
+
+  // Longer envelopes — notes breathe and sustain into the reverb
+  engine.setParameter('attack', 0.08);
+  engine.setParameter('decay', 0.55);
+  engine.setParameter('sustain', 0.45);
+  engine.setParameter('release', 0.5);
+
+  engine.setParameter('filterAttack', 0.1);
+  engine.setParameter('filterDecay', 0.5);
+  engine.setParameter('filterSustain', 0.2);
+  engine.setParameter('filterRelease', 0.4);
+
+  engine.setParameter('glideTime', 0.3);  // longer glide
+
+  // Slow LFO wobble
+  engine.setParameter('lfoRate', 0.08);
+  engine.setParameter('lfoToFilter', 0.06);
+
+  engine.masterVolume = 0.3;
+
+  // ── REVERB — aggressive, 70% wet ──
+  const actx = engine.context;
+  const sr = actx.sampleRate;
+  const reverbTime = 6.0;  // even longer for drift sections
+  const irLength = sr * reverbTime;
+  const irBuffer = actx.createBuffer(2, irLength, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = irBuffer.getChannelData(ch);
+    for (let i = 0; i < irLength; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLength, 1.8);
+    }
+  }
+  const convolver = actx.createConvolver();
+  convolver.buffer = irBuffer;
+
+  const dryGain = actx.createGain();
+  const wetGain = actx.createGain();
+  dryGain.gain.value = 0.35;
+  wetGain.gain.value = 0.75;
+
+  const reverbHP = actx.createBiquadFilter();
+  reverbHP.type = 'highpass';
+  reverbHP.frequency.value = 100;
+
+  convolver.connect(reverbHP);
+  reverbHP.connect(wetGain);
+  dryGain.connect(actx.destination);
+  wetGain.connect(actx.destination);
+
+  // Force scriptNode creation then rewire
+  await engine.playNote('A1', 0.001, false);
+  if (engine._scriptNode) {
+    engine._scriptNode.disconnect();
+    engine._scriptNode.connect(dryGain);
+    engine._scriptNode.connect(convolver);
+  }
+
+  // ── SEQUENCER ──
+  let step = 0;
+
+  setInterval(() => {
+    const stepInBar = step % 16;
+    const section = getSection(step);
+    const prob = getNoteProbability(step);
+    const cutoff = getCutoff(step);
+
+    // Update filter
+    engine.setParameter('cutoff', cutoff);
+
+    // During drift, also increase reverb wet
+    if (section === 'drift' || section === 'dissolve') {
+      const wetAmount = 0.75 + (section === 'drift' ? 0.15 : 0.05);
+      wetGain.gain.value = wetAmount;
+      dryGain.gain.value = 0.35 - (section === 'drift' ? 0.15 : 0.05);
+    } else {
+      wetGain.gain.value = 0.75;
+      dryGain.gain.value = 0.35;
+    }
+
+    // Section label
+    sectionEl.textContent = section.toUpperCase();
+
+    // Note trigger with probability
+    const s = arpFull[stepInBar];
+    const shouldPlay = s.gate && Math.random() < prob;
+
+    if (shouldPlay) {
+      const vel = s.accent ? 0.85 : 0.55;
+      engine.playNote(s.note, vel, s.slide);
+
+      // Visual: ring
+      const brightness = 0.2 + cutoff * 1.2;
+      const size = s.accent ? 30 + cutoff * 80 : 15 + cutoff * 50;
+      rings.push(new SquareRing(size, s.accent ? 1.5 : 0.8, brightness, s.accent));
+
+      // Scatter dots on slides
+      if (s.slide) {
+        const count = 2 + Math.floor(cutoff * 8);
+        const spread = 30 + cutoff * 150;
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2 + Math.random() * 1.0;
+          const dist = spread + (Math.random() - 0.5) * 50;
+          dots.push(new ScatterDot(
+            cx + Math.cos(angle) * dist,
+            cy + Math.sin(angle) * dist,
+            1 + Math.random() * 2,
+            brightness * 0.4
+          ));
+        }
+      }
+
+      centerPulse = s.accent ? 0.9 : 0.5;
+    }
+
+    step++;
+    if (step >= TOTAL_STEPS) step = 0;
+
+  }, STEP_DUR * 1000);
+}
+
+// ── PLAY BUTTON ──
+document.getElementById('play-btn').addEventListener('click', async () => {
+  document.getElementById('play-btn').classList.add('playing');
+  await start();
+});
+</script>
+</body>
+</html>
