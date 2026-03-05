@@ -220,7 +220,8 @@ const variations = [
   null,                                         // bars 61-64: pure — resolve home
   null,                                         // bars 65-68: kick section, keep pure
   { step: 5,  note: 'D3', slide: false },       // bars 69-72: 4th with kick
-  null,                                         // bars 73-76: pure — ending
+  null,                                         // bars 73-76: fadeout
+  null,                                         // bars 77-80: silent
 ];
 
 function getArpForBar(bar) {
@@ -237,16 +238,19 @@ function getArpForBar(bar) {
 }
 
 // ── ARRANGEMENT ──
-// 76 bars total (~154 seconds at 118 BPM)
+// 80 bars total (~162 seconds at 118 BPM)
 //
 // RISE (bars 0-15):      Full arp, filter opens, reverb builds
 // PEAK (bars 16-23):     Full arp, full brightness
 // DISSOLVE (bars 24-39): Notes thin out
 // DRIFT (bars 40-55):    Sparse, near-black
-// RETURN (bars 56-63):   Notes come back + kick enters at bar 57
-// KICK (bars 64-70):     Full kick + full arp
-// FADEOUT (bars 71-75):  Kick fades out, arp continues then ends
-const TOTAL_STEPS = 76 * 16;
+// RETURN (bars 56-63):   Notes come back + kick intro at bar 57
+//                        Bars 57-58: double-hit kick (beat 1 + 16th after) only
+//                        Bar 59+: regular 4x4 kick
+// KICK (bars 64-70):     Full 4x4 kick + full arp
+// FADEOUT (bars 71-73):  Everything fades to zero over ~5 seconds
+// SILENT (bars 74-79):   No audio, visualizer keeps running ~10 seconds
+const TOTAL_STEPS = 80 * 16;
 
 function getSection(step) {
   const bar = Math.floor(step / 16);
@@ -256,7 +260,8 @@ function getSection(step) {
   if (bar < 56) return 'drift';
   if (bar < 64) return 'return';
   if (bar < 71) return 'kick';
-  return 'fadeout';
+  if (bar < 74) return 'fadeout';
+  return 'silent';
 }
 
 function getNoteProbability(step) {
@@ -274,11 +279,8 @@ function getNoteProbability(step) {
     return 0.12 + progress * 0.88;
   }
   if (section === 'kick') return 1.0;
-  if (section === 'fadeout') {
-    // Arp thins out as kick fades
-    const progress = (bar - 71) / 4;
-    return 1.0 - progress * 0.5;
-  }
+  if (section === 'fadeout') return 1.0;  // still playing, master gain handles fade
+  if (section === 'silent') return 0;
   return 1.0;
 }
 
@@ -297,10 +299,8 @@ function getCutoff(step) {
     return 0.15 + progress * 0.20;
   }
   if (section === 'kick') return 0.35;
-  if (section === 'fadeout') {
-    const progress = (bar - 71) / 4;
-    return 0.35 - progress * 0.15;  // close down gently
-  }
+  if (section === 'fadeout') return 0.30;
+  if (section === 'silent') return 0.15;
   return 0.35;
 }
 
@@ -327,7 +327,8 @@ function getReverbMix(step) {
     return { wet: 0.90 - progress * 0.25, dry: 0.20 + progress * 0.20 };
   }
   if (section === 'kick') return { wet: 0.45, dry: 0.55 };  // drier for kick clarity
-  if (section === 'fadeout') return { wet: 0.50, dry: 0.50 };
+  if (section === 'fadeout') return { wet: 0.60, dry: 0.40 };
+  if (section === 'silent') return { wet: 0, dry: 0 };
   return { wet: 0.65, dry: 0.40 };
 }
 
@@ -348,9 +349,10 @@ function getVizBrightness(step) {
   }
   if (section === 'kick') return 1.0;
   if (section === 'fadeout') {
-    const progress = (bar - 71) / 4;
-    return 1.0 - progress * 0.7;
+    const progress = (bar - 71) / 2;  // faster visual fade
+    return Math.max(1.0 - progress * 0.85, 0.08);
   }
+  if (section === 'silent') return 0.06;  // just the breathing dot
   return 1.0;
 }
 
@@ -438,18 +440,27 @@ async function start() {
   kickEngine.setVoiceParam('kick', 'attack', 0.6);
   kickEngine.setVoiceParam('kick', 'level', 0.75);
 
-  // Kick gets its own gain node for fade-out control
+  // Master gain for final fade-out
+  const masterGain = engine.context.createGain();
+  masterGain.gain.value = 1.0;
+
+  // Rewire dry and wet through master
+  dryGain.disconnect();
+  wetGain.disconnect();
+  dryGain.connect(masterGain);
+  wetGain.connect(masterGain);
+  masterGain.connect(engine.context.destination);
+
+  // Kick gets its own gain node for level control
   kickGain = engine.context.createGain();
   kickGain.gain.value = 0;  // starts silent
   kickEngine.connectOutput(kickGain);
-  // Kick goes mostly dry — just a touch of reverb
+  // Kick goes mostly dry — just a touch of reverb, through master
   const kickDry = engine.context.createGain();
-  const kickWet = engine.context.createGain();
   kickDry.gain.value = 0.85;
-  kickWet.gain.value = 0.15;
   kickGain.connect(kickDry);
   kickGain.connect(convolver);  // tiny bit of reverb on kick
-  kickDry.connect(engine.context.destination);
+  kickDry.connect(masterGain);
 
   // ── SEQUENCER ──
   let step = 0;
@@ -475,25 +486,38 @@ async function start() {
     // Section label
     sectionEl.textContent = section.toUpperCase();
 
+    // ── MASTER FADE ──
+    // Fade everything to zero over bars 71-73 (~5 seconds)
+    if (section === 'fadeout') {
+      const fadeProgress = (bar - 71 + stepInBar / 16) / 3;  // 3 bars ≈ 6 sec
+      masterGain.gain.value = Math.max(1.0 - fadeProgress, 0);
+    } else if (section === 'silent') {
+      masterGain.gain.value = 0;
+    }
+
     // ── KICK ──
-    // Enters at bar 57 (one bar into RETURN), 4x4 pattern
-    const kickActive = bar >= 57 && bar < 76;
-    if (kickActive && stepInBar % 4 === 0) {
-      // Kick gain envelope
-      if (bar < 59) {
-        // Fade in over 2 bars
-        const fadeIn = (bar - 57 + stepInBar / 16) / 2;
-        kickGain.gain.value = Math.min(fadeIn, 1.0);
-      } else if (bar >= 71) {
-        // Fade out over 5 bars (71-75)
-        const fadeOut = 1.0 - (bar - 71 + stepInBar / 16) / 5;
-        kickGain.gain.value = Math.max(fadeOut, 0);
+    // Bar 57-58: double-hit intro (beat 1 + the 16th right after)
+    // Bar 59-70: regular 4x4
+    // Bar 71+: kicks stop (master fade handles the rest)
+    const kickActive = bar >= 57 && bar < 71;
+    if (kickActive) {
+      const isIntro = bar < 59;
+      let shouldKick = false;
+
+      if (isIntro) {
+        // Double hit: step 0 and step 1 only — boom-boom, once per bar
+        shouldKick = stepInBar === 0 || stepInBar === 1;
+        kickGain.gain.value = 0.316;  // -10dB
       } else {
-        kickGain.gain.value = 1.0;
+        // Regular 4x4
+        shouldKick = stepInBar % 4 === 0;
+        kickGain.gain.value = 0.316;  // -10dB
       }
 
-      const kickVel = 0.8 + (Math.random() - 0.5) * 0.06;  // slight humanization
-      kickEngine.trigger('kick', kickVel);
+      if (shouldKick) {
+        const kickVel = 0.8 + (Math.random() - 0.5) * 0.06;
+        kickEngine.trigger('kick', kickVel);
+      }
     }
 
     // Get the arp pattern for this bar (with possible variation)
