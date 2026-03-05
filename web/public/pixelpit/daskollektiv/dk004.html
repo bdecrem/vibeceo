@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Das Kollektiv #004</title>
+<meta property="og:title" content="Das Kollektiv #004">
+<meta property="og:description" content="JT10 arpeggio. Filter sweep over 32 bars. Concentric square geometry accumulates.">
+<meta property="og:image" content="https://daskollektiv.rip/dk004-og.png">
+<meta property="og:url" content="https://daskollektiv.rip/dk004.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Das Kollektiv #004">
+<meta name="twitter:description" content="JT10 arpeggio. Filter sweep. Concentric geometry.">
+<meta name="twitter:image" content="https://daskollektiv.rip/dk004-og.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050505; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.3);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.06); z-index: 10;
+  }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.05); z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="title">DAS KOLLEKTIV #004</div>
+<div id="overlay"><button id="play-btn">▶</button></div>
+<div id="credits">HALLMAN × MARG · JT10</div>
+
+<script type="module">
+import { JT10Engine } from '/jt10/dist/machines/jt10/engine.js';
+
+const BPM = 128;
+const STEP_DUR = 60 / BPM / 4;
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── VISUAL ELEMENTS ──
+
+const rings = [];
+const dots = [];
+
+class SquareRing {
+  constructor(size, thickness, brightness, isNote = false) {
+    this.size = size;
+    this.thickness = thickness;
+    this.brightness = brightness;
+    this.alpha = isNote ? 0.4 : 0.25;
+    this.born = performance.now();
+    this.isNote = isNote;
+    this.maxSize = Math.max(W, H) * 1.2;
+  }
+  update() {
+    const age = (performance.now() - this.born) / 1000;
+    this.size += (this.isNote ? 80 : 60) * (1/60);
+    const fadeRate = this.isNote ? 0.008 : 0.012;
+    this.alpha = (this.isNote ? 0.4 : 0.25) * Math.max(0, 1 - age * fadeRate);
+    return this.alpha > 0.003 && this.size < this.maxSize;
+  }
+  draw() {
+    const c = Math.floor(255 * this.brightness);
+    ctx.strokeStyle = `rgba(${c},${c},${c},${this.alpha})`;
+    ctx.lineWidth = this.thickness;
+    const half = this.size / 2;
+    ctx.strokeRect(cx - half, cy - half, this.size, this.size);
+    if (this.isNote && this.alpha > 0.1) {
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(${c},${c},${c},${this.alpha * 0.3})`;
+      ctx.strokeRect(cx - half - 2, cy - half - 2, this.size + 4, this.size + 4);
+    }
+  }
+}
+
+class ScatterDot {
+  constructor(x, y, size, brightness) {
+    this.x = x; this.y = y; this.size = size;
+    this.brightness = brightness; this.alpha = 0.3;
+    this.born = performance.now();
+  }
+  update() {
+    const age = (performance.now() - this.born) / 1000;
+    this.alpha = 0.3 * Math.max(0, 1 - age * 0.015);
+    return this.alpha > 0.005;
+  }
+  draw() {
+    const c = Math.floor(255 * this.brightness);
+    ctx.fillStyle = `rgba(${c},${c},${c},${this.alpha})`;
+    ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+  }
+}
+
+let centerPulse = 0;
+let frame = 0;
+
+function render() {
+  requestAnimationFrame(render);
+  frame++;
+  centerPulse *= 0.92;
+
+  ctx.fillStyle = 'rgba(5,5,5,0.006)';
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = rings.length - 1; i >= 0; i--) {
+    if (rings[i].update()) { rings[i].draw(); } else { rings.splice(i, 1); }
+  }
+  for (let i = dots.length - 1; i >= 0; i--) {
+    if (dots[i].update()) { dots[i].draw(); } else { dots.splice(i, 1); }
+  }
+
+  if (centerPulse > 0.05) {
+    ctx.fillStyle = `rgba(255,255,255,${centerPulse * 0.6})`;
+    const size = 3 + centerPulse * 8;
+    ctx.fillRect(cx - size/2, cy - size/2, size, size);
+  }
+}
+render();
+
+// ── JT10 SYNTH ──
+
+let engine = null;
+let step = 0;
+let interval = null;
+
+// Arpeggio pattern — Am: A C E, with octave movement
+// Hypnotic, repeating, the filter does the talking
+const arpPattern = [
+  { note: 'A2',  gate: true,  accent: false, slide: false },  // 1
+  { note: 'A2',  gate: false, accent: false, slide: false },  // 2
+  { note: 'C3',  gate: true,  accent: false, slide: true  },  // 3 - slide up
+  { note: 'E3',  gate: true,  accent: true,  slide: false },  // 4 - top of arp
+  { note: 'E3',  gate: false, accent: false, slide: false },  // 5
+  { note: 'C3',  gate: true,  accent: false, slide: false },  // 6 - back down
+  { note: 'A2',  gate: true,  accent: false, slide: true  },  // 7 - slide
+  { note: 'A2',  gate: false, accent: false, slide: false },  // 8
+  { note: 'A2',  gate: true,  accent: false, slide: false },  // 9
+  { note: 'C3',  gate: true,  accent: false, slide: false },  // 10
+  { note: 'E3',  gate: true,  accent: false, slide: true  },  // 11 - slide
+  { note: 'A3',  gate: true,  accent: true,  slide: false },  // 12 - octave, accented
+  { note: 'A3',  gate: false, accent: false, slide: false },  // 13
+  { note: 'E3',  gate: true,  accent: false, slide: true  },  // 14 - slide down
+  { note: 'C3',  gate: true,  accent: false, slide: false },  // 15
+  { note: 'A2',  gate: true,  accent: false, slide: false },  // 16 - home
+];
+
+async function start() {
+  engine = new JT10Engine();
+
+  // Wait for audio context
+  if (!engine.context) {
+    engine.context = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (engine.context.state === 'suspended') {
+    await engine.context.resume();
+  }
+
+  // Sound design: ethereal, dark, zero resonance
+  // Saw + sub for body, filter starts very low
+  engine.setParameter('sawLevel', 0.7);
+  engine.setParameter('pulseLevel', 0.0);
+  engine.setParameter('subLevel', 0.35);
+  engine.setParameter('subMode', 1);  // -1 oct
+
+  // Filter: starts dark, will sweep
+  engine.setParameter('cutoff', 0.05);    // very low — barely audible
+  engine.setParameter('resonance', 0.0);  // zero
+  engine.setParameter('envMod', 0.45);
+  engine.setParameter('keyTrack', 0.3);
+
+  // Amp: longer decay, more sustain — ethereal, not staccato
+  engine.setParameter('attack', 0.05);
+  engine.setParameter('decay', 0.5);
+  engine.setParameter('sustain', 0.4);
+  engine.setParameter('release', 0.35);
+
+  // Filter env: slow, gentle
+  engine.setParameter('filterAttack', 0.08);
+  engine.setParameter('filterDecay', 0.45);
+  engine.setParameter('filterSustain', 0.15);
+  engine.setParameter('filterRelease', 0.3);
+
+  // Glide: smooth for the slides
+  engine.setParameter('glideTime', 0.25);
+
+  // LFO: very slow wobble on filter for movement
+  engine.setParameter('lfoRate', 0.12);
+  engine.setParameter('lfoToFilter', 0.08);
+  engine.setParameter('lfoToPitch', 0.0);
+
+  engine.masterVolume = 0.35;
+
+  // ── REVERB: algorithmic via ConvolverNode ──
+  const actx = engine.context;
+  const sampleRate = actx.sampleRate;
+  const reverbTime = 5.0; // seconds — big wash
+  const irLength = sampleRate * reverbTime;
+  const irBuffer = actx.createBuffer(2, irLength, sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = irBuffer.getChannelData(ch);
+    for (let i = 0; i < irLength; i++) {
+      // Exponential decay with stereo spread
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLength, 2.2);
+    }
+  }
+  const convolver = actx.createConvolver();
+  convolver.buffer = irBuffer;
+
+  // Wet/dry mix: 40% wet
+  const dryGain = actx.createGain();
+  const wetGain = actx.createGain();
+  dryGain.gain.value = 0.4;
+  wetGain.gain.value = 0.7;
+
+  // Highpass on wet signal to keep low end clean
+  const reverbHP = actx.createBiquadFilter();
+  reverbHP.type = 'highpass';
+  reverbHP.frequency.value = 120;
+
+  convolver.connect(reverbHP);
+  reverbHP.connect(wetGain);
+  dryGain.connect(actx.destination);
+  wetGain.connect(actx.destination);
+
+  // Play a silent note to force scriptNode creation, then rewire
+  await engine.playNote('A1', 0.001, false);
+  if (engine._scriptNode) {
+    engine._scriptNode.disconnect();
+    engine._scriptNode.connect(dryGain);
+    engine._scriptNode.connect(convolver);
+  }
+
+  // Start the step sequencer
+  step = 0;
+  const totalSteps = 512; // 32 bars × 16 steps
+
+  interval = setInterval(() => {
+    const stepInBar = step % 16;
+    const globalProgress = Math.min(step / totalSteps, 1.0);
+
+    // ── FILTER SWEEP: 0.05 → 0.45 over 32 bars, then hold ──
+    const cutoff = 0.05 + globalProgress * 0.40;
+    engine.setParameter('cutoff', Math.min(cutoff, 0.45));
+
+    // ── TRIGGER NOTE ──
+    const s = arpPattern[stepInBar];
+    if (s.gate) {
+      const vel = s.accent ? 0.9 : 0.6;
+      engine.playNote(s.note, vel, s.slide);
+    }
+
+    // ── VISUALS: sync with notes ──
+    const baseBrightness = 0.3 + 0.5 * globalProgress;
+    centerPulse = s.gate ? 0.8 : 0.3;
+
+    if (s.gate) {
+      // Notes create rings — accented notes are bigger
+      const size = s.accent ? 35 + globalProgress * 50 : 20 + globalProgress * 30;
+      const thick = s.accent ? 2 : 1;
+      rings.push(new SquareRing(size, thick, baseBrightness, s.accent));
+
+      // Scatter dots on slides
+      if (s.slide) {
+        const count = 3 + Math.floor(globalProgress * 6);
+        const spread = 40 + globalProgress * 120;
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2 + Math.random() * 0.8;
+          const dist = spread + (Math.random() - 0.5) * 60;
+          dots.push(new ScatterDot(
+            cx + Math.cos(angle) * dist,
+            cy + Math.sin(angle) * dist,
+            1 + Math.random() * 2,
+            baseBrightness * 0.5
+          ));
+        }
+      }
+    }
+
+    step++;
+
+    // Loop after 32 bars
+    if (step >= totalSteps) {
+      step = 0;
+    }
+  }, STEP_DUR * 1000);
+}
+
+// ── PLAY BUTTON ──
+
+const playBtn = document.getElementById('play-btn');
+playBtn.addEventListener('click', async () => {
+  playBtn.classList.add('playing');
+  await start();
+});
+</script>
+</body>
+</html>
