@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Das Kollektiv - Pulse Grid</title>
+<meta property="og:title" content="Das Kollektiv - Pulse Grid">
+<meta property="og:description" content="Concentric square rings expand from center. Kicks add structure, hats scatter dots. Pure geometry accumulates.">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050505; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.3);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.06); z-index: 10;
+  }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.05); z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="title">PULSE GRID</div>
+<div id="credits">DAS KOLLEKTIV · MARG</div>
+
+<script>
+const BPM = 128;
+const STEP_DUR = 60 / BPM / 4;
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const rings = [];
+const dots = [];
+
+class SquareRing {
+  constructor(size, thickness, brightness, isKick = false) {
+    this.size = size;
+    this.thickness = thickness;
+    this.brightness = brightness;
+    this.alpha = isKick ? 0.4 : 0.25;
+    this.born = performance.now();
+    this.isKick = isKick;
+    this.maxSize = Math.max(W, H) * 1.2;
+  }
+  
+  update() {
+    const age = (performance.now() - this.born) / 1000;
+    this.size += (this.isKick ? 80 : 60) * (1/60);
+    
+    const fadeRate = this.isKick ? 0.008 : 0.012;
+    this.alpha = (this.isKick ? 0.4 : 0.25) * Math.max(0, 1 - age * fadeRate);
+    
+    return this.alpha > 0.003 && this.size < this.maxSize;
+  }
+  
+  draw() {
+    const c = Math.floor(255 * this.brightness);
+    ctx.strokeStyle = `rgba(${c},${c},${c},${this.alpha})`;
+    ctx.lineWidth = this.thickness;
+    
+    const half = this.size / 2;
+    ctx.strokeRect(cx - half, cy - half, this.size, this.size);
+    
+    if (this.isKick && this.alpha > 0.1) {
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(${c},${c},${c},${this.alpha * 0.3})`;
+      ctx.strokeRect(cx - half - 2, cy - half - 2, this.size + 4, this.size + 4);
+    }
+  }
+}
+
+class ScatterDot {
+  constructor(x, y, size, brightness) {
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.brightness = brightness;
+    this.alpha = 0.3;
+    this.born = performance.now();
+  }
+  
+  update() {
+    const age = (performance.now() - this.born) / 1000;
+    this.alpha = 0.3 * Math.max(0, 1 - age * 0.015);
+    return this.alpha > 0.005;
+  }
+  
+  draw() {
+    const c = Math.floor(255 * this.brightness);
+    ctx.fillStyle = `rgba(${c},${c},${c},${this.alpha})`;
+    ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+  }
+}
+
+let centerPulse = 0;
+let frame = 0;
+
+const kickSteps = [0, 4, 8, 12];
+const hatSteps = [2, 6, 10, 14];
+const allSteps = [0, 2, 4, 6, 8, 10, 12, 14];
+
+function render() {
+  requestAnimationFrame(render);
+  frame++;
+  centerPulse *= 0.92;
+
+  ctx.fillStyle = 'rgba(5,5,5,0.006)';
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = rings.length - 1; i >= 0; i--) {
+    if (rings[i].update()) { rings[i].draw(); } else { rings.splice(i, 1); }
+  }
+  for (let i = dots.length - 1; i >= 0; i--) {
+    if (dots[i].update()) { dots[i].draw(); } else { dots.splice(i, 1); }
+  }
+
+  if (centerPulse > 0.05) {
+    ctx.fillStyle = `rgba(255,255,255,${centerPulse * 0.6})`;
+    const size = 3 + centerPulse * 8;
+    ctx.fillRect(cx - size/2, cy - size/2, size, size);
+  }
+}
+render();
+
+// Auto-run: emit visual events on a loop
+const stepMs = STEP_DUR * 1000;
+let step = 0;
+
+setInterval(() => {
+  const stepInBar = step % 16;
+  const progress = (step % 128) / 128;
+  const baseBrightness = 0.4 + 0.4 * Math.sin(progress * Math.PI);
+
+  centerPulse = 1;
+
+  if (allSteps.includes(stepInBar)) {
+    rings.push(new SquareRing(20 + progress * 40, 1, baseBrightness * 0.8));
+  }
+  if (kickSteps.includes(stepInBar)) {
+    rings.push(new SquareRing(30 + progress * 60, 2 + Math.floor(progress * 2), baseBrightness, true));
+  }
+  if (hatSteps.includes(stepInBar)) {
+    const dotCount = 4 + Math.floor(progress * 8);
+    const spreadRadius = 50 + progress * 150;
+    for (let i = 0; i < dotCount; i++) {
+      const angle = (i / dotCount) * Math.PI * 2 + Math.random() * 0.5;
+      const dist = spreadRadius + (Math.random() - 0.5) * 80;
+      dots.push(new ScatterDot(cx + Math.cos(angle) * dist, cy + Math.sin(angle) * dist, 1 + Math.random() * 3, baseBrightness * 0.6));
+    }
+  }
+  step++;
+}, stepMs);
+</script>
+</body>
+</html>
