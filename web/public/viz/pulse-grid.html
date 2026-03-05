@@ -220,6 +220,46 @@ async function start() {
 
   engine.masterVolume = 0.35;
 
+  // ── REVERB: algorithmic via ConvolverNode ──
+  const actx = engine.context;
+  const sampleRate = actx.sampleRate;
+  const reverbTime = 3.5; // seconds — long, ethereal tail
+  const irLength = sampleRate * reverbTime;
+  const irBuffer = actx.createBuffer(2, irLength, sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = irBuffer.getChannelData(ch);
+    for (let i = 0; i < irLength; i++) {
+      // Exponential decay with stereo spread
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLength, 2.2);
+    }
+  }
+  const convolver = actx.createConvolver();
+  convolver.buffer = irBuffer;
+
+  // Wet/dry mix: 40% wet
+  const dryGain = actx.createGain();
+  const wetGain = actx.createGain();
+  dryGain.gain.value = 0.65;
+  wetGain.gain.value = 0.35;
+
+  // Highpass on wet signal to keep low end clean
+  const reverbHP = actx.createBiquadFilter();
+  reverbHP.type = 'highpass';
+  reverbHP.frequency.value = 200;
+
+  convolver.connect(reverbHP);
+  reverbHP.connect(wetGain);
+  dryGain.connect(actx.destination);
+  wetGain.connect(actx.destination);
+
+  // Play a silent note to force scriptNode creation, then rewire
+  await engine.playNote('A1', 0.001, false);
+  if (engine._scriptNode) {
+    engine._scriptNode.disconnect();
+    engine._scriptNode.connect(dryGain);
+    engine._scriptNode.connect(convolver);
+  }
+
   // Start the step sequencer
   step = 0;
   const totalSteps = 512; // 32 bars × 16 steps
