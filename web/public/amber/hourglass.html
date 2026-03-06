@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOURGLASS — Amber</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="HOURGLASS — Amber" />
+  <meta property="og:description" content="Tap to flip time" />
+  <meta property="og:image" content="https://intheamber.com/amber/hourglass-og.png" />
+  <meta property="og:url" content="https://intheamber.com/amber/hourglass.html" />
+  <meta property="og:type" content="website" />
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="HOURGLASS — Amber" />
+  <meta name="twitter:description" content="Tap to flip time" />
+  <meta name="twitter:image" content="https://intheamber.com/amber/hourglass-og.png" />
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #FFD700;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+      cursor: pointer;
+    }
+    
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    .ui {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    .title {
+      font-size: clamp(24px, 6vw, 48px);
+      font-weight: 700;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6),
+                   0 0 40px rgba(255, 215, 0, 0.3);
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      font-size: clamp(12px, 3vw, 16px);
+      color: #2D9596;
+      text-shadow: 0 0 10px rgba(45, 149, 150, 0.5);
+      letter-spacing: 1px;
+    }
+    
+    .stats {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: clamp(10px, 2.5vw, 14px);
+      color: #78716c;
+      pointer-events: none;
+      line-height: 1.6;
+    }
+    
+    .flips {
+      color: #FFD700;
+      font-weight: 700;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    
+    .subtitle {
+      animation: pulse 2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="ui">
+    <div class="title">HOURGLASS</div>
+    <div class="subtitle">TAP TO FLIP TIME</div>
+  </div>
+  
+  <div class="stats">
+    <div>PARTICLES: <span id="particleCount">0</span></div>
+    <div>FLIPS: <span class="flips" id="flipCount">0</span></div>
+    <div id="gravityDirection">GRAVITY: ↓</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Config
+    const COLORS = [
+      '#FFD700', // gold
+      '#f59e0b', // amber
+      '#2D9596', // teal
+      '#14b8a6', // teal light
+      '#ec4899', // hot pink
+      '#f472b6', // pink
+      '#8b5cf6', // purple
+      '#a855f7', // purple light
+      '#f97316', // coral
+      '#fb923c', // coral light
+      '#84cc16', // lime
+      '#3b82f6', // electric blue
+    ];
+    
+    // State
+    let particles = [];
+    let gravityDirection = 1; // 1 = down, -1 = up
+    let flipCount = 0;
+    let flipping = false;
+    let flipProgress = 0;
+    
+    // Audio context
+    let audioCtx = null;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    // Particle class
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.color = color;
+        this.radius = 2 + Math.random() * 2;
+        this.alpha = 1;
+      }
+      
+      update() {
+        // Apply gravity
+        this.vy += gravityDirection * 0.15;
+        
+        // Apply velocity
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Friction
+        this.vx *= 0.99;
+        
+        // Hourglass boundaries
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const neckWidth = 40;
+        const chamberWidth = Math.min(200, canvas.width * 0.4);
+        const chamberHeight = Math.min(250, canvas.height * 0.35);
+        
+        // Check if in top chamber
+        if (this.y < centerY) {
+          const topY = centerY - chamberHeight;
+          const distanceFromTop = this.y - topY;
+          const widthAtY = neckWidth + (chamberWidth - neckWidth) * (distanceFromTop / chamberHeight);
+          
+          // Side walls
+          if (Math.abs(this.x - centerX) > widthAtY / 2) {
+            this.x = centerX + Math.sign(this.x - centerX) * widthAtY / 2;
+            this.vx *= -0.5;
+          }
+          
+          // Top wall
+          if (this.y < topY) {
+            this.y = topY;
+            this.vy *= -0.3;
+          }
+        }
+        // Check if in bottom chamber
+        else {
+          const bottomY = centerY + chamberHeight;
+          const distanceFromBottom = bottomY - this.y;
+          const widthAtY = neckWidth + (chamberWidth - neckWidth) * (distanceFromBottom / chamberHeight);
+          
+          // Side walls
+          if (Math.abs(this.x - centerX) > widthAtY / 2) {
+            this.x = centerX + Math.sign(this.x - centerX) * widthAtY / 2;
+            this.vx *= -0.5;
+          }
+          
+          // Bottom wall
+          if (this.y > bottomY) {
+            this.y = bottomY;
+            this.vy *= -0.3;
+            this.vx *= 0.95; // More friction on floor
+          }
+        }
+        
+        // Neck constraint (the narrow middle)
+        const neckTop = centerY - 20;
+        const neckBottom = centerY + 20;
+        if (this.y > neckTop && this.y < neckBottom) {
+          if (Math.abs(this.x - centerX) > neckWidth / 2) {
+            this.x = centerX + Math.sign(this.x - centerX) * neckWidth / 2;
+            this.vx *= -0.5;
+          }
+        }
+      }
+      
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        
+        // Glow
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        
+        // Particle
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+      }
+    }
+    
+    // Draw hourglass shape
+    function drawHourglass() {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const neckWidth = 40;
+      const chamberWidth = Math.min(200, canvas.width * 0.4);
+      const chamberHeight = Math.min(250, canvas.height * 0.35);
+      
+      ctx.save();
+      
+      // Apply rotation during flip
+      if (flipping) {
+        ctx.translate(centerX, centerY);
+        ctx.rotate(flipProgress * Math.PI);
+        ctx.translate(-centerX, -centerY);
+      }
+      
+      // Draw outline
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(255, 215, 0, 0.2)';
+      
+      ctx.beginPath();
+      // Top chamber
+      ctx.moveTo(centerX - chamberWidth/2, centerY - chamberHeight);
+      ctx.lineTo(centerX + chamberWidth/2, centerY - chamberHeight);
+      ctx.lineTo(centerX + neckWidth/2, centerY);
+      ctx.lineTo(centerX + chamberWidth/2, centerY + chamberHeight);
+      ctx.lineTo(centerX - chamberWidth/2, centerY + chamberHeight);
+      ctx.lineTo(centerX - neckWidth/2, centerY);
+      ctx.closePath();
+      ctx.stroke();
+      
+      // Draw center neck glow
+      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 50);
+      gradient.addColorStop(0, 'rgba(255, 215, 0, 0.2)');
+      gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 50, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+    }
+    
+    // Spawn particles
+    function spawnParticles() {
+      const centerX = canvas.width / 2;
+      const spawnY = gravityDirection === 1 
+        ? canvas.height / 2 - 230  // Top chamber
+        : canvas.height / 2 + 230; // Bottom chamber
+      
+      for (let i = 0; i < 3; i++) {
+        const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        const x = centerX + (Math.random() - 0.5) * 100;
+        particles.push(new Particle(x, spawnY, color));
+      }
+    }
+    
+    // Flip the hourglass
+    function flip() {
+      if (flipping) return;
+      
+      initAudio();
+      flipping = true;
+      flipProgress = 0;
+      flipCount++;
+      
+      // Play flip sound
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+      
+      // Animate flip
+      const flipDuration = 60; // frames
+      let frame = 0;
+      
+      function animateFlip() {
+        frame++;
+        flipProgress = frame / flipDuration;
+        
+        if (frame >= flipDuration) {
+          flipping = false;
+          flipProgress = 0;
+          gravityDirection *= -1;
+          
+          // Reverse all particle velocities
+          particles.forEach(p => {
+            p.vy *= -1;
+          });
+        } else {
+          requestAnimationFrame(animateFlip);
+        }
+      }
+      animateFlip();
+    }
+    
+    // Handle interaction
+    canvas.addEventListener('click', flip);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      flip();
+    });
+    
+    // Animation loop
+    function animate() {
+      // Fade effect instead of clear
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw hourglass
+      drawHourglass();
+      
+      // Spawn new particles
+      if (Math.random() < 0.5 && particles.length < 500) {
+        spawnParticles();
+      }
+      
+      // Update and draw particles
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      
+      // Update stats
+      document.getElementById('particleCount').textContent = particles.length;
+document.getElementById('flipCount').textContent = flipCount;
+      document.getElementById('gravityDirection').textContent = 
+        gravityDirection === 1 ? 'GRAVITY: ↓' : 'GRAVITY: ↑';
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Start with some initial particles
+    for (let i = 0; i < 50; i++) {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2 - 150;
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      const x = centerX + (Math.random() - 0.5) * 120;
+      const y = centerY + (Math.random() - 0.5) * 80;
+      particles.push(new Particle(x, y, color));
+    }
+    
+    animate();
+  </script>
+</body>
+</html>
