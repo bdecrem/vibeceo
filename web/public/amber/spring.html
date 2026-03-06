@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spring — Amber</title>
+<meta name="description" content="Touch to bloom. A spring toy.">
+<meta property="og:title" content="Spring">
+<meta property="og:description" content="Touch to bloom.">
+<meta property="og:url" content="https://intheamber.com/amber/spring.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@intheamber">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌷</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#fdf6e3;font-family:Georgia,serif;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100%;height:100%}
+#hint{position:fixed;bottom:30px;left:0;right:0;text-align:center;color:#b8a070;font-size:13px;letter-spacing:2px;opacity:1;transition:opacity 1s;pointer-events:none;z-index:10}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">touch to plant</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H,dpr;
+function resize(){dpr=window.devicePixelRatio||1;W=window.innerWidth;H=window.innerHeight;canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
+resize();window.addEventListener('resize',resize);
+
+const flowers=[];
+const petals=[];
+const bees=[];
+let time=0,touched=false;
+
+// Warm spring palette
+const petalColors=['#f7a0b8','#f5c4d0','#ffb7c5','#e88fa0','#ffc9d8','#ff9bb3'];
+const leafColors=['#7cb870','#5a9e50','#8cc07a','#a3d49a'];
+const centerColors=['#ffe066','#ffd633','#ffcc00','#ffdb4d'];
+const skyGrad=[
+  {stop:0,color:'#e8f4fd'},
+  {stop:0.4,color:'#d4edfc'},
+  {stop:0.7,color:'#c8e6c9'},
+  {stop:1,color:'#f1f8e9'}
+];
+
+// Audio
+let audioCtx;
+const notes=[261.6,293.7,329.6,349.2,392,440,493.9,523.3];
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
+function chime(i){
+if(!audioCtx)return;
+const freq=notes[i%notes.length]*(1+Math.floor(i/notes.length)*0.5);
+const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+o.type='sine';o.frequency.value=freq;
+g.gain.setValueAtTime(0.08,audioCtx.currentTime);
+g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+1.5);
+o.connect(g);g.connect(audioCtx.destination);
+o.start();o.stop(audioCtx.currentTime+1.5);
+}
+
+class Flower{
+constructor(x,y){
+this.x=x;
+this.y=y;
+this.growth=0;
+this.maxHeight=60+Math.random()*80;
+this.stemWidth=2+Math.random()*2;
+this.petalCount=5+Math.floor(Math.random()*4);
+this.petalSize=8+Math.random()*14;
+this.petalColor=petalColors[Math.floor(Math.random()*petalColors.length)];
+this.centerColor=centerColors[Math.floor(Math.random()*centerColors.length)];
+this.leafColor=leafColors[Math.floor(Math.random()*leafColors.length)];
+this.stemColor=leafColors[Math.floor(Math.random()*leafColors.length)];
+this.sway=Math.random()*Math.PI*2;
+this.swaySpeed=0.01+Math.random()*0.02;
+this.swayAmount=2+Math.random()*4;
+this.leaves=[];
+const leafCount=1+Math.floor(Math.random()*3);
+for(let i=0;i<leafCount;i++){
+this.leaves.push({
+h:0.2+Math.random()*0.5,
+side:Math.random()>0.5?1:-1,
+size:6+Math.random()*8,
+angle:0.3+Math.random()*0.4
+});
+}
+this.bloom=0;
+this.born=time;
+chime(flowers.length);
+}
+update(){
+if(this.growth<1)this.growth+=0.008;
+if(this.growth>0.7&&this.bloom<1)this.bloom+=0.01;
+this.sway+=this.swaySpeed;
+}
+draw(){
+const g=this.growth;
+const h=this.maxHeight*g;
+const sx=Math.sin(this.sway)*this.swayAmount*g;
+const baseX=this.x;
+const baseY=this.y;
+const tipX=baseX+sx;
+const tipY=baseY-h;
+
+// Stem
+ctx.beginPath();
+ctx.moveTo(baseX,baseY);
+ctx.quadraticCurveTo(baseX+sx*0.3,baseY-h*0.5,tipX,tipY);
+ctx.strokeStyle=this.stemColor;
+ctx.lineWidth=this.stemWidth;
+ctx.lineCap='round';
+ctx.stroke();
+
+// Leaves
+for(const l of this.leaves){
+if(g<l.h+0.1)continue;
+const leafGrowth=Math.min(1,(g-l.h)/0.3);
+const lx=baseX+sx*l.h*0.3;
+const ly=baseY-h*l.h;
+const ls=l.size*leafGrowth;
+ctx.save();
+ctx.translate(lx,ly);
+ctx.rotate(l.side*l.angle);
+ctx.beginPath();
+ctx.ellipse(l.side*ls*0.6,0,ls,ls*0.35,0,0,Math.PI*2);
+ctx.fillStyle=this.leafColor;
+ctx.globalAlpha=0.8;
+ctx.fill();
+ctx.restore();
+ctx.globalAlpha=1;
+}
+
+// Flower head
+if(this.bloom>0){
+const b=this.bloom;
+const ps=this.petalSize*b;
+ctx.save();
+ctx.translate(tipX,tipY);
+// Petals
+for(let i=0;i<this.petalCount;i++){
+const angle=(Math.PI*2/this.petalCount)*i+Math.sin(this.sway*0.5)*0.1;
+const px=Math.cos(angle)*ps*0.5;
+const py=Math.sin(angle)*ps*0.5;
+ctx.beginPath();
+ctx.ellipse(px,py,ps*0.45,ps*0.22,angle,0,Math.PI*2);
+ctx.fillStyle=this.petalColor;
+ctx.globalAlpha=0.85*b;
+ctx.fill();
+}
+// Center
+ctx.beginPath();
+ctx.arc(0,0,ps*0.2,0,Math.PI*2);
+ctx.fillStyle=this.centerColor;
+ctx.globalAlpha=b;
+ctx.fill();
+ctx.restore();
+ctx.globalAlpha=1;
+
+// Occasionally release a petal
+if(b>0.9&&Math.random()<0.002){
+petals.push(new Petal(tipX,tipY,this.petalColor));
+}
+}
+}
+}
+
+class Petal{
+constructor(x,y,color){
+this.x=x;this.y=y;this.color=color;
+this.vx=(Math.random()-0.5)*0.5;
+this.vy=-0.2+Math.random()*0.3;
+this.rot=Math.random()*Math.PI*2;
+this.rotSpeed=0.02+Math.random()*0.04;
+this.size=4+Math.random()*5;
+this.life=1;
+this.wobble=Math.random()*Math.PI*2;
+}
+update(){
+this.wobble+=0.03;
+this.x+=this.vx+Math.sin(this.wobble)*0.3;
+this.y+=this.vy+0.3;
+this.rot+=this.rotSpeed;
+this.life-=0.003;
+}
+draw(){
+if(this.life<=0)return;
+ctx.save();
+ctx.translate(this.x,this.y);
+ctx.rotate(this.rot);
+ctx.globalAlpha=this.life*0.7;
+ctx.beginPath();
+ctx.ellipse(0,0,this.size,this.size*0.4,0,0,Math.PI*2);
+ctx.fillStyle=this.color;
+ctx.fill();
+ctx.restore();
+ctx.globalAlpha=1;
+}
+}
+
+class Bee{
+constructor(){
+this.x=Math.random()*W;
+this.y=50+Math.random()*(H*0.5);
+this.targetX=this.x;
+this.targetY=this.y;
+this.speed=0.5+Math.random()*1;
+this.wingPhase=Math.random()*Math.PI*2;
+this.size=4+Math.random()*3;
+this.retargetIn=60+Math.random()*120;
+}
+update(){
+this.retargetIn--;
+if(this.retargetIn<=0){
+// Pick a flower or random spot
+if(flowers.length>0&&Math.random()>0.3){
+const f=flowers[Math.floor(Math.random()*flowers.length)];
+this.targetX=f.x;
+this.targetY=f.y-f.maxHeight*f.growth;
+}else{
+this.targetX=50+Math.random()*(W-100);
+this.targetY=50+Math.random()*(H*0.5);
+}
+this.retargetIn=120+Math.random()*180;
+}
+this.x+=(this.targetX-this.x)*0.01*this.speed;
+this.y+=(this.targetY-this.y)*0.01*this.speed+Math.sin(time*0.05+this.wingPhase)*0.3;
+this.wingPhase+=0.3;
+}
+draw(){
+// Body
+ctx.fillStyle='#f5c842';
+ctx.beginPath();
+ctx.ellipse(this.x,this.y,this.size,this.size*0.6,0,0,Math.PI*2);
+ctx.fill();
+// Stripes
+ctx.fillStyle='#3a3a3a';
+ctx.fillRect(this.x-this.size*0.2,this.y-this.size*0.6,this.size*0.15,this.size*1.2);
+ctx.fillRect(this.x+this.size*0.2,this.y-this.size*0.6,this.size*0.15,this.size*1.2);
+// Wings
+const wFlap=Math.sin(this.wingPhase)*0.4;
+ctx.globalAlpha=0.3;
+ctx.fillStyle='#cde8f5';
+ctx.beginPath();
+ctx.ellipse(this.x-this.size*0.3,this.y-this.size*0.6-wFlap*5,this.size*0.5,this.size*0.8,-.3,0,Math.PI*2);
+ctx.fill();
+ctx.beginPath();
+ctx.ellipse(this.x+this.size*0.3,this.y-this.size*0.6+wFlap*5,this.size*0.5,this.size*0.8,.3,0,Math.PI*2);
+ctx.fill();
+ctx.globalAlpha=1;
+}
+}
+
+// Start with a few bees
+for(let i=0;i<3;i++)bees.push(new Bee());
+
+// Background grass
+function drawGrass(){
+const bladeCount=Math.floor(W/3);
+for(let i=0;i<bladeCount;i++){
+const x=i*(W/bladeCount)+Math.sin(i*0.7)*3;
+const h=15+Math.random()*25+Math.sin(time*0.02+i*0.3)*3;
+const sway=Math.sin(time*0.015+i*0.5)*4;
+ctx.beginPath();
+ctx.moveTo(x,H);
+ctx.quadraticCurveTo(x+sway*0.5,H-h*0.5,x+sway,H-h);
+ctx.strokeStyle=leafColors[i%leafColors.length];
+ctx.globalAlpha=0.4+Math.random()*0.2;
+ctx.lineWidth=1.5;
+ctx.stroke();
+}
+ctx.globalAlpha=1;
+}
+
+function drawSky(){
+const grad=ctx.createLinearGradient(0,0,0,H);
+for(const s of skyGrad)grad.addColorStop(s.stop,s.color);
+ctx.fillStyle=grad;
+ctx.fillRect(0,0,W,H);
+}
+
+// Clouds
+const clouds=[];
+for(let i=0;i<4;i++){
+clouds.push({x:Math.random()*W,y:30+Math.random()*100,w:80+Math.random()*120,h:25+Math.random()*20,speed:0.1+Math.random()*0.2});
+}
+function drawClouds(){
+ctx.fillStyle='rgba(255,255,255,0.6)';
+for(const c of clouds){
+c.x+=c.speed;
+if(c.x>W+c.w)c.x=-c.w;
+ctx.beginPath();
+ctx.ellipse(c.x,c.y,c.w*0.5,c.h,0,0,Math.PI*2);
+ctx.fill();
+ctx.beginPath();
+ctx.ellipse(c.x-c.w*0.25,c.y+c.h*0.3,c.w*0.35,c.h*0.8,0,0,Math.PI*2);
+ctx.fill();
+ctx.beginPath();
+ctx.ellipse(c.x+c.w*0.3,c.y+c.h*0.2,c.w*0.3,c.h*0.7,0,0,Math.PI*2);
+ctx.fill();
+}
+}
+
+// Sun
+function drawSun(){
+const sx=W*0.85,sy=60,sr=30;
+// Glow
+const glow=ctx.createRadialGradient(sx,sy,sr*0.5,sx,sy,sr*4);
+glow.addColorStop(0,'rgba(255,235,130,0.4)');
+glow.addColorStop(1,'rgba(255,235,130,0)');
+ctx.fillStyle=glow;
+ctx.fillRect(sx-sr*4,sy-sr*4,sr*8,sr*8);
+// Sun
+ctx.beginPath();
+ctx.arc(sx,sy,sr,0,Math.PI*2);
+ctx.fillStyle='#ffe082';
+ctx.fill();
+}
+
+// Ground
+function drawGround(){
+ctx.fillStyle='#c8e6a0';
+ctx.fillRect(0,H*0.85,W,H*0.15);
+// Gradient fade
+const gg=ctx.createLinearGradient(0,H*0.82,0,H*0.88);
+gg.addColorStop(0,'rgba(200,230,160,0)');
+gg.addColorStop(1,'rgba(200,230,160,1)');
+ctx.fillStyle=gg;
+ctx.fillRect(0,H*0.82,W,H*0.06);
+}
+
+function loop(){
+time++;
+drawSky();
+drawSun();
+drawClouds();
+drawGround();
+drawGrass();
+
+flowers.forEach(f=>{f.update();f.draw()});
+petals.forEach(p=>{p.update();p.draw()});
+petals.splice(0,petals.length,...petals.filter(p=>p.life>0&&p.y<H+20));
+bees.forEach(b=>{b.update();b.draw()});
+
+requestAnimationFrame(loop);
+}
+
+function plant(x,y){
+if(!touched){touched=true;document.getElementById('hint').style.opacity=0}
+initAudio();
+// Plant at ground level or where touched if lower half
+const groundY=Math.max(y,H*0.7);
+flowers.push(new Flower(x,groundY));
+// Add a bee occasionally
+if(flowers.length%5===0)bees.push(new Bee());
+}
+
+canvas.addEventListener('pointerdown',e=>{e.preventDefault();plant(e.clientX,e.clientY)});
+canvas.addEventListener('pointermove',e=>{
+if(e.buttons>0&&Math.random()>0.7){plant(e.clientX,e.clientY)}
+});
+
+// Plant a few starter flowers
+setTimeout(()=>{
+for(let i=0;i<5;i++){
+setTimeout(()=>plant(80+Math.random()*(W-160),H*0.75+Math.random()*H*0.12),i*300);
+}
+},500);
+
+loop();
+</script>
+</body>
+</html>
