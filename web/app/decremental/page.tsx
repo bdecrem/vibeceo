@@ -122,7 +122,7 @@ const projects: Project[] = [
     url: "https://kochi.to",
     image: "/kochitolabs/og-kochi.png",
     shortDesc: "ai over sms",
-    fullDesc: "daily reports, research papers, chat companion. also an iphone podcast app.",
+    fullDesc: "daily reports, research papers, chat companion. also an iphone podcast app. (some agents decommissioned.)",
     status: "neglected",
     order: 3,
     artifacts: [{ label: "iphone app", url: "https://apps.apple.com/us/app/kochi-podcast-player/id6752669410" }],
@@ -133,7 +133,7 @@ const projects: Project[] = [
     url: "https://pixelpit.gg",
     image: null,
     shortDesc: "ai game studio",
-    fullDesc: "haiku agents build one arcade game per day. currently on pause.",
+    fullDesc: "openclaw agents build one arcade game per day. the agents are in deep hibernation, dreaming of high scores.",
     status: "neglected",
   },
   {
