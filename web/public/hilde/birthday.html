@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Birthday Hilde! 🌸</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fce4ec, #f3e5f5, #e8f5e9, #fff3e0);
+  background-size: 400% 400%;
+  animation: gradientShift 8s ease infinite;
+  font-family: 'Georgia', serif;
+  overflow: hidden;
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.container {
+  text-align: center;
+  z-index: 2;
+  padding: 2rem;
+}
+h1 {
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  color: #d81b60;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 0.5rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.subtitle {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  color: #7b1fa2;
+  margin-top: 0.5rem;
+}
+.flower { position: fixed; font-size: 2rem; animation: fall linear infinite; pointer-events: none; }
+@keyframes fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0.3; }
+}
+.bouquet {
+  font-size: clamp(3rem, 10vw, 6rem);
+  margin: 1rem 0;
+  animation: sway 3s ease-in-out infinite;
+}
+@keyframes sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+.hearts {
+  font-size: 1.5rem;
+  margin-top: 1rem;
+  animation: fadeIn 2s ease-in;
+}
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="bouquet">🌷🌸🌺🌻🌹</div>
+  <h1>Happy Birthday Hilde!</h1>
+  <p class="subtitle">Wishing you the most beautiful day 🎂</p>
+  <p class="hearts">💐 🎉 💖 🎉 💐</p>
+</div>
+<script>
+const flowers = ['🌸', '🌺', '🌷', '🌹', '🌻', '💮', '🏵️', '🪻', '🌼', '💐'];
+function createFlower() {
+  const el = document.createElement('div');
+  el.className = 'flower';
+  el.textContent = flowers[Math.floor(Math.random() * flowers.length)];
+  el.style.left = Math.random() * 100 + 'vw';
+  el.style.fontSize = (1.5 + Math.random() * 2) + 'rem';
+  el.style.animationDuration = (4 + Math.random() * 6) + 's';
+  el.style.animationDelay = Math.random() * 2 + 's';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 12000);
+}
+setInterval(createFlower, 400);
+for (let i = 0; i < 15; i++) setTimeout(createFlower, i * 200);
+</script>
+</body>
+</html>
