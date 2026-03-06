@@ -73,13 +73,13 @@ export async function handleOrchestratedMessage(
       }
     }
 
-    // Try AIR confirmation
-    const { handleAIRConfirmation } = await import('../../commands/air.js');
-    const airHandled = await handleAIRConfirmation(commandContext);
-    if (airHandled) {
-      console.log(`[Orchestrated Routing] Handled AIR confirmation: ${commandContext.messageUpper}`);
-      return;
-    }
+    // DISABLED - neo4j shut down
+    // const { handleAIRConfirmation } = await import('../../commands/air.js');
+    // const airHandled = await handleAIRConfirmation(commandContext);
+    // if (airHandled) {
+    //   console.log(`[Orchestrated Routing] Handled AIR confirmation: ${commandContext.messageUpper}`);
+    //   return;
+    // }
 
     // Then try personalization confirmation
     if (commandContext.messageUpper === 'YES') {

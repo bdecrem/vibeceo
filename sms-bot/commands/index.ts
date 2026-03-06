@@ -1,7 +1,7 @@
 import type { CommandHandler } from "./types.js";
 
 import { aiDailyCommandHandler } from "./ai-daily.js";
-import { airCommandHandler } from "./air.js";
+// import { airCommandHandler } from "./air.js"; // DISABLED - neo4j shut down
 import { ccCommandHandler } from "./cc.js";
 import { aiTwitterCommandHandler } from "./ai-twitter.js";
 import { amberCommandHandler } from "./amber.js";
@@ -11,12 +11,12 @@ import { axCommandHandler } from "./ax.js";
 import { announcementsCommandHandler } from "./announcements.js";
 import { csCommandHandler } from "./cs.js";
 import { audioTestCommandHandler } from "./audio-test.js";
-import { arxivGraphCommandHandler } from "./arxiv-graph.js";
+// import { arxivGraphCommandHandler } from "./arxiv-graph.js"; // DISABLED - neo4j shut down
 // import { arxivCommandHandler } from "./arxiv.js"; // DISABLED - arxiv-research agent retired
 import { cryptoCommandHandler } from "./crypto.js";
 import { driftCommandHandler } from "./drift.js";
 import { gmailCommandHandler } from "./gmail.js";
-import { kgCommandHandler } from "./kg.js";
+// import { kgCommandHandler } from "./kg.js"; // DISABLED - neo4j shut down
 import { medicalDailyCommandHandler } from "./medical-daily.js";
 import { peerReviewCommandHandler } from "./peer-review.js";
 import { personalizeCommandHandler } from "./personalize.js";
@@ -29,7 +29,7 @@ import { tokenshotsCommandHandler } from "./tokenshots.js";
 
 export const commandHandlers: CommandHandler[] = [
   aiDailyCommandHandler, // AI DAILY RUN - generate combined AI Research Daily report (admin only)
-  airCommandHandler, // AIR (AI Research) - personalized research reports
+  // airCommandHandler, // AIR (AI Research) - DISABLED - neo4j shut down
   ccCommandHandler, // CC (Claude Code) - codebase investigation and PR creation
   aiTwitterCommandHandler, // AIT - AI Twitter Daily digest
   amberCommandHandler, // AMBER SCAN/EMAIL/STATUS - agent services (must be before amberx)
@@ -39,12 +39,12 @@ export const commandHandlers: CommandHandler[] = [
   announcementsCommandHandler, // ANNOUNCEMENTS - opt-in to platform updates
   csCommandHandler, // CS - content sharing link feed
   audioTestCommandHandler,
-  arxivGraphCommandHandler,
+  // arxivGraphCommandHandler, // DISABLED - neo4j shut down
   // arxivCommandHandler, // DISABLED - arxiv-research agent retired
   cryptoCommandHandler,
   driftCommandHandler, // $DRIFT - Drift trading agent alerts
   gmailCommandHandler, // GMAIL - Gmail integration for personalization
-  kgCommandHandler,
+  // kgCommandHandler, // DISABLED - neo4j shut down
   medicalDailyCommandHandler,
   peerReviewCommandHandler,
   personalizeCommandHandler, // PERSONALIZE - natural language personalization
