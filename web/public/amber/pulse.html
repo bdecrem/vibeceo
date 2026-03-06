@@ -3,487 +3,326 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PULSE — Visual Shockwave Drum Machine</title>
-  
-  <!-- OG Tags -->
-  <meta property="og:title" content="PULSE — Visual Shockwave Drum Machine" />
-  <meta property="og:description" content="TR-909 beats rendered as expanding shockwaves. Watch the rhythm ripple across space." />
-  <meta property="og:image" content="https://intheamber.com/amber/pulse-og.png" />
-  <meta property="og:url" content="https://intheamber.com/amber/pulse.html" />
-  <meta name="twitter:card" content="summary_large_image" />
-  
+  <title>PULSE</title>
+  <meta property="og:title" content="PULSE">
+  <meta property="og:description" content="Tap to trigger kick drums with hypnotic expanding rings">
+  <meta property="og:image" content="https://intheamber.com/amber/pulse-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/pulse.html">
+  <meta name="twitter:card" content="summary_large_image">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     body {
-      background: #0D0D0D;
+      background: #000;
       color: #D4A574;
       font-family: 'Space Mono', monospace;
       overflow: hidden;
-      width: 100vw;
-      height: 100vh;
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
+      height: 100vh;
+      touch-action: manipulation;
     }
-    
     canvas {
       display: block;
       width: 100%;
       height: 100%;
+      cursor: pointer;
     }
-    
-    #controls {
-      position: fixed;
+    #ui {
+      position: absolute;
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
+      text-align: center;
       z-index: 10;
       pointer-events: none;
     }
-    
     #title {
-      font-size: 2rem;
+      font-size: 64px;
       font-weight: bold;
-      letter-spacing: 0.1em;
-      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+      letter-spacing: 0.3em;
+      text-shadow: 0 0 30px rgba(212, 165, 116, 0.6);
       margin-bottom: 10px;
+      animation: glow 2s ease-in-out infinite;
     }
-    
-    #playBtn {
-      background: #D4A574;
-      color: #0D0D0D;
-      border: none;
-      padding: 15px 40px;
-      font-size: 1.2rem;
-      font-family: 'Space Mono', monospace;
-      font-weight: bold;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: all 0.2s;
-      pointer-events: all;
-      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    @keyframes glow {
+      0%, 100% { text-shadow: 0 0 30px rgba(212, 165, 116, 0.6); }
+      50% { text-shadow: 0 0 50px rgba(212, 165, 116, 0.9); }
     }
-    
-    #playBtn:hover {
-      background: #FFD700;
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    #subtitle {
+      font-size: 14px;
+      color: #2D9596;
+      letter-spacing: 0.2em;
     }
-    
-    #playBtn.playing {
-      background: #2D9596;
-      box-shadow: 0 0 20px rgba(45, 149, 150, 0.3);
+    #startPrompt {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 18px;
+      color: #D4A574;
+      letter-spacing: 0.15em;
+      text-align: center;
+      pointer-events: none;
+      animation: pulse 2s ease-in-out infinite;
     }
-    
-    #playBtn.playing:hover {
-      background: #7B68EE;
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
     }
-    
     #stats {
-      position: fixed;
+      position: absolute;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 0.9rem;
+      font-size: 12px;
       color: #D4A574;
-      opacity: 0.7;
-      text-align: center;
-      line-height: 1.6;
+      letter-spacing: 0.1em;
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
-  <div id="controls">
-    <div id="title">PULSE</div>
-    <button id="playBtn">PLAY</button>
-  </div>
-  
   <canvas id="canvas"></canvas>
-  
-  <div id="stats">
-    <div id="bpm">128 BPM</div>
-    <div id="pattern">TECHNO BASIC</div>
+  <div id="ui">
+    <div id="title">PULSE</div>
+    <div id="subtitle">TAP TO KICK</div>
   </div>
-  
-  <script type="module">
-    // === AUDIO SETUP ===
-    let audioContext;
-    let isPlaying = false;
+  <div id="startPrompt">TAP ANYWHERE</div>
+  <div id="stats">
+    <span id="kicks">0 KICKS</span>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const startPrompt = document.getElementById('startPrompt');
+    const kicksSpan = document.getElementById('kicks');
+
+    let width, height;
+    let audioContext = null;
     let audioStarted = false;
-    
-    const bpm = 128;
-    const stepDuration = 60 / bpm / 4; // 16th note duration
-    const beatsPerBar = 4;
-    const stepsPerBar = 16;
-    
-    // Shockwave system
-    const shockwaves = [];
-    
-    // Voice colors
-    const voiceColors = {
-      kick: '#FFD700',      // Gold
-      snare: '#D4A574',     // Amber
-      ch: '#2D9596',        // Teal
-      oh: '#7B68EE',        // Violet
-      rimshot: '#FF1493',   // Pink
-      clap: '#FF6B35'       // Coral
-    };
-    
-    // Voice positions (where shockwaves originate)
-    const voicePositions = {
-      kick: { x: 0.5, y: 0.5 },      // Center
-      snare: { x: 0.3, y: 0.3 },     // Top-left
-      ch: { x: 0.7, y: 0.2 },        // Top-right
-      oh: { x: 0.7, y: 0.4 },        // Mid-right
-      rimshot: { x: 0.2, y: 0.7 },   // Bottom-left
-      clap: { x: 0.8, y: 0.8 }       // Bottom-right
-    };
-    
-    // TR-909 pattern (techno basic)
-    const pattern = {
-      kick: [
-        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
-      ],
-      snare: [
-        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 0.9 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 0.9 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
-      ],
-      ch: [
-        { velocity: 0.7 }, { velocity: 0 }, { velocity: 0.7 }, { velocity: 0 },
-        { velocity: 0.7 }, { velocity: 0 }, { velocity: 0.7 }, { velocity: 0 },
-        { velocity: 0.7 }, { velocity: 0 }, { velocity: 0.7 }, { velocity: 0 },
-        { velocity: 0.7 }, { velocity: 0 }, { velocity: 0.7 }, { velocity: 0 }
-      ],
-      oh: [
-        { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
-      ],
-      rimshot: [
-        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.6 },
-        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.6 }
-      ],
-      clap: [
-        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
-      ]
-    };
-    
-    // === SYNTHESIZED 909 VOICES ===
-    function triggerKick(time, velocity = 1) {
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      const filter = audioContext.createBiquadFilter();
-      
-      osc.frequency.setValueAtTime(150, time);
-      osc.frequency.exponentialRampToValueAtTime(40, time + 0.05);
-      
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(200, time);
-      
-      gain.gain.setValueAtTime(velocity * 0.8, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
-      
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(audioContext.destination);
-      
-      osc.start(time);
-      osc.stop(time + 0.5);
-      
-      // Spawn shockwave
-      spawnShockwave('kick', velocity);
+    let kickCount = 0;
+    let rings = [];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
     }
-    
-    function triggerSnare(time, velocity = 1) {
-      // Tone component
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Ring class for expanding circles
+    class Ring {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.radius = 0;
+        this.maxRadius = Math.min(width, height) * 0.6;
+        this.color = color;
+        this.alpha = 1;
+        this.startTime = Date.now();
+        this.duration = 1500; // 1.5 seconds
+      }
+
+      update() {
+        const elapsed = Date.now() - this.startTime;
+        const progress = elapsed / this.duration;
+
+        if (progress >= 1) return false; // Ring is done
+
+        // Eased expansion
+        const eased = 1 - Math.pow(1 - progress, 3);
+        this.radius = this.maxRadius * eased;
+        this.alpha = 1 - progress;
+
+        return true; // Ring is still alive
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+
+        // Draw multiple concentric rings for thickness
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Inner glow
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = this.alpha * 0.5;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius - 10, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Outer glow
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = this.alpha * 0.3;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius + 10, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    }
+
+    // Particle class for burst effect
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 4;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.color = color;
+        this.alpha = 1;
+        this.life = 0;
+        this.maxLife = 30 + Math.random() * 30;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+        this.life++;
+        this.alpha = 1 - (this.life / this.maxLife);
+        return this.life < this.maxLife;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Color palette
+    const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE'];
+    let colorIndex = 0;
+
+    function getNextColor() {
+      const color = colors[colorIndex];
+      colorIndex = (colorIndex + 1) % colors.length;
+      return color;
+    }
+
+    // Synthesize kick drum
+    function playKick() {
+      if (!audioContext) return;
+
+      const now = audioContext.currentTime;
+
+      // Oscillator for the body of the kick
       const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      
-      osc.frequency.setValueAtTime(200, time);
-      osc.frequency.exponentialRampToValueAtTime(100, time + 0.1);
-      
-      gain.gain.setValueAtTime(velocity * 0.3, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
-      
-      osc.connect(gain);
-      gain.connect(audioContext.destination);
-      
-      osc.start(time);
-      osc.stop(time + 0.15);
-      
-      // Noise component
-      const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.15, audioContext.sampleRate);
+      const oscGain = audioContext.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.5);
+
+      oscGain.gain.setValueAtTime(0.8, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+      osc.connect(oscGain);
+      oscGain.connect(audioContext.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.5);
+
+      // Noise for the click
+      const bufferSize = audioContext.sampleRate * 0.1;
+      const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
       const data = buffer.getChannelData(0);
-      for (let i = 0; i < buffer.length; i++) {
+      for (let i = 0; i < bufferSize; i++) {
         data[i] = Math.random() * 2 - 1;
       }
-      
+
       const noise = audioContext.createBufferSource();
-      noise.buffer = buffer;
-      
-const noiseGain = audioContext.createGain();
+      const noiseGain = audioContext.createGain();
       const noiseFilter = audioContext.createBiquadFilter();
-      noiseFilter.type = 'highpass';
-      noiseFilter.frequency.value = 2000;
-      
-      noiseGain.gain.setValueAtTime(velocity * 0.4, time);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
-      
+
+      noise.buffer = buffer;
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.value = 1000;
+
+      noiseGain.gain.setValueAtTime(0.3, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
       noise.connect(noiseFilter);
       noiseFilter.connect(noiseGain);
       noiseGain.connect(audioContext.destination);
-      
-      noise.start(time);
-      
-      spawnShockwave('snare', velocity);
+
+      noise.start(now);
+      noise.stop(now + 0.1);
     }
-    
-    function triggerHat(time, velocity = 1, open = false) {
-      const buffer = audioContext.createBuffer(1, audioContext.sampleRate * (open ? 0.3 : 0.05), audioContext.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < buffer.length; i++) {
-        data[i] = Math.random() * 2 - 1;
+
+    // Handle tap/click
+    function handleInteraction(e) {
+      e.preventDefault();
+
+      // Initialize audio on first interaction
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        audioStarted = true;
+        startPrompt.style.display = 'none';
       }
-      
-      const noise = audioContext.createBufferSource();
-      noise.buffer = buffer;
-      
-      const gain = audioContext.createGain();
-      const filter = audioContext.createBiquadFilter();
-      filter.type = 'highpass';
-      filter.frequency.value = 8000;
-      filter.Q.value = 1;
-      
-      gain.gain.setValueAtTime(velocity * 0.15, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + (open ? 0.3 : 0.05));
-      
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(audioContext.destination);
-      
-      noise.start(time);
-      
-      spawnShockwave(open ? 'oh' : 'ch', velocity);
-    }
-    
-    function triggerRimshot(time, velocity = 1) {
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      const filter = audioContext.createBiquadFilter();
-      
-      osc.frequency.setValueAtTime(1200, time);
-      filter.type = 'bandpass';
-      filter.frequency.value = 2000;
-      filter.Q.value = 5;
-      
-      gain.gain.setValueAtTime(velocity * 0.3, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
-      
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(audioContext.destination);
-      
-      osc.start(time);
-      osc.stop(time + 0.08);
-      
-      spawnShockwave('rimshot', velocity);
-    }
-    
-    function triggerClap(time, velocity = 1) {
-      // Multiple short bursts
-      for (let i = 0; i < 3; i++) {
-        const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.01, audioContext.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let j = 0; j < buffer.length; j++) {
-          data[j] = Math.random() * 2 - 1;
-        }
-        
-        const noise = audioContext.createBufferSource();
-        noise.buffer = buffer;
-        
-        const gain = audioContext.createGain();
-        const filter = audioContext.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 1500;
-        filter.Q.value = 1;
-        
-        gain.gain.setValueAtTime(velocity * 0.2, time + i * 0.015);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + i * 0.015 + 0.05);
-        
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(audioContext.destination);
-        
-        noise.start(time + i * 0.015);
+
+      // Get tap coordinates
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX || (e.touches && e.touches[0].clientX);
+      const y = e.clientY || (e.touches && e.touches[0].clientY);
+      const canvasX = x - rect.left;
+      const canvasY = y - rect.top;
+
+      // Play kick
+      playKick();
+      kickCount++;
+      kicksSpan.textContent = `${kickCount} KICKS`;
+
+      // Create visual effects
+      const color = getNextColor();
+      rings.push(new Ring(canvasX, canvasY, color));
+
+      // Create particle burst
+      for (let i = 0; i < 20; i++) {
+        rings.push(new Particle(canvasX, canvasY, color));
       }
-      
-      spawnShockwave('clap', velocity);
     }
-    
-    // === SHOCKWAVE SYSTEM ===
-    function spawnShockwave(voice, velocity) {
-      const pos = voicePositions[voice];
-      const color = voiceColors[voice];
-      
-      shockwaves.push({
-        x: pos.x * canvas.width,
-        y: pos.y * canvas.height,
-        radius: 0,
-        maxRadius: velocity * 400 + 200,
-        speed: velocity * 3 + 2,
-        alpha: velocity * 0.8 + 0.2,
-        color: color,
-        life: 1
+
+    canvas.addEventListener('click', handleInteraction);
+    canvas.addEventListener('touchstart', handleInteraction);
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Fade effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Update and draw all rings and particles
+      rings = rings.filter(ring => {
+        const alive = ring.update();
+        if (alive) ring.draw();
+        return alive;
       });
     }
-    
-    // === SEQUENCER ===
-    let currentStep = 0;
-    let nextStepTime = 0;
-    let intervalId;
-    
-    function scheduleStep() {
-      const now = audioContext.currentTime;
-      
-      // Look ahead to prevent timing drift
-      while (nextStepTime < now + 0.1) {
-        const stepInPattern = currentStep % stepsPerBar;
-        
-        // Trigger voices
-        if (pattern.kick[stepInPattern].velocity > 0) {
-          triggerKick(nextStepTime, pattern.kick[stepInPattern].velocity);
-        }
-        if (pattern.snare[stepInPattern].velocity > 0) {
-          triggerSnare(nextStepTime, pattern.snare[stepInPattern].velocity);
-        }
-        if (pattern.ch[stepInPattern].velocity > 0) {
-          triggerHat(nextStepTime, pattern.ch[stepInPattern].velocity, false);
-        }
-        if (pattern.oh[stepInPattern].velocity > 0) {
-          triggerHat(nextStepTime, pattern.oh[stepInPattern].velocity, true);
-        }
-        if (pattern.rimshot[stepInPattern].velocity > 0) {
-          triggerRimshot(nextStepTime, pattern.rimshot[stepInPattern].velocity);
-        }
-        if (pattern.clap[stepInPattern].velocity > 0) {
-          triggerClap(nextStepTime, pattern.clap[stepInPattern].velocity);
-        }
-        
-        nextStepTime += stepDuration;
-        currentStep++;
-      }
-    }
-    
-    function startSequencer() {
-      if (!audioContext) {
-        audioContext = new AudioContext();
-      }
-      
-      nextStepTime = audioContext.currentTime;
-      currentStep = 0;
-      
-      intervalId = setInterval(scheduleStep, 25); // Check every 25ms
-    }
-    
-    function stopSequencer() {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
-    }
-    
-    // === CANVAS RENDERING ===
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    
-    function render() {
-      // Dark fade (trail effect)
-      ctx.fillStyle = 'rgba(13, 13, 13, 0.15)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Update and draw shockwaves
-      for (let i = shockwaves.length - 1; i >= 0; i--) {
-        const wave = shockwaves[i];
-        
-        // Update
-        wave.radius += wave.speed;
-        wave.life = 1 - (wave.radius / wave.maxRadius);
-        
-        // Remove if dead
-        if (wave.life <= 0) {
-          shockwaves.splice(i, 1);
-          continue;
-        }
-        
-        // Draw expanding ring
-        ctx.strokeStyle = wave.color;
-        ctx.globalAlpha = wave.life * wave.alpha;
-        ctx.lineWidth = 3 + wave.life * 5;
-        ctx.beginPath();
-        ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        // Inner glow
-        ctx.globalAlpha = wave.life * wave.alpha * 0.3;
-        ctx.lineWidth = 10 + wave.life * 15;
-        ctx.beginPath();
-        ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      
-      ctx.globalAlpha = 1;
-      
-      requestAnimationFrame(render);
-    }
-    render();
-    
-    // === CONTROLS ===
-    const playBtn = document.getElementById('playBtn');
-    
-    playBtn.addEventListener('click', async () => {
-      if (!audioStarted) {
-        audioStarted = true;
-        if (!audioContext) {
-          audioContext = new AudioContext();
-        }
-        await audioContext.resume();
-      }
-      
-      if (!isPlaying) {
-        isPlaying = true;
-        playBtn.textContent = 'STOP';
-        playBtn.classList.add('playing');
-        startSequencer();
-      } else {
-        isPlaying = false;
-        playBtn.textContent = 'PLAY';
-        playBtn.classList.remove('playing');
-        stopSequencer();
-      }
-    });
+
+    animate();
   </script>
 </body>
 </html>
