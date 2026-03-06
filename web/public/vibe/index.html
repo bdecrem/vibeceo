@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>VIBE PAD</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; }
+body { background: #0a0a0a; font-family: -apple-system, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+h1 { color: #fff; text-align: center; padding: 12px 0 8px; font-size: 18px; letter-spacing: 4px; opacity: 0.6; }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px; flex: 1; }
+.pad {
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 28px; cursor: pointer; user-select: none; -webkit-user-select: none;
+  transition: transform 0.08s, filter 0.08s;
+  position: relative; overflow: hidden;
+}
+.pad:active, .pad.hit { transform: scale(0.92); filter: brightness(1.8); }
+.pad .ripple {
+  position: absolute; border-radius: 50%; background: rgba(255,255,255,0.4);
+  transform: scale(0); animation: rippleAnim 0.5s ease-out;
+}
+@keyframes rippleAnim { to { transform: scale(3); opacity: 0; } }
+.pad .label { font-size: 11px; position: absolute; bottom: 6px; color: rgba(255,255,255,0.7); letter-spacing: 1px; }
+canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+.mode-bar { display: flex; gap: 8px; padding: 8px; justify-content: center; }
+.mode-btn { background: #222; color: #888; border: none; padding: 8px 16px; border-radius: 20px; font-size: 12px; letter-spacing: 2px; }
+.mode-btn.active { background: #444; color: #fff; }
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<h1>VIBE PAD</h1>
+<div class="mode-bar">
+  <button class="mode-btn active" onclick="setMode('synth')">SYNTH</button>
+  <button class="mode-btn" onclick="setMode('drums')">DRUMS</button>
+  <button class="mode-btn" onclick="setMode('fx')">FX</button>
+</div>
+<div class="grid" id="grid"></div>
+<script>
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let mode = 'synth';
+
+const PADS = {
+  synth: [
+    { emoji: '🌊', note: 261.63, color: '#0066ff', name: 'C' },
+    { emoji: '🔮', note: 293.66, color: '#6600cc', name: 'D' },
+    { emoji: '🌸', note: 329.63, color: '#ff3399', name: 'E' },
+    { emoji: '🍊', note: 349.23, color: '#ff6600', name: 'F' },
+    { emoji: '💚', note: 392.00, color: '#00cc44', name: 'G' },
+    { emoji: '⚡', note: 440.00, color: '#ffcc00', name: 'A' },
+    { emoji: '🧊', note: 493.88, color: '#00ccff', name: 'B' },
+    { emoji: '🔥', note: 523.25, color: '#ff2200', name: 'C+' },
+    { emoji: '🌙', note: 196.00, color: '#334488', name: 'G-' },
+    { emoji: '🍇', note: 220.00, color: '#9933cc', name: 'A-' },
+    { emoji: '🌿', note: 246.94, color: '#33aa44', name: 'B-' },
+    { emoji: '💎', note: 587.33, color: '#44ddff', name: 'D+' },
+    { emoji: '🎭', note: 155.56, color: '#cc4466', name: 'Eb' },
+    { emoji: '🪐', note: 174.61, color: '#886644', name: 'F-' },
+    { emoji: '❄️', note: 659.25, color: '#aaddff', name: 'E+' },
+    { emoji: '🌋', note: 138.59, color: '#cc3300', name: 'C#' },
+  ],
+  drums: [
+    { emoji: '💥', type: 'kick', color: '#ff2200', name: 'KICK' },
+    { emoji: '👏', type: 'snare', color: '#ffaa00', name: 'SNARE' },
+    { emoji: '🎩', type: 'hihat', color: '#aaaaaa', name: 'HAT' },
+    { emoji: '💫', type: 'openhat', color: '#cccccc', name: 'OPEN' },
+    { emoji: '🔔', type: 'bell', color: '#ffdd44', name: 'BELL' },
+    { emoji: '🪘', type: 'tom1', color: '#cc6633', name: 'TOM1' },
+    { emoji: '🥁', type: 'tom2', color: '#aa4422', name: 'TOM2' },
+    { emoji: '💢', type: 'clap', color: '#ff4488', name: 'CLAP' },
+    { emoji: '🔊', type: 'kick2', color: '#dd3300', name: 'KICK2' },
+    { emoji: '⭐', type: 'rim', color: '#dddd88', name: 'RIM' },
+    { emoji: '🌀', type: 'perc1', color: '#6688cc', name: 'PERC' },
+    { emoji: '🎯', type: 'perc2', color: '#cc6688', name: 'CONGA' },
+    { emoji: '💣', type: 'drop', color: '#882200', name: 'DROP' },
+    { emoji: '🪇', type: 'shaker', color: '#88aa66', name: 'SHAKE' },
+    { emoji: '🔕', type: 'mute', color: '#444444', name: 'MUTE' },
+    { emoji: '🎪', type: 'crash', color: '#dddddd', name: 'CRASH' },
+  ],
+  fx: [
+    { emoji: '🚀', type: 'rise', color: '#ff4400', name: 'RISE' },
+    { emoji: '🌊', type: 'sweep', color: '#0066ff', name: 'SWEEP' },
+    { emoji: '👾', type: 'bit', color: '#00ff66', name: '8BIT' },
+    { emoji: '🎰', type: 'glitch', color: '#ff00ff', name: 'GLITCH' },
+    { emoji: '📡', type: 'radio', color: '#aaaa44', name: 'RADIO' },
+    { emoji: '🌪️', type: 'wind', color: '#6688aa', name: 'WIND' },
+    { emoji: '⬇️', type: 'drop', color: '#ff2200', name: 'DROP' },
+    { emoji: '🔁', type: 'stutter', color: '#cc44ff', name: 'STUT' },
+    { emoji: '🐋', type: 'whale', color: '#2244aa', name: 'WHALE' },
+    { emoji: '⚡', type: 'zap', color: '#ffee00', name: 'ZAP' },
+    { emoji: '🎻', type: 'string', color: '#884422', name: 'STRING' },
+    { emoji: '🫧', type: 'bubble', color: '#66ccff', name: 'BUBBLE' },
+    { emoji: '🛸', type: 'ufo', color: '#44ff88', name: 'UFO' },
+    { emoji: '🔔', type: 'chime', color: '#ffcc66', name: 'CHIME' },
+    { emoji: '🌑', type: 'dark', color: '#222244', name: 'DARK' },
+    { emoji: '☀️', type: 'bright', color: '#ffff88', name: 'BRIGHT' },
+  ]
+};
+
+function playSynth(freq) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+  osc.type = 'sawtooth';
+  osc.frequency.value = freq;
+  filter.type = 'lowpass';
+  filter.frequency.value = freq * 4;
+  filter.frequency.exponentialRampToValueAtTime(freq * 0.5, audioCtx.currentTime + 0.8);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+  osc.connect(filter).connect(gain).connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.8);
+}
+
+function playDrum(type) {
+  const t = audioCtx.currentTime;
+  if (type === 'kick' || type === 'kick2') {
+    const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    osc.frequency.setValueAtTime(type === 'kick2' ? 180 : 150, t);
+    osc.frequency.exponentialRampToValueAtTime(30, t + 0.12);
+    g.gain.setValueAtTime(1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    osc.connect(g).connect(audioCtx.destination); osc.start(t); osc.stop(t + 0.3);
+  } else if (type === 'snare' || type === 'clap' || type === 'rim') {
+    const n = audioCtx.createBufferSource(); const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
+    const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i/d.length);
+    n.buffer = buf; const g = audioCtx.createGain(); const f = audioCtx.createBiquadFilter();
+    f.type = 'highpass'; f.frequency.value = type === 'rim' ? 4000 : type === 'clap' ? 1500 : 2000;
+    g.gain.setValueAtTime(type === 'clap' ? 0.6 : 0.4, t); g.gain.exponentialRampToValueAtTime(0.001, t + (type === 'rim' ? 0.05 : 0.15));
+    n.connect(f).connect(g).connect(audioCtx.destination); n.start(t);
+  } else if (type.includes('hat') || type === 'crash' || type === 'shaker') {
+    const n = audioCtx.createBufferSource(); const len = type === 'openhat' ? 0.3 : type === 'crash' ? 0.6 : 0.05;
+    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * len, audioCtx.sampleRate);
+    const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i/d.length);
+    n.buffer = buf; const g = audioCtx.createGain(); const f = audioCtx.createBiquadFilter();
+    f.type = 'highpass'; f.frequency.value = 7000; g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + len);
+    n.connect(f).connect(g).connect(audioCtx.destination); n.start(t);
+  } else if (type.includes('tom') || type.includes('perc') || type === 'drop') {
+    const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    const freqs = { tom1: 200, tom2: 140, perc1: 400, perc2: 300, drop: 800 };
+    osc.frequency.setValueAtTime(freqs[type] || 200, t);
+    osc.frequency.exponentialRampToValueAtTime(type === 'drop' ? 40 : (freqs[type] || 200) * 0.5, t + 0.2);
+    g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    osc.connect(g).connect(audioCtx.destination); osc.start(t); osc.stop(t + 0.25);
+  } else if (type === 'bell') {
+    const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    osc.type = 'sine'; osc.frequency.value = 800;
+    g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    osc.connect(g).connect(audioCtx.destination); osc.start(t); osc.stop(t + 0.5);
+  }
+}
+
+function playFx(type) {
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+  if (type === 'rise') { osc.frequency.setValueAtTime(100, t); osc.frequency.exponentialRampToValueAtTime(2000, t+1); g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+1); osc.start(t); osc.stop(t+1); }
+  else if (type === 'sweep') { osc.type='sawtooth'; const f=audioCtx.createBiquadFilter(); f.type='lowpass'; f.frequency.setValueAtTime(100,t); f.frequency.exponentialRampToValueAtTime(8000,t+1.5); f.frequency.exponentialRampToValueAtTime(100,t+3); osc.frequency.value=80; g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.001,t+3); osc.connect(f).connect(g).connect(audioCtx.destination); osc.start(t); osc.stop(t+3); return; }
+  else if (type === 'bit') { osc.type='square'; osc.frequency.setValueAtTime(440,t); for(let i=0;i<8;i++) osc.frequency.setValueAtTime(200+Math.random()*600,t+i*0.05); g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.5); osc.start(t); osc.stop(t+0.5); }
+  else if (type === 'whale') { osc.type='sine'; osc.frequency.setValueAtTime(150,t); osc.frequency.exponentialRampToValueAtTime(400,t+1); osc.frequency.exponentialRampToValueAtTime(100,t+2.5); g.gain.setValueAtTime(0.25,t); g.gain.exponentialRampToValueAtTime(0.001,t+2.5); osc.start(t); osc.stop(t+2.5); }
+  else if (type === 'zap') { osc.frequency.setValueAtTime(1500,t); osc.frequency.exponentialRampToValueAtTime(50,t+0.15); g.gain.setValueAtTime(0.4,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.15); osc.start(t); osc.stop(t+0.15); }
+  else if (type === 'ufo') { osc.type='sine'; osc.frequency.setValueAtTime(300,t); for(let i=0;i<20;i++) osc.frequency.setValueAtTime(300+Math.sin(i*0.5)*200,t+i*0.05); g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.001,t+1); osc.start(t); osc.stop(t+1); }
+  else if (type === 'chime') { [523,659,784,1047].forEach((f,i)=>{ const o=audioCtx.createOscillator();const gg=audioCtx.createGain();o.type='sine';o.frequency.value=f;gg.gain.setValueAtTime(0.15,t+i*0.1);gg.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.8);o.connect(gg).connect(audioCtx.destination);o.start(t+i*0.1);o.stop(t+i*0.1+0.8);}); return; }
+  else if (type === 'dark') { osc.type='sawtooth'; osc.frequency.value=40; g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+2); osc.start(t); osc.stop(t+2); }
+  else if (type === 'bright') { osc.type='sine'; osc.frequency.value=880; g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.6); osc.start(t); osc.stop(t+0.6); }
+  else { osc.frequency.value=200+Math.random()*800; g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.5); osc.start(t); osc.stop(t+0.5); }
+  osc.connect(g).connect(audioCtx.destination);
+}
+
+// Visual FX
+const canvas = document.getElementById('fx');
+const ctx2d = canvas.getContext('2d');
+const particles = [];
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+
+function spawnParticles(x, y, color) {
+  for (let i = 0; i < 12; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 2 + Math.random() * 4;
+    particles.push({ x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed, life: 1, color, size: 3+Math.random()*5 });
+  }
+}
+
+function animate() {
+  ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.life -= 0.025; p.vy += 0.1;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    ctx2d.globalAlpha = p.life;
+    ctx2d.fillStyle = p.color;
+    ctx2d.beginPath(); ctx2d.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2); ctx2d.fill();
+  }
+  ctx2d.globalAlpha = 1;
+  requestAnimationFrame(animate);
+}
+animate();
+
+function buildGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  PADS[mode].forEach((pad, i) => {
+    const el = document.createElement('div');
+    el.className = 'pad';
+    el.style.background = pad.color;
+    el.innerHTML = `${pad.emoji}<span class="label">${pad.name}</span>`;
+    const handler = (e) => {
+      e.preventDefault();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      el.classList.add('hit');
+      setTimeout(() => el.classList.remove('hit'), 100);
+      const rect = el.getBoundingClientRect();
+      spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2, pad.color);
+      if (mode === 'synth') playSynth(pad.note);
+      else if (mode === 'drums') playDrum(pad.type);
+      else if (mode === 'fx') playFx(pad.type);
+    };
+    el.addEventListener('touchstart', handler, { passive: false });
+    el.addEventListener('mousedown', handler);
+    grid.appendChild(el);
+  });
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.textContent === m.toUpperCase()));
+  buildGrid();
+}
+
+buildGrid();
+</script>
+</body>
+</html>
