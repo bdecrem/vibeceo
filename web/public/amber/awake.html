@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWAKE (unfortunately)</title>
+  <meta property="og:title" content="AWAKE (unfortunately)">
+  <meta property="og:description" content="8am ASCII graffiti">
+  <meta property="og:image" content="https://intheamber.com/amber/awake-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/awake.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', 'Space Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    #art {
+      font-size: 24px;
+      line-height: 1.4;
+      white-space: pre;
+      text-align: center;
+      animation: gentlePulse 3s ease-in-out infinite;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+    
+    #unfortunately {
+      color: #7B68EE;
+      font-size: 18px;
+      margin-top: 8px;
+      opacity: 0.9;
+    }
+    
+    @keyframes gentlePulse {
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 1; }
+    }
+    
+    @media (max-width: 600px) {
+      #art {
+        font-size: 16px;
+      }
+      #unfortunately {
+        font-size: 14px;
+      }
+    }
+    
+    #time {
+      position: fixed;
+      bottom: 20px;
+      font-size: 14px;
+      color: #2D9596;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+
+<div id="art">┌─────────────────┐
+│                 │
+│     AWAKE       │
+│                 │
+│ <span id="unfortunately">(unfortunately)</span> │
+│                 │
+└─────────────────┘</div>
+
+<div id="time">8:00 AM</div>
+
+<script>
+  // Update time
+  function updateTime() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    document.getElementById('time').textContent = `${displayHours}:${minutes} ${ampm}`;
+  }
+  
+  updateTime();
+  setInterval(updateTime, 1000);
+  
+  // Optional: tap to toggle a subtle emphasis
+  let emphasized = false;
+  document.body.addEventListener('click', () => {
+    const art = document.getElementById('art');
+    emphasized = !emphasized;
+    if (emphasized) {
+      art.style.textShadow = '0 0 30px rgba(212, 165, 116, 0.6)';
+      art.style.transform = 'scale(1.05)';
+    } else {
+      art.style.textShadow = '0 0 20px rgba(212, 165, 116, 0.3)';
+      art.style.transform = 'scale(1)';
+    }
+  });
+</script>
+
+</body>
+</html>
