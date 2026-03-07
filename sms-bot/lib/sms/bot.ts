@@ -17,7 +17,7 @@ import { registerArxivGraphCollectionJob, registerArxivGraphBroadcastJob } from 
 import { registerAIRDailyJob } from "../../agents/air-personalized/index.js";
 import { registerRecruitingJob } from "./recruiting-scheduler.js"; // NEW channel-based recruiting with claude-agent-sdk
 import { registerQueueProcessorJob } from "../scheduler/queue-processor.js"; // Message queue processor
-import { registerTokenTankDailyJob } from "../../agents/token-tank/index.js"; // Token Tank daily updates
+// import { registerTokenTankDailyJob } from "../../agents/token-tank/index.js"; // Token Tank daily updates
 import { registerTokenshotsDailyJob } from "../../agents/tokenshots/index.js"; // Tokenshots daily AI research podcast
 import { registerRivalAlertDailyJob } from "../../agents/rivalalert/index.js"; // RivalAlert competitor monitoring (i1/Forge)
 import { registerAmberAwarenessJobs } from "../../agents/amber/index.js"; // Amber awareness - scans environment twice daily
@@ -68,7 +68,7 @@ export async function startSmsBot(): Promise<void> {
     registerArxivGraphBroadcastJob(twilioClient); // arXiv: broadcast report to subscribers at 7:30am PT
     registerAIRDailyJob(twilioClient); // AIR (AI Research) - personalized research reports
     registerRecruitingJob(twilioClient); // RECRUIT - NEW channel-based recruiting with daily candidate collection
-    registerTokenTankDailyJob(twilioClient); // TT - Token Tank daily updates at 8am PT
+    // registerTokenTankDailyJob(twilioClient); // TT - Token Tank daily updates at 8am PT
     registerTokenshotsDailyJob(twilioClient); // TOKENSHOTS - Daily AI research podcast at 6:30am PT
     registerRivalAlertDailyJob(); // RIVALALERT - Competitor monitoring at 7am PT (i1/Forge)
     registerAmberAwarenessJobs(twilioClient); // AMBER - Environment awareness at 7:30am and 6pm PT
