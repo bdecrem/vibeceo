@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>RAIN — Tap to make acid drops fall and play squelchy bass notes</title>
+
+  <!-- OG Tags -->
+  <meta property="og:title" content="RAIN — Acid drops fall and play squelchy bass notes">
+  <meta property="og:description" content="Tap anywhere to spawn colorful drops that fall and play TB-303 style acid bass when they hit. Filter sweeps, resonance, squelch.">
+  <meta property="og:image" content="https://intheamber.com/amber/rain-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/rain.html">
+  <meta property="og:type" content="website">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="RAIN — Acid drops fall and play squelchy bass notes">
+  <meta name="twitter:description" content="Tap anywhere to spawn colorful drops that fall and play TB-303 style acid bass when they hit.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/rain-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      touch-action: none;
+    }
+
+    #canvas {
+      display: block;
+      cursor: crosshair;
+    }
+
+    #info {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-size: 14px;
+      color: #D4A574;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    #subtitle {
+      font-size: 12px;
+      color: #2D9596;
+      opacity: 0.8;
+    }
+
+    #stats {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      font-size: 12px;
+      color: #D4A574;
+      opacity: 0.6;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #startBtn {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 20px 40px;
+      font-size: 24px;
+      font-family: 'Space Mono', monospace;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-weight: bold;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
+      z-index: 100;
+    }
+
+    #startBtn:hover {
+      background: #FFD700;
+      box-shadow: 0 0 50px rgba(255, 215, 0, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div id="info">
+    <div id="title">RAIN</div>
+    <div id="subtitle">tap anywhere to spawn acid drops</div>
+  </div>
+
+  <div id="stats">
+    <div>DROPS: <span id="dropCount">0</span></div>
+    <div>NOTES: <span id="noteCount">0</span></div>
+  </div>
+
+  <button id="startBtn">START</button>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('startBtn');
+    const dropCountEl = document.getElementById('dropCount');
+    const noteCountEl = document.getElementById('noteCount');
+
+    let width, height;
+    let audioStarted = false;
+    let audioCtx;
+    let drops = [];
+    let particles = [];
+    let noteCount = 0;
+
+    const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#FF1493', '#FF6B6B', '#00CED1', '#32CD32'];
+
+    // Resize canvas
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Drop class
+    class Drop {
+      constructor(x, y, color, filterFreq) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.filterFreq = filterFreq;
+        this.size = 8;
+        this.vy = 0;
+        this.gravity = 0.3;
+        this.hasPlayed = false;
+        this.trail = [];
+      }
+
+      update() {
+        this.vy += this.gravity;
+        this.y += this.vy;
+
+        // Store trail
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > 20) this.trail.shift();
+
+        // Hit bottom
+        if (this.y >= height - 40 && !this.hasPlayed) {
+          this.hasPlayed = true;
+          playNote(this.filterFreq);
+          createBurst(this.x, this.y, this.color);
+          noteCount++;
+          noteCountEl.textContent = noteCount;
+          return true;
+        }
+
+        return false;
+      }
+
+      draw() {
+        // Draw trail
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        for (let i = 0; i < this.trail.length; i++) {
+          const t = this.trail[i];
+          if (i === 0) ctx.moveTo(t.x, t.y);
+          else ctx.lineTo(t.x, t.y);
+        }
+        ctx.stroke();
+
+        // Draw drop
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    // Particle class
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vx = (Math.random() - 0.5) * 6;
+        this.vy = (Math.random() - 0.5) * 6 - 2;
+        this.size = Math.random() * 4 + 2;
+        this.life = 1;
+        this.decay = Math.random() * 0.02 + 0.01;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2;
+        this.life -= this.decay;
+        return this.life > 0;
+      }
+
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    // Create particle burst
+    function createBurst(x, y, color) {
+      for (let i = 0; i < 30; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    }
+
+    // Play acid bass note
+    function playNote(filterFreq) {
+      if (!audioStarted) return;
+
+      const now = audioCtx.currentTime;
+
+      // Create oscillator (sawtooth for acid sound)
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sawtooth';
+
+      // Random note from E minor pentatonic
+      const notes = [82.41, 98, 110, 130.81, 146.83, 164.81, 196]; // E2-G3
+      const freq = notes[Math.floor(Math.random() * notes.length)];
+      osc.frequency.value = freq;
+
+      // Filter (the squelch!)
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = filterFreq;
+      filter.Q.value = 15; // High resonance for squelch
+
+      // Envelope for filter sweep
+      filter.frequency.setValueAtTime(filterFreq, now);
+      filter.frequency.exponentialRampToValueAtTime(freq * 2, now + 0.05);
+      filter.frequency.exponentialRampToValueAtTime(freq * 0.5, now + 0.3);
+
+      // Gain envelope
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0;
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.3, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+      // Connect
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+// Start/stop
+      osc.start(now);
+      osc.stop(now + 0.4);
+    }
+
+    // Spawn drop
+    function spawnDrop(x, y) {
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      // Map X position to filter frequency (200Hz - 2000Hz)
+      const filterFreq = 200 + (x / width) * 1800;
+      drops.push(new Drop(x, y, color, filterFreq));
+      dropCountEl.textContent = drops.length;
+    }
+
+    // Auto-spawn drops
+    let autoSpawnTimer = 0;
+    function autoSpawn() {
+      autoSpawnTimer++;
+      if (autoSpawnTimer > 60) { // Every second
+        const x = Math.random() * width;
+        spawnDrop(x, 0);
+        autoSpawnTimer = 0;
+      }
+    }
+
+    // Animation loop
+    function animate() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw ground line
+      ctx.strokeStyle = '#2D9596';
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath();
+      ctx.moveTo(0, height - 40);
+      ctx.lineTo(width, height - 40);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Update and draw drops
+      for (let i = drops.length - 1; i >= 0; i--) {
+        const hit = drops[i].update();
+        drops[i].draw();
+        if (hit) {
+          drops.splice(i, 1);
+          dropCountEl.textContent = drops.length;
+        }
+      }
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const alive = particles[i].update();
+        particles[i].draw();
+        if (!alive) particles.splice(i, 1);
+      }
+
+      // Auto-spawn
+      if (audioStarted) {
+        autoSpawn();
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // Start audio
+    startBtn.addEventListener('click', () => {
+      if (!audioStarted) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioStarted = true;
+        startBtn.style.display = 'none';
+
+        // Spawn initial drops
+        for (let i = 0; i < 5; i++) {
+          setTimeout(() => {
+            const x = (i + 1) * (width / 6);
+            spawnDrop(x, 0);
+          }, i * 200);
+        }
+      }
+    });
+
+    // Click to spawn
+    canvas.addEventListener('click', (e) => {
+      if (!audioStarted) return;
+      spawnDrop(e.clientX, e.clientY);
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      if (!audioStarted) return;
+      e.preventDefault();
+      for (let touch of e.touches) {
+        spawnDrop(touch.clientX, touch.clientY);
+      }
+    });
+
+    animate();
+  </script>
+</body>
+</html>
