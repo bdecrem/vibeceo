@@ -18,6 +18,7 @@ const labMessages = [
 ];
 
 const games = [
+  { icon: '🎨', name: 'Flood', href: '/pixelpit/arcade/flood', playable: true, date: 'Sat 3/7' },
   { icon: '🎯', name: 'Slingshot', href: '/pixelpit/arcade/slingshot', playable: true, date: 'Mon 3/2' },
   { icon: '🎯', name: 'Bullseye', href: '/pixelpit/arcade/bullseye', playable: true, date: 'Sun 3/1' },
   { icon: '💨', name: 'Dash', href: '/pixelpit/arcade/dash', playable: true, date: 'Wed 2/25' },
