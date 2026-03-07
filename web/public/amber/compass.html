@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COMPASS — Following magnetic pull</title>
+  <meta name="description" content="An interactive compass where the needle follows your touch with spring physics, each direction glowing in the Amber palette.">
+  <meta property="og:title" content="COMPASS">
+  <meta property="og:description" content="Following magnetic pull">
+  <meta property="og:image" content="https://intheamber.com/amber/compass-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/compass.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      touch-action: none;
+      user-select: none;
+    }
+    
+    canvas {
+      display: block;
+      background: #0D0D0D;
+    }
+    
+    #stats {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #FFD700;
+      font-size: 14px;
+      font-weight: 500;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      z-index: 10;
+      font-family: 'Courier New', monospace;
+    }
+    
+    #stats div {
+      margin-bottom: 4px;
+    }
+    
+    #stats .label {
+      color: #2D9596;
+      display: inline-block;
+      width: 100px;
+    }
+    
+    #title {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #FFD700;
+      font-size: 18px;
+      font-weight: 600;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      letter-spacing: 2px;
+      z-index: 10;
+    }
+    
+    #startBtn {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px 40px;
+      font-size: 24px;
+      font-weight: 600;
+      background: #FFD700;
+      color: #0D0D0D;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+      z-index: 100;
+      letter-spacing: 2px;
+    }
+    
+    #startBtn:hover {
+      background: #FFC107;
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="stats">
+    <div><span class="label">BEARING:</span><span id="bearing">0°</span></div>
+    <div><span class="label">PULL:</span><span id="pull">0%</span></div>
+    <div><span class="label">SPEED:</span><span id="speed">0°/s</span></div>
+  </div>
+  
+  <div id="title">COMPASS</div>
+  
+  <button id="startBtn">START</button>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('startBtn');
+    
+    let w, h, centerX, centerY;
+    let audioContext, droneOsc, droneGain;
+    let isRunning = false;
+    
+    // Resize canvas
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+      centerX = w / 2;
+      centerY = h / 2;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Compass directions with colors from full palette
+    const directions = [
+      { angle: 0, label: 'N', color: '#FFD700' },      // Gold
+      { angle: 45, label: 'NE', color: '#ec4899' },    // Hot pink
+      { angle: 90, label: 'E', color: '#3b82f6' },     // Electric blue
+      { angle: 135, label: 'SE', color: '#8b5cf6' },   // Purple
+      { angle: 180, label: 'S', color: '#2D9596' },    // Teal
+      { angle: 225, label: 'SW', color: '#84cc16' },   // Lime
+      { angle: 270, label: 'W', color: '#f97316' },    // Coral
+      { angle: 315, label: 'NW', color: '#a855f7' }    // Purple variant
+    ];
+    
+    // Needle physics
+    let needleAngle = 0;
+    let needleVelocity = 0;
+    let targetAngle = 0;
+    
+    // Mouse/touch position
+    let mouseX = centerX;
+    let mouseY = centerY - 200; // Default to north
+    let isInteracting = false;
+    
+    // Particles
+    const particles = [];
+    const orbitParticles = [];
+    
+    // Create orbit particles
+    for (let i = 0; i < 30; i++) {
+      orbitParticles.push({
+        angle: (Math.PI * 2 * i) / 30,
+        radius: 180,
+        speed: 0.002 + Math.random() * 0.001,
+        color: directions[i % directions.length].color,
+        size: 2 + Math.random() * 2
+      });
+    }
+    
+    // Audio setup
+    function initAudio() {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Drone - low A (110Hz)
+      droneOsc = audioContext.createOscillator();
+      droneOsc.type = 'sine';
+      droneOsc.frequency.value = 110;
+      
+      droneGain = audioContext.createGain();
+      droneGain.gain.value = 0.08;
+      
+      droneOsc.connect(droneGain);
+      droneGain.connect(audioContext.destination);
+      droneOsc.start();
+    }
+    
+    // Create particle burst
+    function createBurst(x, y) {
+      const count = 30;
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count;
+        const speed = 3 + Math.random() * 4;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1,
+          color: directions[i % directions.length].color,
+          size: 3 + Math.random() * 3
+        });
+      }
+      
+      // Audio feedback
+      if (audioContext) {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.frequency.value = 440 + Math.random() * 200;
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        osc.start();
+        osc.stop(audioContext.currentTime + 0.3);
+      }
+    }
+    
+    // Update physics
+    function update() {
+      // Calculate target angle based on mouse position
+      const dx = mouseX - centerX;
+      const dy = mouseY - centerY;
+      targetAngle = Math.atan2(dy, dx) + Math.PI / 2;
+      
+      // Normalize angles to -π to π
+      let angleDiff = targetAngle - needleAngle;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      
+      // Spring physics
+      const springK = 0.05;
+      const damping = 0.92;
+      const force = angleDiff * springK;
+      
+      needleVelocity += force;
+      needleVelocity *= damping;
+      needleAngle += needleVelocity;
+      
+      // Update orbit particles
+      orbitParticles.forEach(p => {
+        p.angle += p.speed;
+      });
+      
+      // Update burst particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+        p.life -= 0.02;
+        
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+      
+      // Update stats
+      const bearing = ((needleAngle * 180 / Math.PI + 360) % 360).toFixed(0);
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const maxDist = Math.min(w, h) / 2;
+      const pull = Math.min(100, (distance / maxDist) * 100).toFixed(0);
+      const speed = Math.abs(needleVelocity * 180 / Math.PI * 60).toFixed(0);
+      
+      document.getElementById('bearing').textContent = bearing + '°';
+      document.getElementById('pull').textContent = pull + '%';
+      document.getElementById('speed').textContent = speed + '°/s';
+    }
+    
+    // Draw
+    function draw() {
+      // Fade effect
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.15)';
+      ctx.fillRect(0, 0, w, h);
+      
+      // Draw compass rose
+      const roseRadius = 150;
+      
+      // Outer circle
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, roseRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Inner circle
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, roseRadius * 0.7, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Direction markers
+      directions.forEach(dir => {
+        const angle = (dir.angle - 90) * Math.PI / 180;
+        const x1 = centerX + Math.cos(angle) * roseRadius * 0.75;
+        const y1 = centerY + Math.sin(angle) * roseRadius * 0.75;
+        const x2 = centerX + Math.cos(angle) * roseRadius * 0.95;
+        const y2 = centerY + Math.sin(angle) * roseRadius * 0.95;
+        
+        // Line
+        ctx.strokeStyle = dir.color;
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = dir.color;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        
+        // Label
+        const labelX = centerX + Math.cos(angle) * roseRadius * 1.15;
+        const labelY = centerY + Math.sin(angle) * roseRadius * 1.15;
+        ctx.font = 'bold 16px monospace';
+        ctx.fillStyle = dir.color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = dir.color;
+        ctx.fillText(dir.label, labelX, labelY);
+      });
+      
+      ctx.shadowBlur = 0;
+      
+      // Draw orbit particles
+      orbitParticles.forEach(p => {
+        const x = centerX + Math.cos(p.angle) * p.radius;
+        const y = centerY + Math.sin(p.angle) * p.radius;
+        
+        ctx.fillStyle = p.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = p.color;
+        ctx.beginPath();
+        ctx.arc(x, y, p.size, 0, Math.PI *2);
+        ctx.fill();
+      });
+      
+      ctx.shadowBlur = 0;
+      
+      // Draw burst particles
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+      
+      // Draw needle pivot
+      ctx.fillStyle = '#FFD700';
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      
+      // Draw needle
+      const needleLength = 120;
+      const needleTipX = centerX + Math.cos(needleAngle - Math.PI / 2) * needleLength;
+      const needleTipY = centerY + Math.sin(needleAngle - Math.PI / 2) * needleLength;
+      const needleBackX = centerX + Math.cos(needleAngle + Math.PI / 2) * 30;
+      const needleBackY = centerY + Math.sin(needleAngle + Math.PI / 2) * 30;
+      
+      // Needle glow
+      const gradient = ctx.createLinearGradient(needleBackX, needleBackY, needleTipX, needleTipY);
+      gradient.addColorStop(0, 'rgba(255, 215, 0, 0.3)');
+      gradient.addColorStop(1, 'rgba(255, 215, 0, 1)');
+      
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.shadowBlur = 25;
+      ctx.shadowColor = '#FFD700';
+      ctx.beginPath();
+      ctx.moveTo(needleBackX, needleBackY);
+      ctx.lineTo(needleTipX, needleTipY);
+      ctx.stroke();
+      
+      // Needle tip
+      ctx.fillStyle = '#FFD700';
+      ctx.shadowBlur = 30;
+      ctx.shadowColor = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(needleTipX, needleTipY, 5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.shadowBlur = 0;
+    }
+    
+    // Animation loop
+    function animate() {
+      if (!isRunning) return;
+      update();
+      draw();
+      requestAnimationFrame(animate);
+    }
+    
+    // Input handlers
+    function handleMove(e) {
+      const rect = canvas.getBoundingClientRect();
+      if (e.touches) {
+        mouseX = e.touches[0].clientX - rect.left;
+        mouseY = e.touches[0].clientY - rect.top;
+      } else {
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+      }
+      isInteracting = true;
+    }
+    
+    function handleClick(e) {
+      const rect = canvas.getBoundingClientRect();
+      let x, y;
+      if (e.touches) {
+        x = e.touches[0].clientX - rect.left;
+        y = e.touches[0].clientY - rect.top;
+      } else {
+        x = e.clientX - rect.left;
+        y = e.clientY - rect.top;
+      }
+      createBurst(x, y);
+    }
+    
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('touchmove', handleMove);
+    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('touchstart', handleClick);
+    
+    // Start button
+    startBtn.addEventListener('click', () => {
+      initAudio();
+      isRunning = true;
+      startBtn.style.display = 'none';
+      animate();
+    });
+  </script>
+</body>
+</html>
