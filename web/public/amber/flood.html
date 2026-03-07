@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FLOOD — Fill the grid with one color</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="FLOOD — Fill the grid with one color">
+  <meta property="og:description" content="A color puzzle game with limited moves. Flood from the top-left corner.">
+  <meta property="og:image" content="https://intheamber.com/amber/flood-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/flood.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FLOOD — Fill the grid with one color">
+  <meta name="twitter:description" content="A color puzzle game with limited moves. Flood from the top-left corner.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/flood-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    h1 {
+      font-size: clamp(32px, 8vw, 48px);
+      margin-bottom: 10px;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.8);
+      letter-spacing: 4px;
+    }
+    
+    .subtitle {
+      font-size: clamp(12px, 3vw, 14px);
+      color: #2D9596;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .stats {
+      display: flex;
+      gap: 30px;
+      margin-bottom: 20px;
+      font-size: clamp(14px, 3vw, 16px);
+    }
+    
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .stat-label {
+      color: #2D9596;
+      font-size: clamp(10px, 2.5vw, 12px);
+      margin-bottom: 5px;
+    }
+    
+    .stat-value {
+      font-size: clamp(20px, 5vw, 28px);
+      font-weight: bold;
+      color: #FFD700;
+    }
+    
+    .stat-value.warning {
+      color: #FF6B6B;
+      animation: pulse 0.5s ease-in-out infinite alternate;
+    }
+    
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.1); }
+    }
+    
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 2px;
+      margin-bottom: 20px;
+      background: #0D0D0D;
+      padding: 2px;
+      max-width: 500px;
+      width: 100%;
+      aspect-ratio: 1;
+    }
+    
+    .cell {
+      aspect-ratio: 1;
+      border-radius: 2px;
+      transition: transform 0.1s ease;
+    }
+    
+    .cell.flood-animation {
+      animation: flood 0.3s ease-out;
+    }
+    
+    @keyframes flood {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    
+    .colors {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 500px;
+    }
+    
+    .color-btn {
+      width: 50px;
+      height: 50px;
+      border: 3px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    
+    .color-btn:active {
+      transform: scale(0.9);
+    }
+    
+    .color-btn.current {
+      border-color: #FFD700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+    
+    .color-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    .message {
+      font-size: clamp(16px, 4vw, 20px);
+      text-align: center;
+      min-height: 30px;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+    
+    .message.win {
+      color: #4ADE80;
+      text-shadow: 0 0 20px rgba(74, 222, 128, 0.8);
+    }
+    
+    .message.lose {
+      color: #FF6B6B;
+      text-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+    }
+    
+    button.action {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 12px 30px;
+      font-size: clamp(14px, 3.5vw, 18px);
+      font-family: 'Space Mono', monospace;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 2px;
+      min-width: 44px;
+      min-height: 44px;
+    }
+    
+    button.action:hover {
+      background: #FFD700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+    
+    button.action:active {
+      transform: scale(0.95);
+    }
+    
+    @media (max-width: 600px) {
+      #grid {
+        grid-template-columns: repeat(10, 1fr);
+        gap: 1px;
+      }
+      
+      .color-btn {
+        width: 44px;
+        height: 44px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>FLOOD</h1>
+  <div class="subtitle">Fill the grid with one color</div>
+  
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">MOVES LEFT</div>
+      <div class="stat-value" id="moves">20</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">FILLED</div>
+      <div class="stat-value" id="filled">1%</div>
+    </div>
+  </div>
+  
+  <div id="grid"></div>
+  
+  <div class="colors" id="colors"></div>
+  
+  <div class="message" id="message"></div>
+  
+  <button class="action" id="newGame">NEW GAME</button>
+  
+  <script>
+    // Audio context
+    let audioCtx;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    function playTone(freq, duration, type = 'sine') {
+      initAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    function playFlood() {
+      playTone(440, 0.2, 'sine');
+    }
+    
+    function playWin() {
+      playTone(523, 0.1);
+      setTimeout(() => playTone(659, 0.1), 100);
+      setTimeout(() => playTone(784, 0.1), 200);
+      setTimeout(() => playTone(1047, 0.3), 300);
+    }
+    
+    function playLose() {
+      playTone(300, 0.15, 'sawtooth');
+      setTimeout(() => playTone(200, 0.15, 'sawtooth'), 150);
+      setTimeout(() => playTone(100, 0.3, 'sawtooth'), 300);
+    }
+    
+    // Game state
+    const GRID_SIZE = 10;
+    const COLORS = [
+      '#D4A574', // amber
+      '#FFD700', // gold
+      '#2D9596', // teal
+      '#7B68EE', // violet
+      '#FF69B4', // hot pink
+      '#FF7F50'  // coral
+    ];
+    
+    let grid = [];
+    let movesLeft = 20;
+    let gameOver = false;
+    
+    // Initialize grid
+    function initGrid() {
+      grid = [];
+      for (let i = 0; i < GRID_SIZE; i++) {
+        grid[i] = [];
+        for (let j = 0; j < GRID_SIZE; j++) {
+          grid[i][j] = COLORS[Math.floor(Math.random() * COLORS.length)];
+        }
+      }
+      movesLeft = 20;
+      gameOver = false;
+      renderGrid();
+      renderColors();
+      updateStats();
+      document.getElementById('message').textContent = '';
+    }
+    
+    // Render grid
+    function renderGrid() {
+      const gridEl = document.getElementById('grid');
+      gridEl.innerHTML = '';
+      
+      for (let i = 0; i < GRID_SIZE; i++) {
+        for (let j = 0; j < GRID_SIZE; j++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.style.backgroundColor = grid[i][j];
+          cell.dataset.row = i;
+          cell.dataset.col = j;
+          gridEl.appendChild(cell);
+        }
+      }
+    }
+    
+    // Render color buttons
+    function renderColors() {
+      const colorsEl = document.getElementById('colors');
+      colorsEl.innerHTML = '';
+      
+      const currentColor = grid[0][0];
+      
+      COLORS.forEach(color => {
+        const btn = document.createElement('button');
+        btn.className = 'color-btn';
+        btn.style.backgroundColor = color;
+        if (color === currentColor) {
+          btn.classList.add('current');
+          btn.disabled = true;
+        }
+        btn.onclick = () => flood(color);
+        colorsEl.appendChild(btn);
+      });
+    }
+    
+    // Flood fill algorithm
+    function flood(newColor) {
+      if (gameOver) return;
+      
+      initAudio();
+      
+      const oldColor = grid[0][0];
+      if (oldColor === newColor) return;
+      
+      const toFlood = [[0, 0]];
+      const visited = new Set();
+      const floodedCells = [];
+      
+      while (toFlood.length > 0) {
+        const [row, col] = toFlood.pop();
+        const key = `${row},${col}`;
+        
+        if (visited.has(key)) continue;
+        if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) continue;
+        if (grid[row][col] !== oldColor) continue;
+        
+        visited.add(key);
+        grid[row][col] = newColor;
+        floodedCells.push([row, col]);
+        
+        toFlood.push([row - 1, col]);
+        toFlood.push([row + 1, col]);
+        toFlood.push([row, col - 1]);
+        toFlood.push([row, col + 1]);
+      }
+      
+      // Animate flooded cells
+      floodedCells.forEach(([row, col]) => {
+        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        if (cell) {
+          cell.classList.add('flood-animation');
+          setTimeout(() => cell.classList.remove('flood-animation'), 300);
+        }
+      });
+      
+      movesLeft--;
+      playFlood();
+      
+      renderGrid();
+      renderColors();
+      updateStats();
+      checkWin();
+    }
+    
+    // Update stats
+    function updateStats() {
+      const movesEl = document.getElementById('moves');
+      movesEl.textContent = movesLeft;
+      
+      if (movesLeft <= 3) {
+        movesEl.classList.add('warning');
+      } else {
+        movesEl.classList.remove('warning');
+      }
+      
+      const filled = calculateFilled();
+      document.getElementById('filled').textContent = filled + '%';
+    }
+    
+    // Calculate percentage filled
+    function calculateFilled() {
+      const targetColor = grid[0][0];
+      let count = 0;
+      
+      for (let i = 0; i < GRID_SIZE; i++) {
+        for (let j = 0; j < GRID_SIZE; j++) {
+          if (grid[i][j] === targetColor) count++;
+        }
+      }
+      
+      return Math.round((count / (GRID_SIZE * GRID_SIZE)) * 100);
+    }
+    
+    // Check win condition
+    function checkWin() {
+      const filled = calculateFilled();
+      
+      if (filled === 100) {
+        gameOver = true;
+        const messageEl = document.getElementById('message');
+        messageEl.textContent = `YOU WIN! Solved in ${20 - movesLeft} moves!`;
+        messageEl.className = 'message win';
+        playWin();
+      } else if (movesLeft === 0) {
+        gameOver = true;
+        const messageEl = document.getElementById('message');
+        messageEl.textContent = `OUT OF MOVES! You filled ${filled}%`;
+        messageEl.className = 'message lose';
+        playLose();
+      }
+    }
+    
+    // New game button
+    document.getElementById('newGame').onclick = () => {
+      initAudio();
+      initGrid();
+    };
+    
+    // Initialize on load
+    initGrid();
+  </script>
+</body>
+</html>
