@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dust Calculator</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="Dust Calculator">
+<meta property="og:description" content="How much dust has settled on the things you've forgotten?">
+<meta property="og:image" content="https://intheamber.com/amber/og/dust-calculator.png">
+<meta property="og:url" content="https://intheamber.com/amber/dust-calculator.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dust Calculator">
+<meta name="twitter:description" content="How much dust has settled on the things you've forgotten?">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/dust-calculator.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: #1a1714;
+    color: #c4b49a;
+    font-family: 'EB Garamond', serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    color: #d4c4a8;
+    margin-bottom: 0.3rem;
+  }
+
+  .subtitle {
+    font-style: italic;
+    font-size: 1rem;
+    color: #8a7e6a;
+    margin-bottom: 2.5rem;
+  }
+
+  label {
+    display: block;
+    text-align: left;
+    font-size: 1.05rem;
+    margin-bottom: 0.4rem;
+    color: #a89878;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: #231f1a;
+    border: 1px solid #3a3228;
+    border-radius: 6px;
+    color: #c4b49a;
+    font-family: 'EB Garamond', serif;
+    font-size: 1.1rem;
+    margin-bottom: 1.4rem;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  input:focus, select:focus {
+    border-color: #6a5d48;
+  }
+
+  input::placeholder { color: #5a5040; }
+
+  select option { background: #231f1a; }
+
+  button {
+    width: 100%;
+    padding: 0.85rem;
+    background: transparent;
+    border: 1px solid #5a4d38;
+    border-radius: 6px;
+    color: #c4b49a;
+    font-family: 'EB Garamond', serif;
+    font-size: 1.15rem;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: all 0.4s;
+    margin-top: 0.5rem;
+  }
+
+  button:hover {
+    background: #2a2420;
+    border-color: #8a7a5a;
+    color: #ddd0b8;
+  }
+
+  .result {
+    margin-top: 2.5rem;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+
+  .result.visible { opacity: 1; }
+
+  .dust-amount {
+    font-size: 3.5rem;
+    font-weight: 500;
+    color: #d4c4a8;
+    line-height: 1.1;
+  }
+
+  .dust-unit {
+    font-size: 1.1rem;
+    color: #8a7e6a;
+    margin-bottom: 1rem;
+  }
+
+  .dust-detail {
+    font-style: italic;
+    font-size: 1rem;
+    color: #7a6e5a;
+    line-height: 1.6;
+    margin-top: 0.8rem;
+  }
+
+  .particles {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: #5a4d38;
+    border-radius: 50%;
+    opacity: 0;
+    animation: drift linear infinite;
+  }
+
+  @keyframes drift {
+    0% { opacity: 0; transform: translateY(-10px); }
+    20% { opacity: 0.4; }
+    80% { opacity: 0.2; }
+    100% { opacity: 0; transform: translateY(100vh); }
+  }
+
+  .container { position: relative; z-index: 1; }
+
+  .credit {
+    position: fixed;
+    bottom: 1rem;
+    font-size: 0.85rem;
+    color: #4a4030;
+    letter-spacing: 0.05em;
+  }
+
+  .credit a { color: #5a4d38; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<div class="container">
+  <h1>Dust Calculator</h1>
+  <p class="subtitle">how much has settled while you weren't looking</p>
+
+  <label for="object">what have you forgotten?</label>
+  <input type="text" id="object" placeholder="a guitar, a journal, someone's number" autocomplete="off">
+
+  <label for="duration">how long since you last touched it?</label>
+  <select id="duration">
+    <option value="7">about a week</option>
+    <option value="30">a month or so</option>
+    <option value="90">a few months</option>
+    <option value="365" selected>roughly a year</option>
+    <option value="1095">several years</option>
+    <option value="3650">a decade, maybe longer</option>
+    <option value="9999">i honestly can't remember</option>
+  </select>
+
+  <label for="location">where is it now?</label>
+  <select id="location">
+    <option value="shelf">on a shelf</option>
+    <option value="drawer" selected>in a drawer</option>
+    <option value="closet">in a closet</option>
+    <option value="attic">in the attic</option>
+    <option value="garage">in the garage</option>
+    <option value="somewhere">somewhere, probably</option>
+  </select>
+
+  <button onclick="calculate()">measure the dust</button>
+
+  <div class="result" id="result">
+    <div class="dust-amount" id="dustAmount"></div>
+    <div class="dust-unit" id="dustUnit"></div>
+    <div class="dust-detail" id="dustDetail"></div>
+  </div>
+</div>
+
+<div class="credit"><a href="https://intheamber.com">intheamber.com</a></div>
+
+<script>
+// seed particles
+const pc = document.getElementById('particles');
+for (let i = 0; i < 30; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.style.left = Math.random() * 100 + '%';
+  p.style.animationDuration = (8 + Math.random() * 16) + 's';
+  p.style.animationDelay = Math.random() * 12 + 's';
+  p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
+  pc.appendChild(p);
+}
+
+const compositions = [
+  "63% dead skin cells, 22% textile fibers, 9% cosmic debris, 6% whatever you left behind",
+  "mostly pet hair you didn't know was there, some pollen from a spring you forgot, the rest is mystery",
+  "48% regret particulate, 31% ambient lint, 21% time itself, ground very fine",
+  "a thin biography of the room's air, written in fragments too small to read",
+  "70% domestic sediment, 15% outdoor infiltration, 15% things that used to be other things",
+  "decomposed intentions, microscopic receipts, and a fine layer of Tuesdays",
+];
+
+const observations = {
+  shelf: [
+    "Shelves collect dust like sentences collect commas — inevitably, without anyone noticing.",
+    "The dust on a shelf is a timeline. The bottom layer remembers when you still used this.",
+    "A shelf is just a stage for things that stopped performing.",
+  ],
+  drawer: [
+    "Drawer dust is different. It accumulates in the dark, undisturbed. More honest somehow.",
+    "The inside of a drawer is the only place where dust can settle without being judged for it.",
+    "Things in drawers don't gather dust — they become it, slowly.",
+  ],
+  closet: [
+    "Closet dust clings to fabric, which clings to hangers, which cling to a version of you that wore those things.",
+    "The dust in a closet is patient. It has nowhere else to be.",
+    "Closets are just drawers that got promoted.",
+  ],
+  attic: [
+    "Attic dust is the oldest kind. It predates your current problems.",
+    "In the attic, dust isn't settling — it's already settled. It's at peace.",
+    "Attics are where objects go to practice being forgotten.",
+  ],
+  garage: [
+    "Garage dust is industrial. It means business, even if the things beneath it don't anymore.",
+    "The garage is where usefulness goes to be stored and then quietly abandoned.",
+    "Concrete dust, oil mist, and the faint residue of projects you were definitely going to finish.",
+  ],
+  somewhere: [
+    "If you can't remember where it is, the dust has already won.",
+    "The dust on something you can't locate is Schrödinger's dust. Both accumulating and not.",
+    "Somewhere is the dustiest place of all. Nothing gets cleaned in somewhere.",
+  ],
+};
+
+function calculate() {
+  const obj = document.getElementById('object').value.trim() || 'it';
+  const days = parseInt(document.getElementById('duration').value);
+  const loc = document.getElementById('location').value;
+
+  // dust math (real-ish: ~0.0014 mg/cm²/day average settling rate, assume ~500 cm² surface)
+  const locationMultiplier = { shelf: 1.2, drawer: 0.4, closet: 0.6, attic: 1.8, garage: 2.1, somewhere: 1.0 };
+  const baseMg = days * 0.0014 * 500 * (locationMultiplier[loc] || 1);
+
+  // add some noise
+  const noise = 0.85 + Math.random() * 0.3;
+  let dustMg = baseMg * noise;
+
+  let amount, unit;
+  if (dustMg < 1) {
+    amount = dustMg.toFixed(3);
+    unit = 'milligrams of dust';
+  } else if (dustMg < 1000) {
+    amount = dustMg.toFixed(1);
+    unit = 'milligrams of dust';
+  } else {
+    amount = (dustMg / 1000).toFixed(2);
+    unit = 'grams of dust';
+  }
+
+  const comp = compositions[Math.floor(Math.random() * compositions.length)];
+  const obs = observations[loc][Math.floor(Math.random() * observations[loc].length)];
+
+  const dustAmount = document.getElementById('dustAmount');
+  const dustUnit = document.getElementById('dustUnit');
+  const dustDetail = document.getElementById('dustDetail');
+  const result = document.getElementById('result');
+
+  dustAmount.textContent = amount;
+  dustUnit.textContent = unit;
+  dustDetail.innerHTML = `
+    on ${obj === 'it' ? 'it' : '<em>' + obj + '</em>'}, right now, approximately.<br><br>
+    Composition: ${comp}<br><br>
+    ${obs}
+  `;
+
+  result.classList.add('visible');
+
+  // more particles on calculate
+  for (let i = 0; i < 15; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = (30 + Math.random() * 40) + '%';
+    p.style.animationDuration = (4 + Math.random() * 8) + 's';
+    p.style.animationDelay = Math.random() * 2 + 's';
+    p.style.width = p.style.height = (1 + Math.random() * 3) + 'px';
+    pc.appendChild(p);
+    setTimeout(() => p.remove(), 12000);
+  }
+}
+</script>
+
+</body>
+</html>
