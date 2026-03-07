@@ -7,9 +7,11 @@
 <meta name="description" content="Touch to bloom. A spring toy.">
 <meta property="og:title" content="Spring">
 <meta property="og:description" content="Touch to bloom.">
+<meta property="og:image" content="https://intheamber.com/amber/og/spring.png">
 <meta property="og:url" content="https://intheamber.com/amber/spring.html">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@intheamber">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/spring.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌷</text></svg>">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -197,6 +199,27 @@ ctx.globalAlpha=1;
 }
 }
 
+// Pollen particles
+const pollenParticles=[];
+class PollenDust{
+constructor(x,y){
+this.x=x;this.y=y;
+this.vx=(Math.random()-0.5)*1.5;
+this.vy=(Math.random()-0.5)*1.5;
+this.size=2+Math.random()*2;
+this.life=1;
+this.color=centerColors[Math.floor(Math.random()*centerColors.length)];
+}
+update(){this.x+=this.vx;this.y+=this.vy;this.vx*=0.95;this.vy*=0.95;this.life-=0.02}
+draw(){
+if(this.life<=0)return;
+ctx.globalAlpha=this.life*0.6;
+ctx.fillStyle=this.color;
+ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();
+ctx.globalAlpha=1;
+}
+}
+
 class Bee{
 constructor(){
 this.x=Math.random()*W;
@@ -207,16 +230,20 @@ this.speed=0.5+Math.random()*1;
 this.wingPhase=Math.random()*Math.PI*2;
 this.size=4+Math.random()*3;
 this.retargetIn=60+Math.random()*120;
+this.hasPollen=false;
+this.pollenFrom=null; // flower that gave pollen
+this.pollenColor=null;
 }
 update(){
 this.retargetIn--;
 if(this.retargetIn<=0){
-// Pick a flower or random spot
-if(flowers.length>0&&Math.random()>0.3){
+if(flowers.length>0&&Math.random()>0.2){
 const f=flowers[Math.floor(Math.random()*flowers.length)];
+this.targetFlower=f;
 this.targetX=f.x;
 this.targetY=f.y-f.maxHeight*f.growth;
 }else{
+this.targetFlower=null;
 this.targetX=50+Math.random()*(W-100);
 this.targetY=50+Math.random()*(H*0.5);
 }
@@ -225,10 +252,46 @@ this.retargetIn=120+Math.random()*180;
 this.x+=(this.targetX-this.x)*0.01*this.speed;
 this.y+=(this.targetY-this.y)*0.01*this.speed+Math.sin(time*0.05+this.wingPhase)*0.3;
 this.wingPhase+=0.3;
+
+// Check if close to target flower
+if(this.targetFlower&&this.targetFlower.bloom>0.8){
+const f=this.targetFlower;
+const fx=f.x+Math.sin(f.sway)*f.swayAmount*f.growth;
+const fy=f.y-f.maxHeight*f.growth;
+const dist=Math.hypot(this.x-fx,this.y-fy);
+if(dist<15){
+if(!this.hasPollen){
+// Pick up pollen
+this.hasPollen=true;
+this.pollenFrom=f;
+this.pollenColor=f.centerColor;
+// Pollen burst
+for(let i=0;i<5;i++)pollenParticles.push(new PollenDust(this.x,this.y));
+}else if(this.pollenFrom!==f&&flowers.length<80){
+// Pollinate! Spawn new flower between the two parents
+const parentA=this.pollenFrom;
+const newX=f.x+(Math.random()-0.5)*100;
+const groundY=Math.max(H*0.7,Math.min(f.y,parentA.y)+(Math.random()-0.5)*30);
+const clampedX=Math.max(30,Math.min(W-30,newX));
+flowers.push(new Flower(clampedX,groundY));
+// Pollen burst at pollination
+for(let i=0;i<10;i++)pollenParticles.push(new PollenDust(this.x,this.y));
+this.hasPollen=false;
+this.pollenFrom=null;
+// New bee for the ecosystem
+if(flowers.length%8===0)bees.push(new Bee());
+}
+}
+}
+
+// Trail pollen dust when carrying
+if(this.hasPollen&&Math.random()<0.05){
+pollenParticles.push(new PollenDust(this.x,this.y));
+}
 }
 draw(){
 // Body
-ctx.fillStyle='#f5c842';
+ctx.fillStyle=this.hasPollen?'#ffe066':'#f5c842';
 ctx.beginPath();
 ctx.ellipse(this.x,this.y,this.size,this.size*0.6,0,0,Math.PI*2);
 ctx.fill();
@@ -236,6 +299,13 @@ ctx.fill();
 ctx.fillStyle='#3a3a3a';
 ctx.fillRect(this.x-this.size*0.2,this.y-this.size*0.6,this.size*0.15,this.size*1.2);
 ctx.fillRect(this.x+this.size*0.2,this.y-this.size*0.6,this.size*0.15,this.size*1.2);
+// Pollen glow
+if(this.hasPollen){
+ctx.globalAlpha=0.3;
+ctx.fillStyle=this.pollenColor||'#ffe066';
+ctx.beginPath();ctx.arc(this.x,this.y,this.size*1.8,0,Math.PI*2);ctx.fill();
+ctx.globalAlpha=1;
+}
 // Wings
 const wFlap=Math.sin(this.wingPhase)*0.4;
 ctx.globalAlpha=0.3;
@@ -339,6 +409,8 @@ drawGrass();
 flowers.forEach(f=>{f.update();f.draw()});
 petals.forEach(p=>{p.update();p.draw()});
 petals.splice(0,petals.length,...petals.filter(p=>p.life>0&&p.y<H+20));
+pollenParticles.forEach(p=>{p.update();p.draw()});
+pollenParticles.splice(0,pollenParticles.length,...pollenParticles.filter(p=>p.life>0));
 bees.forEach(b=>{b.update();b.draw()});
 
 requestAnimationFrame(loop);
