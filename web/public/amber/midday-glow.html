@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIDDAY GLOW</title>
+    <meta property="og:title" content="MIDDAY GLOW">
+    <meta property="og:description" content="Steady and warm at the peak hour">
+    <meta property="og:image" content="https://intheamber.com/amber/midday-glow-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/midday-glow.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100vh;
+        }
+
+        #info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #D4A574;
+            font-size: 14px;
+            text-align: center;
+            opacity: 0.7;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="info">12:00 PM</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height, centerX, centerY;
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+        }
+        
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Light particles
+        const particles = [];
+        for (let i = 0; i < 50; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * Math.min(width, height) * 0.4;
+            particles.push({
+                x: centerX + Math.cos(angle) * distance,
+                y: centerY + Math.sin(angle) * distance,
+                size: Math.random() * 2 + 1,
+                speed: Math.random() * 0.3 + 0.1,
+                angle: Math.random() * Math.PI * 2,
+                orbitSpeed: (Math.random() - 0.5) * 0.005,
+                distance: distance,
+                baseAngle: angle,
+                pulseOffset: Math.random() * Math.PI * 2
+            });
+        }
+
+        let time = 0;
+
+        function drawGlow() {
+            // Clear with slight fade for trails
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, width, height);
+
+            time += 0.01;
+
+            // Draw concentric light layers (from outside in for proper overlap)
+            const maxRadius = Math.min(width, height) * 0.45;
+            const layers = [
+                { radius: 1.0, color: 'rgba(45, 149, 150, 0.08)', pulse: 1.0 },  // Teal outer
+                { radius: 0.85, color: 'rgba(255, 165, 0, 0.12)', pulse: 0.9 },  // Orange
+                { radius: 0.70, color: 'rgba(255, 215, 0, 0.15)', pulse: 0.8 },  // Gold
+                { radius: 0.55, color: 'rgba(245, 158, 11, 0.18)', pulse: 0.7 }, // Amber
+                { radius: 0.40, color: 'rgba(255, 215, 0, 0.22)', pulse: 0.6 },  // Gold
+                { radius: 0.25, color: 'rgba(212, 165, 116, 0.3)', pulse: 0.5 }  // Amber core
+            ];
+
+            layers.forEach((layer, i) => {
+                const pulse = 1 + Math.sin(time * layer.pulse) * 0.08;
+                const radius = maxRadius * layer.radius * pulse;
+                
+                // Outer glow
+                const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+                gradient.addColorStop(0, layer.color);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw center figure (abstract silhouette)
+            const figureHeight = maxRadius * 0.3;
+            const figureWidth = figureHeight * 0.3;
+            
+            // Head
+            ctx.fillStyle = 'rgba(212, 165, 116, 0.9)';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY - figureHeight * 0.4, figureWidth * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Body glow
+            const bodyGradient = ctx.createRadialGradient(
+                centerX, centerY, 0,
+                centerX, centerY, figureWidth * 2
+            );
+            bodyGradient.addColorStop(0, 'rgba(255, 215, 0, 0.6)');
+            bodyGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, figureWidth * 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Body
+            ctx.fillStyle = 'rgba(212, 165, 116, 0.8)';
+            ctx.fillRect(
+                centerX - figureWidth * 0.5,
+                centerY - figureHeight * 0.2,
+                figureWidth,
+                figureHeight * 0.5
+            );
+            
+            // Arms (extended outward, open posture)
+            ctx.beginPath();
+            ctx.moveTo(centerX - figureWidth * 0.5, centerY - figureHeight * 0.1);
+            ctx.lineTo(centerX - figureWidth * 1.5, centerY);
+            ctx.lineWidth = figureWidth * 0.2;
+            ctx.strokeStyle = 'rgba(212, 165, 116, 0.8)';
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX + figureWidth * 0.5, centerY - figureHeight * 0.1);
+            ctx.lineTo(centerX + figureWidth * 1.5, centerY);
+            ctx.stroke();
+            
+            // Legs
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY + figureHeight * 0.3);
+            ctx.lineTo(centerX - figureWidth * 0.3, centerY + figureHeight * 0.8);
+            ctx.lineWidth = figureWidth * 0.25;
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY + figureHeight * 0.3);
+            ctx.lineTo(centerX + figureWidth * 0.3, centerY + figureHeight * 0.8);
+            ctx.stroke();
+
+            // Update and draw particles
+particles.forEach(p => {
+                // Orbital drift
+                p.baseAngle += p.orbitSpeed;
+                const targetX = centerX + Math.cos(p.baseAngle) * p.distance;
+                const targetY = centerY + Math.sin(p.baseAngle) * p.distance;
+                
+                p.x += (targetX - p.x) * 0.05;
+                p.y += (targetY - p.y) * 0.05;
+                
+                // Pulsing glow
+                const pulseBrightness = 0.5 + Math.sin(time * 2 + p.pulseOffset) * 0.3;
+                
+                // Draw particle with glow
+                const glowGradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 8);
+                glowGradient.addColorStop(0, `rgba(255, 215, 0, ${pulseBrightness * 0.8})`);
+                glowGradient.addColorStop(0.5, `rgba(245, 158, 11, ${pulseBrightness * 0.3})`);
+                glowGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                
+                ctx.fillStyle = glowGradient;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Core
+                ctx.fillStyle = `rgba(255, 215, 0, ${pulseBrightness})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            requestAnimationFrame(drawGlow);
+        }
+
+        drawGlow();
+
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            document.getElementById('info').textContent = `${displayHours}:${minutes} ${ampm}`;
+        }
+        
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+</html>
