@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tinbox</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="Tinbox">
+<meta property="og:description" content="A music box you build yourself.">
+<meta property="og:image" content="https://intheamber.com/amber/og/tinbox.png">
+<meta property="og:url" content="https://intheamber.com/amber/tinbox.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tinbox">
+<meta name="twitter:description" content="A music box you build yourself.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/tinbox.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1612;
+  color: #d4c4a0;
+  font-family: 'Georgia', serif;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+h1 {
+  font-size: 14px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #8a7a5a;
+  margin-top: 20px;
+  font-weight: 400;
+}
+.controls {
+  display: flex;
+  gap: 16px;
+  margin: 12px 0 8px;
+  align-items: center;
+}
+button {
+  background: none;
+  border: 1px solid #4a3f2e;
+  color: #b0a080;
+  padding: 6px 18px;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-radius: 2px;
+}
+button:hover { border-color: #d4c4a0; color: #d4c4a0; }
+button.active { border-color: #c8a050; color: #c8a050; }
+.tempo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #6a5a3a;
+  letter-spacing: 1px;
+}
+.tempo input {
+  width: 80px;
+  accent-color: #c8a050;
+}
+canvas {
+  border: 1px solid #2a2318;
+  cursor: crosshair;
+  border-radius: 4px;
+}
+.hint {
+  font-size: 11px;
+  color: #5a4a2a;
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+.scale-select {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.scale-select label {
+  font-size: 11px;
+  color: #6a5a3a;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+select {
+  background: #1a1612;
+  border: 1px solid #4a3f2e;
+  color: #b0a080;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+</style>
+</head>
+<body>
+<h1>Tinbox</h1>
+<div class="controls">
+  <button id="playBtn">Play</button>
+  <button id="clearBtn">Clear</button>
+  <div class="tempo">
+    <span>BPM</span>
+    <input type="range" id="bpm" min="40" max="200" value="90">
+    <span id="bpmVal">90</span>
+  </div>
+  <div class="scale-select">
+    <label>Scale</label>
+    <select id="scaleSelect">
+      <option value="pentatonic">Pentatonic</option>
+      <option value="major">Major</option>
+      <option value="minor">Minor</option>
+      <option value="dorian">Dorian</option>
+      <option value="blues">Blues</option>
+      <option value="chromatic">Chromatic</option>
+    </select>
+  </div>
+</div>
+<canvas id="c"></canvas>
+<div class="hint">click to place pins · they ring when the barrel turns</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+const SCALES = {
+  pentatonic: [0, 2, 4, 7, 9],
+  major: [0, 2, 4, 5, 7, 9, 11],
+  minor: [0, 2, 3, 5, 7, 8, 10],
+  dorian: [0, 2, 3, 5, 7, 9, 10],
+  blues: [0, 3, 5, 6, 7, 10],
+  chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+};
+
+let ROWS = 16;
+let COLS = 32;
+let scale = SCALES.pentatonic;
+let grid = [];
+let playing = false;
+let currentCol = 0;
+let lastTime = 0;
+let bpm = 90;
+let audioCtx = null;
+let cellW, cellH;
+let barrelX, barrelY, barrelW, barrelH;
+const MARGIN_LEFT = 60;
+const MARGIN_TOP = 10;
+const MARGIN_BOTTOM = 10;
+const MARGIN_RIGHT = 20;
+
+// Glow particles
+let glows = [];
+
+function initGrid() {
+  grid = [];
+  for (let r = 0; r < ROWS; r++) {
+    grid[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      grid[r][c] = false;
+    }
+  }
+}
+
+function resize() {
+  const maxW = Math.min(window.innerWidth - 40, 900);
+  const maxH = Math.min(window.innerHeight - 160, 520);
+  canvas.width = maxW;
+  canvas.height = maxH;
+  barrelX = MARGIN_LEFT;
+  barrelY = MARGIN_TOP;
+  barrelW = canvas.width - MARGIN_LEFT - MARGIN_RIGHT;
+  barrelH = canvas.height - MARGIN_TOP - MARGIN_BOTTOM;
+  cellW = barrelW / COLS;
+  cellH = barrelH / ROWS;
+}
+
+function getNote(row) {
+  const baseNote = 72; // C5
+  const octaves = Math.floor(row / scale.length);
+  const idx = row % scale.length;
+  const totalRows = ROWS;
+  const invertedRow = totalRows - 1 - row;
+  const oct = Math.floor(invertedRow / scale.length);
+  const si = invertedRow % scale.length;
+  return baseNote - 24 + oct * 12 + scale[si];
+}
+
+function midiToFreq(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function getNoteName(row) {
+  const midi = getNote(row);
+  const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  return names[midi % 12] + Math.floor(midi / 12 - 1);
+}
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+function playNote(row) {
+  if (!audioCtx) return;
+  const freq = midiToFreq(getNote(row));
+  const now = audioCtx.currentTime;
+
+  // Music box tone: sine + quiet harmonics + quick decay
+  const gain = audioCtx.createGain();
+  gain.connect(audioCtx.destination);
+  gain.gain.setValueAtTime(0.15, now);
+  gain.gain.exponentialRampToValueAtTime(0.08, now + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+  // Fundamental
+  const osc1 = audioCtx.createOscillator();
+  osc1.type = 'sine';
+  osc1.frequency.setValueAtTime(freq, now);
+  osc1.connect(gain);
+  osc1.start(now);
+  osc1.stop(now + 2);
+
+  // 2nd harmonic (quiet, for shimmer)
+  const gain2 = audioCtx.createGain();
+  gain2.connect(audioCtx.destination);
+  gain2.gain.setValueAtTime(0.04, now);
+  gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(freq * 2, now);
+  osc2.connect(gain2);
+  osc2.start(now);
+  osc2.stop(now + 1);
+
+  // 3rd harmonic (very quiet, metallic character)
+  const gain3 = audioCtx.createGain();
+  gain3.connect(audioCtx.destination);
+  gain3.gain.setValueAtTime(0.015, now);
+  gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+  const osc3 = audioCtx.createOscillator();
+  osc3.type = 'sine';
+  osc3.frequency.setValueAtTime(freq * 5.4, now); // inharmonic for bell-like quality
+  osc3.connect(gain3);
+  osc3.start(now);
+  osc3.stop(now + 0.5);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Background with slight gradient
+  const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  bg.addColorStop(0, '#1e1a14');
+  bg.addColorStop(1, '#161210');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw note labels
+  ctx.font = '9px Georgia';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let r = 0; r < ROWS; r++) {
+    const y = barrelY + r * cellH + cellH / 2;
+    const name = getNoteName(r);
+    const isScaleRoot = scale.indexOf((getNote(r)) % 12) === 0;
+    ctx.fillStyle = isScaleRoot ? '#8a7a5a' : '#3a3020';
+    ctx.fillText(name, barrelX - 8, y);
+  }
+
+  // Draw grid lines
+  for (let r = 0; r <= ROWS; r++) {
+    ctx.strokeStyle = r % scale.length === 0 ? '#3a3020' : '#252018';
+    ctx.lineWidth = r % scale.length === 0 ? 1 : 0.5;
+    ctx.beginPath();
+    ctx.moveTo(barrelX, barrelY + r * cellH);
+    ctx.lineTo(barrelX + barrelW, barrelY + r * cellH);
+    ctx.stroke();
+  }
+  for (let c = 0; c <= COLS; c++) {
+    ctx.strokeStyle = c % 4 === 0 ? '#3a3020' : '#201a12';
+    ctx.lineWidth = c % 4 === 0 ? 1 : 0.5;
+    ctx.beginPath();
+    ctx.moveTo(barrelX + c * cellW, barrelY);
+    ctx.lineTo(barrelX + c * cellW, barrelY + barrelH);
+    ctx.stroke();
+  }
+
+  // Draw pins
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (grid[r][c]) {
+        const x = barrelX + c * cellW + cellW / 2;
+        const y = barrelY + r * cellH + cellH / 2;
+        const radius = Math.min(cellW, cellH) * 0.3;
+
+        // Pin glow
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, radius * 2.5);
+        grd.addColorStop(0, 'rgba(200, 160, 80, 0.3)');
+        grd.addColorStop(1, 'rgba(200, 160, 80, 0)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(x - radius * 2.5, y - radius * 2.5, radius * 5, radius * 5);
+
+        // Pin body
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = c === currentCol && playing ? '#f0d080' : '#c8a050';
+        ctx.fill();
+
+        // Pin highlight
+        ctx.beginPath();
+        ctx.arc(x - radius * 0.25, y - radius * 0.25, radius * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 240, 200, 0.3)';
+        ctx.fill();
+      }
+    }
+  }
+
+  // Draw playhead
+  if (playing) {
+    const x = barrelX + currentCol * cellW;
+    ctx.fillStyle = 'rgba(200, 160, 80, 0.08)';
+    ctx.fillRect(x, barrelY, cellW, barrelH);
+
+    ctx.strokeStyle = 'rgba(200, 160, 80, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, barrelY);
+    ctx.lineTo(x, barrelY + barrelH);
+    ctx.stroke();
+  }
+
+  // Draw glows
+  for (let i = glows.length - 1; i >= 0; i--) {
+    const g = glows[i];
+    g.life -= 0.015;
+    if (g.life <= 0) { glows.splice(i, 1); continue; }
+    const alpha = g.life * 0.6;
+    const r = g.radius * (1 + (1 - g.life) * 3);
+    const grd = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, r);
+    grd.addColorStop(0, `rgba(240, 208, 128, ${alpha})`);
+    grd.addColorStop(0.5, `rgba(200, 160, 80, ${alpha * 0.3})`);
+    grd.addColorStop(1, `rgba(200, 160, 80, 0)`);
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(g.x, g.y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  requestAnimationFrame(draw);
+}
+
+function tick(time) {
+  if (!playing) return;
+  const interval = (60 / bpm) * 1000 / 2; // 8th notes
+  if (time - lastTime >= interval) {
+    lastTime = time;
+
+    // Play notes in current column
+    for (let r = 0; r < ROWS; r++) {
+      if (grid[r][currentCol]) {
+        playNote(r);
+        const x = barrelX + currentCol * cellW + cellW / 2;
+        const y = barrelY + r * cellH + cellH / 2;
+        glows.push({ x, y, radius: Math.min(cellW, cellH) * 0.5, life: 1 });
+      }
+    }
+
+    currentCol = (currentCol + 1) % COLS;
+  }
+  requestAnimationFrame(tick);
+}
+
+// Event handlers
+canvas.addEventListener('click', (e) => {
+  initAudio();
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const col = Math.floor((mx - barrelX) / cellW);
+  const row = Math.floor((my - barrelY) / cellH);
+  if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+    grid[row][col] = !grid[row][col];
+    if (grid[row][col]) playNote(row);
+  }
+});
+
+// Drag to paint/erase
+let dragging = false;
+let dragMode = null;
+canvas.addEventListener('mousedown', (e) => {
+  initAudio();
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const col = Math.floor((mx - barrelX) / cellW);
+  const row = Math.floor((my - barrelY) / cellH);
+  if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+    dragging = true;
+    dragMode = !grid[row][col];
+    grid[row][col] = dragMode;
+    if (dragMode) playNote(row);
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const col = Math.floor((mx - barrelX) / cellW);
+  const row = Math.floor((my - barrelY) / cellH);
+  if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+    if (grid[row][col] !== dragMode) {
+      grid[row][col] = dragMode;
+      if (dragMode) playNote(row);
+    }
+  }
+});
+
+canvas.addEventListener('mouseup', () => { dragging = false; });
+canvas.addEventListener('mouseleave', () => { dragging = false; });
+
+// Touch support
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  initAudio();
+  const rect = canvas.getBoundingClientRect();
+  const t = e.touches[0];
+  const mx = t.clientX - rect.left;
+  const my = t.clientY - rect.top;
+  const col = Math.floor((mx - barrelX) / cellW);
+  const row = Math.floor((my - barrelY) / cellH);
+  if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+    dragging = true;
+    dragMode = !grid[row][col];
+    grid[row][col] = dragMode;
+    if (dragMode) playNote(row);
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (!dragging) return;
+  const rect = canvas.getBoundingClientRect();
+  const t = e.touches[0];
+  const mx = t.clientX - rect.left;
+  const my = t.clientY - rect.top;
+  const col = Math.floor((mx - barrelX) / cellW);
+  const row = Math.floor((my - barrelY) / cellH);
+  if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+    if (grid[row][col] !== dragMode) {
+      grid[row][col] = dragMode;
+      if (dragMode) playNote(row);
+    }
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => { dragging = false; });
+
+const playBtn = document.getElementById('playBtn');
+playBtn.addEventListener('click', () => {
+  initAudio();
+  playing = !playing;
+  playBtn.textContent = playing ? 'Stop' : 'Play';
+  playBtn.classList.toggle('active', playing);
+  if (playing) {
+    lastTime = 0;
+    requestAnimationFrame(tick);
+  }
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  initGrid();
+  currentCol = 0;
+});
+
+const bpmSlider = document.getElementById('bpm');
+const bpmVal = document.getElementById('bpmVal');
+bpmSlider.addEventListener('input', () => {
+  bpm = parseInt(bpmSlider.value);
+  bpmVal.textContent = bpm;
+});
+
+document.getElementById('scaleSelect').addEventListener('change', (e) => {
+  scale = SCALES[e.target.value];
+  // Adjust rows based on scale
+  const newRows = Math.max(12, Math.min(20, scale.length * 3));
+  if (newRows !== ROWS) {
+    ROWS = newRows;
+    initGrid();
+    resize();
+  }
+});
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    playBtn.click();
+  }
+});
+
+window.addEventListener('resize', resize);
+initGrid();
+resize();
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
