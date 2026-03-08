@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BASEMENT — Berlin techno machine</title>
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="BASEMENT — Berlin techno machine">
+  <meta property="og:description" content="Four-on-floor kick meets ducking acid bass. 128 BPM. Berlin basement.">
+  <meta property="og:image" content="https://intheamber.com/amber/basement-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/basement.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="BASEMENT — Berlin techno machine">
+  <meta name="twitter:description" content="Four-on-floor kick meets ducking acid bass. 128 BPM. Berlin basement.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/basement-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+    }
+    
+    #controls {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      text-align: center;
+    }
+    
+    #title {
+      font-size: clamp(32px, 8vw, 72px);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      margin-bottom: 20px;
+      color: #D4A574;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+    }
+    
+    #subtitle {
+      font-size: clamp(14px, 3vw, 18px);
+      margin-bottom: 40px;
+      color: #2D9596;
+      letter-spacing: 0.05em;
+    }
+    
+    #playButton {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 20px 60px;
+      font-size: clamp(18px, 4vw, 24px);
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
+      transition: all 0.3s;
+      touch-action: manipulation;
+    }
+    
+    #playButton:hover {
+      background: #FFD700;
+      box-shadow: 0 0 50px rgba(255, 215, 0, 0.8);
+      transform: scale(1.05);
+    }
+    
+    #playButton:active {
+      transform: scale(0.95);
+    }
+    
+    #stats {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      font-size: 12px;
+      color: #2D9596;
+      z-index: 10;
+      font-family: 'Space Mono', monospace;
+      line-height: 1.6;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="controls">
+    <div id="title">BASEMENT</div>
+    <div id="subtitle">Berlin techno machine</div>
+    <button id="playButton">START</button>
+  </div>
+  
+  <div id="stats">
+    <div>BPM: <span id="bpm">128</span></div>
+    <div>KICKS: <span id="kicks">0</span></div>
+    <div>BASS NOTES: <span id="notes">0</span></div>
+    <div>DUCK: <span id="duck">0%</span></div>
+  </div>
+
+  <script type="module">
+    import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+    import { TB303Engine } from '/303/dist/machines/tb303/engine.js';
+
+    // Canvas setup
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W = canvas.width = window.innerWidth;
+    let H = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    });
+
+    // State
+    let isPlaying = false;
+    let kickCount = 0;
+    let noteCount = 0;
+    let duckAmount = 0;
+    
+    // Visual elements
+    const rings = [];
+    const particles = [];
+    const bassGlow = { intensity: 0, hue: 0 };
+
+    // Colors
+    const AMBER = '#D4A574';
+    const GOLD = '#FFD700';
+    const TEAL = '#2D9596';
+    const VIOLET = '#7B68EE';
+    const PINK = '#FF1493';
+    
+    const colors = [AMBER, GOLD, TEAL, VIOLET, PINK];
+
+    // Audio setup
+    let audioContext;
+    let drums;
+    let bass;
+    let bassGain;
+    let masterGain;
+    let duckGain;
+    
+    const BPM = 128;
+    const stepTime = (60 / BPM) / 4; // 16th note duration
+    let currentStep = 0;
+    let nextStepTime = 0;
+
+    // Patterns
+    const drumPattern = {
+      kick: [
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+      ],
+      ch: [
+        { velocity: 0.6 }, { velocity: 0.4 }, { velocity: 0.6 }, { velocity: 0.4 },
+        { velocity: 0.6 }, { velocity: 0.4 }, { velocity: 0.6 }, { velocity: 0.4 },
+        { velocity: 0.6 }, { velocity: 0.4 }, { velocity: 0.6 }, { velocity: 0.4 },
+        { velocity: 0.6 }, { velocity: 0.4 }, { velocity: 0.6 }, { velocity: 0.4 }
+      ],
+      oh: [
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0.7 }, { velocity: 0 },
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0.7 }, { velocity: 0 }
+      ]
+    };
+
+    const bassPattern = [
+      { note: 'E2', gate: true, accent: true, slide: false },
+      { note: 'E2', gate: false, accent: false, slide: false },
+      { note: 'E2', gate: true, accent: false, slide: false },
+      { note: 'G2', gate: true, accent: false, slide: true },
+      { note: 'A2', gate: true, accent: true, slide: false },
+      { note: 'A2', gate: false, accent: false, slide: false },
+      { note: 'G2', gate: true, accent: false, slide: true },
+      { note: 'E2', gate: true, accent: false, slide: false },
+      { note: 'D2', gate: true, accent: true, slide: false },
+      { note: 'D2', gate: false, accent: false, slide: false },
+      { note: 'D2', gate: true, accent: false, slide: false },
+      { note: 'E2', gate: true, accent: false, slide: true },
+      { note: 'G2', gate: true, accent: false, slide: false },
+      { note: 'G2', gate: false, accent: false, slide: false },
+      { note: 'A2', gate: true, accent: true, slide: true },
+      { note: 'B2', gate: true, accent: false, slide: false }
+    ];
+
+    // Note frequencies for visualization
+    const noteFreqs = {
+      'D2': 73.42, 'E2': 82.41, 'G2': 98.00, 'A2': 110.00, 'B2': 123.47
+    };
+
+    // Init audio
+    function initAudio() {
+      audioContext = new AudioContext();
+      
+      // Create engines
+      drums = new TR909Engine({ context: audioContext });
+      bass = new TB303Engine({ context: audioContext });
+      
+      // Set BPM
+      drums.setBpm(BPM);
+      bass.setBpm(BPM);
+      
+      // Load patterns
+      drums.setPattern('main', drumPattern);
+      bass.setPattern(bassPattern);
+      
+      // Set 303 parameters for acid sound
+      bass.setParameter('cutoff', 0.25);
+      bass.setParameter('resonance', 0.75);
+      bass.setParameter('envMod', 0.8);
+      bass.setParameter('decay', 0.4);
+      bass.setParameter('accent', 0.85);
+      bass.setWaveform('sawtooth');
+      
+      // Create sidechain ducking
+      bassGain = audioContext.createGain();
+      bassGain.gain.value = 0.7;
+      
+      duckGain = audioContext.createGain();
+      duckGain.gain.value = 1.0;
+      
+      masterGain =audioContext.createGain();
+      masterGain.gain.value = 0.9;
+      
+      // Routing: bass → duckGain → bassGain → master
+      bass.output.connect(duckGain);
+      duckGain.connect(bassGain);
+      bassGain.connect(masterGain);
+      
+      // Drums → master
+      drums.output.connect(masterGain);
+      
+      // Master → destination
+      masterGain.connect(audioContext.destination);
+    }
+
+    // Sidechain ducking
+    function triggerDuck(time) {
+      const now = audioContext.currentTime;
+      const attackTime = 0.01;
+      const releaseTime = 0.15;
+      
+      // Duck down to 40%
+      duckGain.gain.cancelScheduledValues(now);
+      duckGain.gain.setValueAtTime(duckGain.gain.value, now);
+      duckGain.gain.linearRampToValueAtTime(0.4, time + attackTime);
+      duckGain.gain.linearRampToValueAtTime(1.0, time + attackTime + releaseTime);
+      
+      // Visual feedback
+      duckAmount = 60;
+      setTimeout(() => {
+        const interval = setInterval(() => {
+          duckAmount = Math.max(0, duckAmount - 5);
+          if (duckAmount === 0) clearInterval(interval);
+        }, 16);
+      }, attackTime * 1000);
+    }
+
+    // Sequencer
+    function scheduler() {
+      if (!isPlaying) return;
+      
+      const now = audioContext.currentTime;
+      
+      while (nextStepTime < now + 0.1) {
+        const stepInPattern = currentStep % 16;
+        
+        // Schedule kick
+        if (drumPattern.kick[stepInPattern].velocity > 0) {
+          drums.voices.get('kick').trigger(nextStepTime, drumPattern.kick[stepInPattern].velocity);
+          
+          // Trigger sidechain
+          triggerDuck(nextStepTime);
+          
+          // Visual: ring
+          setTimeout(() => {
+            rings.push({
+              x: W / 2,
+              y: H / 2,
+              radius: 0,
+              maxRadius: Math.min(W, H) * 0.6,
+              alpha: 1,
+              color: colors[Math.floor(Math.random() * colors.length)]
+            });
+            kickCount++;
+          }, (nextStepTime - now) * 1000);
+        }
+        
+        // Schedule hats
+        if (drumPattern.ch[stepInPattern].velocity > 0) {
+          drums.voices.get('ch').trigger(nextStepTime, drumPattern.ch[stepInPattern].velocity);
+        }
+        if (drumPattern.oh[stepInPattern].velocity > 0) {
+          drums.voices.get('oh').trigger(nextStepTime, drumPattern.oh[stepInPattern].velocity);
+        }
+        
+        // Schedule bass
+        const bassStep = bassPattern[stepInPattern];
+        if (bassStep.gate) {
+          bass.voices.get('bass').trigger(nextStepTime, bassStep);
+          
+          // Visual: bass glow + particles
+          const freq = noteFreqs[bassStep.note] || 82.41;
+          setTimeout(() => {
+            bassGlow.intensity = 1.0;
+            bassGlow.hue = (freq - 70) / 60; // Map freq to hue
+            
+            // Spawn particles
+            for (let i = 0; i < 10; i++) {
+              const angle = Math.random() * Math.PI * 2;
+              const speed = 2 + Math.random() * 3;
+              particles.push({
+                x: W / 2,
+                y: H / 2,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                alpha: 1,
+                size: 3 + Math.random() * 4,
+                color: bassStep.accent ? GOLD : TEAL
+              });
+            }
+            noteCount++;
+          }, (nextStepTime - now) * 1000);
+        }
+        
+        nextStepTime += stepTime;
+        currentStep++;
+      }
+      
+      requestAnimationFrame(scheduler);
+    }
+
+    // Animation
+    function animate() {
+      // Fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, W, H);
+      
+      // Bass glow (center)
+      if (bassGlow.intensity > 0) {
+        const hue = bassGlow.hue * 360;
+        const gradient = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, 200 * bassGlow.intensity);
+        gradient.addColorStop(0, `hsla(${hue}, 70%, 60%, ${bassGlow.intensity * 0.3})`);
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, W, H);
+        
+        bassGlow.intensity *= 0.95;
+      }
+      
+      // Rings (kick visualization)
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const ring = rings[i];
+        ring.radius += 8;
+        ring.alpha *= 0.96;
+        
+        ctx.strokeStyle = ring.color.replace(')', `, ${ring.alpha})`).replace('rgb', 'rgba').replace('#', 'rgba(');
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = ring.color;
+        
+        ctx.beginPath();
+        ctx.arc(ring.x, ring.y, ring.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        if (ring.alpha < 0.01 || ring.radius > ring.maxRadius) {
+          rings.splice(i, 1);
+        }
+      }
+      
+      ctx.shadowBlur = 0;
+      
+      // Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha *= 0.97;
+        
+        ctx.fillStyle = p.color.replace(')', `, ${p.alpha})`).replace('rgb', 'rgba').replace('#', 'rgba(');
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        if (p.alpha < 0.01) {
+          particles.splice(i, 1);
+        }
+      }
+      
+      // Idle animation (before playing)
+      if (!isPlaying) {
+        const time = Date.now() * 0.001;
+        
+        // Pulsing grid
+        ctx.strokeStyle = `rgba(212, 165, 116, ${0.1 + Math.sin(time * 2) * 0.05})`;
+        ctx.lineWidth = 1;
+        
+        for (let i = 0; i < 8; i++) {
+          const radius = 50 + i * 60 + Math.sin(time + i) * 10;
+          ctx.beginPath();
+          ctx.arc(W/2, H/2, radius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        
+        // Orbiting particles
+        for (let i = 0; i < 12; i++) {
+          const angle = time * 0.5 + (i / 12) * Math.PI * 2;
+          const radius = 180 + Math.sin(time * 2 + i) * 30;
+          const x = W/2 + Math.cos(angle) * radius;
+          const y = H/2 + Math.sin(angle) * radius;
+          
+          ctx.fillStyle = colors[i % colors.length];
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = colors[i % colors.length];
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        ctx.shadowBlur = 0;
+      }
+      
+      // Update stats
+      document.getElementById('kicks').textContent = kickCount;
+      document.getElementById('notes').textContent = noteCount;
+      document.getElementById('duck').textContent = Math.round(duckAmount) + '%';
+      
+      requestAnimationFrame(animate);
+    }
+
+    // Start
+    document.getElementById('playButton').addEventListener('click', async () => {
+      if (isPlaying) return;
+      
+      if (!audioContext) {
+        initAudio();
+      }
+      
+      await audioContext.resume();
+      
+      isPlaying = true;
+      nextStepTime = audioContext.currentTime;
+      currentStep = 0;
+      
+      // Hide controls
+      document.getElementById('controls').classList.add('hidden');
+      
+      // Start sequencer
+      scheduler();
+    });
+
+    // Start animation
+    animate();
+  </script>
+</body>
+</html>
