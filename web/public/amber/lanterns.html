@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LANTERNS — Release light into the night</title>
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="LANTERNS — Release light into the night">
+  <meta property="og:description" content="Tap to release glowing paper lanterns that float upward into the darkness. Watch them rise, sway, and illuminate the night sky.">
+  <meta property="og:image" content="https://intheamber.com/amber/lanterns-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/lanterns.html">
+  <meta property="og:type" content="website">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LANTERNS — Release light into the night">
+  <meta name="twitter:description" content="Tap to release glowing paper lanterns that float upward into the darkness. Watch them rise, sway, and illuminate the night sky.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/lanterns-og.png">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(0,0,0,0.8);
+      padding: 15px 20px;
+      border: 1px solid #D4A574;
+      border-radius: 4px;
+    }
+
+    #title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #FFD700;
+      margin-bottom: 10px;
+    }
+
+    #stats {
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .stat-label {
+      color: #2D9596;
+      margin-right: 5px;
+    }
+
+    #instructions {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      padding: 12px 24px;
+      border: 1px solid #D4A574;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #FFD700;
+      text-align: center;
+      z-index: 10;
+    }
+
+    @media (max-width: 600px) {
+      #ui {
+        top: 10px;
+        left: 10px;
+        padding: 10px 15px;
+        font-size: 11px;
+      }
+
+      #title {
+        font-size: 14px;
+      }
+
+      #instructions {
+        font-size: 12px;
+        padding: 10px 20px;
+        bottom: 10px;
+      }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div id="ui">
+    <div id="title">LANTERNS</div>
+    <div id="stats">
+      <div><span class="stat-label">FLOATING:</span><span id="floating">0</span></div>
+      <div><span class="stat-label">RELEASED:</span><span id="released">0</span></div>
+    </div>
+  </div>
+
+  <div id="instructions">Tap to release a lantern into the night</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    // Audio context
+    let audioContext;
+
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    // Play release chime
+    function playChime(frequency) {
+      if (!audioContext) return;
+
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+
+      osc.frequency.value = frequency;
+      osc.type = 'sine';
+
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.5);
+
+      osc.start();
+      osc.stop(audioContext.currentTime + 1.5);
+
+    }
+
+    // Full palette
+    const colors = [
+      '#FFD700', // gold
+      '#D4A574', // amber
+      '#ec4899', // hot pink
+      '#2D9596', // teal
+      '#f97316', // coral
+      '#8b5cf6', // violet
+      '#3b82f6', // electric blue
+      '#a3e635', // lime
+    ];
+
+    // Pentatonic chime frequencies
+    const frequencies = [523.25, 587.33, 659.25, 783.99, 880.00]; // C5, D5, E5, G5, A5
+
+    // Lanterns array
+    const lanterns = [];
+
+    // Particles array
+    const particles = [];
+
+    // Stats
+    let totalReleased = 0;
+
+    class Lantern {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 30 + Math.random() * 20;
+        this.height = this.width * 1.4;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.riseSpeed = 0.3 + Math.random() * 0.3;
+        this.swaySpeed = 0.02 + Math.random() * 0.02;
+        this.swayAmount = 15 + Math.random() * 15;
+        this.swayOffset = Math.random() * Math.PI * 2;
+        this.opacity = 0;
+        this.fadeIn = true;
+        this.glowPulse = Math.random() * Math.PI * 2;
+      }
+
+      update() {
+        // Fade in
+        if (this.fadeIn) {
+          this.opacity += 0.02;
+          if (this.opacity >= 1) {
+            this.fadeIn = false;
+          }
+        }
+
+        // Rise
+        this.y -= this.riseSpeed;
+
+        // Sway
+        this.swayOffset += this.swaySpeed;
+        const swayX = Math.sin(this.swayOffset) * this.swayAmount;
+
+        // Glow pulse
+        this.glowPulse += 0.05;
+
+        // Spawn ember particles
+        if (Math.random() < 0.3) {
+          particles.push(new Particle(
+            this.x + swayX,
+            this.y + this.height,
+            this.color
+          ));
+        }
+
+        // Draw
+        this.draw(swayX);
+
+        // Remove if off screen
+        return this.y + this.height > 0;
+      }
+
+      draw(swayX) {
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+
+        const centerX = this.x + swayX;
+        const centerY = this.y + this.height / 2;
+
+        // Outer glow
+        const glowSize = 1 + Math.sin(this.glowPulse) * 0.3;
+        const outerGlow = ctx.createRadialGradient(
+          centerX, centerY, 0,
+          centerX, centerY, this.width * glowSize
+        );
+        outerGlow.addColorStop(0, this.color + '40');
+        outerGlow.addColorStop(0.5, this.color + '10');
+        outerGlow.addColorStop(1, this.color + '00');
+
+        ctx.fillStyle = outerGlow;
+        ctx.fillRect(
+          centerX - this.width * glowSize,
+          centerY - this.height * glowSize,
+          this.width * 2 * glowSize,
+          this.height * 2 * glowSize
+        );
+
+        // Lantern body
+        ctx.fillStyle = this.color + '30';
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.roundRect(
+          this.x + swayX - this.width / 2,
+          this.y,
+          this.width,
+          this.height,
+          5
+        );
+        ctx.fill();
+        ctx.stroke();
+
+        // Inner glow
+        const innerGlow = ctx.createRadialGradient(
+          centerX, centerY, 0,
+          centerX, centerY, this.width / 2
+        );
+        innerGlow.addColorStop(0, '#FFD700' + 'AA');
+        innerGlow.addColorStop(0.6, this.color + '60');
+        innerGlow.addColorStop(1, this.color + '00');
+
+        ctx.fillStyle = innerGlow;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, this.width / 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Horizontal lines (paper texture)
+        ctx.strokeStyle = this.color + '40';
+        ctx.lineWidth = 1;
+        for (let i = 1; i < 3; i++) {
+          const lineY = this.y + (this.height / 3) * i;
+          ctx.beginPath();
+          ctx.moveTo(this.x + swayX - this.width / 2, lineY);
+          ctx.lineTo(this.x + swayX + this.width / 2, lineY);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = Math.random() * 0.5 + 0.2;
+        this.size = 2 + Math.random() * 3;
+        this.life = 1;
+        this.decay = 0.01 + Math.random() * 0.02;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+
+        ctx.save();
+        ctx.globalAlpha = this.life;
+
+        // Particle glow
+        const glow = ctx.createRadialGradient(
+          this.x, this.y, 0,
+          this.x, this.y, this.size * 2
+        );
+        glow.addColorStop(0, this.color);
+        glow.addColorStop(0.5, this.color + '80');
+        glow.addColorStop(1, this.color + '00');
+
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Particle core
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+
+        return this.life > 0;
+      }
+    }
+
+    // Create lantern on tap
+    function createLantern(x, y) {
+      initAudio();
+
+      lanterns.push(new Lantern(x, y));
+      totalReleased++;
+
+      // Play chime
+      const freq = frequencies[Math.floor(Math.random() * frequencies.length)];
+      playChime(freq);
+
+      // Burst particles
+      for (let i = 0; i < 20; i++) {
+        const angle = (Math.PI * 2 / 20) * i;
+        const speed = 2 + Math.random() * 2;
+        const p = new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]);
+        p.vx = Math.cos(angle) * speed;
+        p.vy = Math.sin(angle) * speed;
+        particles.push(p);
+      }
+
+      updateStats();
+    }
+
+    // Input handlers
+    canvas.addEventListener('click', (e) => {
+      createLantern(e.clientX, e.clientY);
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      for (let touch of e.touches) {
+        createLantern(touch.clientX, touch.clientY);
+      }
+    });
+
+    // Update stats
+    function updateStats() {
+      document.getElementById('floating').textContent = lanterns.length;
+      document.getElementById('released').textContent = totalReleased;
+    }
+
+    // Auto-spawn
+    let autoSpawnTimer = 0;
+    const autoSpawnInterval = 180; // Every 3 seconds
+
+    // Animation loop
+    function animate() {
+      // Fade trails (very slow fade for dreamy effect)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Update and draw lanterns
+      for (let i = lanterns.length - 1; i >= 0; i--) {
+        if (!lanterns[i].update()) {
+          lanterns.splice(i, 1);
+}
+      }
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        if (!particles[i].update()) {
+          particles.splice(i, 1);
+        }
+      }
+
+      // Auto-spawn
+      autoSpawnTimer++;
+      if (autoSpawnTimer >= autoSpawnInterval) {
+        const x = width * 0.2 + Math.random() * width * 0.6;
+        const y = height + 50;
+        createLantern(x, y);
+        autoSpawnTimer = 0;
+      }
+
+      updateStats();
+      requestAnimationFrame(animate);
+    }
+
+    // Start with a few lanterns
+    setTimeout(() => {
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          const x = width * 0.3 + Math.random() * width * 0.4;
+          const y = height + 50;
+          createLantern(x, y);
+        }, i * 800);
+      }
+    }, 500);
+
+    animate();
+  </script>
+</body>
+</html>
