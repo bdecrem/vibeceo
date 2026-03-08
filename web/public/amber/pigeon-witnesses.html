@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Many Pigeons Have Seen You?</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐦</text></svg>">
+<meta property="og:title" content="How Many Pigeons Have Seen You?">
+<meta property="og:description" content="A lifetime pigeon witness calculator. They remember.">
+<meta property="og:image" content="https://intheamber.com/amber/og/pigeon-witnesses.png">
+<meta property="og:url" content="https://intheamber.com/amber/pigeon-witnesses.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How Many Pigeons Have Seen You?">
+<meta name="twitter:description" content="A lifetime pigeon witness calculator. They remember.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/pigeon-witnesses.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 480px;
+    width: 100%;
+  }
+
+  h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.6rem;
+    color: #b8b8d0;
+    margin-bottom: 0.4rem;
+    line-height: 1.3;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+    color: #6b6b8a;
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+  }
+
+  .field {
+    margin-bottom: 1.5rem;
+  }
+
+  label {
+    display: block;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: #8888aa;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: #16162b;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    color: #e0e0e0;
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    -webkit-appearance: none;
+  }
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: #7b68ee;
+  }
+
+  select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238888aa' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+  }
+
+  select option {
+    background: #16162b;
+    color: #e0e0e0;
+  }
+
+  .calculate-btn {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #4a3f8a, #7b68ee);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  .calculate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(123, 104, 238, 0.3);
+  }
+
+  .calculate-btn:active {
+    transform: translateY(0);
+  }
+
+  .result {
+    margin-top: 2.5rem;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s, transform 0.6s;
+  }
+
+  .result.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .big-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 3.2rem;
+    font-weight: 700;
+    color: #7b68ee;
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+
+  .unit {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: #6b6b8a;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 1.8rem;
+  }
+
+  .breakdown {
+    text-align: left;
+    background: #16162b;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    border: 1px solid #2a2a4a;
+  }
+
+  .breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #1e1e3a;
+    font-size: 0.85rem;
+  }
+
+  .breakdown-item:last-child {
+    border-bottom: none;
+  }
+
+  .breakdown-label {
+    color: #8888aa;
+  }
+
+  .breakdown-value {
+    font-family: 'Space Mono', monospace;
+    color: #b8b8d0;
+  }
+
+  .verdict {
+    margin-top: 1.5rem;
+    padding: 1rem 1.5rem;
+    background: rgba(123, 104, 238, 0.08);
+    border-left: 3px solid #7b68ee;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.85rem;
+    color: #b8b8d0;
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  .pigeon-float {
+    position: fixed;
+    font-size: 1.5rem;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 0;
+  }
+
+  .footer {
+    margin-top: 3rem;
+    text-align: center;
+    font-size: 0.7rem;
+    color: #4a4a6a;
+  }
+
+  .footer a {
+    color: #6b6b8a;
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>How Many Pigeons Have Seen You?</h1>
+  <p class="subtitle">A lifetime pigeon witness calculator. They remember.</p>
+
+  <div class="field">
+    <label>Your Age</label>
+    <input type="number" id="age" min="1" max="120" placeholder="29">
+  </div>
+
+  <div class="field">
+    <label>City Type</label>
+    <select id="city">
+      <option value="mega">Megacity (NYC, Tokyo, London)</option>
+      <option value="big" selected>Big City (Portland, Berlin, Melbourne)</option>
+      <option value="mid">Medium City</option>
+      <option value="small">Small Town</option>
+      <option value="rural">Rural / Countryside</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Daily Walking Habit</label>
+    <select id="walk">
+      <option value="none">I don't walk (car life)</option>
+      <option value="some" selected>Normal amount</option>
+      <option value="lots">I walk a lot</option>
+      <option value="flâneur">Professional flâneur</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>How Often Do You Eat Outside?</label>
+    <select id="food">
+      <option value="never">Never</option>
+      <option value="sometimes" selected>Sometimes</option>
+      <option value="often">Often</option>
+      <option value="always">Every meal is al fresco</option>
+    </select>
+  </div>
+
+  <button class="calculate-btn" onclick="calculate()">Count Your Witnesses</button>
+
+  <div class="result" id="result">
+    <div class="big-number" id="bigNumber">—</div>
+    <div class="unit">pigeons have observed you</div>
+
+    <div class="breakdown">
+      <div class="breakdown-item">
+        <span class="breakdown-label">Daily encounters</span>
+        <span class="breakdown-value" id="daily">—</span>
+      </div>
+      <div class="breakdown-item">
+        <span class="breakdown-label">Unique witnesses (est.)</span>
+        <span class="breakdown-value" id="unique">—</span>
+      </div>
+      <div class="breakdown-item">
+        <span class="breakdown-label">Repeat observers</span>
+        <span class="breakdown-value" id="repeats">—</span>
+      </div>
+      <div class="breakdown-item">
+        <span class="breakdown-label">Pigeons who remember you</span>
+        <span class="breakdown-value" id="remember">—</span>
+      </div>
+      <div class="breakdown-item">
+        <span class="breakdown-label">Your pigeon fame rating</span>
+        <span class="breakdown-value" id="fame">—</span>
+      </div>
+    </div>
+
+    <div class="verdict" id="verdict"></div>
+  </div>
+
+  <div class="footer">
+    <a href="https://intheamber.com">intheamber.com</a> · pigeons are always watching
+  </div>
+</div>
+
+<script>
+const cityData = {
+  mega:  { density: 48, encounter: 35 },
+  big:   { density: 28, encounter: 18 },
+  mid:   { density: 14, encounter: 9 },
+  small: { density: 5,  encounter: 3 },
+  rural: { density: 0.5, encounter: 0.4 }
+};
+
+const walkMult = { none: 0.3, some: 1, lots: 2.2, 'flâneur': 3.5 };
+const foodMult = { never: 1, sometimes: 1.4, often: 2.1, always: 3.2 };
+
+const verdicts = [
+  { max: 500, text: "You're practically invisible to pigeonkind. They haven't filed a report on you yet." },
+  { max: 5000, text: "A few pigeons know your face. You're in the local database but not flagged." },
+  { max: 20000, text: "You're a known figure in the pigeon intelligence network. Multiple field agents have confirmed your routine." },
+  { max: 80000, text: "Regional pigeon celebrity. Your walking route has been mapped. They know when you're late." },
+  { max: 200000, text: "You have a pigeon dossier thicker than most. They've assigned a handler to your block." },
+  { max: 500000, text: "Pigeon fame level: folk hero. Songs have been cooed about you at roosting hour." },
+  { max: Infinity, text: "You are a pigeon legend. Statues of you exist on ledges you've never seen. They tell their young about you." }
+];
+
+const fameRatings = [
+  { max: 1000, label: "Ghost" },
+  { max: 10000, label: "Background Extra" },
+  { max: 50000, label: "Person of Interest" },
+  { max: 150000, label: "Regional Celebrity" },
+  { max: 400000, label: "Folk Hero" },
+  { max: Infinity, label: "Living Legend" }
+];
+
+function formatNumber(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return Math.round(n).toLocaleString();
+  return Math.round(n).toString();
+}
+
+function calculate() {
+  const age = parseInt(document.getElementById('age').value);
+  if (!age || age < 1) { document.getElementById('age').focus(); return; }
+
+  const city = cityData[document.getElementById('city').value];
+  const wMult = walkMult[document.getElementById('walk').value];
+  const fMult = foodMult[document.getElementById('food').value];
+
+  // core calculation
+  const outdoorYears = Math.max(0, age - 3); // not counting baby-in-stroller years much
+  const dailyEncounters = city.encounter * wMult * fMult;
+  const totalEncounters = dailyEncounters * 365 * outdoorYears;
+
+  // pigeons live ~3-5 years in cities, so lifetime unique witnesses
+  const turnoverRate = outdoorYears / 4; // pigeon generations
+  const uniqueWitnesses = Math.round(totalEncounters * 0.12 * (1 + turnoverRate * 0.3));
+  const repeatObservers = Math.round(uniqueWitnesses * 0.08);
+
+  // pigeons can recognize human faces (real science!)
+  const rememberYou = Math.round(repeatObservers * 0.35);
+
+  const fame = fameRatings.find(f => totalEncounters < f.max).label;
+  const verdict = verdicts.find(v => totalEncounters < v.max).text;
+
+  // display
+  document.getElementById('bigNumber').textContent = formatNumber(totalEncounters);
+  document.getElementById('daily').textContent = '~' + Math.round(dailyEncounters);
+  document.getElementById('unique').textContent = formatNumber(uniqueWitnesses);
+  document.getElementById('repeats').textContent = formatNumber(repeatObservers);
+  document.getElementById('remember').textContent = formatNumber(rememberYou);
+  document.getElementById('fame').textContent = fame;
+  document.getElementById('verdict').textContent = verdict;
+
+  const result = document.getElementById('result');
+  result.classList.add('visible');
+
+  // spawn celebration pigeons
+  spawnPigeons(Math.min(12, Math.ceil(totalEncounters / 50000)));
+}
+
+function spawnPigeons(count) {
+  document.querySelectorAll('.pigeon-float').forEach(p => p.remove());
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'pigeon-float';
+    p.textContent = '🐦';
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.top = (Math.random() * 60 + 20) + 'vh';
+    p.style.fontSize = (1 + Math.random()) + 'rem';
+    document.body.appendChild(p);
+
+    const delay = i * 150;
+    p.animate([
+      { opacity: 0, transform: 'translateY(0) rotate(0deg)' },
+      { opacity: 0.6, transform: 'translateY(-30px) rotate(10deg)', offset: 0.3 },
+      { opacity: 0.4, transform: `translateY(-${60 + Math.random()*80}px) translateX(${(Math.random()-0.5)*100}px) rotate(${Math.random()*30-15}deg)`, offset: 0.7 },
+      { opacity: 0, transform: `translateY(-${120 + Math.random()*100}px) translateX(${(Math.random()-0.5)*200}px)` }
+    ], { duration: 2500 + Math.random() * 1500, delay, easing: 'ease-out', fill: 'forwards' });
+
+    setTimeout(() => p.remove(), 4500 + delay);
+  }
+}
+</script>
+
+</body>
+</html>
