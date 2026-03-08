@@ -1,340 +1,337 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>MEETING — Amber</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
-<meta property="og:title" content="MEETING">
-<meta property="og:description" content="8-bit video call. nobody's listening.">
-<meta property="og:image" content="https://intheamber.com/amber/og/meeting.png">
-<meta property="og:url" content="https://intheamber.com/amber/meeting.html">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@intheamber">
-<meta name="twitter:title" content="MEETING">
-<meta name="twitter:description" content="8-bit video call. nobody's listening.">
-<meta name="twitter:image" content="https://intheamber.com/amber/og/meeting.png">
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  background: #0a0a0a;
-  color: #e0e0e0;
-  font-family: monospace;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-.header {
-  font-size: 10px;
-  color: #ff4444;
-  letter-spacing: 2px;
-  margin-bottom: 8px;
-  animation: blink 1.5s step-end infinite;
-}
-@keyframes blink { 50% { opacity: 0.3; } }
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  width: min(360px, 92vw);
-  padding: 4px;
-  background: #1a1a1a;
-  border: 2px solid #333;
-  border-radius: 4px;
-}
-.cell {
-  aspect-ratio: 4/3;
-  background: #111;
-  border: 1px solid #2a2a2a;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  image-rendering: pixelated;
-}
-.cell canvas {
-  width: 100%;
-  height: 100%;
-  image-rendering: pixelated;
-}
-.name-tag {
-  position: absolute;
-  bottom: 2px;
-  left: 4px;
-  font-size: 8px;
-  color: #aaa;
-  background: rgba(0,0,0,0.7);
-  padding: 1px 3px;
-  letter-spacing: 1px;
-}
-.muted {
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  font-size: 7px;
-  color: #ff4444;
-}
-.bottom-bar {
-  margin-top: 10px;
-  width: min(360px, 92vw);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 9px;
-  color: #888;
-}
-.bar-container {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.bar-label { font-size: 9px; color: #FFD700; min-width: 80px; }
-.bar {
-  font-size: 9px;
-  color: #FFD700;
-  letter-spacing: 1px;
-}
-.tip {
-  font-size: 9px;
-  color: #555;
-  text-align: center;
-  margin-top: 8px;
-}
-.quest-box {
-  border: 1px solid #FFD700;
-  padding: 6px 10px;
-  font-size: 9px;
-  color: #FFD700;
-  text-align: center;
-  margin-top: 6px;
-  background: rgba(255,215,0,0.05);
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MEETING — 8-Bit Office Life</title>
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="MEETING — 8-Bit Office Life">
+  <meta property="og:description" content="Someone's always asleep. Retro pixel art by Amber.">
+  <meta property="og:image" content="https://intheamber.com/amber/meeting-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/meeting.html">
+  <meta property="og:type" content="website">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MEETING — 8-Bit Office Life">
+  <meta name="twitter:description" content="Someone's always asleep. Retro pixel art by Amber.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/meeting-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      color: #D4A574;
+      overflow-x: hidden;
+    }
+
+    #game-container {
+      max-width: 640px;
+      width: 100%;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 4px solid #D4A574;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+
+    #ui {
+      margin-top: 20px;
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      padding: 15px;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .stat-bar {
+      display: flex;
+      align-items: center;
+      margin: 8px 0;
+      gap: 10px;
+    }
+
+    .label {
+      color: #2D9596;
+      min-width: 120px;
+    }
+
+    .bar {
+      flex: 1;
+      height: 16px;
+      background: #1a1a1a;
+      border: 1px solid #D4A574;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 100%;
+      background: #D4A574;
+      transition: width 0.3s;
+    }
+
+    .status {
+      color: #FFD700;
+      text-align: center;
+      font-size: 16px;
+      margin-top: 15px;
+      padding: 10px;
+      background: #1a1a1a;
+      border: 1px solid #FFD700;
+    }
+
+    @media (max-width: 600px) {
+      #ui {
+        font-size: 12px;
+      }
+
+      .label {
+        min-width: 100px;
+        font-size: 11px;
+      }
+
+      .status {
+        font-size: 14px;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div id="game-container">
+    <canvas id="pixel-canvas" width="320" height="240"></canvas>
 
-<div class="header">● REC 00:47:23</div>
+    <div id="ui">
+      <div class="stat-bar">
+        <span class="label">ATTENTION:</span>
+        <div class="bar">
+          <div class="fill" id="attention-bar" style="width: 15%;"></div>
+        </div>
+      </div>
 
-<div class="grid" id="grid"></div>
+      <div class="stat-bar">
+        <span class="label">MEETING TIME:</span>
+        <span style="color: #FF6B6B;" id="timer">32:47</span>
+      </div>
 
-<div class="bottom-bar">
-  <div class="bar-container">
-    <span class="bar-label">ATTENTION:</span>
-    <span class="bar" id="attention-bar"></span>
+      <div class="stat-bar">
+        <span class="label">AWAKE NPCS:</span>
+        <span style="color: #FFD700;">4/5</span>
+      </div>
+
+      <div class="status" id="status">
+        "Let's circle back on that..."
+      </div>
+    </div>
   </div>
-  <div class="bar-container">
-    <span class="bar-label">WILL TO LIVE:</span>
-    <span class="bar" id="will-bar"></span>
-  </div>
-  <div class="stat-row">
-    <span>"CAN EVERYONE SEE MY SCREEN?"</span>
-    <span id="screen-count">×3</span>
-  </div>
-  <div class="quest-box">
-    ⚔ QUEST: SURVIVE UNTIL "ANY QUESTIONS?"
-  </div>
-  <div class="tip">tap a tile to unmute them (don't)</div>
-</div>
 
-<script>
-const PEOPLE = [
-  { name: 'DAVE', activity: 'sleeping', muted: true, skin: '#f4c689', shirt: '#4477aa' },
-  { name: 'KAREN', activity: 'eating', muted: true, skin: '#e8b878', shirt: '#aa4477' },
-  { name: 'CHAD', activity: 'gaming', muted: false, shirt: '#44aa77', skin: '#d4a76a' },
-  { name: 'YOU', activity: 'staring', muted: true, skin: '#f0c080', shirt: '#777' },
-  { name: 'BOSS', activity: 'talking', muted: false, skin: '#e0b070', shirt: '#333' },
-  { name: 'CAT', activity: 'walking', muted: true, skin: '#ccc', shirt: '#ccc' },
-];
+  <script>
+    const canvas = document.getElementById('pixel-canvas');
+    const ctx = canvas.getContext('2d');
 
-const grid = document.getElementById('grid');
-const cells = [];
+    // Disable image smoothing for crisp pixels
+    ctx.imageSmoothingEnabled = false;
 
-PEOPLE.forEach((p, i) => {
-  const cell = document.createElement('div');
-  cell.className = 'cell';
-  const canvas = document.createElement('canvas');
-  canvas.width = 32;
-  canvas.height = 24;
-  cell.appendChild(canvas);
+    // Color palette
+    const colors = {
+      bg: '#1a1a1a',
+      floor: '#2a2a2a',
+      table: '#4a3520',
+      chair: '#3a2a15',
+      npc1: '#7B68EE', // violet
+      npc2: '#2D9596', // teal
+      npc3: '#D4A574', // amber
+      npc4: '#FFD700', // gold
+      npc5: '#FF69B4', // hot pink
+      wall: '#353535',
+      ui: '#D4A574',
+      white: '#fff',
+      sleep: '#4a4a4a'
+    };
 
-  const tag = document.createElement('div');
-  tag.className = 'name-tag';
-  tag.textContent = p.name;
-  cell.appendChild(tag);
+    let frame = 0;
+    let attentionLevel = 15;
+    let minutes = 32;
+    let seconds = 47;
 
-  if (p.muted) {
-    const m = document.createElement('div');
-    m.className = 'muted';
-    m.textContent = '🔇';
-    cell.appendChild(m);
-  }
+    const statuses = [
+      '"Let\'s circle back on that..."',
+      '"Does anyone have questions?"',
+      '"Moving forward..."',
+      '"As I was saying..."',
+      '"Per my last email..."',
+      '"Let\'s take this offline..."'
+    ];
 
-  cell.addEventListener('click', () => {
-    // flash red border
-    cell.style.borderColor = '#ff4444';
-    const tag2 = document.createElement('div');
-    tag2.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:8px;color:#ff4444;background:rgba(0,0,0,0.8);padding:2px 4px;z-index:9;white-space:nowrap;';
-    const msgs = ['WHY', 'DON\'T', 'PLEASE NO', '*STATIC*', 'NO SIGNAL', '"YOU\'RE ON MUTE"'];
-    tag2.textContent = msgs[Math.floor(Math.random() * msgs.length)];
-    cell.appendChild(tag2);
-    setTimeout(() => { cell.style.borderColor = '#2a2a2a'; tag2.remove(); }, 1200);
-  });
+    function drawPixel(x, y, size, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, size, size);
+    }
 
-  grid.appendChild(cell);
-  cells.push({ canvas, person: p, frame: 0 });
-});
+    function drawRoom() {
+      // Background
+      ctx.fillStyle = colors.bg;
+      ctx.fillRect(0, 0, 320, 240);
 
-// pixel art renderer
-function drawPerson(ctx, p, frame) {
-  ctx.fillStyle = '#111';
-  ctx.fillRect(0, 0, 32, 24);
+      // Floor tiles
+      ctx.fillStyle = colors.floor;
+      for (let y = 120; y < 240; y += 16) {
+        for (let x = 0; x < 320; x += 16) {
+          if ((x/16 + y/16) % 2 === 0) {
+            ctx.fillRect(x, y, 16, 16);
+          }
+        }
+      }
 
-  // desk
-  ctx.fillStyle = '#3a2a1a';
-  ctx.fillRect(0, 18, 32, 6);
+      // Walls
+      ctx.fillStyle = colors.wall;
+      ctx.fillRect(0, 0, 320, 120);
 
-  const cx = 16;
+      // Wall details (window)
+      ctx.fillStyle = '#4a6b8a';
+      ctx.fillRect(240, 20, 60, 40);
+      ctx.fillStyle = '#2a4b6a';
+      ctx.fillRect(268, 20, 2, 40);
+      ctx.fillRect(240, 38, 60, 2);
+    }
 
-  if (p.activity === 'sleeping') {
-    // head drooped
-    ctx.fillStyle = p.skin;
-    ctx.fillRect(cx-3, 10 + (frame % 2), 6, 5);
-    ctx.fillStyle = p.shirt;
-    ctx.fillRect(cx-4, 15, 8, 4);
-    // zzz
-    ctx.fillStyle = '#FFD700';
-    const zx = 22 + (frame % 3);
-    ctx.fillRect(zx, 8 - (frame % 4), 2, 2);
-    if (frame % 6 > 2) ctx.fillRect(zx-3, 6, 2, 2);
-  } else if (p.activity === 'eating') {
-    // normal pose + food item
-    ctx.fillStyle = p.skin;
-    ctx.fillRect(cx-3, 8, 6, 5);
-    ctx.fillStyle = '#222';
-    ctx.fillRect(cx-2, 8, 1, 1); ctx.fillRect(cx+1, 8, 1, 1); // eyes
-    ctx.fillStyle = p.shirt;
-    ctx.fillRect(cx-4, 13, 8, 5);
-    // hand with food
-    ctx.fillStyle = p.skin;
-    ctx.fillRect(cx+4, 11, 3, 2);
-    ctx.fillStyle = frame % 4 < 2 ? '#ff6644' : '#44cc44'; // alternating food
-    ctx.fillRect(cx+5, 10, 2, 2);
-  } else if (p.activity === 'gaming') {
-    ctx.fillStyle = p.skin;
-    ctx.fillRect(cx-3, 8, 6, 5);
-    ctx.fillStyle = '#222';
-    ctx.fillRect(cx-2, 9, 1, 1); ctx.fillRect(cx+1, 9, 1, 1);
-    // big grin
-    ctx.fillStyle = '#222';
-    ctx.fillRect(cx-1, 11, 3, 1);
-    ctx.fillStyle = p.shirt;
-    ctx.fillRect(cx-4, 13, 8, 5);
-    // controller glow
-    ctx.fillStyle = frame % 2 ? '#44ff44' : '#4444ff';
-    ctx.fillRect(cx-6, 16, 4, 2);
-    ctx.fillRect(cx+3, 16, 4, 2);
-  } else if (p.activity === 'staring') {
-    // dead eyes
-    ctx.fillStyle = p.skin;
-    ctx.fillRect(cx-3, 8, 6, 5);
-    ctx.fillStyle = '#222';
-    ctx.fillRect(cx-2, 9, 1, 1); ctx.fillRect(cx+1, 9, 1, 1);
-    ctx.fillStyle = '#666';
-    ctx.fillRect(cx-1, 11, 2, 1); // flat mouth
-    ctx.fillStyle = p.shirt;
-    ctx.fillRect(cx-4, 13, 8, 5);
-    // coffee
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(2, 16, 3, 3);
-    ctx.fillStyle = '#6b3a00';
-    ctx.fillRect(2, 17, 3, 2);
-    // steam
-    if (frame % 3 === 0) { ctx.fillStyle = '#555'; ctx.fillRect(3, 14, 1, 2); }
-  } else if (p.activity === 'talking') {
-    ctx.fillStyle = p.skin;
-    ctx.fillRect(cx-3, 7, 6, 5);
-    ctx.fillStyle = '#222';
-    ctx.fillRect(cx-2, 8, 1, 1); ctx.fillRect(cx+1, 8, 1, 1);
-    // mouth open/close
-    ctx.fillStyle = '#222';
-    if (frame % 3 !== 0) ctx.fillRect(cx-1, 10, 3, 2); else ctx.fillRect(cx-1, 10, 3, 1);
-    ctx.fillStyle = p.shirt;
-    ctx.fillRect(cx-4, 12, 8, 6);
-    // hand gesturing
-    ctx.fillStyle = p.skin;
-    const hy = 10 + (frame % 2);
-    ctx.fillRect(cx+5, hy, 3, 2);
-  } else if (p.activity === 'walking') {
-    // cat walking across
-    const catx = (frame * 2) % 40 - 4;
-    ctx.fillStyle = '#f0a030';
-    ctx.fillRect(catx, 14, 6, 3); // body
-    ctx.fillRect(catx+1, 12, 4, 2); // head
-    ctx.fillRect(catx, 13, 1, 1); ctx.fillRect(catx+5, 13, 1, 1); // ears
-    ctx.fillStyle = '#222';
-    ctx.fillRect(catx+2, 12, 1, 1); ctx.fillRect(catx+4, 12, 1, 1); // eyes
-    // legs
-    ctx.fillStyle = '#f0a030';
-    const legOff = frame % 2;
-    ctx.fillRect(catx+1, 17, 1, 2+legOff);
-    ctx.fillRect(catx+4, 17, 1, 2+(1-legOff));
-    // tail
-    ctx.fillRect(catx-2, 13, 2, 1);
-    ctx.fillRect(catx-3, 12, 1, 1);
-    // empty chair text
-    ctx.fillStyle = '#333';
-    // no person, just cat
-  }
+    function drawTable() {
+      // Conference table (oval shape approximation)
+      ctx.fillStyle = colors.table;
+      ctx.fillRect(80, 120, 160, 60);
+      ctx.fillRect(70, 130, 180, 40);
 
-  // scanline effect
-  for (let y = 0; y < 24; y += 2) {
-    ctx.fillStyle = 'rgba(0,0,0,0.15)';
-    ctx.fillRect(0, y, 32, 1);
-  }
-}
+      // Table edge highlight
+      ctx.fillStyle = '#5a4530';
+      ctx.fillRect(80, 120, 160, 4);
+    }
 
-// attention bar
-let attention = 4;
-let will = 3;
-let screenCount = 3;
+    function drawNPC(x, y, color, sleeping = false) {
+      // Body
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, 16, 16);
 
-function updateBars() {
-  const attBar = '▓'.repeat(attention) + '░'.repeat(10 - attention);
-  document.getElementById('attention-bar').textContent = attBar + ' ' + (attention * 10) + '%';
-  const willBar = '▓'.repeat(will) + '░'.repeat(10 - will);
-  document.getElementById('will-bar').textContent = willBar + ' ' + (will * 10) + '%';
-  document.getElementById('screen-count').textContent = '×' + screenCount;
-}
+      // Head
+      ctx.fillStyle = sleeping ? colors.sleep : color;
+      ctx.fillRect(x + 4, y - 12, 8, 8);
 
-updateBars();
+      // Eyes (if awake)
+      if (!sleeping) {
+        ctx.fillStyle = colors.white;
+        ctx.fillRect(x + 5, y - 10, 2, 2);
+        ctx.fillRect(x + 9, y - 10, 2, 2);
+      } else {
+        // Closed eyes
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(x + 5, y - 9, 2, 1);
+        ctx.fillRect(x + 9, y - 9, 2, 1);
+      }
 
-// drain over time
-setInterval(() => {
-  if (attention > 0 && Math.random() < 0.3) attention--;
-  if (will > 0 && Math.random() < 0.2) will--;
-  if (Math.random() < 0.1) screenCount++;
-  updateBars();
-}, 3000);
+      // Arms on table
+      ctx.fillStyle = color;
+      ctx.fillRect(x - 4, y + 8, 6, 8);
+      ctx.fillRect(x + 14, y + 8, 6, 8);
+    }
 
-// animation loop
-let globalFrame = 0;
-function animate() {
-  cells.forEach(c => {
-    const ctx = c.canvas.getContext('2d');
-    drawPerson(ctx, c.person, globalFrame);
-  });
-  globalFrame++;
-  setTimeout(animate, 250);
-}
-animate();
-</script>
+    function drawZZZ(x, y, frame) {
+      const offset = Math.sin(frame / 10) * 2;
+      ctx.fillStyle = colors.ui;
+ctx.font = 'bold 16px monospace';
+      ctx.fillText('Z', x + offset, y - 20);
+      ctx.fillText('Z', x + 6 + offset, y - 28);
+      ctx.fillText('Z', x + 12 + offset, y - 36);
+    }
+
+    function drawLaptop(x, y) {
+      // Laptop base
+      ctx.fillStyle = '#3a3a3a';
+      ctx.fillRect(x, y, 20, 12);
+
+      // Screen
+      ctx.fillStyle = '#2a2a2a';
+      ctx.fillRect(x + 2, y - 10, 16, 10);
+
+      // Screen content (blue glow)
+      ctx.fillStyle = '#1a3a5a';
+      ctx.fillRect(x + 4, y - 8, 12, 6);
+    }
+
+    function render() {
+      frame++;
+
+      drawRoom();
+      drawTable();
+
+      // NPCs around table
+      drawNPC(100, 140, colors.npc1, false); // Left side
+      drawNPC(140, 120, colors.npc2, false); // Top left
+      drawNPC(180, 120, colors.npc3, true);  // Top center - SLEEPING
+      drawNPC(220, 120, colors.npc4, false); // Top right
+      drawNPC(200, 160, colors.npc5, false); // Right side
+
+      // Laptops
+      drawLaptop(110, 150);
+      drawLaptop(150, 132);
+      drawLaptop(230, 132);
+      drawLaptop(210, 170);
+
+      // ZZZ above sleeping NPC
+      drawZZZ(188, 108, frame);
+
+      // UI text at top
+      ctx.fillStyle = colors.ui;
+      ctx.font = 'bold 12px monospace';
+      ctx.fillText('QUEST: Survive Meeting', 10, 15);
+
+      requestAnimationFrame(render);
+    }
+
+    // Update attention bar slowly
+    setInterval(() => {
+      attentionLevel = Math.max(5, attentionLevel - 1);
+      document.getElementById('attention-bar').style.width = attentionLevel + '%';
+
+      if (attentionLevel < 10) {
+        document.getElementById('attention-bar').style.background = '#FF6B6B';
+      }
+    }, 3000);
+
+    // Update timer
+    setInterval(() => {
+      seconds++;
+      if (seconds >= 60) {
+        seconds = 0;
+        minutes++;
+      }
+      document.getElementById('timer').textContent =
+        `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }, 1000);
+
+    // Rotate status messages
+    let statusIndex = 0;
+    setInterval(() => {
+      statusIndex = (statusIndex + 1) % statuses.length;
+      document.getElementById('status').textContent = statuses[statusIndex];
+    }, 4000);
+
+    // Start rendering
+    render();
+  </script>
 </body>
 </html>
