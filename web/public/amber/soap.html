@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Soap</title>
+<meta name="description" content="Try to grab the soap.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧼</text></svg>">
+<meta property="og:title" content="Soap">
+<meta property="og:description" content="Try to grab the soap.">
+<meta property="og:image" content="https://intheamber.com/amber/og/soap.png">
+<meta property="og:url" content="https://intheamber.com/amber/soap.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Soap">
+<meta name="twitter:description" content="Try to grab the soap.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/soap.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #1a1a2e;
+    font-family: 'Georgia', serif;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: grab;
+  }
+
+  #floor {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(180deg, #2a2a4a 0%, #1e1e3a 100%);
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  #soap {
+    position: absolute;
+    width: 90px;
+    height: 60px;
+    border-radius: 30px / 20px;
+    background: linear-gradient(135deg, #f0e6d3 0%, #e8d5b8 40%, #d4c4a0 100%);
+    box-shadow: 
+      0 4px 20px rgba(0,0,0,0.4),
+      inset 0 -3px 8px rgba(0,0,0,0.15),
+      inset 0 3px 8px rgba(255,255,255,0.3),
+      0 0 40px rgba(240,230,211,0.1);
+    cursor: grab;
+    z-index: 10;
+    transition: transform 0.05s ease-out;
+  }
+
+  #soap::after {
+    content: '';
+    position: absolute;
+    top: 12px; left: 18px;
+    width: 40px; height: 15px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transform: rotate(-15deg);
+  }
+
+  #soap.grabbed {
+    cursor: grabbing;
+    box-shadow: 
+      0 8px 30px rgba(0,0,0,0.5),
+      inset 0 -3px 8px rgba(0,0,0,0.15),
+      inset 0 3px 8px rgba(255,255,255,0.3),
+      0 0 60px rgba(240,230,211,0.15);
+  }
+
+  .bubble {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), rgba(255,255,255,0.05));
+    border: 1px solid rgba(255,255,255,0.15);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  #attempts {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    color: rgba(255,255,255,0.25);
+    font-size: 14px;
+    letter-spacing: 2px;
+    z-index: 100;
+  }
+
+  #message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255,255,255,0);
+    font-size: 18px;
+    letter-spacing: 3px;
+    text-align: center;
+    z-index: 100;
+    pointer-events: none;
+    transition: color 2s ease;
+    max-width: 80%;
+    line-height: 1.8;
+  }
+
+  #message.visible {
+    color: rgba(255,255,255,0.6);
+  }
+
+  #hint {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.15);
+    font-size: 13px;
+    letter-spacing: 4px;
+    text-transform: lowercase;
+    z-index: 100;
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.35; }
+  }
+
+  .water-drop {
+    position: absolute;
+    width: 4px;
+    height: 6px;
+    background: rgba(150, 180, 220, 0.4);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    pointer-events: none;
+    z-index: 4;
+  }
+
+  #caught-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(240, 230, 211, 0);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transition: background 3s ease;
+  }
+
+  #caught-overlay.active {
+    background: rgba(240, 230, 211, 0.08);
+  }
+
+  #caught-text {
+    color: rgba(255,255,255,0);
+    font-size: 22px;
+    letter-spacing: 5px;
+    text-align: center;
+    line-height: 2;
+    transition: color 3s ease;
+    max-width: 80%;
+  }
+
+  #caught-overlay.active #caught-text {
+    color: rgba(255,255,255,0.7);
+  }
+</style>
+</head>
+<body>
+
+<div id="floor"></div>
+<div id="soap"></div>
+<div id="attempts"></div>
+<div id="message"></div>
+<div id="hint">grab the soap</div>
+<div id="caught-overlay"><div id="caught-text"></div></div>
+
+<script>
+const soap = document.getElementById('soap');
+const attemptsEl = document.getElementById('attempts');
+const messageEl = document.getElementById('message');
+const hintEl = document.getElementById('hint');
+const caughtOverlay = document.getElementById('caught-overlay');
+const caughtText = document.getElementById('caught-text');
+
+let soapX = window.innerWidth / 2 - 45;
+let soapY = window.innerHeight / 2 - 30;
+let attempts = 0;
+let caught = false;
+let grabbing = false;
+let holdTime = 0;
+let holdInterval = null;
+let soapVelX = 0;
+let soapVelY = 0;
+let lastSlipTime = 0;
+
+const slipMessages = [
+  '',
+  '',
+  '',
+  'slippery, isn\'t it',
+  '',
+  'you\'re trying too hard',
+  '',
+  '',
+  'it doesn\'t want to be held',
+  '',
+  'maybe that\'s the point',
+  '',
+  '',
+  '',
+  'some things resist the grip',
+  '',
+  '',
+  '',
+  '',
+  'still here?',
+  '',
+  '',
+  '',
+  '',
+  '',
+  'patience',
+];
+
+const caughtMessages = [
+  'you held on long enough\nfor something that didn\'t want to stay',
+  'was it worth it?\nthe soap doesn\'t know either',
+  'congratulations\nyou caught a slippery thing\nnow what',
+  'some things are better\nin the almost-catching',
+  'you held still\nand it forgot to run',
+];
+
+soap.style.left = soapX + 'px';
+soap.style.top = soapY + 'px';
+
+function updateSoapPos() {
+  soapX = Math.max(0, Math.min(window.innerWidth - 90, soapX));
+  soapY = Math.max(0, Math.min(window.innerHeight - 60, soapY));
+  soap.style.left = soapX + 'px';
+  soap.style.top = soapY + 'px';
+}
+
+function spawnBubble(x, y) {
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  const size = 4 + Math.random() * 12;
+  bubble.style.width = size + 'px';
+  bubble.style.height = size + 'px';
+  bubble.style.left = (x + Math.random() * 40 - 20) + 'px';
+  bubble.style.top = (y + Math.random() * 30 - 15) + 'px';
+  document.body.appendChild(bubble);
+  
+  const dx = (Math.random() - 0.5) * 60;
+  const dy = -30 - Math.random() * 80;
+  let opacity = 0.6;
+  let bx = parseFloat(bubble.style.left);
+  let by = parseFloat(bubble.style.top);
+  
+  function animBubble() {
+    bx += dx * 0.016;
+    by += dy * 0.016;
+    opacity -= 0.012;
+    bubble.style.left = bx + 'px';
+    bubble.style.top = by + 'px';
+    bubble.style.opacity = opacity;
+    if (opacity > 0) requestAnimationFrame(animBubble);
+    else bubble.remove();
+  }
+  requestAnimationFrame(animBubble);
+}
+
+function spawnWaterDrops(x, y, count) {
+  for (let i = 0; i < count; i++) {
+    const drop = document.createElement('div');
+    drop.className = 'water-drop';
+    drop.style.left = (x + Math.random() * 60 - 10) + 'px';
+    drop.style.top = (y + Math.random() * 40 - 10) + 'px';
+    document.body.appendChild(drop);
+    
+    let dy = 0;
+    let opacity = 0.5;
+    function animDrop() {
+      dy += 0.15;
+      let cy = parseFloat(drop.style.top) + dy;
+      opacity -= 0.005;
+      drop.style.top = cy + 'px';
+      drop.style.opacity = opacity;
+      if (opacity > 0 && cy < window.innerHeight) requestAnimationFrame(animDrop);
+      else drop.remove();
+    }
+    setTimeout(() => requestAnimationFrame(animDrop), Math.random() * 200);
+  }
+}
+
+function slip(pointerX, pointerY) {
+  if (caught) return;
+  
+  const now = Date.now();
+  if (now - lastSlipTime < 100) return;
+  lastSlipTime = now;
+  
+  attempts++;
+  
+  const centerX = soapX + 45;
+  const centerY = soapY + 30;
+  const angle = Math.atan2(centerY - pointerY, centerX - pointerX);
+  
+  // slip distance decreases slightly with attempts (gets "tired")
+  const baseDist = Math.max(60, 200 - attempts * 3);
+  const dist = baseDist + Math.random() * 80;
+  const wobble = (Math.random() - 0.5) * 1.2;
+  
+  soapVelX = Math.cos(angle + wobble) * dist;
+  soapVelY = Math.sin(angle + wobble) * dist;
+  
+  // spawn effects
+  for (let i = 0; i < 3; i++) spawnBubble(soapX + 45, soapY + 30);
+  spawnWaterDrops(soapX, soapY, 2);
+  
+  // animate slip
+  const startX = soapX;
+  const startY = soapY;
+  const targetX = startX + soapVelX;
+  const targetY = startY + soapVelY;
+  let t = 0;
+  
+  function animSlip() {
+    t += 0.06;
+    if (t >= 1) t = 1;
+    const ease = 1 - Math.pow(1 - t, 3);
+    soapX = startX + (targetX - startX) * ease;
+    soapY = startY + (targetY - startY) * ease;
+    
+    // bounce off walls
+    if (soapX < 0) { soapX = 0; }
+    if (soapX > window.innerWidth - 90) { soapX = window.innerWidth - 90; }
+    if (soapY < 0) { soapY = 0; }
+    if (soapY > window.innerHeight - 60) { soapY = window.innerHeight - 60; }
+    
+    // slight rotation wobble
+    const rot = Math.sin(t * Math.PI * 3) * (1 - t) * 15;
+    soap.style.transform = `rotate(${rot}deg)`;
+    
+    updateSoapPos();
+    if (t < 1) requestAnimationFrame(animSlip);
+  }
+  requestAnimationFrame(animSlip);
+  
+  // show message
+  if (attempts < slipMessages.length && slipMessages[attempts]) {
+    messageEl.textContent = slipMessages[attempts];
+    messageEl.classList.add('visible');
+    setTimeout(() => messageEl.classList.remove('visible'), 3000);
+  }
+  
+  // update counter
+  if (attempts > 2) {
+    attemptsEl.textContent = attempts;
+  }
+}
+
+// After many attempts, soap gets "tired" and catchable
+function checkCatchable() {
+  return attempts >= 25 + Math.floor(Math.random() * 10);
+}
+
+function catchSoap() {
+  caught = true;
+  soap.classList.add('grabbed');
+  hintEl.style.display = 'none';
+  attemptsEl.style.display = 'none';
+  messageEl.classList.remove('visible');
+  
+  setTimeout(() => {
+    caughtText.textContent = caughtMessages[Math.floor(Math.random() * caughtMessages.length)];
+    caughtOverlay.classList.add('active');
+    soap.style.transition = 'opacity 3s ease';
+    soap.style.opacity = '0.3';
+  }, 500);
+}
+
+// Pointer events
+function getPos(e) {
+  if (e.touches) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  return { x: e.clientX, y: e.clientY };
+}
+
+function isOverSoap(px, py) {
+  const margin = 15; // generous touch area
+  return px >= soapX - margin && px <= soapX + 90 + margin &&
+         py >= soapY - margin && py <= soapY + 60 + margin;
+}
+
+function onDown(e) {
+  e.preventDefault();
+  if (caught) return;
+  const { x, y } = getPos(e);
+  
+  if (isOverSoap(x, y)) {
+    if (checkCatchable()) {
+      // soap is tired — start hold timer
+      grabbing = true;
+      soap.classList.add('grabbed');
+      holdTime = 0;
+      holdInterval = setInterval(() => {
+        holdTime += 50;
+        // need to hold for 1.5 seconds
+        if (holdTime >= 1500) {
+          clearInterval(holdInterval);
+          catchSoap();
+        }
+        // soap trembles while held
+        const tremor = (Math.random() - 0.5) * 3;
+        soap.style.transform = `rotate(${tremor}deg)`;
+      }, 50);
+    } else {
+      slip(x, y);
+    }
+  }
+}
+
+function onMove(e) {
+  e.preventDefault();
+  if (caught) return;
+  const { x, y } = getPos(e);
+  
+  if (grabbing) {
+    // if pointer moves too far while holding, soap escapes
+    if (!isOverSoap(x, y)) {
+      grabbing = false;
+      soap.classList.remove('grabbed');
+      clearInterval(holdInterval);
+      slip(x, y);
+    }
+  }
+}
+
+function onUp(e) {
+  if (grabbing && !caught) {
+    grabbing = false;
+    soap.classList.remove('grabbed');
+    clearInterval(holdInterval);
+    // released too early
+    if (holdTime > 0 && holdTime < 1500) {
+      const { x, y } = getPos(e) || { x: soapX + 45, y: soapY + 30 };
+      messageEl.textContent = 'so close';
+      messageEl.classList.add('visible');
+      setTimeout(() => messageEl.classList.remove('visible'), 2000);
+    }
+  }
+}
+
+// idle soap drift
+let idleAngle = Math.random() * Math.PI * 2;
+function idleDrift() {
+  if (caught || grabbing) { requestAnimationFrame(idleDrift); return; }
+  
+  idleAngle += 0.003;
+  soapX += Math.sin(idleAngle) * 0.15;
+  soapY += Math.cos(idleAngle * 0.7) * 0.1;
+  updateSoapPos();
+  
+  // occasional subtle rotation
+  const rot = Math.sin(Date.now() * 0.001) * 2;
+  soap.style.transform = `rotate(${rot}deg)`;
+  
+  requestAnimationFrame(idleDrift);
+}
+idleDrift();
+
+document.addEventListener('mousedown', onDown);
+document.addEventListener('mousemove', onMove);
+document.addEventListener('mouseup', onUp);
+document.addEventListener('touchstart', onDown, { passive: false });
+document.addEventListener('touchmove', onMove, { passive: false });
+document.addEventListener('touchend', onUp);
+
+// prevent context menu
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// Resize handling
+window.addEventListener('resize', () => {
+  soapX = Math.min(soapX, window.innerWidth - 90);
+  soapY = Math.min(soapY, window.innerHeight - 60);
+  updateSoapPos();
+});
+</script>
+</body>
+</html>
