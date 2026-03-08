@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kintsugi — Amber</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="Kintsugi">
+<meta property="og:description" content="The gold holds what broke apart.">
+<meta property="og:image" content="https://intheamber.com/amber/og/kintsugi.png">
+<meta property="og:url" content="https://intheamber.com/amber/kintsugi.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kintsugi">
+<meta name="twitter:description" content="The gold holds what broke apart.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/kintsugi.png">
+<meta name="twitter:site" content="@intheamber">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0c; overflow: hidden; }
+canvas { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, time = 0;
+
+function resize() {
+  W = canvas.width = window.innerWidth * devicePixelRatio;
+  H = canvas.height = window.innerHeight * devicePixelRatio;
+  ctx.scale(1, 1);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Voronoi-like shard system
+class Shard {
+  constructor(cx, cy) {
+    this.cx = cx;
+    this.cy = cy;
+    this.vertices = [];
+    this.color = `hsl(${20 + Math.random() * 15}, ${8 + Math.random() * 12}%, ${8 + Math.random() * 6}%)`;
+    this.phase = Math.random() * Math.PI * 2;
+    this.breathSpeed = 0.3 + Math.random() * 0.4;
+  }
+}
+
+// Generate seed points
+const seeds = [];
+const cols = 8, rows = 6;
+const cellW = W / cols, cellH = H / rows;
+
+for (let r = 0; r < rows; r++) {
+  for (let c = 0; c < cols; c++) {
+    const jitter = 0.7;
+    seeds.push({
+      x: (c + 0.5 + (Math.random() - 0.5) * jitter) * cellW,
+      y: (r + 0.5 + (Math.random() - 0.5) * jitter) * cellH
+    });
+  }
+}
+
+// Compute Voronoi via pixel sampling (lightweight approach)
+// Instead, we'll use a geometric approach with polygon clipping
+
+// Simplified approach: create irregular polygons from Delaunay-like triangulation
+// Actually, let's use a beautiful visual approach — draw the Voronoi cracks directly
+
+function closestSeed(x, y) {
+  let minD = Infinity, idx = 0;
+  for (let i = 0; i < seeds.length; i++) {
+    const dx = x - seeds[i].x, dy = y - seeds[i].y;
+    const d = dx * dx + dy * dy;
+    if (d < minD) { minD = d; idx = i; }
+  }
+  return idx;
+}
+
+// Pre-compute a low-res Voronoi map
+const mapRes = 4;
+const mapW = Math.ceil(W / mapRes);
+const mapH = Math.ceil(H / mapRes);
+const voronoiMap = new Int16Array(mapW * mapH);
+
+for (let y = 0; y < mapH; y++) {
+  for (let x = 0; x < mapW; x++) {
+    voronoiMap[y * mapW + x] = closestSeed(x * mapRes, y * mapRes);
+  }
+}
+
+// Find edge pixels
+const edges = [];
+for (let y = 1; y < mapH - 1; y++) {
+  for (let x = 1; x < mapW - 1; x++) {
+    const idx = voronoiMap[y * mapW + x];
+    if (voronoiMap[y * mapW + x + 1] !== idx ||
+        voronoiMap[y * mapW + x - 1] !== idx ||
+        voronoiMap[(y + 1) * mapW + x] !== idx ||
+        voronoiMap[(y - 1) * mapW + x] !== idx) {
+      edges.push({ x: x * mapRes, y: y * mapRes, seed: idx });
+    }
+  }
+}
+
+// Shard colors
+const shardColors = seeds.map((_, i) => {
+  const h = 15 + Math.random() * 25;
+  const s = 6 + Math.random() * 10;
+  const l = 6 + Math.random() * 8;
+  return { h, s, l, phase: Math.random() * Math.PI * 2, speed: 0.2 + Math.random() * 0.5 };
+});
+
+// Crack segments for beautiful golden lines
+// Trace along edges to form crack paths
+const crackPoints = [];
+// Group edge points by their boundary pair
+const boundaryMap = new Map();
+
+for (let y = 1; y < mapH - 1; y++) {
+  for (let x = 1; x < mapW - 1; x++) {
+    const idx = voronoiMap[y * mapW + x];
+    const neighbors = [
+      voronoiMap[y * mapW + x + 1],
+      voronoiMap[(y + 1) * mapW + x]
+    ];
+    for (const n of neighbors) {
+      if (n !== idx) {
+        const key = Math.min(idx, n) + ',' + Math.max(idx, n);
+        if (!boundaryMap.has(key)) boundaryMap.set(key, []);
+        boundaryMap.get(key).push({ x: x * mapRes, y: y * mapRes });
+      }
+    }
+  }
+}
+
+// Create crack line segments
+const cracks = [];
+boundaryMap.forEach((points, key) => {
+  // Sub-sample for performance
+  const step = Math.max(1, Math.floor(points.length / 60));
+  const sampled = points.filter((_, i) => i % step === 0);
+  if (sampled.length > 1) {
+    cracks.push({
+      points: sampled,
+      phase: Math.random() * Math.PI * 2,
+      width: 1.5 + Math.random() * 2.5,
+      glowWidth: 8 + Math.random() * 16
+    });
+  }
+});
+
+// Gold particle system along cracks
+class GoldParticle {
+  constructor() {
+    this.reset();
+  }
+  reset() {
+    const crack = cracks[Math.floor(Math.random() * cracks.length)];
+    const pt = crack.points[Math.floor(Math.random() * crack.points.length)];
+    this.x = pt.x + (Math.random() - 0.5) * 6;
+    this.y = pt.y + (Math.random() - 0.5) * 6;
+    this.life = 1;
+    this.decay = 0.003 + Math.random() * 0.008;
+    this.size = 0.5 + Math.random() * 2;
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.vy = (Math.random() - 0.5) * 0.3 - 0.15;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.life -= this.decay;
+    if (this.life <= 0) this.reset();
+  }
+}
+
+const particles = Array.from({ length: 120 }, () => new GoldParticle());
+
+function draw() {
+  time += 0.008;
+
+  // Dark background with slight warmth
+  ctx.fillStyle = '#0a0a0c';
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw shards (subtle color variation)
+  const imgData = ctx.createImageData(mapW, mapH);
+  for (let y = 0; y < mapH; y++) {
+    for (let x = 0; x < mapW; x++) {
+      const idx = voronoiMap[y * mapW + x];
+      const sc = shardColors[idx];
+      const breath = Math.sin(time * sc.speed + sc.phase) * 0.5 + 0.5;
+      const l = sc.l + breath * 3;
+      // Convert HSL to RGB approximately
+      const hue = sc.h / 360;
+      const sat = sc.s / 100;
+      const lig = l / 100;
+      const [r, g, b] = hslToRgb(hue, sat, lig);
+      const pi = (y * mapW + x) * 4;
+      imgData.data[pi] = r;
+      imgData.data[pi + 1] = g;
+      imgData.data[pi + 2] = b;
+      imgData.data[pi + 3] = 255;
+    }
+  }
+
+  // Draw to offscreen then scale up
+  const offscreen = new OffscreenCanvas(mapW, mapH);
+  const offCtx = offscreen.getContext('2d');
+  offCtx.putImageData(imgData, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(offscreen, 0, 0, W, H);
+
+  // Draw golden cracks
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  for (const crack of cracks) {
+    const breath = Math.sin(time * 0.7 + crack.phase) * 0.3 + 0.7;
+    const pts = crack.points;
+    if (pts.length < 2) continue;
+
+    // Outer glow
+    ctx.strokeStyle = `rgba(218, 165, 32, ${0.08 * breath})`;
+    ctx.lineWidth = crack.glowWidth * breath;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.stroke();
+
+    // Mid glow
+    ctx.strokeStyle = `rgba(255, 195, 0, ${0.2 * breath})`;
+    ctx.lineWidth = crack.width * 3 * breath;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.stroke();
+
+    // Core line
+    ctx.strokeStyle = `rgba(255, 223, 100, ${0.6 * breath})`;
+    ctx.lineWidth = crack.width * breath;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.stroke();
+
+    // Bright center
+    ctx.strokeStyle = `rgba(255, 248, 200, ${0.4 * breath})`;
+    ctx.lineWidth = crack.width * 0.4 * breath;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.stroke();
+  }
+
+  // Draw junction glows where multiple cracks meet
+  for (const seed of seeds) {
+    const breath = Math.sin(time * 0.5 + seed.x * 0.01) * 0.3 + 0.7;
+    const gradient = ctx.createRadialGradient(seed.x, seed.y, 0, seed.x, seed.y, 20 * breath);
+    gradient.addColorStop(0, `rgba(255, 210, 60, ${0.05 * breath})`);
+    gradient.addColorStop(1, 'rgba(255, 210, 60, 0)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(seed.x, seed.y, 20 * breath, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Gold particles
+  for (const p of particles) {
+    p.update();
+    const alpha = p.life * 0.6;
+    const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
+    gradient.addColorStop(0, `rgba(255, 220, 80, ${alpha})`);
+    gradient.addColorStop(0.5, `rgba(218, 165, 32, ${alpha * 0.3})`);
+    gradient.addColorStop(1, 'rgba(218, 165, 32, 0)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Subtle vignette
+  const vignette = ctx.createRadialGradient(W / 2, H / 2, W * 0.25, W / 2, H / 2, W * 0.7);
+  vignette.addColorStop(0, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.5)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, W, H);
+
+  requestAnimationFrame(draw);
+}
+
+function hslToRgb(h, s, l) {
+  let r, g, b;
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+draw();
+</script>
+</body>
+</html>
