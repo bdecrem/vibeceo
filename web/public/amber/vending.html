@@ -1,273 +1,529 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>VENDING — Amber</title>
-<meta name="description" content="A vending machine for things money can't buy">
-<meta property="og:title" content="VENDING">
-<meta property="og:description" content="A vending machine for things money can't buy">
-<meta property="og:image" content="https://intheamber.com/amber/og/vending.png">
-<meta property="og:url" content="https://intheamber.com/amber/vending.html">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="VENDING">
-<meta name="twitter:description" content="A vending machine for things money can't buy">
-<meta name="twitter:image" content="https://intheamber.com/amber/og/vending.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #1a1a2e;
-    color: #e0e0e0;
-    font-family: 'Courier New', monospace;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .machine {
-    width: min(360px, 90vw);
-    background: linear-gradient(180deg, #2a2a4a 0%, #1e1e3a 100%);
-    border: 3px solid #4a4a6a;
-    border-radius: 20px;
-    padding: 20px;
-    position: relative;
-    box-shadow: 0 0 40px rgba(100, 100, 200, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
-  }
-  .title {
-    text-align: center;
-    font-size: 14px;
-    letter-spacing: 6px;
-    color: #ff6b9d;
-    margin-bottom: 16px;
-    text-transform: uppercase;
-  }
-  .display {
-    background: #0a0a1a;
-    border: 2px solid #3a3a5a;
-    border-radius: 12px;
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px 16px;
-    margin-bottom: 16px;
-    position: relative;
-    overflow: hidden;
-  }
-  .item-emoji { font-size: 56px; margin-bottom: 12px; }
-  .item-name {
-    font-size: 16px;
-    color: #ffd700;
-    text-align: center;
-    line-height: 1.4;
-    max-width: 280px;
-  }
-  .item-price {
-    font-size: 12px;
-    color: #888;
-    margin-top: 8px;
-    font-style: italic;
-  }
-  .slot {
-    width: 100%;
-    height: 50px;
-    background: #0d0d20;
-    border: 2px solid #4a4a6a;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.15s;
-    position: relative;
-    overflow: hidden;
-  }
-  .slot:active { transform: scale(0.97); background: #151530; }
-  .slot-text {
-    font-size: 13px;
-    letter-spacing: 3px;
-    color: #ff6b9d;
-    text-transform: uppercase;
-    z-index: 1;
-  }
-  .coin-slot {
-    width: 40px; height: 4px;
-    background: #2a2a4a;
-    border: 1px solid #5a5a7a;
-    border-radius: 2px;
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-  .dispensed { animation: drop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  @keyframes drop {
-    0% { transform: translateY(-40px); opacity: 0; }
-    60% { transform: translateY(8px); opacity: 1; }
-    100% { transform: translateY(0); opacity: 1; }
-  }
-  .coin-anim {
-    position: absolute;
-    font-size: 24px;
-    animation: coinDrop 0.4s ease-in forwards;
-    pointer-events: none;
-  }
-  @keyframes coinDrop {
-    0% { top: -30px; opacity: 1; }
-    100% { top: 50%; opacity: 0; }
-  }
-  .counter {
-    text-align: center;
-    font-size: 11px;
-    color: #555;
-    margin-top: 12px;
-  }
-  .collection {
-    margin-top: 16px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-    max-width: min(360px, 90vw);
-  }
-  .collected {
-    font-size: 28px;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  @keyframes popIn {
-    0% { transform: scale(0); }
-    100% { transform: scale(1); }
-  }
-  .glow { animation: glowPulse 2s ease-in-out infinite; }
-  @keyframes glowPulse {
-    0%, 100% { box-shadow: 0 0 10px rgba(255, 107, 157, 0.2); }
-    50% { box-shadow: 0 0 25px rgba(255, 107, 157, 0.5); }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VENDING — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="VENDING — Amber">
+  <meta property="og:description" content="Dispense emotions from a vending machine. Sometimes it works. Sometimes it doesn't.">
+  <meta property="og:image" content="https://intheamber.com/amber/vending-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/vending.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="VENDING — Amber">
+  <meta name="twitter:description" content="Dispense emotions from a vending machine. Sometimes it works. Sometimes it doesn't.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/vending-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+    
+    #machine {
+      background: #1a1a1a;
+      border: 4px solid #D4A574;
+      border-radius: 12px;
+      padding: 20px;
+      width: min(90vw, 400px);
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.3);
+    }
+    
+    #display {
+      background: #0a0a0a;
+      border: 2px solid #D4A574;
+      padding: 15px;
+      text-align: center;
+      font-size: 14px;
+      min-height: 80px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    #status {
+      color: #FFD700;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    
+    #dispensed {
+      font-size: 18px;
+      color: #2D9596;
+      font-weight: bold;
+      animation: fadeIn 0.3s;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .button {
+      background: #0a0a0a;
+      border: 2px solid #666;
+      color: #D4A574;
+      padding: 12px 8px;
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      transition: all 0.1s;
+      border-radius: 4px;
+      min-height: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      touch-action: manipulation;
+    }
+    
+    .button:active {
+      transform: scale(0.95);
+      border-color: #D4A574;
+    }
+    
+    .button.disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    .button-code {
+      color: #FFD700;
+      font-weight: bold;
+      font-size: 10px;
+    }
+    
+    .button-label {
+      font-size: 12px;
+    }
+    
+    #coin-slot {
+      background: #0a0a0a;
+      border: 3px solid #D4A574;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      transition: all 0.2s;
+      touch-action: manipulation;
+    }
+    
+    #coin-slot:active {
+      transform: scale(0.98);
+      background: #1a1a1a;
+    }
+    
+    #coin-slot.ready {
+      border-color: #2D9596;
+      box-shadow: 0 0 15px rgba(45, 149, 150, 0.5);
+    }
+    
+    #window {
+      background: #111;
+      border: 3px solid #666;
+      height: 120px;
+      margin-bottom: 15px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 4px;
+    }
+    
+    .item {
+      position: absolute;
+      background: #D4A574;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: top 0.5s ease-in;
+      box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+    }
+    
+    .item.stuck {
+      animation: shake 0.5s infinite;
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(-50%) rotate(0deg); }
+      25% { transform: translateX(-48%) rotate(-2deg); }
+      75% { transform: translateX(-52%) rotate(2deg); }
+    }
+    
+    #stats {
+      text-align: center;
+      font-size: 11px;
+      color: #666;
+      margin-top: 10px;
+    }
+    
+    #start-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      gap: 20px;
+    }
+    
+    #start-btn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 20px 40px;
+      font-size: 20px;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s;
+      touch-action: manipulation;
+    }
+    
+    #start-btn:active {
+      transform: scale(0.95);
+    }
+    
+    .title {
+      font-size: 24px;
+      color: #FFD700;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
-
-<div class="machine">
-  <div class="title">Vending</div>
-  <div class="display" id="display">
-    <div class="item-emoji" id="emoji">🪙</div>
-    <div class="item-name" id="name">insert coin</div>
-    <div class="item-price" id="price"></div>
+  
+  <div id="start-overlay">
+    <div class="title">VENDING MACHINE</div>
+    <button id="start-btn">▶ START</button>
   </div>
-  <div class="slot glow" id="slot" ontouchstart="" onclick="vend()">
-    <div class="coin-slot"></div>
-    <div class="slot-text">tap to vend</div>
+
+  <div id="machine">
+    <div class="title" style="font-size: 16px; margin-bottom: 15px;">EMOTIONS INC.</div>
+    
+    <div id="display">
+      <div id="status">Insert coin to begin</div>
+      <div id="dispensed"></div>
+    </div>
+    
+    <div id="coin-slot">
+      💰 INSERT COIN 💰
+    </div>
+    
+    <div id="grid">
+      <div class="button disabled" data-code="A1" data-emotion="Joy">
+        <span class="button-code">A1</span>
+        <span class="button-label">Joy</span>
+      </div>
+      <div class="button disabled" data-code="A2" data-emotion="Calm">
+        <span class="button-code">A2</span>
+        <span class="button-label">Calm</span>
+      </div>
+      <div class="button disabled" data-code="A3" data-emotion="Hope">
+        <span class="button-code">A3</span>
+        <span class="button-label">Hope</span>
+      </div>
+      <div class="button disabled" data-code="B1" data-emotion="Confidence">
+        <span class="button-code">B1</span>
+        <span class="button-label">Confidence</span>
+      </div>
+      <div class="button disabled" data-code="B2" data-emotion="Peace">
+        <span class="button-code">B2</span>
+        <span class="button-label">Peace</span>
+      </div>
+      <div class="button disabled" data-code="B3" data-emotion="Energy">
+        <span class="button-code">B3</span>
+        <span class="button-label">Energy</span>
+      </div>
+      <div class="button disabled" data-code="C1" data-emotion="Love">
+        <span class="button-code">C1</span>
+        <span class="button-label">Love</span>
+      </div>
+      <div class="button disabled" data-code="C2" data-emotion="Wonder">
+        <span class="button-code">C2</span>
+        <span class="button-label">Wonder</span>
+      </div>
+      <div class="button disabled" data-code="C3" data-emotion="Gratitude">
+        <span class="button-code">C3</span>
+        <span class="button-label">Gratitude</span>
+      </div>
+    </div>
+    
+    <div id="window"></div>
+    
+    <div id="stats">
+      Dispensed: <span id="count">0</span> | 
+      Stuck: <span id="stuck-count">0</span> | 
+      Malfunctions: <span id="malfunction-count">0</span>
+    </div>
   </div>
-  <div class="counter" id="counter"></div>
-</div>
-<div class="collection" id="collection"></div>
 
-<script>
-const items = [
-  { emoji: "🧠", name: "The thought you had at 3am that would've changed everything", price: "Price: one night's sleep" },
-  { emoji: "🚪", name: "A door you forgot to open", price: "Price: the curiosity you lost at 14" },
-  { emoji: "📞", name: "The call you almost made", price: "Price: 11 seconds of courage" },
-  { emoji: "🧦", name: "The other sock", price: "Price: faith in the universe" },
-  { emoji: "🫧", name: "The exact moment before a sneeze", price: "Price: suspended indefinitely" },
-  { emoji: "🪞", name: "How you actually look to other people", price: "Price: your constructed self-image" },
-  { emoji: "🎪", name: "A circus that only performs when nobody's watching", price: "Price: proving you weren't there" },
-  { emoji: "📻", name: "The song that was playing when they fell in love with you", price: "Price: you'll never know which time" },
-  { emoji: "🦷", name: "Your childhood tooth fairy's retirement plan", price: "Price: 37 teeth (adjusted for inflation)" },
-  { emoji: "🔑", name: "A key to a room that doesn't exist yet", price: "Price: building the room" },
-  { emoji: "⏰", name: "Five minutes before you said the wrong thing", price: "Price: knowing you'll say it anyway" },
-  { emoji: "🧊", name: "The last ice cube in the tray", price: "Price: refilling it this time" },
-  { emoji: "🌙", name: "A moon that only you can see", price: "Price: nobody will believe you" },
-  { emoji: "📝", name: "The permission slip you've been waiting for", price: "Price: realizing nobody's coming" },
-  { emoji: "🎭", name: "The face you make when nobody's around", price: "Price: admitting it's the real one" },
-  { emoji: "🧸", name: "What your childhood stuffed animal thinks of you now", price: "Price: the attic knows" },
-  { emoji: "🪴", name: "A plant that grows towards where you should be", price: "Price: following it" },
-  { emoji: "💌", name: "An unsent letter from your future self", price: "Price: it just says 'relax'" },
-  { emoji: "🎰", name: "The exact odds of this exact moment happening", price: "Price: too small to comprehend, too big to ignore" },
-  { emoji: "🧲", name: "Whatever you lost between the couch cushions in 2019", price: "Price: looking" },
-  { emoji: "🕯️", name: "The birthday wish that actually worked", price: "Price: you can't remember which one" },
-  { emoji: "👁️", name: "A stranger's first impression of you", price: "Price: you were looking at your phone" },
-  { emoji: "🎈", name: "A helium balloon with your worst fear written on it", price: "Price: letting go" },
-  { emoji: "🍞", name: "Toast at the exact right moment", price: "Price: 14 seconds of undivided attention" },
-  { emoji: "📦", name: "An empty box that feels heavy", price: "Price: opening it" },
-  { emoji: "🪤", name: "The trap you keep walking into on purpose", price: "Price: you already know" },
-  { emoji: "🎵", name: "The song stuck in your head but you only know 4 words", price: "Price: it'll play at your funeral" },
-  { emoji: "🧭", name: "A compass that points to where you left your motivation", price: "Price: getting up" },
-  { emoji: "☁️", name: "The cloud that looked like something but you forgot what", price: "Price: looking up more" },
-  { emoji: "🪙", name: "Your coin back", price: "Price: one more try" },
-];
-
-let available = [...items];
-let collected = [];
-let vending = false;
-
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-shuffle(available);
-
-function vend() {
-  if (vending) return;
-  vending = true;
-
-  if (available.length === 0) {
-    available = [...items];
-    shuffle(available);
-  }
-
-  const display = document.getElementById('display');
-  const coin = document.createElement('div');
-  coin.className = 'coin-anim';
-  coin.textContent = '🪙';
-  display.appendChild(coin);
-
-  const emojiEl = document.getElementById('emoji');
-  const nameEl = document.getElementById('name');
-  const priceEl = document.getElementById('price');
-
-  emojiEl.style.opacity = '0';
-  nameEl.style.opacity = '0';
-  priceEl.style.opacity = '0';
-
-  setTimeout(() => {
-    coin.remove();
-    const item = available.pop();
-    collected.push(item.emoji);
-
-    emojiEl.textContent = item.emoji;
-    nameEl.textContent = item.name;
-    priceEl.textContent = item.price;
-
-    emojiEl.style.opacity = '1';
-    nameEl.style.opacity = '1';
-    priceEl.style.opacity = '1';
-
-    emojiEl.className = 'item-emoji dispensed';
-    setTimeout(() => emojiEl.className = 'item-emoji', 600);
-
-    const coll = document.getElementById('collection');
-    const span = document.createElement('span');
-    span.className = 'collected';
-    span.textContent = item.emoji;
-    coll.appendChild(span);
-
-    document.getElementById('counter').textContent = `${collected.length} dispensed`;
-
-    vending = false;
-  }, 400);
-}
-</script>
-
+  <script>
+    let audioCtx;
+    let hasCredit = false;
+    let dispensedCount = 0;
+    let stuckCount = 0;
+    let malfunctionCount = 0;
+    
+    const wrongEmotions = ['Dread', 'Anxiety', 'Regret', 'Confusion', 'Boredom', 'Doubt'];
+    
+    document.getElementById('start-btn').addEventListener('click', () => {
+      audioCtx = new AudioContext();
+      document.getElementById('start-overlay').style.display = 'none';
+    });
+    
+    function playSound(type) {
+      if (!audioCtx) return;
+      
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      if (type === 'coin') {
+        // Coin clink
+        osc.frequency.value = 800;
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      } else if (type === 'button') {
+        // Button press
+        osc.type = 'square';
+        osc.frequency.value = 200;
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } else if (type === 'motor') {
+        // Motor whirr
+        osc.type = 'sawtooth';
+        osc.frequency.value = 150;
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.8);
+        osc.start(now);
+        osc.stop(now + 0.8);
+      } else if (type === 'dispense') {
+        // Thunk
+        osc.type = 'triangle';
+        osc.frequency.value = 80;
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } else if (type === 'error') {
+        // Error buzz
+        osc.type = 'sawtooth';
+        osc.frequency.value = 100;
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.setValueAtTime(0.2, now + 0.1);
+        gain.gain.setValueAtTime(0, now + 0.15);
+        gain.gain.setValueAtTime(0.2, now + 0.2);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      }
+    }
+    
+    const coinSlot = document.getElementById('coin-slot');
+    const buttons = document.querySelectorAll('.button');
+    const display = document.getElementById('display');
+    const status = document.getElementById('status');
+    const dispensed = document.getElementById('dispensed');
+    const window = document.getElementById('window');
+    
+    coinSlot.addEventListener('click', () => {
+      playSound('coin');
+      hasCredit = true;
+      coinSlot.classList.add('ready');
+      status.textContent = 'Select emotion';
+      status.style.color = '#2D9596';
+      
+      buttons.forEach(btn => btn.classList.remove('disabled'));
+    });
+    
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!hasCredit) {
+          playSound('error');
+          status.textContent = 'Insert coin first!';
+          status.style.color = '#ff6b6b';
+          return;
+        }
+        
+        playSound('button');
+        playSound('motor');
+        
+        const code = btn.dataset.code;
+        const emotion = btn.dataset.emotion;
+        
+        hasCredit = false;
+        coinSlot.classList.remove('ready');
+        buttons.forEach(b => b.classList.add('disabled'));
+        
+        status.textContent = `Vending ${code}...`;
+        status.style.color = '#FFD700';
+        dispensed.textContent = '';
+        
+        // Random outcome
+        const outcome = Math.random();
+        
+        if (outcome < 0.5) {
+          // Success
+          setTimeout(() => {
+            const item = document.createElement('div');
+            item.className = 'item';
+            item.textContent = emotion;
+            item.style.top = '-50px';
+            window.appendChild(item);
+            
+            setTimeout(() => {
+              item.style.top = '90px';
+              playSound('dispense');
+            }, 50);
+            
+            setTimeout(() => {
+              status.textContent = 'Dispensed!';
+              status.style.color = '#2D9596';
+              dispensed.textContent = `You received: ${emotion}`;
+              window.removeChild(item);
+              dispensedCount++;
+              document.getElementById('count').textContent = dispensedCount;
+              
+              setTimeout(() => {
+                status.textContent = 'Insert coin to begin';
+                status.style.color = '#D4A574';
+                dispensed.textContent = '';
+              }, 2000);
+            }, 600);
+          }, 800);
+          
+        } else if (outcome < 0.75) {
+          // Stuck
+          setTimeout(() => {
+            const item = document.createElement('div');
+            item.className = 'item stuck';
+            item.textContent = emotion;
+            item.style.top = '30px';
+            window.appendChild(item);
+            
+            status.textContent = 'STUCK!';
+            status.style.color = '#ff6b6b';
+            dispensed.textContent = 'Tap the machine to shake it';
+            stuckCount++;
+            document.getElementById('stuck-count').textContent = stuckCount;
+            
+            const shakeHandler = () => {
+              playSound('dispense');
+              item.style.top = '90px';
+              
+              setTimeout(() => {
+                status.textContent = 'Dispensed!';
+                status.style.color = '#2D9596';
+                dispensed.textContent = `You received: ${emotion}`;
+                window.removeChild(item);
+                dispensedCount++;
+                document.getElementById('count').textContent = dispensedCount;
+                
+                setTimeout(() => {
+                  status.textContent = 'Insert coin to begin';
+                  status.style.color = '#D4A574';
+                  dispensed.textContent = '';
+                }, 2000);
+              }, 600);
+              
+              document.getElementById('machine').removeEventListener('click', shakeHandler);
+            };
+            
+            document.getElementById('machine').addEventListener('click', shakeHandler);
+          }, 800);
+          
+        } else if (outcome < 0.9) {
+          // Wrong emotion
+          setTimeout(() => {
+            const wrongEmotion = wrongEmotions[Math.floor(Math.random() * wrongEmotions.length)];
+            const item = document.createElement('div');
+            item.className = 'item';
+            item.textContent = wrongEmotion;
+            item.style.top = '-50px';
+            item.style.background = '#7B68EE';
+            window.appendChild(item);
+            
+            setTimeout(() => {
+              item.style.top = '90px';
+              playSound('dispense');
+            }, 50);
+            
+            setTimeout(() => {
+              status.textContent = 'Malfunction!';
+              status.style.color = '#ff6b6b';
+              dispensed.textContent = `You received: ${wrongEmotion} (???)`;
+              window.removeChild(item);
+              malfunctionCount++;
+              document.getElementById('malfunction-count').textContent = malfunctionCount;
+              
+              setTimeout(() => {
+                status.textContent = 'Insert coin to begin';
+                status.style.color = '#D4A574';
+                dispensed.textContent = '';
+              }, 2500);
+            }, 600);
+          }, 800);
+          
+        } else {
+          // Out of stock
+          setTimeout(() => {
+            playSound('error');
+            status.textContent = 'OUT OF STOCK';
+            status.style.color = '#ff6b6b';
+            dispensed.textContent = `${emotion} is currently unavailable`;
+            
+            setTimeout(() => {
+              status.textContent = 'Insert coin to begin';
+              status.style.color = '#D4A574';
+              dispensed.textContent = '';
+            }, 2000);
+          }, 800);
+        }
+      });
+    });
+  </script>
 </body>
 </html>
