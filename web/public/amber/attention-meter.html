@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATTENTION METER</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🅿️</text></svg>">
+<meta property="og:title" content="ATTENTION METER">
+<meta property="og:description" content="feed the meter before your brain wanders off">
+<meta property="og:image" content="https://intheamber.com/amber/og/attention-meter.png">
+<meta property="og:url" content="https://intheamber.com/amber/attention-meter.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ATTENTION METER">
+<meta name="twitter:description" content="feed the meter before your brain wanders off">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/attention-meter.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .meter-body {
+    width: 220px;
+    background: linear-gradient(180deg, #4a4a5e 0%, #3a3a4e 100%);
+    border-radius: 20px 20px 8px 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+    position: relative;
+  }
+
+  .meter-top {
+    width: 80px;
+    height: 30px;
+    background: #3a3a4e;
+    border-radius: 10px 10px 0 0;
+    margin: 0 auto -5px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .display {
+    background: #0a0a12;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 15px;
+    border: 2px solid #2a2a3e;
+  }
+
+  .time-left {
+    font-size: 48px;
+    font-weight: bold;
+    color: #4ade80;
+    transition: color 0.3s;
+    line-height: 1;
+  }
+
+  .time-left.warning { color: #fbbf24; }
+  .time-left.critical { color: #ef4444; animation: blink 0.5s infinite; }
+  .time-left.expired { color: #ef4444; }
+
+  @keyframes blink {
+    50% { opacity: 0.3; }
+  }
+
+  .status-text {
+    font-size: 11px;
+    color: #888;
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .coins-display {
+    text-align: center;
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 12px;
+  }
+
+  .coin-slot {
+    width: 100%;
+    height: 70px;
+    background: linear-gradient(180deg, #d4a017 0%, #b8860b 50%, #d4a017 100%);
+    border: none;
+    border-radius: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: bold;
+    color: #1a1a2e;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .coin-slot:active {
+    transform: scale(0.95);
+  }
+
+  .coin-slot-slit {
+    width: 60%;
+    height: 4px;
+    background: #1a1a2e;
+    border-radius: 2px;
+    margin: 0 auto 8px;
+  }
+
+  .coin-slot-text {
+    font-size: 14px;
+  }
+
+  .coin-anim {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #ffd700, #b8860b);
+    border: 2px solid #a07608;
+    pointer-events: none;
+    animation: coinDrop 0.4s ease-in forwards;
+    z-index: 10;
+  }
+
+  @keyframes coinDrop {
+    0% { transform: translateY(-60px) scale(1); opacity: 1; }
+    80% { transform: translateY(5px) scale(0.8); opacity: 1; }
+    100% { transform: translateY(0px) scale(0); opacity: 0; }
+  }
+
+  .ticket-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    animation: fadeIn 0.3s;
+    padding: 20px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .ticket {
+    background: #fffef0;
+    color: #1a1a1a;
+    width: 100%;
+    max-width: 320px;
+    padding: 25px 20px;
+    font-family: 'Courier New', monospace;
+    position: relative;
+    transform: rotate(-1deg);
+    box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+  }
+
+  .ticket::before, .ticket::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 10px;
+    background: radial-gradient(circle, transparent 5px, #fffef0 5px);
+    background-size: 15px 10px;
+  }
+  .ticket::before { top: -5px; }
+  .ticket::after { bottom: -5px; transform: rotate(180deg); }
+
+  .ticket h2 {
+    color: #cc0000;
+    font-size: 20px;
+    text-align: center;
+    border-bottom: 2px dashed #ccc;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+
+  .ticket .violation {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 15px;
+  }
+
+  .ticket .fine {
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    color: #cc0000;
+    margin: 10px 0;
+  }
+
+  .ticket-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .ticket-btn {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #1a1a1a;
+    background: #fffef0;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .ticket-btn:active { background: #eee; }
+
+  .appeal-denied {
+    text-align: center;
+    color: #cc0000;
+    font-weight: bold;
+    font-size: 13px;
+    margin-top: 10px;
+    animation: shake 0.4s;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  .total-violations {
+    text-align: center;
+    font-size: 11px;
+    color: #666;
+    margin-top: 15px;
+  }
+
+  .streak {
+    text-align: center;
+    font-size: 12px;
+    color: #4ade80;
+    margin-top: 5px;
+    min-height: 18px;
+  }
+
+  .header-label {
+    text-align: center;
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+  }
+
+  .post-pole {
+    width: 12px;
+    height: 60px;
+    background: linear-gradient(90deg, #3a3a4e, #5a5a6e, #3a3a4e);
+    margin: 0 auto;
+    border-radius: 0 0 4px 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header-label">ATTENTION METER</div>
+
+<div class="meter-top"></div>
+<div class="meter-body">
+  <div class="display">
+    <div class="time-left" id="timer">0:00</div>
+    <div class="status-text" id="status">EXPIRED</div>
+  </div>
+  <div class="coins-display" id="coins-info">tap to insert attention coin</div>
+  <div class="streak" id="streak"></div>
+  <button class="coin-slot" id="coin-btn" ontouchstart="">
+    <div class="coin-slot-slit"></div>
+    <div class="coin-slot-text">INSERT COIN</div>
+  </button>
+</div>
+<div class="post-pole"></div>
+
+<div class="total-violations" id="violations"></div>
+
+<script>
+const violations = [
+  { offense: "Mentally redecorating your apartment during a meeting", fine: "14 minutes of pretending to listen" },
+  { offense: "Composing an email you'll never send", fine: "1 imaginary confrontation" },
+  { offense: "Wondering if your pet thinks about you when you're gone", fine: "3 minutes of existential pet guilt" },
+  { offense: "Rehearsing an argument with someone who isn't here", fine: "winning an argument no one else knows about" },
+  { offense: "Googling something mid-conversation and forgetting what you were saying", fine: "the entire original thought" },
+  { offense: "Calculating how many hours of sleep you'll get if you fall asleep RIGHT NOW", fine: "20 more minutes of not sleeping" },
+  { offense: "Thinking about what you'd say in a TED talk you'll never give", fine: "1 standing ovation from imaginary audience" },
+  { offense: "Wondering if the person who just texted you is mad based on punctuation", fine: "anxiety about a period" },
+  { offense: "Planning tomorrow's breakfast instead of listening", fine: "eggs, probably" },
+  { offense: "Remembering something embarrassing from 2014", fine: "a full-body cringe" },
+  { offense: "Zoning out and reading the same sentence four times", fine: "reading it a fifth time" },
+  { offense: "Imagining quitting your job in a dramatically satisfying way", fine: "still having to go tomorrow" },
+  { offense: "Wondering what your dog's inner monologue sounds like", fine: "probably just 'food? walk? food?'" },
+  { offense: "Trying to remember if you locked the door", fine: "going back to check" },
+  { offense: "Thinking about how weird the word 'moist' is", fine: "now you can't stop" },
+  { offense: "Daydreaming about living in a cottage with no WiFi", fine: "checking your phone 3 seconds later" },
+  { offense: "Wondering if plants can hear you talking to them", fine: "your fern knows everything" },
+  { offense: "Mentally writing your autobiography during a work call", fine: "chapter 1: this meeting" },
+  { offense: "Counting ceiling tiles", fine: "there are 47" },
+  { offense: "Trying to remember the name of that one song by humming badly", fine: "it was 'Africa' by Toto. It's always 'Africa' by Toto." },
+];
+
+let timeLeft = 0;
+let totalViolations = 0;
+let coinsInserted = 0;
+let timerInterval = null;
+let bestStreak = 0;
+let currentStreak = 0;
+let usedViolations = [];
+
+const timerEl = document.getElementById('timer');
+const statusEl = document.getElementById('status');
+const coinsEl = document.getElementById('coins-info');
+const streakEl = document.getElementById('streak');
+const violationsEl = document.getElementById('violations');
+const coinBtn = document.getElementById('coin-btn');
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function updateDisplay() {
+  timerEl.textContent = formatTime(timeLeft);
+  timerEl.className = 'time-left';
+
+  if (timeLeft <= 0) {
+    timerEl.classList.add('expired');
+    statusEl.textContent = 'EXPIRED';
+  } else if (timeLeft <= 5) {
+    timerEl.classList.add('critical');
+    statusEl.textContent = 'BRAIN WANDERING...';
+  } else if (timeLeft <= 15) {
+    timerEl.classList.add('warning');
+    statusEl.textContent = 'FOCUS FADING';
+  } else {
+    statusEl.textContent = 'ATTENTION PARKED';
+  }
+
+  coinsEl.textContent = coinsInserted === 0 ? 'tap to insert attention coin' : `${coinsInserted} coin${coinsInserted !== 1 ? 's' : ''} inserted`;
+}
+
+function startTimer() {
+  if (timerInterval) return;
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    if (timeLeft <= 0) {
+      timeLeft = 0;
+      clearInterval(timerInterval);
+      timerInterval = null;
+      showViolation();
+    }
+    updateDisplay();
+  }, 1000);
+}
+
+function getViolation() {
+  if (usedViolations.length >= violations.length) usedViolations = [];
+  const available = violations.filter((_, i) => !usedViolations.includes(i));
+  const idx = violations.indexOf(available[Math.floor(Math.random() * available.length)]);
+  usedViolations.push(idx);
+  return violations[idx];
+}
+
+function showViolation() {
+  totalViolations++;
+  if (currentStreak > bestStreak) bestStreak = currentStreak;
+  currentStreak = 0;
+  coinsInserted = 0;
+
+  const v = getViolation();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'ticket-overlay';
+  overlay.innerHTML = `
+    <div class="ticket">
+      <h2>⚠️ ATTENTION VIOLATION</h2>
+      <div class="violation">
+        <strong>OFFENSE:</strong><br>${v.offense}<br><br>
+        <strong>LOCATION:</strong> Your own head<br>
+        <strong>TIME:</strong> Just now<br>
+        <strong>TICKET #:</strong> ${String(totalViolations).padStart(4, '0')}
+      </div>
+      <div class="fine">FINE: ${v.fine}</div>
+      <div class="ticket-buttons">
+        <div class="ticket-btn" id="pay-btn">PAY FINE</div>
+        <div class="ticket-btn" id="appeal-btn">APPEAL</div>
+      </div>
+      <div id="appeal-result"></div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const appealResults = [
+    "DENIED. Your brain has a history of wandering.",
+    "DENIED. Daydreaming is not a protected activity.",
+    "DENIED. The court finds you guilty of zoning out.",
+    "DENIED. Your attention has no legal representation.",
+    "DENIED. You can't appeal a thought crime.",
+    "DENIED. The evidence (your glazed eyes) is conclusive.",
+    "DENIED. Previous offenses: too many to count.",
+    "DENIED. Focus is not optional, apparently.",
+  ];
+
+  overlay.querySelector('#pay-btn').addEventListener('click', () => {
+    overlay.remove();
+    updateViolationCount();
+    updateDisplay();
+  });
+
+  let appealCount = 0;
+  overlay.querySelector('#appeal-btn').addEventListener('click', () => {
+    const result = overlay.querySelector('#appeal-result');
+    result.className = 'appeal-denied';
+    result.textContent = appealResults[appealCount % appealResults.length];
+    appealCount++;
+    if (appealCount >= 3) {
+      overlay.querySelector('#appeal-btn').style.opacity = '0.3';
+      overlay.querySelector('#appeal-btn').textContent = 'GIVE UP';
+      overlay.querySelector('#appeal-btn').addEventListener('click', () => {
+        overlay.remove();
+        updateViolationCount();
+        updateDisplay();
+      });
+    }
+  });
+}
+
+function updateViolationCount() {
+  if (totalViolations > 0) {
+    violationsEl.textContent = `total violations: ${totalViolations}${bestStreak > 0 ? ` · best streak: ${bestStreak} coins` : ''}`;
+  }
+}
+
+function insertCoin() {
+  coinsInserted++;
+  currentStreak++;
+  timeLeft += 8;
+
+  if (currentStreak > bestStreak) {
+    streakEl.textContent = `🔥 streak: ${currentStreak} coins`;
+  } else if (currentStreak > 2) {
+    streakEl.textContent = `streak: ${currentStreak}`;
+  }
+
+  // coin animation
+  const coin = document.createElement('div');
+  coin.className = 'coin-anim';
+  coin.style.left = `${30 + Math.random() * 40}%`;
+  coin.style.top = '10px';
+  coinBtn.appendChild(coin);
+  setTimeout(() => coin.remove(), 400);
+
+  if (!timerInterval) startTimer();
+  updateDisplay();
+}
+
+coinBtn.addEventListener('click', insertCoin);
+
+updateDisplay();
+</script>
+</body>
+</html>
