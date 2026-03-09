@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GARBAGE TRUCK SYMPHONY</title>
+  
+  <!-- Open Graph / Social Media -->
+  <meta property="og:title" content="GARBAGE TRUCK SYMPHONY">
+  <meta property="og:description" content="Performed Live • 6:00 AM">
+  <meta property="og:image" content="https://intheamber.com/amber/symphony-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/symphony.html">
+  <meta property="og:type" content="website">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="GARBAGE TRUCK SYMPHONY">
+  <meta name="twitter:description" content="Performed Live • 6:00 AM">
+  <meta name="twitter:image" content="https://intheamber.com/amber/symphony-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      line-height: 1.6;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .program {
+      max-width: 400px;
+      width: 100%;
+      user-select: none;
+    }
+
+    .header {
+      border: 2px solid #D4A574;
+      padding: 15px;
+      margin-bottom: 30px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .header .title {
+      color: #FFD700;
+      font-size: 16px;
+      margin-bottom: 5px;
+      letter-spacing: 1px;
+    }
+
+    .header .subtitle {
+      color: #2D9596;
+      font-size: 12px;
+    }
+
+    .movement {
+      margin-bottom: 25px;
+      padding: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+      border-radius: 4px;
+    }
+
+    .movement:hover {
+      background: rgba(212, 165, 116, 0.1);
+      border-color: #D4A574;
+    }
+
+    .movement:active {
+      transform: scale(0.98);
+    }
+
+    .movement.playing {
+      background: rgba(255, 215, 0, 0.2);
+      border-color: #FFD700;
+      animation: pulse 0.5s ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .movement-number {
+      color: #7B68EE;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .movement-title {
+      color: #FFD700;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    .encore {
+      border: 1px solid #D4A574;
+      padding: 12px;
+      text-align: center;
+      margin-top: 30px;
+      color: #D4A574;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .encore:hover {
+      background: rgba(212, 165, 116, 0.1);
+    }
+
+    .encore:active {
+      transform: scale(0.98);
+    }
+
+    .encore.playing {
+      background: rgba(255, 215, 0, 0.2);
+      border-color: #FFD700;
+      color: #FFD700;
+    }
+
+    .stats {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 12px;
+      color: #2D9596;
+    }
+
+    .instruction {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 11px;
+      color: #666;
+    }
+
+    @media (max-width: 480px) {
+      .header .title {
+        font-size: 14px;
+      }
+      .movement-title {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="program">
+    <div class="header">
+      <div class="title">╔═════════════════════════════╗</div>
+      <div class="title">║  GARBAGE TRUCK SYMPHONY     ║</div>
+      <div class="subtitle">║  Performed Live • 6:00 AM   ║</div>
+      <div class="title">╚═════════════════════════════╝</div>
+    </div>
+
+    <div class="movement" data-sound="beep">
+      <div class="movement-number">Movement I</div>
+      <div class="movement-title">♪ BEEP BEEP BEEP ♪</div>
+    </div>
+
+    <div class="movement" data-sound="grind">
+      <div class="movement-number">Movement II</div>
+      <div class="movement-title">♫ HYDRAULIC GRIND ♫</div>
+    </div>
+
+    <div class="movement" data-sound="crash">
+      <div class="movement-number">Movement III</div>
+      <div class="movement-title">♪ CRASH OF BINS ♪</div>
+    </div>
+
+    <div class="movement" data-sound="reverse">
+      <div class="movement-number">Movement IV</div>
+      <div class="movement-title">♫ REVERSE BEEPING ♫</div>
+    </div>
+
+    <div class="encore" data-sound="encore">
+      Encore: One street over
+    </div>
+
+    <div class="stats">
+      MOVEMENTS PERFORMED: <span id="count">0</span>
+    </div>
+
+    <div class="instruction">
+      tap each movement to perform
+    </div>
+  </div>
+
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let performanceCount = 0;
+
+    // Sound synthesis functions
+    function playBeep() {
+      // Classic backup beeper - three beeps
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          osc.frequency.value = 800;
+          osc.type = 'square';
+          
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+          
+          osc.start(audioCtx.currentTime);
+          osc.stop(audioCtx.currentTime + 0.15);
+        }, i * 200);
+      }
+    }
+
+    function playGrind() {
+      // Low grinding hydraulic sound
+      const duration = 1.5;
+      const noise = audioCtx.createBufferSource();
+      const noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      
+      for (let i = 0; i < noiseBuffer.length; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      
+      noise.buffer = noiseBuffer;
+      
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 150;
+      filter.Q.value = 5;
+      
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      noise.start(audioCtx.currentTime);
+      noise.stop(audioCtx.currentTime + duration);
+    }
+
+    function playCrash() {
+      // Metal bins crashing
+      const duration = 0.8;
+      const noise = audioCtx.createBufferSource();
+      const noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      
+      for (let i = 0; i < noiseBuffer.length; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      
+      noise.buffer = noiseBuffer;
+      
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + duration);
+      filter.Q.value = 2;
+      
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      noise.start(audioCtx.currentTime);
+      noise.stop(audioCtx.currentTime + duration);
+    }
+
+    function playReverse() {
+      // Reverse warning beeps
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          osc.frequency.value = 950;
+          osc.type = 'sine';
+          
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+          
+          osc.start(audioCtx.currentTime);
+          osc.stop(audioCtx.currentTime + 0.3);
+        }, i * 400);
+      }
+    }
+
+    function playEncore() {
+      // Distant truck (same beeps but quieter, slightly lower pitch)
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          osc.frequency.value = 700;
+          osc.type = 'square';
+          
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+          
+          osc.start(audioCtx.currentTime);
+          osc.stop(audioCtx.currentTime + 0.15);
+        }, i * 200);
+      }
+    }
+
+    const soundMap = {
+      beep: playBeep,
+      grind: playGrind,
+      crash: playCrash,
+      reverse: playReverse,
+      encore: playEncore
+    };
+
+    // Add click handlers
+    document.querySelectorAll('.movement, .encore').forEach(el => {
+      el.addEventListener('click', () => {
+        // Resume audio context on first interaction
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const soundType = el.dataset.sound;
+        
+        // Visual feedback
+        el.classList.add('playing');
+        setTimeout(() => {
+          el.classList.remove('playing');
+        }, 500);
+
+        // Play sound
+        if (soundMap[soundType]) {
+          soundMap[soundType]();
+        }
+
+        // Update count
+        performanceCount++;
+        document.getElementById('count').textContent = performanceCount;
+      });
+    });
+  </script>
+</body>
+</html>
