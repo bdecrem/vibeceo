@@ -10,7 +10,7 @@ export const size = OG_SIZE;
 export const contentType = 'image/png';
 
 function FloodDecorations() {
-  const PALETTE = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#FF69B4', '#FF7F50'];
+  const PALETTE = ['#FF6B6B', '#FECA57', '#48DBFB', '#A55EEA', '#FF9FF3', '#1DD1A1'];
   return (
     <div style={{ position: 'absolute', display: 'flex', top: 0, left: 0, right: 0, bottom: 0 }}>
       {/* Color swatches top-right */}
@@ -29,19 +29,19 @@ function FloodDecorations() {
       {/* Grid squares bottom-left */}
       <div style={{
         position: 'absolute', bottom: 100, left: 100,
-        width: 60, height: 60, background: '#D4A57430', borderRadius: 4,
+        width: 60, height: 60, background: '#FF6B6B30', borderRadius: 4,
       }} />
       <div style={{
         position: 'absolute', bottom: 100, left: 170,
-        width: 60, height: 60, background: '#2D959630', borderRadius: 4,
+        width: 60, height: 60, background: '#48DBFB30', borderRadius: 4,
       }} />
       <div style={{
         position: 'absolute', bottom: 170, left: 100,
-        width: 60, height: 60, background: '#FFD70030', borderRadius: 4,
+        width: 60, height: 60, background: '#FECA5730', borderRadius: 4,
       }} />
       <div style={{
         position: 'absolute', bottom: 170, left: 170,
-        width: 60, height: 60, background: '#7B68EE30', borderRadius: 4,
+        width: 60, height: 60, background: '#A55EEA30', borderRadius: 4,
       }} />
     </div>
   );
@@ -55,11 +55,11 @@ export default async function Image({ params }: { params: { score: string } }) {
       gameName: 'FLOOD',
       tagline: 'CAN YOU BEAT ME? 🎨',
       colors: {
-        background: '#000000',
-        primary: '#D4A574',
-        secondary: '#2D9596',
-        accent: '#FFD700',
-        branding: '#ffffff80',
+        background: '#FFF8F0',
+        primary: '#FF6B6B',
+        secondary: '#A55EEA',
+        accent: '#FECA57',
+        branding: '#2D343640',
       },
       decorations: <FloodDecorations />,
     }),

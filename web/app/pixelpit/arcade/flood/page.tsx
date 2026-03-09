@@ -643,7 +643,7 @@ export default function FloodGame() {
               marginBottom: 8,
               lineHeight: 1,
             }}>
-              {score}
+              {cumulative}
             </div>
 
             <div style={{
@@ -810,7 +810,7 @@ export default function FloodGame() {
         {showShareModal && user && (
           <ShareModal
             gameUrl={GAME_URL}
-            score={score}
+            score={cumulative}
             colors={LEADERBOARD_COLORS}
             onClose={() => setShowShareModal(false)}
           />
