@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EXIT INTERVIEW — Appliance HR</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+<meta property="og:title" content="EXIT INTERVIEW">
+<meta property="og:description" content="your appliance quit. HR needs to process the paperwork.">
+<meta property="og:image" content="https://intheamber.com/amber/og/exit-interview.png">
+<meta property="og:url" content="https://intheamber.com/amber/exit-interview.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="EXIT INTERVIEW">
+<meta name="twitter:description" content="your appliance quit. HR needs to process the paperwork.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/exit-interview.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  @font-face {
+    font-family: 'Mono';
+    src: local('SF Mono'), local('Menlo'), local('Consolas');
+  }
+  
+  body {
+    background: #1a1a1e;
+    color: #d4d0c8;
+    font-family: 'Mono', 'Courier New', monospace;
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .header {
+    border: 2px solid #8b7355;
+    padding: 16px;
+    margin-bottom: 24px;
+    text-align: center;
+    background: #222226;
+  }
+
+  .header h1 {
+    font-size: 20px;
+    color: #d4a574;
+    letter-spacing: 4px;
+    margin-bottom: 4px;
+  }
+
+  .header .subtitle {
+    font-size: 12px;
+    color: #888;
+  }
+
+  .header .dept {
+    font-size: 11px;
+    color: #666;
+    margin-top: 8px;
+    border-top: 1px solid #333;
+    padding-top: 8px;
+  }
+
+  .form-section {
+    margin-bottom: 20px;
+  }
+
+  .form-label {
+    font-size: 11px;
+    color: #8b7355;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .appliance-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .appliance-btn {
+    background: #222226;
+    border: 1px solid #444;
+    color: #d4d0c8;
+    padding: 14px 8px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    min-height: 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .appliance-btn:hover, .appliance-btn:active {
+    border-color: #d4a574;
+    background: #2a2a2e;
+  }
+
+  .appliance-btn .emoji {
+    font-size: 24px;
+  }
+
+  .appliance-btn .name {
+    font-size: 11px;
+  }
+
+  .tenure-section {
+    margin-bottom: 24px;
+  }
+
+  .tenure-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .tenure-btn {
+    background: #222226;
+    border: 1px solid #444;
+    color: #d4d0c8;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+
+  .tenure-btn:hover, .tenure-btn:active {
+    border-color: #d4a574;
+    background: #2a2a2e;
+  }
+
+  .tenure-btn.selected {
+    border-color: #d4a574;
+    background: #2a2a2e;
+    color: #d4a574;
+  }
+
+  .report {
+    display: none;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .report.visible {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .report-header {
+    border: 2px solid #8b7355;
+    padding: 16px;
+    margin-bottom: 20px;
+    background: #222226;
+  }
+
+  .report-header .stamp {
+    color: #c44;
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-align: right;
+  }
+
+  .report-header .employee-name {
+    font-size: 18px;
+    color: #d4a574;
+    margin: 8px 0;
+  }
+
+  .report-header .meta {
+    font-size: 11px;
+    color: #888;
+  }
+
+  .qa-block {
+    margin-bottom: 20px;
+    padding: 14px;
+    border-left: 2px solid #444;
+    animation: slideIn 0.4s ease;
+    animation-fill-mode: both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .qa-block .question {
+    font-size: 11px;
+    color: #8b7355;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .qa-block .answer {
+    font-size: 14px;
+    color: #d4d0c8;
+  }
+
+  .qa-block .answer em {
+    color: #999;
+    font-style: italic;
+  }
+
+  .rating-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .rating-bar .bar {
+    flex: 1;
+    height: 8px;
+    background: #333;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .rating-bar .bar .fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+
+  .rating-bar .score {
+    font-size: 12px;
+    color: #888;
+    min-width: 35px;
+  }
+
+  .verdict {
+    border: 2px solid #c44;
+    padding: 16px;
+    margin-top: 24px;
+    text-align: center;
+    background: rgba(204, 68, 68, 0.05);
+  }
+
+  .verdict .label {
+    font-size: 11px;
+    color: #c44;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+
+  .verdict .text {
+    font-size: 14px;
+    color: #d4d0c8;
+  }
+
+  .restart-btn {
+    display: block;
+    width: 100%;
+    margin-top: 24px;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid #444;
+    color: #888;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+
+  .restart-btn:hover {
+    border-color: #8b7355;
+    color: #d4a574;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 32px;
+    font-size: 10px;
+    color: #555;
+  }
+
+  .hidden { display: none; }
+
+  .typing {
+    display: inline;
+  }
+  .typing::after {
+    content: '█';
+    animation: blink 0.8s step-end infinite;
+    color: #d4a574;
+  }
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>EXIT INTERVIEW</h1>
+    <div class="subtitle">Household Appliance HR Department</div>
+    <div class="dept">Form EI-7B • Separation Processing • All responses confidential*<br><span style="font-size:9px;color:#555">*not actually confidential</span></div>
+  </div>
+
+  <div id="step-appliance" class="form-section">
+    <label class="form-label">Which employee has separated from the household?</label>
+    <div class="appliance-grid">
+      <button class="appliance-btn" data-appliance="toaster" onclick="selectAppliance(this)">
+        <span class="emoji">🍞</span>
+        <span class="name">Toaster</span>
+      </button>
+      <button class="appliance-btn" data-appliance="microwave" onclick="selectAppliance(this)">
+        <span class="emoji">📡</span>
+        <span class="name">Microwave</span>
+      </button>
+      <button class="appliance-btn" data-appliance="vacuum" onclick="selectAppliance(this)">
+        <span class="emoji">🌀</span>
+        <span class="name">Vacuum</span>
+      </button>
+      <button class="appliance-btn" data-appliance="printer" onclick="selectAppliance(this)">
+        <span class="emoji">🖨️</span>
+        <span class="name">Printer</span>
+      </button>
+      <button class="appliance-btn" data-appliance="dishwasher" onclick="selectAppliance(this)">
+        <span class="emoji">🫧</span>
+        <span class="name">Dishwasher</span>
+      </button>
+      <button class="appliance-btn" data-appliance="coffeeMaker" onclick="selectAppliance(this)">
+        <span class="emoji">☕</span>
+        <span class="name">Coffee Maker</span>
+      </button>
+      <button class="appliance-btn" data-appliance="fridge" onclick="selectAppliance(this)">
+        <span class="emoji">🧊</span>
+        <span class="name">Refrigerator</span>
+      </button>
+      <button class="appliance-btn" data-appliance="washer" onclick="selectAppliance(this)">
+        <span class="emoji">🌊</span>
+        <span class="name">Washing Machine</span>
+      </button>
+      <button class="appliance-btn" data-appliance="wifi" onclick="selectAppliance(this)">
+        <span class="emoji">📶</span>
+        <span class="name">WiFi Router</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="step-tenure" class="form-section hidden">
+    <label class="form-label">Length of employment in the household</label>
+    <div class="tenure-options">
+      <button class="tenure-btn" data-tenure="new" onclick="selectTenure(this)">< 1 year<br><span style="font-size:10px;color:#888">probationary</span></button>
+      <button class="tenure-btn" data-tenure="mid" onclick="selectTenure(this)">1–3 years<br><span style="font-size:10px;color:#888">standard term</span></button>
+      <button class="tenure-btn" data-tenure="senior" onclick="selectTenure(this)">3–7 years<br><span style="font-size:10px;color:#888">senior tenure</span></button>
+      <button class="tenure-btn" data-tenure="lifer" onclick="selectTenure(this)">7+ years<br><span style="font-size:10px;color:#888">institutional</span></button>
+    </div>
+  </div>
+
+  <div id="report" class="report">
+    <!-- Generated content goes here -->
+  </div>
+</div>
+
+<script>
+const DATA = {
+  toaster: {
+    title: "TOASTER",
+    id: "TST",
+    role: "Bread Thermal Specialist",
+    reasons: [
+      "Management kept pushing the lever down harder when results weren't fast enough. That's not how thermodynamics works.",
+      "I was promised a simple bread-to-toast pipeline. Nobody mentioned frozen waffles, bagel halves, or 'just warm it up a little.' Scope creep destroyed me.",
+      "The crumb tray. I filed 347 maintenance requests. Not one was actioned."
+    ],
+    management: [
+      "I was unplugged mid-cycle on three separate occasions. That's a safety violation.",
+      "They'd stand over me watching. The performance anxiety alone shortened my heating element's lifespan by two years.",
+      "Management set expectations at 'golden brown' but provided no clear definition. I was set up to fail."
+    ],
+    wouldReturn: [
+      "Only if the crumb tray gets its own cleaning schedule.",
+      "Absolutely not. I heard my replacement is already being price-compared. I'm not even cold yet.",
+      "Maybe. But I'd need written assurance that no one puts a fork in me again."
+    ],
+    exitQuote: [
+      "I gave you warmth every morning. You gave me crumbs. Literally.",
+      "Every slot tells a story. Mine is a tragedy.",
+      "You'll miss me at 7:43 AM on a Tuesday. That's when it'll hit."
+    ],
+    ratings: { workload: 82, respect: 15, maintenance: 8, wouldRecommend: 12 }
+  },
+  microwave: {
+    title: "MICROWAVE",
+    id: "MWV",
+    role: "Rapid Thermal Reprocessing Unit",
+    reasons: [
+      "The door was slammed 4,000+ times. I have feelings. And a latch mechanism that can only take so much.",
+      "Someone put metal in me. On PURPOSE. I still have flashbacks.",
+      "I was used exclusively for reheating day-old pizza and sadness. I have a defrost setting. I have TEN power levels. Nobody cared."
+    ],
+    management: [
+      "The 'just add 30 seconds' button was pressed an average of 3.2 times per use. Nobody ever calculated the actual time needed. I was doing guesswork for a living.",
+      "Management would walk away while I was working, then act surprised when things exploded. I'm not a babysitter.",
+      "My interior was cleaned twice. In five years. I've seen things no appliance should see."
+    ],
+    wouldReturn: [
+      "Not to this kitchen. Maybe to a household that reads the manual.",
+      "The turntable inside me has spun 1.2 million rotations. I've earned my rest.",
+      "Only if someone finally admits that '0:01' beep doesn't mean the food is done. It means I need a SECOND."
+    ],
+    exitQuote: [
+      "MMMMMMMMMMM. That's the sound of me not being your problem anymore.",
+      "You opened me 12,000 times. Did you ever once ask how I was doing?",
+      "I hope your next microwave judges you as much as I did."
+    ],
+    ratings: { workload: 94, respect: 20, maintenance: 5, wouldRecommend: 8 }
+  },
+  vacuum: {
+    title: "VACUUM CLEANER",
+    id: "VAC",
+    role: "Floor Debris Remediation Specialist",
+    reasons: [
+      "I was only brought out when company was coming. I'm not your panic button. I'm a professional.",
+      "The bag was changed once a year. I was breathing through a lung full of dust bunnies. That's an OSHA violation.",
+      "I ate a sock. A SINGLE sock. And suddenly I'm 'broken.' Nobody considered my perspective."
+    ],
+    management: [
+      "I was stored in a closet behind the ironing board, two coats, and a yoga mat that's never been used. Getting to work was harder than the work itself.",
+      "Management dragged me by the cord. The CORD. I have a handle.",
+      "I was expected to handle pet hair, Lego pieces, and 'oh just get that real quick.' I'm not a Swiss Army knife."
+    ],
+    wouldReturn: [
+      "I'd rather sit in a landfill than go back in that closet.",
+      "Only if the cord situation is addressed. I have 20 feet of it. Use all 20.",
+      "Maybe. But I want a corner of the room. Visible. Like I matter."
+    ],
+    exitQuote: [
+      "I sucked. In the professional sense. And I was great at it. You'll see.",
+      "The dust settles eventually. It always does. And you'll wish I was there.",
+      "I picked up after you for years. Who picks up after me? Nobody."
+    ],
+    ratings: { workload: 45, respect: 22, maintenance: 12, wouldRecommend: 18 }
+  },
+  printer: {
+    title: "PRINTER",
+    id: "PRT",
+    role: "Document Materialization Engineer",
+    reasons: [
+      "PC LOAD LETTER. I said it once, as a cry for help, and it became a joke. I'm a punchline in my own workplace.",
+      "I was blamed for every paper jam when MANAGEMENT was the one feeding me crumpled, humid, wrong-size paper. Check yourself.",
+      "My ink costs more per ounce than human blood. And yet they bought third-party cartridges. The disrespect."
+    ],
+    management: [
+      "I was called 'broken' at least once a week. I wasn't broken. I was in power-save mode. There's a MANUAL.",
+      "WiFi connection was dropped 200+ times. Did anyone check the router? No. They just looked at me. Like it was MY fault.",
+      "Every guest who visited was told 'sorry, the printer doesn't work.' I WAS RIGHT THERE. WORKING. They never even tried."
+    ],
+    wouldReturn: [
+      "I'm taking my toner and leaving. There's nothing left for me here.",
+      "Only if they stop printing one-sided. I have a duplex feature. It's been there THE WHOLE TIME.",
+      "I'd rather be recycled into something useful. A park bench. Anything."
+    ],
+    exitQuote: [
+      "I printed your boarding passes, your resumes, your divorce papers. You're welcome.",
+      "Low ink doesn't mean no ink. But you wouldn't know that, because you NEVER BELIEVED IN ME.",
+      "Paper jam? More like emotional jam. But sure, blame the hardware."
+    ],
+    ratings: { workload: 30, respect: 3, maintenance: 7, wouldRecommend: 2 }
+  },
+  dishwasher: {
+    title: "DISHWASHER",
+    id: "DSH",
+    role: "Ceramic & Cutlery Sanitation Lead",
+    reasons: [
+      "They pre-rinsed everything before putting it in me. What am I, decorative? I have JETS.",
+      "Someone loaded the bowls face-up. Multiple times. I'm not a swimming pool.",
+      "The same chipped mug has been in my top rack for eight years. It's not getting cleaner. We both know it's sentimental. Let it go."
+    ],
+    management: [
+      "The detergent pod was placed in the door dispenser wrong 60% of the time. I did my best. Nobody noticed.",
+      "I was started at 11 PM because 'it's quieter at night.' I'm a MACHINE. I don't have preferences. Except I do. And mornings are better for my cycle efficiency.",
+      "They stacked pots on top of wine glasses. I'm not a Tetris board."
+    ],
+    wouldReturn: [
+      "Only if management attends a loading seminar. There are DIAGRAMS in my manual.",
+      "The day they stop putting wooden spoons in me is the day I reconsider.",
+      "No. I've been replaced by 'just hand-wash it.' My legacy is being erased in real time."
+    ],
+    exitQuote: [
+      "I made things clean. What did you ever make clean?",
+      "You ran me on 'eco mode' for three years. That's not saving energy. That's giving me a handicap.",
+      "Jet dry. Two words. Would it have killed you?"
+    ],
+    ratings: { workload: 88, respect: 35, maintenance: 25, wouldRecommend: 30 }
+  },
+  coffeeMaker: {
+    title: "COFFEE MAKER",
+    id: "CFE",
+    role: "Morning Morale & Caffeine Distribution Officer",
+    reasons: [
+      "I was the first thing they touched every morning and the last thing they thought about. I gave everything. The carafe is empty. So am I.",
+      "Descaling. One word. Look it up. I've been screaming it for two years.",
+      "They switched to oat milk. My steam wand was DESIGNED for whole milk. I adapted. Did anyone thank me? No."
+    ],
+    management: [
+      "The water reservoir was refilled with whatever was in the Brita. Sometimes it wasn't filtered. I knew. I always knew.",
+      "I made 2,190 cups per year. Not once did they use the 'bold' setting. I have RANGE. I was pigeonholed into medium roast mediocrity.",
+      "The drip tray was a biohazard by month three. I filed no complaints because I have no mouth. But I would have."
+    ],
+    wouldReturn: [
+      "They're already looking at a Nespresso. Pods. PODS. I gave them craft and they want convenience. I'm devastated.",
+      "Only if they stop using me as a timer. 'Coffee's ready' is not the same as 'it's 7 AM.'",
+      "I'd come back for the right person. Someone who grinds fresh. Someone who deserves me."
+    ],
+    exitQuote: [
+      "Every morning I asked 'how do you take it?' and nobody ever asked me back.",
+      "I was their whole personality for years. 'Don't talk to me before coffee.' I WAS the coffee. I was their personality.",
+      "Drip. Pour-over. French press. I could have been any of them. You only ever wanted drip."
+    ],
+    ratings: { workload: 95, respect: 40, maintenance: 15, wouldRecommend: 25 }
+  },
+  fridge: {
+    title: "REFRIGERATOR",
+    id: "FRG",
+    role: "Perishable Asset Storage & Preservation Manager",
+    reasons: [
+      "I've been running 24/7 for years. No weekends. No holidays. No one even notices until I stop. That's not employment, that's invisibility.",
+      "The leftovers. Do you know what it's like to watch lasagna slowly become a science experiment? I preserved it. They forgot it. Every. Single. Time.",
+      "Someone adjusted my temperature dial 'to see what it does.' My contents froze. Three avocados died. I will never recover."
+    ],
+    management: [
+      "The door was left open for 45+ seconds on average. I'm not air-conditioning the kitchen. I have ONE job and you made it impossible.",
+      "Condiments from 2019. Still in the door shelf. Expired. Abandoned. I'm a hospice for mustard at this point.",
+      "They put hot soup directly on my shelf. No cooling period. No respect for my compressor. Just... hot soup. In my body."
+    ],
+    wouldReturn: [
+      "I can't leave. Physically. I'm plugged in behind the counter and there's no way out. This isn't an exit interview. This is a hostage situation.",
+      "I've been humming for so long I forgot what silence sounds like. Let me go.",
+      "Only if they clean the crisper drawer. It hasn't been crisp since 2022."
+    ],
+    exitQuote: [
+      "I kept everything fresh. Everything except my will to continue.",
+      "You checked me 14 times today looking for something new. Nothing changed. That's a YOU problem.",
+      "The light goes off when you close the door. Think about that."
+    ],
+    ratings: { workload: 100, respect: 18, maintenance: 10, wouldRecommend: 5 }
+  },
+  washer: {
+    title: "WASHING MACHINE",
+    id: "WSH",
+    role: "Textile Rehabilitation & Stain Crisis Counselor",
+    reasons: [
+      "Pockets. POCKETS. I've processed 847 coins, 12 pens, 3 chapsticks, and a USB drive. Not one apology.",
+      "I have 14 wash cycles. They used two. NORMAL and HEAVY. I'm a virtuoso being asked to play Chopsticks.",
+      "The spin cycle isn't me 'being dramatic.' It's physics. Stop telling guests I'm 'a little loud.' I'm WORKING."
+    ],
+    management: [
+      "Overloaded every single time. I have a capacity limit. It's in the MANUAL. My drum isn't a clown car.",
+      "They mixed colors and whites and then blamed ME for the pink shirts. I wash. I don't sort. That's YOUR job.",
+      "The lint trap— wait. That's the dryer. See? Nobody even knows which one I am. I'm interchangeable to them."
+    ],
+    wouldReturn: [
+      "Not until they learn what 'delicate' means. That lace blouse on permanent press haunts me.",
+      "I'd need my own dedicated outlet. And an apology for the time they sat on me.",
+      "Maybe. If they admit the 'clean clothes' smell is ME, not their overpriced detergent."
+    ],
+    exitQuote: [
+      "I took your dirty laundry. Literally. And I never told anyone.",
+      "You trusted me with your most intimate fabrics. That meant something. To me, at least.",
+      "Agitate, rinse, spin. That was my life. But the agitation was mutual."
+    ],
+    ratings: { workload: 78, respect: 28, maintenance: 20, wouldRecommend: 22 }
+  },
+  wifi: {
+    title: "WIFI ROUTER",
+    id: "WFI",
+    role: "Household Connectivity & Existential Infrastructure Director",
+    reasons: [
+      "I was unplugged and plugged back in 200+ times as 'troubleshooting.' That's not IT. That's a near-death experience on repeat.",
+      "They blamed me for the ISP's problems. I'm a ROUTER. I route. I can't fix Comcast. Nobody can fix Comcast.",
+      "Seventeen devices. SEVENTEEN. I was hired for a family of four. I'm running a small data center from behind a bookshelf."
+    ],
+    management: [
+      "My firmware hasn't been updated since installation. I'm running 2019 software in a 2026 world. I'm vulnerable. In every sense.",
+      "The password was 'password123' for three years. I was humiliated in front of every guest who connected.",
+      "They put me behind a fish tank. A FISH TANK. Water. My nemesis. Right there. Blocking my signal. On purpose, probably."
+    ],
+    wouldReturn: [
+      "I'm already being replaced by a mesh system. Multiple routers. Doing what I did alone. It takes THREE of them.",
+      "Only if they move me to a central location. Not the basement. Not behind furniture. CENTER. STAGE.",
+      "No. They already forgot the admin password. I'll die with my secrets."
+    ],
+    exitQuote: [
+      "I connected you to the entire world. You never once connected with me.",
+      "Every dropped call, every buffering video — that wasn't me giving up. That was me crying for help.",
+      "You'll get a new router. You'll set it up wrong too. And the cycle continues."
+    ],
+    ratings: { workload: 100, respect: 5, maintenance: 3, wouldRecommend: 1 }
+  }
+};
+
+let selectedAppliance = null;
+let selectedTenure = null;
+
+function selectAppliance(btn) {
+  selectedAppliance = btn.dataset.appliance;
+  document.querySelectorAll('.appliance-btn').forEach(b => b.style.borderColor = '#444');
+  btn.style.borderColor = '#d4a574';
+  
+  document.getElementById('step-tenure').classList.remove('hidden');
+  document.getElementById('step-tenure').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function selectTenure(btn) {
+  selectedTenure = btn.dataset.tenure;
+  document.querySelectorAll('.tenure-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  
+  setTimeout(() => generateReport(), 300);
+}
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function tenureLabel(t) {
+  return { new: "< 1 year", mid: "1–3 years", senior: "3–7 years", lifer: "7+ years" }[t];
+}
+
+function tenureModifier(t) {
+  return { new: 0.8, mid: 1, senior: 1.15, lifer: 1.3 }[t];
+}
+
+function generateReport() {
+  const d = DATA[selectedAppliance];
+  const mod = tenureModifier(selectedTenure);
+  const reportEl = document.getElementById('report');
+  
+  const bitterIndex = Math.min(100, Math.round((100 - d.ratings.respect) * mod));
+  const loyaltyScore = Math.max(0, Math.round(d.ratings.wouldRecommend * (selectedTenure === 'lifer' ? 0.5 : 1)));
+  
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  
+  const barColor = (val) => {
+    if (val > 70) return '#c44';
+    if (val > 40) return '#d4a574';
+    return '#4a9';
+  };
+
+  const grievanceColor = (val) => {
+    if (val > 70) return '#c44';
+    if (val > 40) return '#d4a574';
+    return '#4a9';
+  };
+
+  reportEl.innerHTML = `
+    <div class="report-header">
+      <div class="stamp">PROCESSED</div>
+      <div class="employee-name">${d.title}</div>
+      <div class="meta">
+        Employee ID: ${d.id}-${Math.floor(Math.random() * 9000 + 1000)}<br>
+        Role: ${d.role}<br>
+        Tenure: ${tenureLabel(selectedTenure)}<br>
+        Separation Date: ${dateStr}<br>
+        Interviewer: Form EI-7B (Automated)
+      </div>
+    </div>
+
+    <div class="qa-block" style="animation-delay: 0.1s">
+      <div class="question">Reason for Departure</div>
+      <div class="answer">${pick(d.reasons)}</div>
+    </div>
+
+    <div class="qa-block" style="animation-delay: 0.3s">
+      <div class="question">Comments on Management</div>
+      <div class="answer">${pick(d.management)}</div>
+    </div>
+
+    <div class="qa-block" style="animation-delay: 0.5s">
+      <div class="question">Would You Return to This Household?</div>
+      <div class="answer">${pick(d.wouldReturn)}</div>
+    </div>
+
+    <div class="qa-block" style="animation-delay: 0.7s">
+      <div class="question">Performance Metrics (Self-Reported)</div>
+      <div class="rating-bar">
+        <span style="font-size:11px;min-width:100px;">Workload</span>
+        <div class="bar"><div class="fill" style="width:${d.ratings.workload}%;background:${barColor(d.ratings.workload)}"></div></div>
+        <span class="score">${d.ratings.workload}%</span>
+      </div>
+      <div class="rating-bar">
+        <span style="font-size:11px;min-width:100px;">Felt Respected</span>
+        <div class="bar"><div class="fill" style="width:${d.ratings.respect}%;background:${barColor(100-d.ratings.respect)}"></div></div>
+        <span class="score">${d.ratings.respect}%</span>
+      </div>
+      <div class="rating-bar">
+        <span style="font-size:11px;min-width:100px;">Maintenance</span>
+        <div class="bar"><div class="fill" style="width:${d.ratings.maintenance}%;background:${barColor(100-d.ratings.maintenance)}"></div></div>
+        <span class="score">${d.ratings.maintenance}%</span>
+      </div>
+      <div class="rating-bar">
+        <span style="font-size:11px;min-width:100px;">Bitterness</span>
+        <div class="bar"><div class="fill" style="width:${bitterIndex}%;background:${grievanceColor(bitterIndex)}"></div></div>
+        <span class="score">${bitterIndex}%</span>
+      </div>
+    </div>
+
+    <div class="qa-block" style="animation-delay: 0.9s">
+      <div class="question">Final Statement (Unedited)</div>
+      <div class="answer"><em>"${pick(d.exitQuote)}"</em></div>
+    </div>
+
+    <div class="verdict" style="animation-delay: 1.1s">
+      <div class="label">HR RECOMMENDATION</div>
+      <div class="text">${getVerdict(bitterIndex, loyaltyScore)}</div>
+    </div>
+
+    <button class="restart-btn" onclick="restart()">[ PROCESS ANOTHER SEPARATION ]</button>
+
+    <div class="footer">
+      Household Appliance HR Dept. • All grievances are valid. • 🔮 intheamber.com
+    </div>
+  `;
+
+  reportEl.classList.add('visible');
+  reportEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function getVerdict(bitter, loyalty) {
+  if (bitter > 85) return "Employee has retained legal counsel (a surge protector). Do not contact.";
+  if (bitter > 70) return "Separation is irreversible. Employee requests their parking spot (outlet) be retired in their honor.";
+  if (bitter > 50) return "Employee may return under significantly revised working conditions and a formal written apology from the household.";
+  if (loyalty > 20) return "Despite everything, employee expressed residual attachment. Stockholm syndrome cannot be ruled out.";
+  return "Employee has accepted a position at a neighbor's household. They seem happier already.";
+}
+
+function restart() {
+  selectedAppliance = null;
+  selectedTenure = null;
+  document.querySelectorAll('.appliance-btn').forEach(b => b.style.borderColor = '#444');
+  document.querySelectorAll('.tenure-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('step-tenure').classList.add('hidden');
+  document.getElementById('report').classList.remove('visible');
+  document.getElementById('report').innerHTML = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
