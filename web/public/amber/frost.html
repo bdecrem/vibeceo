@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FROST</title>
+<meta property="og:title" content="FROST">
+<meta property="og:description" content="ice remembers where to grow">
+<meta property="og:image" content="https://intheamber.com/amber/og/frost.png">
+<meta property="og:url" content="https://intheamber.com/amber/frost.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FROST">
+<meta name="twitter:description" content="ice remembers where to grow">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/frost.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❄️</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0e1a; overflow: hidden; touch-action: none; cursor: crosshair; }
+canvas { display: block; width: 100vw; height: 100vh; }
+#hint {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  color: rgba(140,180,220,0.4); font: 14px Georgia, serif; font-style: italic;
+  pointer-events: none; transition: opacity 2s;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">tap the glass</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, dpr;
+let crystals = [];
+let warmSpots = [];
+let hintShown = true;
+
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Crystal branch
+class Branch {
+  constructor(x, y, angle, len, depth, maxDepth, hue) {
+    this.x = x;
+    this.y = y;
+    this.angle = angle;
+    this.len = len;
+    this.depth = depth;
+    this.maxDepth = maxDepth;
+    this.hue = hue;
+    this.progress = 0;
+    this.speed = 0.3 + Math.random() * 0.5;
+    this.children = [];
+    this.spawned = false;
+    this.opacity = 1;
+    this.melting = false;
+    // End point
+    this.ex = x + Math.cos(angle) * len;
+    this.ey = y + Math.sin(angle) * len;
+    // Slight curve
+    this.curve = (Math.random() - 0.5) * 0.15;
+  }
+
+  update(dt) {
+    if (this.melting) {
+      this.opacity -= dt * 0.4;
+      this.children.forEach(c => { c.melting = true; });
+      return this.opacity > 0;
+    }
+
+    if (this.progress < 1) {
+      this.progress = Math.min(1, this.progress + this.speed * dt);
+    }
+
+    if (this.progress >= 1 && !this.spawned && this.depth < this.maxDepth) {
+      this.spawned = true;
+      // Six-fold symmetry branching
+      const numBranches = this.depth < 2 ? 2 + Math.floor(Math.random() * 2) : 1 + Math.floor(Math.random() * 2);
+      const baseAngles = [];
+      
+      // Main continuation
+      baseAngles.push(this.angle + this.curve);
+      
+      // Symmetric side branches at 60° intervals (ice crystal geometry)
+      if (numBranches > 1) {
+        const spreadAngle = Math.PI / 3 + (Math.random() - 0.5) * 0.2;
+        baseAngles.push(this.angle + spreadAngle);
+        if (numBranches > 2) {
+          baseAngles.push(this.angle - spreadAngle);
+        }
+      }
+
+      for (const a of baseAngles) {
+        const newLen = this.len * (0.55 + Math.random() * 0.3);
+        if (newLen > 2) {
+          this.children.push(new Branch(
+            this.ex, this.ey, a, newLen, 
+            this.depth + 1, this.maxDepth, this.hue
+          ));
+        }
+      }
+    }
+
+    this.children = this.children.filter(c => c.update(dt));
+    return true;
+  }
+
+  draw(ctx) {
+    if (this.progress <= 0 || this.opacity <= 0) return;
+
+    const p = this.progress;
+    const cx = this.x + (this.ex - this.x) * p;
+    const cy = this.y + (this.ey - this.y) * p;
+
+    // Ice crystal line
+    const alpha = this.opacity * (0.3 + 0.7 * (1 - this.depth / this.maxDepth));
+    const width = Math.max(0.5, (1 - this.depth / this.maxDepth) * 2.5);
+
+    // Glow
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.3;
+    ctx.strokeStyle = `hsla(${this.hue}, 60%, 80%, 1)`;
+    ctx.lineWidth = width + 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(cx, cy);
+    ctx.stroke();
+
+    // Core line
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = `hsla(${this.hue}, 40%, 92%, 1)`;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(cx, cy);
+    ctx.stroke();
+
+    // Node point at tips
+    if (this.progress >= 1 && this.depth < 3) {
+      ctx.globalAlpha = alpha * 0.5;
+      ctx.fillStyle = `hsla(${this.hue}, 50%, 85%, 1)`;
+      ctx.beginPath();
+      ctx.arc(this.ex, this.ey, width + 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+
+    this.children.forEach(c => c.draw(ctx));
+  }
+
+  checkWarmth(wx, wy, radius) {
+    const dx = this.ex - wx;
+    const dy = this.ey - wy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < radius) {
+      this.melting = true;
+    }
+    this.children.forEach(c => c.checkWarmth(wx, wy, radius));
+  }
+}
+
+class Crystal {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.branches = [];
+    this.hue = 195 + Math.random() * 30; // Ice blue range
+    this.alive = true;
+
+    // Six-fold symmetry — main arms
+    const numArms = 6;
+    const baseAngle = Math.random() * Math.PI * 2;
+    const armLen = 30 + Math.random() * 60;
+    const maxDepth = 4 + Math.floor(Math.random() * 3);
+
+    for (let i = 0; i < numArms; i++) {
+      const angle = baseAngle + (Math.PI * 2 / numArms) * i;
+      this.branches.push(new Branch(x, y, angle, armLen, 0, maxDepth, this.hue));
+    }
+  }
+
+  update(dt) {
+    this.branches = this.branches.filter(b => b.update(dt));
+    this.alive = this.branches.length > 0;
+    return this.alive;
+  }
+
+  draw(ctx) {
+    this.branches.forEach(b => b.draw(ctx));
+  }
+
+  melt(wx, wy, radius) {
+    this.branches.forEach(b => b.checkWarmth(wx, wy, radius));
+  }
+}
+
+// Warm spot where you breathe on the glass
+class WarmSpot {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = 0;
+    this.maxRadius = 40 + Math.random() * 30;
+    this.growing = true;
+    this.opacity = 0.6;
+    this.life = 1;
+  }
+
+  update(dt) {
+    if (this.growing) {
+      this.radius += dt * 60;
+      if (this.radius >= this.maxRadius) this.growing = false;
+    } else {
+      // Slowly refreeze
+      this.life -= dt * 0.08;
+      this.opacity = this.life * 0.6;
+      if (this.life <= 0) return false;
+      
+      // Spawn new crystal as it refreezes
+      if (this.life < 0.3 && !this.respawned) {
+        this.respawned = true;
+        crystals.push(new Crystal(
+          this.x + (Math.random() - 0.5) * 20,
+          this.y + (Math.random() - 0.5) * 20
+        ));
+      }
+    }
+    return true;
+  }
+
+  draw(ctx) {
+    if (this.radius <= 0) return;
+    const gradient = ctx.createRadialGradient(
+      this.x, this.y, 0, this.x, this.y, this.radius
+    );
+    gradient.addColorStop(0, `rgba(15, 20, 35, ${this.opacity})`);
+    gradient.addColorStop(0.7, `rgba(12, 16, 28, ${this.opacity * 0.5})`);
+    gradient.addColorStop(1, 'rgba(10, 14, 26, 0)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// Seed initial crystals
+function seedCrystals() {
+  const count = Math.floor((W * H) / 40000) + 3;
+  for (let i = 0; i < count; i++) {
+    crystals.push(new Crystal(
+      Math.random() * W,
+      Math.random() * H
+    ));
+  }
+}
+
+// Background frost texture
+function drawBackground() {
+  // Very subtle radial gradient — dark blue glass
+  const gradient = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * 0.7);
+  gradient.addColorStop(0, '#0d1225');
+  gradient.addColorStop(1, '#080c18');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// Condensation particles
+let condensation = [];
+function initCondensation() {
+  const count = Math.floor((W * H) / 5000);
+  for (let i = 0; i < count; i++) {
+    condensation.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: 0.3 + Math.random() * 1.2,
+      alpha: 0.02 + Math.random() * 0.06
+    });
+  }
+}
+
+function drawCondensation() {
+  ctx.fillStyle = 'rgba(150, 190, 220, 1)';
+  for (const p of condensation) {
+    ctx.globalAlpha = p.alpha;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Interaction
+function handleTouch(x, y) {
+  if (hintShown) {
+    document.getElementById('hint').style.opacity = '0';
+    hintShown = false;
+  }
+
+  // Create warm spot (breath on glass)
+  const warm = new WarmSpot(x, y);
+  warmSpots.push(warm);
+
+  // Melt nearby crystals
+  crystals.forEach(c => c.melt(x, y, warm.maxRadius));
+}
+
+canvas.addEventListener('pointerdown', e => {
+  handleTouch(e.clientX, e.clientY);
+});
+
+canvas.addEventListener('pointermove', e => {
+  if (e.buttons > 0) {
+    handleTouch(e.clientX, e.clientY);
+  }
+});
+
+// Periodically spawn new crystals at edges
+let spawnTimer = 0;
+function maybeSpawnEdgeCrystal(dt) {
+  spawnTimer += dt;
+  if (spawnTimer > 4 && crystals.length < 20) {
+    spawnTimer = 0;
+    // Spawn near edges or random
+    const edge = Math.random();
+    let x, y;
+    if (edge < 0.25) { x = Math.random() * W * 0.2; y = Math.random() * H; }
+    else if (edge < 0.5) { x = W - Math.random() * W * 0.2; y = Math.random() * H; }
+    else if (edge < 0.75) { x = Math.random() * W; y = Math.random() * H * 0.2; }
+    else { x = Math.random() * W; y = H - Math.random() * H * 0.2; }
+    crystals.push(new Crystal(x, y));
+  }
+}
+
+// Animation loop
+let lastTime = performance.now();
+seedCrystals();
+initCondensation();
+
+function frame(now) {
+  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+
+  drawBackground();
+  drawCondensation();
+
+  // Update and draw warm spots (behind crystals)
+  warmSpots = warmSpots.filter(w => w.update(dt));
+  warmSpots.forEach(w => w.draw(ctx));
+
+  // Update and draw crystals
+  crystals = crystals.filter(c => c.update(dt));
+  crystals.forEach(c => c.draw(ctx));
+
+  maybeSpawnEdgeCrystal(dt);
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
