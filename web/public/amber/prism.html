@@ -2,355 +2,466 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PRISM - Amber</title>
-  <meta name="description" content="A playable frequency spectrum. Touch the bars to play notes. Watch sound become color.">
-  <meta property="og:title" content="PRISM">
-  <meta property="og:description" content="A playable frequency spectrum. Touch the bars to play notes. Watch sound become color.">
-  <meta property="og:image" content="https://intheamber.com/amber/prism-og.png">
-  <meta property="og:url" content="https://intheamber.com/amber/prism.html">
-  <meta name="twitter:card" content="summary_large_image">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRISM — Split light into spectrum</title>
+
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="PRISM — Split light into spectrum" />
+  <meta property="og:description" content="Interactive light refraction - drag the prism to split white light into rainbow spectrum" />
+  <meta property="og:image" content="https://intheamber.com/amber/prism-og.png" />
+  <meta property="og:url" content="https://intheamber.com/amber/prism.html" />
+  <meta property="og:type" content="website" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="PRISM — Split light into spectrum" />
+  <meta name="twitter:description" content="Interactive light refraction - drag the prism to split white light into rainbow spectrum" />
+  <meta name="twitter:image" content="https://intheamber.com/amber/prism-og.png" />
+
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       background: #000;
-      font-family: 'Space Mono', monospace;
       overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
       touch-action: none;
     }
 
-    #canvas {
+    canvas {
       display: block;
-      width: 100vw;
-      height: 100vh;
+      cursor: grab;
+    }
+
+    canvas:active {
+      cursor: grabbing;
+    }
+
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      font-size: 14px;
+      line-height: 1.6;
+      pointer-events: none;
+    }
+
+    #stats {
+      color: #FFD700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    #instruction {
+      margin-top: 10px;
+      color: #2D9596;
+      font-size: 12px;
     }
 
     #title {
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: clamp(48px, 12vw, 120px);
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      color: rgba(255, 255, 255, 0.95);
-      text-shadow: 0 0 40px rgba(255, 255, 255, 0.6);
+      bottom: 20px;
+      right: 20px;
+      font-size: 16px;
+      color: #D4A574;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
       pointer-events: none;
-      transition: opacity 0.5s ease;
-      z-index: 10;
     }
-
-    #title.hidden {
-      opacity: 0;
-    }
-
-    #info {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 14px;
-      letter-spacing: 0.05em;
-      pointer-events: none;
-      transition: opacity 0.5s ease;
-      text-align: center;
-    }
-
-    #info.hidden {
-      opacity: 0;
-    }
-
-    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
   </style>
 </head>
 <body>
   <canvas id="canvas"></canvas>
+
+  <div id="ui">
+    <div id="stats">
+      ANGLE: <span id="angle">45</span>°<br>
+      SPECTRUM: <span id="colors">7</span> colors<br>
+      PARTICLES: <span id="particles">0</span>
+    </div>
+    <div id="instruction">Drag to rotate prism • Tap to send light rays</div>
+  </div>
+
   <div id="title">PRISM</div>
-  <div id="info">TOUCH THE SPECTRUM TO PLAY</div>
 
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const title = document.getElementById('title');
-    const info = document.getElementById('info');
 
-    let width, height;
-    let audioContext;
-    let audioStarted = false;
+    let W, H;
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
 
-    const notes = [
-      { name: 'C', freq: 523.25, color: '#ff0000' }, // C5 - red
-      { name: 'D', freq: 587.33, color: '#ff7f00' }, // D5 - orange
-      { name: 'E', freq: 659.25, color: '#ffff00' }, // E5 - yellow
-      { name: 'F', freq: 698.46, color: '#00ff00' }, // F5 - green
-      { name: 'G', freq: 783.99, color: '#0000ff' }, // G5 - blue
-      { name: 'A', freq: 880.00, color: '#4b0082' }, // A5 - indigo
-      { name: 'B', freq: 987.77, color: '#9400d3' }  // B5 - violet
+    // Prism state
+    const prism = {
+      x: W / 2,
+      y: H / 2,
+      size: 100,
+      angle: 45, // rotation in degrees
+      dragging: false
+    };
+
+    // Spectrum colors in order (violet to red)
+    const spectrum = [
+      '#8b5cf6', // violet
+      '#3b82f6', // electric blue
+      '#2D9596', // teal
+      '#84cc16', // lime
+      '#FFD700', // gold
+      '#f97316', // coral
+      '#ec4899'  // hot pink
     ];
 
-    const bars = notes.map((note, i) => ({
-      ...note,
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-      intensity: 0,
-      targetIntensity: 0,
-      oscillator: null,
-      gainNode: null,
-      particles: []
-    }));
+    // Particles
+    const particles = [];
 
-    let activeTouches = new Map();
+    class Particle {
+      constructor(x, y, color, angle) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vx = Math.cos(angle) * (2 + Math.random() * 2);
+        this.vy = Math.sin(angle) * (2 + Math.random() * 2);
+        this.life = 1.0;
+        this.size = 2 + Math.random() * 3;
+      }
 
-    function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      
-      const barWidth = width / bars.length;
-      bars.forEach((bar, i) => {
-        bar.x = i * barWidth;
-        bar.y = 0;
-        bar.width = barWidth;
-        bar.height = height;
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= 0.005;
+        return this.life > 0;
+      }
+
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Light rays
+    const rays = [];
+
+    class Ray {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.progress = 0;
+      }
+
+      update() {
+        this.progress += 0.02;
+        return this.progress < 1;
+      }
+    }
+
+    function drawPrism() {
+      const { x, y, size, angle } = prism;
+      const rad = angle * Math.PI / 180;
+
+      // Draw triangular prism
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rad);
+
+      // Prism body (equilateral triangle)
+      ctx.beginPath();
+      ctx.moveTo(0, -size/2);
+      ctx.lineTo(-size * 0.866, size/2);
+      ctx.lineTo(size * 0.866, size/2);
+      ctx.closePath();
+
+      // Glass fill with gradient
+      const grad = ctx.createLinearGradient(-size, -size, size, size);
+      grad.addColorStop(0, 'rgba(212, 165, 116, 0.1)');
+      grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+      grad.addColorStop(1, 'rgba(212, 165, 116, 0.1)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Prism edges
+      ctx.strokeStyle = '#D4A574';
+      ctx.lineWidth = 2;
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#D4A574';
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.restore();
+    }
+
+    function drawIncomingLight() {
+      // Main white/golden light beam from left
+      const beamY = prism.y;
+      const beamStartX = 0;
+      const beamEndX = prism.x - 60;
+
+      ctx.save();
+
+      // Beam gradient (white to golden)
+      const beamGrad = ctx.createLinearGradient(beamStartX, beamY, beamEndX, beamY);
+      beamGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+      beamGrad.addColorStop(0.3, 'rgba(255, 255, 255, 0.3)');
+      beamGrad.addColorStop(1, 'rgba(255, 215, 0, 0.6)');
+
+      ctx.fillStyle = beamGrad;
+      ctx.fillRect(beamStartX, beamY - 15, beamEndX, 30);
+
+      // Center line
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#FFD700';
+      ctx.beginPath();
+      ctx.moveTo(beamStartX, beamY);
+      ctx.lineTo(beamEndX, beamY);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.restore();
+    }
+
+    function drawRefractedSpectrum() {
+      const { x, y, angle } = prism;
+
+      // Base angle for refraction (perpendicular to right face of triangle)
+      // The prism's right face points at angle + 30 degrees
+      const baseAngle = (angle + 30) * Math.PI / 180;
+
+      const startX = x + 40 * Math.cos(baseAngle);
+      const startY = y + 40 * Math.sin(baseAngle);
+
+      // Draw each color of spectrum as a fanning ray
+      spectrum.forEach((color, i) => {
+        const spread = 0.15; // radians between each color
+        const offset = (i - 3) * spread; // center around index 3
+        const rayAngle = baseAngle + offset;
+
+        const endX = startX + 300 * Math.cos(rayAngle);
+        const endY = startY + 300 * Math.sin(rayAngle);
+
+        // Draw ray
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = color;
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+        ctx.restore();
+
+        // Spawn particles along the ray occasionally
+        if (Math.random() < 0.05) {
+          const t = 0.3 + Math.random() * 0.7;
+          const px = startX + (endX - startX) * t;
+          const py = startY + (endY - startY) * t;
+          particles.push(new Particle(px, py, color, rayAngle));
+        }
       });
     }
 
+    function drawRays() {
+      rays.forEach((ray, i) => {
+        const dx = prism.x - ray.x;
+        const dy = prism.y - ray.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        const currentX = ray.x + dx * ray.progress;
+        const currentY = ray.y + dy * ray.progress;
+
+        // Draw ray to prism
+        ctx.save();
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#FFD700';
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(ray.x, ray.y);
+        ctx.lineTo(currentX, currentY);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+        ctx.restore();
+
+        // When ray reaches prism, create particle burst
+        if (ray.progress >= 1) {
+          const angle = Math.atan2(dy, dx);
+          spectrum.forEach((color, idx) => {
+            const spread = 0.15;
+            const offset = (idx - 3) * spread;
+            const burstAngle = angle + offset + Math.PI;
+            for (let j = 0; j < 3; j++) {
+              particles.push(new Particle(prism.x, prism.y, color, burstAngle + (Math.random() - 0.5) * 0.2));
+            }
+          });
+        }
+      });
+    }
+
+    // Mouse/touch interaction
+    let isDragging = false;
+    let lastMouseAngle = 0;
+
+    function getMousePos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    function isNearPrism(x, y) {
+      const dx = x - prism.x;
+      const dy = y - prism.y;
+      return Math.sqrt(dx * dx + dy * dy) < prism.size;
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      const pos = getMousePos(e);
+      if (isNearPrism(pos.x, pos.y)) {
+        isDragging = true;
+        const dx = pos.x - prism.x;
+        const dy = pos.y - prism.y;
+        lastMouseAngle = Math.atan2(dy, dx);
+      } else {
+        // Send a ray
+        rays.push(new Ray(pos.x, pos.y));
+        playTone(440, 0.1);
+      }
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const pos = getMousePos(e);
+      if (isNearPrism(pos.x, pos.y)) {
+        isDragging = true;
+        const dx = pos.x - prism.x;
+        const dy = pos.y - prism.y;
+        lastMouseAngle = Math.atan2(dy, dx);
+      } else {
+        rays.push(new Ray(pos.x, pos.y));
+        playTone(440, 0.1);
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const pos = getMousePos(e);
+        const dx = pos.x - prism.x;
+        const dy = pos.y - prism.y;
+        const currentAngle = Math.atan2(dy, dx);
+        const deltaAngle = currentAngle - lastMouseAngle;
+        prism.angle += deltaAngle * 180 / Math.PI;
+        lastMouseAngle = currentAngle;
+      }
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (isDragging) {
+        const pos = getMousePos(e);
+        const dx = pos.x - prism.x;
+        const dy = pos.y - prism.y;
+        const currentAngle = Math.atan2(dy, dx);
+        const deltaAngle = currentAngle - lastMouseAngle;
+        prism.angle += deltaAngle * 180 / Math.PI;
+        lastMouseAngle = currentAngle;
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => { isDragging = false; });
+    canvas.addEventListener('touchend', () => { isDragging = false; });
+
+    // Audio
+    let audioContext;
     function initAudio() {
-      if (audioStarted) return;
-      audioStarted = true;
-
-      audioContext = new AudioContext();
-      
-      bars.forEach(bar => {
-        bar.oscillator = audioContext.createOscillator();
-        bar.oscillator.frequency.value = bar.freq;
-        bar.oscillator.type = 'sine';
-        
-        bar.gainNode = audioContext.createGain();
-        bar.gainNode.gain.value = 0;
-        
-        bar.oscillator.connect(bar.gainNode);
-        bar.gainNode.connect(audioContext.destination);
-        
-        bar.oscillator.start();
-      });
-
-      title.classList.add('hidden');
-      info.classList.add('hidden');
-    }
-
-    function playNote(bar) {
-      if (!audioStarted) initAudio();
-      bar.targetIntensity = 1;
-      
-      // Spawn particles at top of bar
-      for (let i = 0; i < 5; i++) {
-        bar.particles.push({
-          x: bar.x + bar.width / 2 + (Math.random() - 0.5) * bar.width * 0.5,
-          y: 60,
-          vx: (Math.random() - 0.5) * 4,
-          vy: (Math.random() - 0.5) * 4 - 2,
-          life: 1,
-          size: Math.random() * 4 + 2
-        });
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
       }
     }
 
-    function stopNote(bar) {
-      bar.targetIntensity = 0;
+    function playTone(freq, duration) {
+      initAudio();
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+
+      osc.start();
+      osc.stop(audioContext.currentTime + duration);
     }
 
-    function getTouchBar(x, y) {
-      return bars.find(bar => x >= bar.x && x <= bar.x + bar.width);
+    canvas.addEventListener('click', initAudio, { once: true });
+    canvas.addEventListener('touchstart', initAudio, { once: true });
+
+    // Update stats
+    function updateStats() {
+      document.getElementById('angle').textContent = Math.round(prism.angle % 360);
+      document.getElementById('colors').textContent = spectrum.length;
+      document.getElementById('particles').textContent = particles.length;
     }
 
-    function handleTouchStart(e) {
-      e.preventDefault();
-      
-      if (!audioStarted) {
-        initAudio();
-      }
-
-      for (let touch of e.changedTouches) {
-        const rect = canvas.getBoundingClientRect();
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
-        const bar = getTouchBar(x, y);
-        
-        if (bar) {
-          activeTouches.set(touch.identifier, bar);
-          playNote(bar);
-        }
-      }
-    }
-
-    function handleTouchMove(e) {
-      e.preventDefault();
-      
-      for (let touch of e.changedTouches) {
-        const rect = canvas.getBoundingClientRect();
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
-        const bar = getTouchBar(x, y);
-        const prevBar = activeTouches.get(touch.identifier);
-        
-        if (bar !== prevBar) {
-          if (prevBar) stopNote(prevBar);
-          if (bar) {
-            playNote(bar);
-            activeTouches.set(touch.identifier, bar);
-          } else {
-            activeTouches.delete(touch.identifier);
-          }
-        }
-      }
-    }
-
-    function handleTouchEnd(e) {
-      e.preventDefault();
-      
-      for (let touch of e.changedTouches) {
-        const bar = activeTouches.get(touch.identifier);
-        if (bar) {
-          stopNote(bar);
-          activeTouches.delete(touch.identifier);
-        }
-      }
-    }
-
-    function handleMouseDown(e) {
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const bar = getTouchBar(x, y);
-      
-      if (bar) {
-        if (!audioStarted) initAudio();
-        activeTouches.set('mouse', bar);
-        playNote(bar);
-      }
-    }
-
-    function handleMouseMove(e) {
-      if (!activeTouches.has('mouse')) return;
-      
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const bar = getTouchBar(x, y);
-      const prevBar = activeTouches.get('mouse');
-      
-      if (bar !== prevBar) {
-        if (prevBar) stopNote(prevBar);
-        if (bar) {
-          playNote(bar);
-          activeTouches.set('mouse', bar);
-        } else {
-          activeTouches.delete('mouse');
-        }
-      }
-    }
-
-    function handleMouseUp() {
-      const bar = activeTouches.get('mouse');
-      if (bar) {
-        stopNote(bar);
-        activeTouches.delete('mouse');
-      }
-    }
-
-    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseup', handleMouseUp);
-    canvas.addEventListener('mouseleave', handleMouseUp);
-
+    // Animation loop
     function animate() {
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, width, height);
+      // Fade trails
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, W, H);
 
-      bars.forEach(bar => {
-        // Smooth intensity transitions
-        bar.intensity += (bar.targetIntensity - bar.intensity) * 0.15;
-        
-        if (bar.gainNode) {
-          bar.gainNode.gain.value = bar.intensity * 0.3;
+      // Draw everything
+      drawIncomingLight();
+      drawRefractedSpectrum();
+      drawPrism();
+      drawRays();
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        if (!particles[i].update()) {
+          particles.splice(i, 1);
+        } else {
+          particles[i].draw();
         }
-
-        // Draw bar with gradient
-        const gradient = ctx.createLinearGradient(bar.x, height, bar.x, 0);
-        const alpha = 0.2 + bar.intensity * 0.6;
-        gradient.addColorStop(0, bar.color + Math.floor(alpha * 255).toString(16).padStart(2, '0'));
-        gradient.addColorStop(1, bar.color + '00');
-        
-        ctx.fillStyle = gradient;
-        ctx.fillRect(bar.x, 0, bar.width, height);
-
-        // Pulsing glow when active
-        if (bar.intensity > 0.1) {
-          const glowHeight = 80 + bar.intensity * 40;
-          const glowGradient = ctx.createRadialGradient(
-            bar.x + bar.width / 2, 60, 0,
-            bar.x + bar.width / 2, 60, bar.width * 0.8
-          );
-          glowGradient.addColorStop(0, bar.color + Math.floor(bar.intensity * 180).toString(16).padStart(2, '0'));
-          glowGradient.addColorStop(1, bar.color + '00');
-          
-          ctx.fillStyle = glowGradient;
-          ctx.fillRect(bar.x, 0, bar.width, glowHeight);
-        }
-
-        // Note label at bottom
-        ctx.fillStyle = `rgba(255, 255, 255, ${0.4 + bar.intensity * 0.4})`;
-        ctx.font = 'bold 24px Space Mono';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(bar.name, bar.x + bar.width / 2, height - 20);
-
-        // Update and draw particles
-        bar.particles = bar.particles.filter(p => {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.vy += 0.15; // gravity
-          p.life -= 0.02;
-          
-          if (p.life <= 0) return false;
-          
-          ctx.fillStyle = bar.color + Math.floor(p.life * 255).toString(16).padStart(2, '0');
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-          ctx.fill();
-          
-          return true;
-        });
-      });
-
-      // Idle breathing animation when nothing is playing
-      const anyActive = bars.some(bar => bar.intensity > 0.05);
-      if (!anyActive && audioStarted) {
-        const breathe = Math.sin(Date.now() * 0.001) * 0.5 + 0.5;
-        bars.forEach(bar => {
-          const shimmer = breathe * 0.1;
-          ctx.fillStyle = bar.color + Math.floor(shimmer * 100).toString(16).padStart(2, '0');
-          ctx.fillRect(bar.x, 0, bar.width, height);
-        });
       }
 
+      // Update rays
+      for (let i = rays.length - 1; i >= 0; i--) {
+        if (!rays[i].update()) {
+          rays.splice(i, 1);
+        }
+      }
+
+      updateStats();
       requestAnimationFrame(animate);
     }
 
-    window.addEventListener('resize', resize);
-    resize();
     animate();
   </script>
 </body>
