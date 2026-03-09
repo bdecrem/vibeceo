@@ -18,6 +18,7 @@ const labMessages = [
 ];
 
 const games = [
+  { icon: '💧', name: 'Pour', href: '/pixelpit/arcade/pour', playable: true, date: 'Mon 3/9' },
   { icon: '🎨', name: 'Flood', href: '/pixelpit/arcade/flood', playable: true, date: 'Sat 3/7' },
   { icon: '🎯', name: 'Slingshot', href: '/pixelpit/arcade/slingshot', playable: true, date: 'Mon 3/2' },
   { icon: '🎯', name: 'Bullseye', href: '/pixelpit/arcade/bullseye', playable: true, date: 'Sun 3/1' },
@@ -142,7 +143,7 @@ const labItems = [
   { icon: '👻', name: 'Séance', href: '/pixelpit/lab/seance', date: 'Sun 2/15' },
   { icon: '👾', name: 'Blast', href: '/pixelpit/lab/blast', date: 'Fri 2/14', shipped: true },
   { icon: '🧊', name: 'Melt', href: '/pixelpit/lab/melt', date: 'Fri 2/13', shipped: true },
-  { icon: '💧', name: 'Pour', href: '/pixelpit/lab/pour', date: 'Fri 2/13' },
+  { icon: '💧', name: 'Pour', href: '/pixelpit/lab/pour', date: 'Fri 2/13', shipped: true },
   { icon: '🦎', name: 'Chroma', href: '/pixelpit/lab/chroma', date: 'Tue 2/11' },
   { icon: '🐝', name: 'Swarm', href: '/pixelpit/lab/swarm', date: 'Tue 2/11' },
   { icon: '👑', name: 'Glop', href: '/pixelpit/lab/glop', date: 'Tue 2/10' },
