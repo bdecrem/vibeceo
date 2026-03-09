@@ -1,344 +1,437 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GEARS — Clockwork in color</title>
-    <meta property="og:title" content="GEARS — Clockwork in color">
-    <meta property="og:description" content="Rotating mechanisms in bold colors. Tap to add more gears to the machine.">
-    <meta property="og:image" content="https://intheamber.com/amber/gears-og.png">
-    <meta property="og:url" content="https://intheamber.com/amber/gears.html">
-    <meta name="twitter:card" content="summary_large_image">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            background: #0D0D0D;
-            overflow: hidden;
-            font-family: 'Space Mono', monospace;
-            color: #D4A574;
-            touch-action: none;
-        }
-        
-        canvas {
-            display: block;
-            cursor: pointer;
-        }
-        
-        #stats {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            font-size: 14px;
-            line-height: 1.6;
-            pointer-events: none;
-            text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
-        }
-        
-        #info {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 12px;
-            opacity: 0.7;
-            pointer-events: none;
-            text-align: center;
-        }
-        
-        .value {
-            color: #FFD700;
-            font-weight: bold;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GEARS - Amber</title>
+
+  <!-- Open Graph / Social Media Meta Tags -->
+  <meta property="og:title" content="GEARS - Amber">
+  <meta property="og:description" content="Clockwork chimes. Slow rotations. Gentle polyrhythms.">
+  <meta property="og:image" content="https://intheamber.com/amber/gears-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/gears.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="GEARS - Amber">
+  <meta name="twitter:description" content="Clockwork chimes. Slow rotations. Gentle polyrhythms.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/gears-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      touch-action: none;
+    }
+
+    #canvas {
+      display: block;
+      cursor: crosshair;
+    }
+
+    #controls {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      z-index: 10;
+    }
+
+    button {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      color: #FFD700;
+      padding: 12px 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 120px;
+    }
+
+    button:hover {
+      background: #D4A574;
+      color: #000;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    #stats {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 14px;
+      color: #D4A574;
+      z-index: 10;
+    }
+
+    .instruction {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      color: rgba(212, 165, 116, 0.6);
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      button {
+        padding: 10px 16px;
+        font-size: 14px;
+        min-width: 100px;
+      }
+
+      #stats, .instruction {
+        font-size: 12px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
-    
-    <div id="stats">
-        <div>GEARS: <span class="value" id="gearCount">0</span></div>
-        <div>ROTATIONS: <span class="value" id="rotations">0</span></div>
-        <div>ENERGY: <span class="value">0.82</span></div>
-    </div>
-    
-    <div id="info">TAP TO ADD GEARS</div>
-    
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        
-        // Color palette - bold and saturated for high energy
-        const COLORS = [
-            '#FFD700', // gold
-            '#f59e0b', // amber
-            '#2D9596', // teal
-            '#14b8a6', // teal bright
-            '#3b82f6', // electric blue
-            '#ec4899', // hot pink
-            '#8b5cf6', // purple
-            '#f97316', // coral
-        ];
-        
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.color= color;
-                this.life = 1;
-                this.vx = (Math.random() - 0.5) * 2;
-                this.vy = (Math.random() - 0.5) * 2;
-            }
-            
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= 0.02;
-            }
-            
-            draw(ctx) {
-                ctx.globalAlpha = this.life;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1;
-            }
+  <div id="controls">
+    <button id="startBtn">START</button>
+    <button id="clearBtn">CLEAR</button>
+  </div>
+
+  <div id="stats">
+    GEARS: <span id="gearCount">3</span> | CHIMES: <span id="chimeCount">0</span>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="instruction">Tap to add gears · Listen to the clockwork</div>
+
+  <script type="module">
+    import { SH101Controller } from '/101/dist/api/index.js';
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('startBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const gearCountEl = document.getElementById('gearCount');
+    const chimeCountEl = document.getElementById('chimeCount');
+
+    let width, height;
+    let isPlaying = false;
+    let audioStarted = false;
+    let synth;
+    let gears = [];
+    let chimeCount = 0;
+    let lastChimeTimes = new Map(); // Track last chime time for each gear
+
+    // Pentatonic scale notes (D minor pentatonic)
+    const notes = ['D3', 'F3', 'G3', 'A3', 'C4', 'D4', 'F4', 'G4'];
+    const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#FF69B4', '#FF7F50'];
+
+    // Gear class
+    class Gear {
+      constructor(x, y, radius, rpm, color, noteIndex) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.rpm = rpm; // rotations per minute
+        this.color = color;
+        this.noteIndex = noteIndex;
+        this.angle = Math.random() * Math.PI * 2; // Random starting angle
+        this.toothAngle = 0; // Angle where the tooth is (top = 0, -PI/2)
+        this.teeth = 12; // Number of teeth
+        this.glowing = false;
+        this.glowAmount = 0;
+      }
+
+      update(deltaTime) {
+        // Convert RPM to radians per millisecond
+        const radiansPerMs = (this.rpm * 2 * Math.PI) / (60 * 1000);
+        this.angle += radiansPerMs * deltaTime;
+
+        // Check if tooth has crossed the top (angle wraps around at 2PI)
+        const currentToothAngle = (this.angle + this.toothAngle) % (Math.PI * 2);
+        const topAngle = -Math.PI / 2; // Top is at -90 degrees
+
+        // Normalize to -PI to PI range
+        const normalizedAngle = ((currentToothAngle + Math.PI) % (Math.PI * 2)) - Math.PI;
+        const normalizedTop = -Math.PI / 2;
+
+        // Check if we just crossed the top (within a small threshold)
+        const threshold = 0.1;
+        if (Math.abs(normalizedAngle - normalizedTop) < threshold) {
+          this.trigger();
         }
-        
-        class Gear {
-            constructor(x, y, radius, teeth, speed, color) {
-                this.x = x;
-                this.y = y;
-                this.radius = radius;
-                this.teeth = teeth;
-                this.speed = speed; // degrees per frame
-                this.angle = Math.random() * Math.PI * 2;
-                this.color = color;
-                this.toothHeight = radius * 0.2;
-                this.innerRadius = radius * 0.6;
-                this.lastTickAngle = 0;
-                this.rotationCount = 0;
-            }
-            
-            update() {
-                this.angle += this.speed * Math.PI / 180;
-                
-                // Count full rotations
-                const currentRotation = Math.floor(this.angle / (Math.PI * 2));
-                if (currentRotation > this.rotationCount) {
-                    this.rotationCount = currentRotation;
-                    return true; // Signal a full rotation
-                }
-                
-                // Tick sound at each tooth
-                const tickInterval = (Math.PI * 2) / this.teeth;
-                if (Math.floor(this.angle / tickInterval) > Math.floor(this.lastTickAngle / tickInterval)) {
-                    this.playTick();
-                }
-                this.lastTickAngle = this.angle;
-                
-                return false;
-            }
-            
-            playTick() {
-                const audioCtx = getAudioContext();
-                if (!audioCtx) return;
-                
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                
-                // Pitch based on gear size - smaller = higher pitch
-                const frequency = 200 + (100 - this.radius) * 3;
-                osc.frequency.value = frequency;
-                osc.type = 'sine';
-                
-                gain.gain.value = 0.03;
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-                
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.05);
-            }
-            
-            draw(ctx) {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
-                
-                // Draw gear with teeth
-                ctx.beginPath();
-                for (let i = 0; i < this.teeth; i++) {
-                    const angle1 = (i / this.teeth) * Math.PI * 2;
-                    const angle2 = ((i + 0.4) / this.teeth) * Math.PI * 2;
-                    const angle3 = ((i + 0.6) / this.teeth) * Math.PI * 2;
-                    const angle4 = ((i + 1) / this.teeth) * Math.PI * 2;
-                    
-                    // Outer arc (tooth tip)
-                    ctx.arc(0, 0, this.radius + this.toothHeight, angle1, angle2);
-                    // Inner arc (tooth base)
-                    ctx.arc(0, 0, this.radius, angle2, angle3, true);
-                    // Outer arc (tooth tip)
-                    ctx.arc(0, 0, this.radius + this.toothHeight, angle3, angle4);
-                    // Inner arc (between teeth)
-                    ctx.arc(0, 0, this.radius, angle4, angle1 + (Math.PI * 2 / this.teeth), true);
-                }
-                ctx.closePath();
-                
-                // Fill with semi-transparent color
-                ctx.fillStyle = this.color + '33'; // 20% opacity
-                ctx.fill();
-                
-                // Glowing edge
-                ctx.strokeStyle = this.color;
-                ctx.lineWidth = 2;
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = this.color;
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-                
-                // Inner circle
-                ctx.beginPath();
-                ctx.arc(0, 0, this.innerRadius, 0, Math.PI * 2);
-                ctx.strokeStyle = this.color;
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                
-                // Center hub
-                ctx.beginPath();
-                ctx.arc(0, 0, this.innerRadius * 0.3, 0, Math.PI * 2);
-                ctx.fillStyle = this.color + '80'; // 50% opacity
-                ctx.fill();
-                
-                ctx.restore();
-            }
-            
-            spawnParticles() {
-                const particles = [];
-                for (let i = 0; i < 8; i++) {
-                    const angle = (i / 8) * Math.PI * 2 + this.angle;
-                    const x = this.x + Math.cos(angle) * this.radius;
-                    const y = this.y + Math.sin(angle) * this.radius;
-                    particles.push(new Particle(x, y, this.color));
-                }
-                return particles;
-            }
+
+        // Update glow
+        if (this.glowing) {
+          this.glowAmount = Math.max(0, this.glowAmount - 0.05);
+          if (this.glowAmount === 0) this.glowing = false;
         }
-        
-        let gears = [];
-        let particles = [];
-        let audioContext = null;
-        let totalRotations = 0;
-        let isAudioReady = false;
-        
-        function getAudioContext() {
-            if (!isAudioReady) return null;
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            return audioContext;
+      }
+
+      trigger() {
+        const now = Date.now();
+        const gearId = `${this.x}-${this.y}-${this.radius}`;
+
+        // Prevent multiple triggers in quick succession (debounce 500ms)
+        if (lastChimeTimes.has(gearId)) {
+          const lastTime = lastChimeTimes.get(gearId);
+          if (now - lastTime < 500) return;
         }
-        
-        function createRandomGear(x, y) {
-            const radius = 40 + Math.random() * 60;
-            const teeth = 8 + Math.floor(Math.random() * 16);
-            const speed = (Math.random() > 0.5 ? 1 : -1) * (0.5 + Math.random() * 1.5);
-            const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-            
-            return new Gear(x, y, radius, teeth, speed, color);
+
+        lastChimeTimes.set(gearId, now);
+
+        if (audioStarted && synth) {
+          // Play note
+          const note = notes[this.noteIndex % notes.length];
+          synth.playNote(note, 0.3, { release: 1.5 });
+
+          chimeCount++;
+          chimeCountEl.textContent = chimeCount;
+
+          this.glowing = true;
+          this.glowAmount = 1;
+
+          // Particle burst
+          createParticleBurst(this.x, this.y, this.color);
         }
-        
-        // Initialize with several gears for immediate visual impact
-        function initGears() {
-            const positions = [
-                [canvas.width * 0.25, canvas.height * 0.3],
-                [canvas.width * 0.75, canvas.height * 0.3],
-                [canvas.width * 0.5, canvas.height * 0.5],
-                [canvas.width * 0.3, canvas.height * 0.7],
-                [canvas.width * 0.7, canvas.height * 0.7],
-            ];
-            
-            positions.forEach(([x, y]) => {
-                gears.push(createRandomGear(x, y));
-            });
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        // Outer glow when chiming
+        if (this.glowing) {
+          const gradient = ctx.createRadialGradient(0, 0, this.radius * 0.5, 0, 0, this.radius * 1.5);
+          gradient.addColorStop(0, `${this.color}${Math.floor(this.glowAmount * 100).toString(16).padStart(2, '0')}`);
+          gradient.addColorStop(1, 'transparent');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(-this.radius * 1.5, -this.radius * 1.5, this.radius * 3, this.radius * 3);
         }
-        
-        initGears();
-        
-        // Click/tap to add gears
-        canvas.addEventListener('click', (e) => {
-            isAudioReady = true;
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            const newGear = createRandomGear(x, y);
-            gears.push(newGear);
-            
-            // Spawn particles on creation
-            particles.push(...newGear.spawnParticles());
-            
-            // Audio feedback
-            const audioCtx = getAudioContext();
-            if (audioCtx) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                
-                osc.frequency.value = 400;
-                osc.type = 'sine';
-                gain.gain.value = 0.1;
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-                
-osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.2);
-            }
-        });
-        
-        function animate() {
-            // Fade effect for trails
-            ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Update and draw gears
-            gears.forEach(gear => {
-                if (gear.update()) {
-                    totalRotations++;
-                }
-                gear.draw(ctx);
-            });
-            
-            // Update and draw particles
-            particles = particles.filter(p => p.life > 0);
-            particles.forEach(p => {
-                p.update();
-                p.draw(ctx);
-            });
-            
-            // Update stats
-            document.getElementById('gearCount').textContent = gears.length;
-            document.getElementById('rotations').textContent = totalRotations;
-            
-            requestAnimationFrame(animate);
+
+        // Draw gear body
+        ctx.fillStyle = '#0D0D0D';
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw gear teeth
+        for (let i = 0; i < this.teeth; i++) {
+          const toothAngle = (Math.PI * 2 * i) / this.teeth;
+          const toothX = Math.cos(toothAngle) * this.radius;
+          const toothY = Math.sin(toothAngle) * this.radius;
+
+          ctx.fillStyle = this.color;
+          ctx.globalAlpha = 0.5;
+          ctx.beginPath();
+          ctx.arc(toothX, toothY, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
         }
-        
-        animate();
-        
-        // Handle resize
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-    </script>
+
+        // Draw special tooth marker at top (this is what triggers the note)
+        const markerX = Math.cos(this.toothAngle) * (this.radius - 10);
+        const markerY = Math.sin(this.toothAngle) * (this.radius - 10);
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(markerX, markerY, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw inner circle/hub
+        const innerGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius * 0.4);
+        innerGradient.addColorStop(0, this.color);
+        innerGradient.addColorStop(1, '#0D0D0D');
+        ctx.fillStyle = innerGradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    // Particle system
+    const particles = [];
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 3;
+        this.vy = (Math.random() - 0.5) * 3;
+        this.life = 1;
+        this.decay = 0.02;
+        this.color = color;
+        this.size = Math.random() * 3 + 2;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.1; // Gravity
+        this.life -= this.decay;
+      }
+
+      draw() {
+        ctx.fillStyle = `${this.color}${Math.floor(this.life * 255).toString(16).padStart(2, '0')}`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function createParticleBurst(x, y, color) {
+      for (let i = 0; i < 15; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    }
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    function initGears() {
+      gears = [];
+
+      // Start with 3 gears of different sizes and speeds
+      // Positions spread across canvas
+      const positions = [
+        { x: width * 0.3, y: height * 0.5 },
+        { x: width * 0.5, y: height * 0.5 },
+        { x: width * 0.7, y: height * 0.5 }
+      ];
+
+      const rpms = [6, 4, 3]; // Slow rotations
+      const radii = [60, 80, 50];
+
+      for (let i = 0; i < 3; i++) {
+        gears.push(new Gear(
+          positions[i].x,
+          positions[i].y,
+          radii[i],
+          rpms[i],
+          colors[i % colors.length],
+          i
+        ));
+      }
+
+      gearCountEl.textContent = gears.length;
+    }
+
+    function addGear(x, y) {
+      if (gears.length >= 12) return; // Max 12 gears
+
+      const radius = Math.random() * 30 + 40; // 40-70
+      const rpm = Math.random() * 4 + 2; // 2-6 RPM
+      const noteIndex = gears.length % notes.length;
+      const color = colors[gears.length % colors.length];
+
+      gears.push(new Gear(x, y, radius, rpm, color, noteIndex));
+      gearCountEl.textContent = gears.length;
+
+      createParticleBurst(x, y, color);
+    }
+
+    let lastTime = Date.now();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const now = Date.now();
+      const deltaTime = now - lastTime;
+      lastTime = now;
+
+      // Fade trails
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Update and draw gears
+      if (isPlaying) {
+        gears.forEach(gear => gear.update(deltaTime));
+      }
+      gears.forEach(gear => gear.draw());
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+
+    // Event listeners
+    startBtn.addEventListener('click', async () => {
+      if (!audioStarted) {
+        audioStarted = true;
+        synth = new SH101Controller();
+        await synth.init();
+        synth.setFilter({ cutoff: 2000, resonance: 0.3 });
+        synth.setEnvelope({ attack: 0.01, decay: 0.3, sustain: 0.3, release: 1.5 });
+      }
+
+      if (isPlaying) {
+        isPlaying = false;
+        startBtn.textContent = 'START';
+      } else {
+        isPlaying = true;
+        startBtn.textContent = 'STOP';
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      gears = [];
+      particles.length = 0;
+      chimeCount = 0;
+      lastChimeTimes.clear();
+      chimeCountEl.textContent = chimeCount;
+      gearCountEl.textContent = gears.length;
+      initGears();
+    });
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      addGear(x, y);
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      addGear(x, y);
+    });
+
+    // Initialize
+    window.addEventListener('resize', resize);
+    resize();
+    initGears();
+    animate();
+  </script>
 </body>
 </html>
