@@ -2,20 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>STACK — Build a tower, watch it wobble</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STACK — Build it high</title>
   
   <!-- OG Tags -->
-  <meta property="og:title" content="STACK">
-  <meta property="og:description" content="Drag blocks to build a tower. Stack them perfectly or watch them wobble.">
+  <meta property="og:title" content="STACK — Build it high">
+  <meta property="og:description" content="Tap to drop blocks. Stack them high. Don't miss.">
   <meta property="og:image" content="https://intheamber.com/amber/stack-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/stack.html">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="STACK">
-  <meta name="twitter:description" content="Drag blocks to build a tower. Stack them perfectly or watch them wobble.">
+  <meta name="twitter:title" content="STACK — Build it high">
+  <meta name="twitter:description" content="Tap to drop blocks. Stack them high. Don't miss.">
   <meta name="twitter:image" content="https://intheamber.com/amber/stack-og.png">
-
+  
   <style>
     * {
       margin: 0;
@@ -27,526 +27,516 @@
     body {
       background: #000;
       color: #D4A574;
-      font-family: 'Courier New', monospace;
+      font-family: 'Space Mono', monospace;
       overflow: hidden;
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     #canvas {
       display: block;
-      width: 100vw;
-      height: 100vh;
-      cursor: grab;
-    }
-
-    #canvas.dragging {
-      cursor: grabbing;
+      background: #000;
+      cursor: pointer;
+      max-width: 100vw;
+      max-height: 80vh;
     }
 
     #ui {
-      position: fixed;
+      position: absolute;
       top: 20px;
-      left: 20px;
-      font-size: 14px;
-      line-height: 1.6;
+      left: 0;
+      right: 0;
+      text-align: center;
       pointer-events: none;
       z-index: 10;
     }
 
-    #stats {
-      background: rgba(0,0,0,0.8);
-      padding: 12px;
-      border: 1px solid #D4A574;
-    }
-
-    .stat-label {
-      color: #888;
-      text-transform: uppercase;
-      font-size: 10px;
-      letter-spacing: 1px;
-    }
-
-    .stat-value {
+    #score {
+      font-size: 3rem;
       color: #FFD700;
-      font-size: 18px;
+      text-shadow: 0 0 20px #FFD700;
       font-weight: bold;
+      margin-bottom: 5px;
     }
 
-    #instructions {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      font-size: 16px;
+    #highScore {
+      font-size: 1rem;
       color: #D4A574;
+      opacity: 0.7;
+    }
+
+    #status {
+      position: absolute;
+      bottom: 100px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 1.2rem;
+      color: #2D9596;
       pointer-events: none;
-      opacity: 1;
-      transition: opacity 0.5s;
+      z-index: 10;
     }
 
-    #instructions.hidden {
-      opacity: 0;
+    #startScreen, #gameOverScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 20;
     }
 
-    .big {
-      font-size: 24px;
+    #startScreen h1, #gameOverScreen h1 {
+      font-size: 4rem;
       color: #FFD700;
-      margin-bottom: 10px;
+      text-shadow: 0 0 30px #FFD700;
+      margin-bottom: 20px;
     }
 
-    #game-over {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      background: rgba(0,0,0,0.95);
-      padding: 30px;
-      border: 2px solid #FFD700;
-      display: none;
-      z-index: 100;
-    }
-
-    #game-over.visible {
-      display: block;
-    }
-
-    .title {
-      font-size: 28px;
-      color: #FFD700;
-      margin-bottom: 15px;
-    }
-
-    .final-score {
-      font-size: 48px;
+    #startScreen p, #gameOverScreen p {
+      font-size: 1.2rem;
       color: #D4A574;
-      margin: 20px 0;
+      margin-bottom: 30px;
+      max-width: 80%;
+      line-height: 1.6;
     }
 
-    .message {
-      font-size: 14px;
-      color: #888;
-      margin: 10px 0;
-    }
-
-    #restart {
-      margin-top: 20px;
-      padding: 12px 30px;
+    button {
       background: #D4A574;
       color: #000;
       border: none;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      font-family: 'Space Mono', monospace;
       font-weight: bold;
       cursor: pointer;
-      pointer-events: all;
+      border-radius: 8px;
       transition: all 0.2s;
+      pointer-events: all;
+      min-width: 200px;
+      min-height: 50px;
     }
 
-    #restart:hover {
+    button:hover {
       background: #FFD700;
       transform: scale(1.05);
     }
 
-    #restart:active {
+    button:active {
       transform: scale(0.95);
+    }
+
+    #gameOverScreen .finalScore {
+      font-size: 2rem;
+      color: #FFD700;
+      margin: 20px 0;
+    }
+
+    #gameOverScreen .newHigh {
+      color: #FF1493;
+      text-shadow: 0 0 20px #FF1493;
+    }
+
+    @media (max-width: 768px) {
+      #score {
+        font-size: 2rem;
+      }
+      #startScreen h1, #gameOverScreen h1 {
+        font-size: 2.5rem;
+      }
     }
   </style>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
-  
-  <div id="ui">
-    <div id="stats">
-      <div class="stat-label">Height</div>
-      <div class="stat-value" id="height">0</div>
-      <div class="stat-label" style="margin-top: 8px">Stability</div>
-      <div class="stat-value" id="stability">100%</div>
+  <div id="container">
+    <div id="ui">
+      <div id="score">0</div>
+      <div id="highScore">HIGH: 0</div>
     </div>
-  </div>
-
-  <div id="instructions">
-    <div class="big">STACK</div>
-    <div>Tap & drag to place blocks</div>
-    <div>Center them for stability</div>
-  </div>
-
-  <div id="game-over">
-    <div class="title">TOWER COLLAPSED</div>
-    <div class="final-score" id="final-height">0</div>
-    <div class="message" id="collapse-message"></div>
-    <div class="message" id="best-message"></div>
-    <button id="restart">BUILD AGAIN</button>
+    
+    <div id="status"></div>
+    
+    <canvas id="canvas"></canvas>
+    
+    <div id="startScreen">
+      <h1>STACK</h1>
+      <p>Tap to drop blocks.<br>Stack them high.<br>Perfect drops = bonus points.<br>Don't miss.</p>
+      <button id="startBtn">START</button>
+    </div>
+    
+    <div id="gameOverScreen" style="display: none;">
+      <h1>STACK FELL</h1>
+      <div class="finalScore"></div>
+      <p></p>
+      <button id="retryBtn">TRY AGAIN</button>
+    </div>
   </div>
 
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const heightDisplay = document.getElementById('height');
-    const stabilityDisplay = document.getElementById('stability');
-    const instructions = document.getElementById('instructions');
-    const gameOverScreen = document.getElementById('game-over');
-    const finalHeightDisplay = document.getElementById('final-height');
-    const collapseMessage = document.getElementById('collapse-message');
-    const bestMessage = document.getElementById('best-message');
-    const restartBtn = document.getElementById('restart');
+    const scoreEl = document.getElementById('score');
+    const highScoreEl = document.getElementById('highScore');
+    const statusEl = document.getElementById('status');
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const startBtn = document.getElementById('startBtn');
+    const retryBtn = document.getElementById('retryBtn');
 
-    let width, height, centerX;
-    let blocks = [];
-    let draggingBlock = null;
-    let currentBlock = null;
-    let gameActive = true;
-    let totalBlocks = 0;
-    let stability = 100;
+    // Set canvas size
+    const setCanvasSize = () => {
+      const maxWidth = Math.min(window.innerWidth, 600);
+      const maxHeight = Math.min(window.innerHeight * 0.8, 800);
+      canvas.width = maxWidth;
+      canvas.height = maxHeight;
+    };
+    setCanvasSize();
+    window.addEventListener('resize', setCanvasSize);
+
+    // Audio context
     let audioContext;
-    let bestHeight = parseInt(localStorage.getItem('stack-best-height') || '0');
-
-    const BLOCK_WIDTH = 100;
-    const BLOCK_HEIGHT = 40;
-    const GROUND_Y = 80;
-    const SPAWN_Y_OFFSET = 200;
-    
-    const COLORS = ['#FFD700', '#D4A574', '#2D9596', '#7B68EE', '#FF69B4', '#40E0D0', '#FFD700'];
-
-    function resizeCanvas() {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-      centerX = width / 2;
-    }
-
-    function initAudio() {
+    const initAudio = () => {
       if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
       }
-    }
+    };
 
-    function playTone(freq, duration = 100, type = 'sine') {
+    // Sound functions
+    const playDrop = () => {
       if (!audioContext) return;
       const osc = audioContext.createOscillator();
       const gain = audioContext.createGain();
       osc.connect(gain);
       gain.connect(audioContext.destination);
-      osc.frequency.value = freq;
-      osc.type = type;
-      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration/1000);
+      osc.frequency.value = 440;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
       osc.start();
-      osc.stop(audioContext.currentTime + duration/1000);
-    }
+      osc.stop(audioContext.currentTime + 0.1);
+    };
 
-    function spawnNewBlock() {
-      if (!gameActive) return;
-      
-      const colorIndex = totalBlocks % COLORS.length;
-      currentBlock = {
-        x: centerX,
-        y: height - SPAWN_Y_OFFSET,
-        width: BLOCK_WIDTH,
-        height: BLOCK_HEIGHT,
-        color: COLORS[colorIndex],
-        rotation: 0,
-        vx: 0,
-        vy: 0,
-        rotationSpeed: 0,
-        isPlaced: false,
-        isDragging: false
-      };
-    }
+    const playPerfect = () => {
+      if (!audioContext) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = 880;
+      osc.type = 'triangle';
+      gain.gain.setValueAtTime(0.4, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+      osc.start();
+      osc.stop(audioContext.currentTime + 0.2);
+    };
 
-    function getTopOfStack() {
-      if (blocks.length === 0) {
-        return height - GROUND_Y;
-      }
-      return Math.min(...blocks.map(b => b.y));
-    }
+    const playGameOver = () => {
+      if (!audioContext) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.setValueAtTime(440, audioContext.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(110, audioContext.currentTime + 0.5);
+      osc.type = 'sawtooth';
+      gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      osc.start();
+      osc.stop(audioContext.currentTime + 0.5);
+    };
 
-    function placeBlock(block) {
-      if (!gameActive) return;
-      
-      const topY = getTopOfStack();
-      block.y = topY - block.height;
-      block.isPlaced = true;
-      blocks.push(block);
-      totalBlocks++;
-      
-      // Calculate offset from center
-      const offset = Math.abs(block.x - centerX);
-      const maxOffset = BLOCK_WIDTH / 2;
-      const offsetRatio = Math.min(offset / maxOffset, 1);
-      
-      // Perfect placement
-      if (offset < 5) {
-        playTone(800 + totalBlocks * 20, 150);
-        stability = Math.min(100, stability + 2);
-      } else {
-        playTone(400 - offsetRatio * 200, 100);
-        stability -= offsetRatio * 15;
-        block.rotationSpeed = (block.x - centerX) * 0.001;
-      }
-      
-      // Check if unstable
-      if (stability <= 0) {
-        collapse();
-      } else {
-        // Spawn next block
-        setTimeout(spawnNewBlock, 100);
-      }
-      
-      heightDisplay.textContent = totalBlocks;
-      stabilityDisplay.textContent = Math.round(stability) + '%';
-      
-      if (totalBlocks === 1) {
-        instructions.classList.add('hidden');
-      }
-    }
+    // Game state
+    let gameState = 'start'; // start, playing, gameover
+    let score = 0;
+    let highScore = parseInt(localStorage.getItem('stack_highscore') || '0');
+    let blocks = [];
+    let currentBlock = null;
+    let blockSpeed = 2;
+    let direction = 1;
+    let particles = [];
 
-    function collapse() {
-      gameActive = false;
-      playTone(200, 500, 'sawtooth');
-      
-      // Apply collapse physics
-      blocks.forEach(block => {
-        const offsetFromCenter = block.x - centerX;
-        block.vx = offsetFromCenter * 0.05 + (Math.random() - 0.5) * 2;
-        block.vy = -Math.random() * 3;
-        block.rotationSpeed = (Math.random() - 0.5) * 0.1;
-      });
-      
-      // Show game over after animation
-      setTimeout(() => {
-        finalHeightDisplay.textContent = totalBlocks;
+    // Colors
+    const colors = ['#FFD700', '#D4A574', '#2D9596', '#7B68EE', '#FF1493', '#FF6B6B', '#00CED1', '#32CD32'];
+
+    // Update high score display
+    highScoreEl.textContent = `HIGH: ${highScore}`;
+
+    // Block class
+    class Block {
+      constructor(x, y, width, height, color) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.color = color;
+        this.isMoving = false;
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
         
-        if (totalBlocks > bestHeight) {
-          bestHeight = totalBlocks;
-          localStorage.setItem('stack-best-height', bestHeight);
-          bestMessage.textContent = `NEW BEST! Previous: ${bestHeight - totalBlocks === 0 ? '0' : bestHeight - totalBlocks}`;
-          bestMessage.style.color = '#FFD700';
-        } else {
-          bestMessage.textContent = `Personal best: ${bestHeight}`;
-          bestMessage.style.color = '#888';
+        // Glow effect
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.color;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        ctx.shadowBlur = 0;
+      }
+
+      update() {
+        if (this.isMoving) {
+          this.x += blockSpeed * direction;
+          
+          // Bounce at edges
+          if (this.x <= 0) {
+            this.x = 0;
+            direction = 1;
+          } else if (this.x + this.width >= canvas.width) {
+            this.x = canvas.width - this.width;
+            direction = -1;
+          }
         }
-        
-        if (totalBlocks === 0) {
-          collapseMessage.textContent = "You didn't even place one block.";
-        } else if (totalBlocks < 3) {
-          collapseMessage.textContent = "That tower was very short-lived.";
-        } else if (totalBlocks < 5) {
-          collapseMessage.textContent = "Not bad for a first attempt.";
-        } else if (totalBlocks < 10) {
-          collapseMessage.textContent = "Decent height. Watch that wobble.";
-        } else if (totalBlocks < 15) {
-          collapseMessage.textContent = "Impressive! The higher it gets, the harder it falls.";
-        } else {
-          collapseMessage.textContent = "LEGENDARY. That tower defied physics.";
-        }
-        
-        gameOverScreen.classList.add('visible');
-      }, 2000);
+      }
     }
 
-    function restart() {
+    // Particle class
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 8;
+        this.vy = (Math.random() - 0.5) * 8 - 2;
+        this.color = color;
+        this.life = 1;
+        this.size = Math.random() * 4 + 2;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2; // gravity
+        this.life -= 0.02;
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.life;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Initialize game
+    const initGame = () => {
+      score = 0;
       blocks = [];
-      currentBlock = null;
-      draggingBlock = null;
-      gameActive = true;
-      totalBlocks = 0;
-      stability = 100;
-      heightDisplay.textContent = '0';
-      stabilityDisplay.textContent = '100%';
-      gameOverScreen.classList.remove('visible');
-      instructions.classList.remove('hidden');
-      spawnNewBlock();
-    }
-
-    function update() {
-      // Update placed blocks (wobble and physics)
-      blocks.forEach(block => {
-        if (block.isPlaced) {
-          // Apply rotation wobble
-          block.rotation += block.rotationSpeed;
-          
-          // Decay wobble
-          block.rotationSpeed *= 0.98;
-          
-          // Apply gravity if collapsed
-          if (!gameActive) {
-            block.vy += 0.5;
-            block.y += block.vy;
-            block.x += block.vx;
-            block.rotation += block.rotationSpeed;
-          }
-        }
-      });
+      particles = [];
+      blockSpeed = 2;
+      direction = 1;
+      scoreEl.textContent = score;
       
-      // Update stability based on wobble
-      if (gameActive && blocks.length > 0) {
-        const totalWobble = blocks.reduce((sum, b) => sum + Math.abs(b.rotationSpeed), 0);
-        if (totalWobble > 0.05) {
-          stability -= 0.1;
-          stabilityDisplay.textContent = Math.round(Math.max(0, stability)) + '%';
-          if (stability <= 0) {
-            collapse();
-          }
+      // First block (base)
+      const baseWidth = 120;
+      const baseHeight = 30;
+      const baseBlock = new Block(
+        canvas.width / 2 - baseWidth / 2,
+        canvas.height - baseHeight - 10,
+        baseWidth,
+        baseHeight,
+        colors[0]
+      );
+      blocks.push(baseBlock);
+      
+      // Spawn first moving block
+      spawnBlock();
+    };
+
+    const spawnBlock = () => {
+      const lastBlock = blocks[blocks.length - 1];
+      const height = 30;
+      const width = lastBlock.width;
+      const y = lastBlock.y - height - 2;
+      const color = colors[blocks.length % colors.length];
+      
+      currentBlock = new Block(0, y, width, height, color);
+      currentBlock.isMoving = true;
+      
+      // Increase speed slightly
+      blockSpeed = Math.min(2 + blocks.length * 0.1, 6);
+    };
+
+    const dropBlock = () => {
+      if (!currentBlock || !currentBlock.isMoving) return;
+      
+      currentBlock.isMoving = false;
+      const lastBlock = blocks[blocks.length - 1];
+      
+      // Check overlap
+      const overlapLeft = Math.max(currentBlock.x, lastBlock.x);
+      const overlapRight = Math.min(
+        currentBlock.x + currentBlock.width,
+        lastBlock.x + lastBlock.width
+      );
+      const overlap = overlapRight - overlapLeft;
+      
+      if (overlap <= 0) {
+        // Complete miss - game over
+        gameOver();
+        return;
+      }
+      
+      // Calculate how well centered the drop was
+      const lastCenter = lastBlock.x + lastBlock.width / 2;
+      const currentCenter = currentBlock.x + currentBlock.width / 2;
+      const centerOffset = Math.abs(currentCenter - lastCenter);
+      
+      // Perfect drop bonus (within 5 pixels of center)
+      if (centerOffset < 5) {
+        score += 10;
+        statusEl.textContent = 'PERFECT! +10';
+        statusEl.style.color = '#FF1493';
+        playPerfect();
+        setTimeout(() => { statusEl.textContent = ''; }, 1000);
+        
+        // Perfect drop particles
+        for (let i = 0; i < 30; i++) {
+          particles.push(new Particle(
+            currentCenter,
+            currentBlock.y,
+            '#FF1493'
+          ));
+        }
+      } else {
+        score += 1;
+        playDrop();
+        
+        // Regular particles
+        for (let i = 0; i < 15; i++) {
+          particles.push(new Particle(
+            currentBlock.x + currentBlock.width / 2,
+            currentBlock.y,
+            currentBlock.color
+          ));
         }
       }
-    }
+      
+      scoreEl.textContent = score;
+      
+      // Trim block to overlap area
+      currentBlock.x = overlapLeft;
+      currentBlock.width = overlap;
+      blocks.push(currentBlock);
+      
+      // Check if we need to scroll down
+      if (blocks.length > 15) {
+        const shift = 32;
+        blocks.forEach(block => {
+          block.y += shift;
+        });
+      }
+      
+      // Spawn next block
+      if (currentBlock.y > 50) {
+        spawnBlock();
+      } else {
+        gameOver();
+      }
+    };
 
-    function draw() {
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, width, height);
+    const gameOver = () => {
+      gameState = 'gameover';
+      playGameOver();
       
-      // Draw ground line
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, height - GROUND_Y);
-      ctx.lineTo(width, height - GROUND_Y);
-      ctx.stroke();
+      const finalScoreEl = gameOverScreen.querySelector('.finalScore');
+      const messageEl = gameOverScreen.querySelector('p');
       
-      // Draw center guide line
-      ctx.strokeStyle = 'rgba(255, 215, 0, 0.1)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(centerX, 0);
-      ctx.lineTo(centerX, height);
-      ctx.stroke();
+      finalScoreEl.textContent = `SCORE: ${score}`;
       
-      // Draw placed blocks
-      blocks.forEach(block => {
-        ctx.save();
-        ctx.translate(block.x, block.y + block.height/2);
-        ctx.rotate(block.rotation);
-        
-        // Block
-        ctx.fillStyle = block.color;
-        ctx.fillRect(-block.width/2, -block.height/2, block.width, block.height);
-        
-        // Highlight
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.fillRect(-block.width/2, -block.height/2, block.width, 5);
-        
-        // Border
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(-block.width/2, -block.height/2, block.width, block.height);
-        
-        ctx.restore();
-      });
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('stack_highscore', highScore);
+        highScoreEl.textContent = `HIGH: ${highScore}`;
+        finalScoreEl.classList.add('newHigh');
+        messageEl.textContent = 'NEW HIGH SCORE!';
+      } else {
+        finalScoreEl.classList.remove('newHigh');
+        const diff = highScore - score;
+        messageEl.textContent = `${diff} away from your best.`;
+      }
       
-      // Draw current block
-      if (currentBlock && !currentBlock.isPlaced) {
-        ctx.save();
-        ctx.translate(currentBlock.x, currentBlock.y + currentBlock.height/2);
-        
-        // Block
-        ctx.fillStyle = currentBlock.color;
-        ctx.globalAlpha = currentBlock.isDragging ? 0.9 : 0.7;
-        ctx.fillRect(-currentBlock.width/2, -currentBlock.height/2, currentBlock.width, currentBlock.height);
-        
-        // Highlight
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.fillRect(-currentBlock.width/2, -currentBlock.height/2, currentBlock.width, 5);
-        
-        // Border
-        ctx.strokeStyle = currentBlock.isDragging ? '#FFD700' : 'rgba(255, 215, 0, 0.5)';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(-currentBlock.width/2, -currentBlock.height/2, currentBlock.width, currentBlock.height);
-        
-        // Drop zone indicator if dragging
-        if (currentBlock.isDragging) {
-          ctx.globalAlpha = 0.3;
-          const topY = getTopOfStack();
-          ctx.strokeStyle = '#2D9596';
-          ctx.lineWidth = 2;
-          ctx.setLineDash([5, 5]);
-          ctx.strokeRect(-currentBlock.width/2, topY - currentBlock.y - currentBlock.height/2, currentBlock.width, currentBlock.height);
-          ctx.setLineDash([]);
+      gameOverScreen.style.display = 'flex';
+    };
+
+    // Game loop
+    const gameLoop = () => {
+      // Clear with fade
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      if (gameState === 'playing') {
+        // Update current block
+        if (currentBlock) {
+          currentBlock.update();
+          currentBlock.draw();
         }
         
-        ctx.restore();
+        // Draw all placed blocks
+        blocks.forEach(block => block.draw());
+        
+        // Update and draw particles
+        particles = particles.filter(p => p.life > 0);
+        particles.forEach(p => {
+          p.update();
+          p.draw();
+        });
       }
-    }
-
-    function gameLoop() {
-      update();
-      draw();
+      
       requestAnimationFrame(gameLoop);
-    }
+    };
 
-    // Input handling
-    function getPos(e) {
-      const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
-      };
-    }
-
-    function isInsideBlock(pos, block) {
-      return pos.x >= block.x - block.width/2 &&
-             pos.x <= block.x + block.width/2 &&
-             pos.y >= block.y &&
-             pos.y <= block.y + block.height;
-    }
-
-    function onStart(e) {
-      e.preventDefault();
+    // Start game
+    const startGame = () => {
       initAudio();
-      
-      if (!gameActive || !currentBlock || currentBlock.isPlaced) return;
-      
-      const pos = getPos(e);
-      // Tap anywhere to grab the current block
-      draggingBlock = currentBlock;
-      draggingBlock.isDragging = true;
-      draggingBlock.x = pos.x; // Snap block to touch position
-      canvas.classList.add('dragging');
-      playTone(600, 50);
-    }
-
-    function onMove(e) {
-      e.preventDefault();
-      if (!draggingBlock) return;
-      
-      const pos = getPos(e);
-      draggingBlock.x = pos.x;
-    }
-
-    function onEnd(e) {
-      e.preventDefault();
-      if (!draggingBlock) return;
-      
-      draggingBlock.isDragging = false;
-      placeBlock(draggingBlock);
-      draggingBlock = null;
-      currentBlock = null;
-      canvas.classList.remove('dragging');
-    }
+      gameState = 'playing';
+      startScreen.style.display = 'none';
+      gameOverScreen.style.display = 'none';
+      initGame();
+    };
 
     // Event listeners
-    canvas.addEventListener('mousedown', onStart);
-    canvas.addEventListener('mousemove', onMove);
-    canvas.addEventListener('mouseup', onEnd);
-    canvas.addEventListener('touchstart', onStart, { passive: false });
-    canvas.addEventListener('touchmove', onMove, { passive: false });
-    canvas.addEventListener('touchend', onEnd, { passive: false });
-    
-    restartBtn.addEventListener('click', () => {
-      playTone(800, 100);
-      restart();
+    startBtn.addEventListener('click', startGame);
+    retryBtn.addEventListener('click', startGame);
+
+    canvas.addEventListener('click', () => {
+      if (gameState === 'playing') {
+        dropBlock();
+      }
     });
 
-    // Initialize
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-    spawnNewBlock();
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (gameState === 'playing') {
+        dropBlock();
+      }
+    });
+
+    // Start game loop
     gameLoop();
   </script>
 </body>
