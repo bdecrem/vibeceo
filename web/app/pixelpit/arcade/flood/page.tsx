@@ -384,6 +384,7 @@ export default function FloodGame() {
           -webkit-user-select: none;
           touch-action: manipulation;
         }
+
       `}</style>
 
       <div style={{
@@ -393,7 +394,38 @@ export default function FloodGame() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
+        position: 'relative',
+        overflow: 'hidden',
       }}>
+        {/* Scattered confetti dots */}
+        {(gameState === 'start' || gameState === 'playing') && (
+          <>
+            {Array.from({ length: 30 }, (_, i) => {
+              const seed = i * 137.508; // golden angle spread
+              const x = ((seed * 7) % 100);
+              const y = ((seed * 13) % 100);
+              const size = 8 + (i % 5) * 8;
+              const color = PALETTE[i % PALETTE.length];
+              const shapes = ['50%', '3px', '50% 3px 50% 3px'] as const;
+              const shape = shapes[i % 3];
+              const rotate = (i * 37) % 360;
+              return (
+                <div key={i} style={{
+                  position: 'absolute',
+                  left: `${x}%`,
+                  top: `${y}%`,
+                  width: size,
+                  height: size,
+                  background: color,
+                  borderRadius: shape,
+                  transform: `rotate(${rotate}deg)`,
+                  opacity: 0.15 + (i % 3) * 0.08,
+                  pointerEvents: 'none',
+                }} />
+              );
+            })}
+          </>
+        )}
 
         {/* START SCREEN */}
         {gameState === 'start' && (
