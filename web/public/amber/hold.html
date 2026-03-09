@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HOLD MUSIC — Customer Service for Life</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="HOLD MUSIC — Amber">
+  <meta property="og:description" content="You're on hold with Customer Service for Life. Your estimated wait time is... increasing.">
+  <meta property="og:image" content="https://intheamber.com/amber/hold-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/hold.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="HOLD MUSIC — Amber">
+  <meta name="twitter:description" content="You're on hold with Customer Service for Life. Your estimated wait time is... increasing.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/hold-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #000;
+      color: #D4A574;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .phone {
+      width: 100%;
+      max-width: 400px;
+      background: #0D0D0D;
+      border: 3px solid #D4A574;
+      border-radius: 30px;
+      padding: 30px 20px;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+    }
+    
+    .screen {
+      background: #000;
+      border: 2px solid #2D9596;
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+      min-height: 300px;
+    }
+    
+    .company {
+      text-align: center;
+      font-size: 1.2rem;
+      color: #FFD700;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    
+    .tagline {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #2D9596;
+      margin-bottom: 30px;
+      font-style: italic;
+    }
+    
+    .status {
+      text-align: center;
+      font-size: 1.5rem;
+      color: #D4A574;
+      margin: 20px 0;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    
+    .wait-time {
+      text-align: center;
+      font-size: 1rem;
+      color: #FFD700;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    
+    .minutes {
+      font-size: 2rem;
+      color: #ff6b6b;
+    }
+    
+    .message {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #2D9596;
+      margin: 30px 0;
+      min-height: 40px;
+      line-height: 1.4;
+    }
+    
+    .menu {
+      font-size: 0.75rem;
+      color: #888;
+      margin: 20px 0;
+      line-height: 1.8;
+    }
+    
+    .menu-item {
+      margin: 8px 0;
+    }
+    
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .key {
+      background: #1a1a1a;
+      border: 2px solid #D4A574;
+      color: #FFD700;
+      font-size: 1.5rem;
+      font-weight: bold;
+      padding: 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.1s;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .key:active {
+      background: #D4A574;
+      color: #000;
+      transform: scale(0.95);
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+    }
+    
+    .key.zero {
+      grid-column: 2;
+    }
+    
+    .warning {
+      text-align: center;
+      font-size: 0.7rem;
+      color: #666;
+      margin-top: 20px;
+      font-style: italic;
+    }
+    
+    .music-indicator {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #7B68EE;
+      margin-top: 20px;
+    }
+    
+    .start-btn {
+      width: 100%;
+      padding: 20px;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    
+    .start-btn:active {
+      background: #FFD700;
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <button class="start-btn" id="startBtn">TAP TO CALL</button>
+    
+    <div class="screen" id="screen" style="display: none;">
+      <div class="company">CUSTOMER SERVICE FOR LIFE™</div>
+      <div class="tagline">We're here for you. Eventually.</div>
+      
+      <div class="status">Please hold...</div>
+      
+      <div class="wait-time">
+        Your estimated wait time is:<br>
+        <span class="minutes" id="waitTime">37</span> minutes
+      </div>
+      
+      <div class="message" id="message">Your call is important to us.</div>
+      
+      <div class="menu">
+        <div class="menu-item">Press 1 for Existential Crisis Support</div>
+        <div class="menu-item">Press 2 for Meaning of Life Inquiries</div>
+        <div class="menu-item">Press 3 to Speak to a Manager (unavailable)</div>
+        <div class="menu-item">Press 0 to Return to Main Menu</div>
+      </div>
+      
+      <div class="music-indicator">♪ ♫ Hold Music Playing ♪ ♫</div>
+    </div>
+    
+    <div class="keypad" id="keypad" style="display: none;">
+      <div class="key" data-key="1">1</div>
+      <div class="key" data-key="2">2</div>
+      <div class="key" data-key="3">3</div>
+      <div class="key" data-key="4">4</div>
+      <div class="key" data-key="5">5</div>
+      <div class="key" data-key="6">6</div>
+      <div class="key" data-key="7">7</div>
+      <div class="key" data-key="8">8</div>
+      <div class="key" data-key="9">9</div>
+      <div class="key" data-key="*">*</div>
+      <div class="key zero" data-key="0">0</div>
+      <div class="key" data-key="#">#</div>
+    </div>
+    
+    <div class="warning" id="warning" style="display: none;">
+      You cannot hang up. This is life.
+    </div>
+  </div>
+
+  <script>
+    let audioContext;
+    let holdMusicGain;
+    let holdMusicOsc1, holdMusicOsc2;
+    let waitMinutes = 37;
+    let messageIndex = 0;
+    let started = false;
+    
+    const messages = [
+      "Your call is important to us.",
+      "Please continue to hold.",
+      "All representatives are currently assisting other customers.",
+      "Did you know you can visit our website at www.life.com?",
+      "We appreciate your patience.",
+      "Your call will be answered in the order it was received.",
+      "Thank you for holding.",
+      "We're experiencing higher than normal call volume.",
+      "Please stay on the line.",
+      "Your estimated wait time may vary.",
+      "We value your business.",
+      "Representatives are standing by to assist you.",
+      "This call may be monitored for quality assurance.",
+      "Por favor oprima el dos para español. Just kidding, we don't have that option.",
+      "Have you tried turning it off and on again?",
+      "The meaning you seek is important to us."
+    ];
+    
+    const responses = {
+      '1': "Transferring you to Existential Crisis Support... *click* Please hold.",
+      '2': "The Meaning of Life department is currently closed. Please hold.",
+      '3': "All managers are in a meeting. Please hold.",
+      '0': "Returning to main menu... Please hold.",
+      '4': "That's not a valid option. Please hold.",
+      '5': "Nice try. Please hold.",
+      '6': "We appreciate your input. Please hold.",
+      '7': "Thank you for your patience. Please hold.",
+      '8': "Please listen carefully as our menu options have changed. Please hold.",
+      '9': "This number has been disconnected. Just kidding. Please hold.",
+      '*': "We're sorry, we didn't catch that. Please hold.",
+      '#': "To repeat this menu, press 0. Please hold."
+    };
+    
+    document.getElementById('startBtn').addEventListener('click', startCall);
+    
+    function startCall() {
+      if (started) return;
+      started = true;
+      
+      // Hide start button, show screen
+      document.getElementById('startBtn').style.display = 'none';
+      document.getElementById('screen').style.display = 'block';
+      document.getElementById('keypad').style.display = 'grid';
+      document.getElementById('warning').style.display = 'block';
+      
+      // Start audio
+      audioContext = new AudioContext();
+      startHoldMusic();
+      
+      // Start timers
+      setInterval(updateWaitTime, 3000);
+      setInterval(updateMessage, 8000);
+      
+      // Add keypad listeners
+      document.querySelectorAll('.key').forEach(key => {
+        key.addEventListener('click', () => handleKeyPress(key.dataset.key));
+      });
+    }
+    
+    function startHoldMusic() {
+      // Terrible muzak-style hold music
+      // Two oscillators playing a boring major chord progression
+      holdMusicGain = audioContext.createGain();
+      holdMusicGain.gain.value = 0.15;
+      holdMusicGain.connect(audioContext.destination);
+      
+      // Create two oscillators for harmony
+      holdMusicOsc1 = audioContext.createOscillator();
+      holdMusicOsc2 = audioContext.createOscillator();
+      
+      holdMusicOsc1.type = 'sine';
+      holdMusicOsc2.type = 'sine';
+      
+      holdMusicOsc1.connect(holdMusicGain);
+      holdMusicOsc2.connect(holdMusicGain);
+      
+      // Start with C major chord
+      holdMusicOsc1.frequency.value = 523.25; // C5
+      holdMusicOsc2.frequency.value = 659.25; // E5
+      
+      holdMusicOsc1.start();
+      holdMusicOsc2.start();
+      
+      // Boring chord progression loop
+      playChordProgression();
+    }
+    
+    function playChordProgression() {
+      const progression = [
+        [523.25, 659.25], // C - E (C major)
+        [587.33, 739.99], // D - F# (D major)
+        [392.00, 493.88], // G - B (G major)
+        [523.25, 659.25], // C - E (C major)
+      ];
+      
+      let chordIndex = 0;
+      
+      setInterval(() => {
+const [freq1, freq2] = progression[chordIndex];
+        
+        holdMusicOsc1.frequency.exponentialRampToValueAtTime(
+          freq1,
+          audioContext.currentTime + 0.5
+        );
+        holdMusicOsc2.frequency.exponentialRampToValueAtTime(
+          freq2,
+          audioContext.currentTime + 0.5
+        );
+        
+        chordIndex = (chordIndex + 1) % progression.length;
+      }, 4000);
+    }
+    
+    function updateWaitTime() {
+      // Wait time only increases, never decreases
+      waitMinutes += Math.floor(Math.random() * 3) + 1;
+      document.getElementById('waitTime').textContent = waitMinutes;
+    }
+    
+    function updateMessage() {
+      messageIndex = (messageIndex + 1) % messages.length;
+      document.getElementById('message').textContent = messages[messageIndex];
+    }
+    
+    function handleKeyPress(key) {
+      if (!audioContext) return;
+      
+      // Play DTMF tone
+      playDTMF(key);
+      
+      // Show response message
+      const response = responses[key] || "Please hold.";
+      const messageEl = document.getElementById('message');
+      messageEl.textContent = response;
+      messageEl.style.color = '#FFD700';
+      
+      // Reset message color after a moment
+      setTimeout(() => {
+        messageEl.style.color = '#2D9596';
+      }, 2000);
+    }
+    
+    function playDTMF(key) {
+      // Classic phone DTMF tones
+      const frequencies = {
+        '1': [697, 1209], '2': [697, 1336], '3': [697, 1477],
+        '4': [770, 1209], '5': [770, 1336], '6': [770, 1477],
+        '7': [852, 1209], '8': [852, 1336], '9': [852, 1477],
+        '*': [941, 1209], '0': [941, 1336], '#': [941, 1477]
+      };
+      
+      const [freq1, freq2] = frequencies[key] || [440, 440];
+      
+      const osc1 = audioContext.createOscillator();
+      const osc2 = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc1.frequency.value = freq1;
+      osc2.frequency.value = freq2;
+      gain.gain.value = 0.2;
+      
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc1.start();
+      osc2.start();
+      
+      setTimeout(() => {
+        osc1.stop();
+        osc2.stop();
+      }, 200);
+    }
+  </script>
+</body>
+</html>
