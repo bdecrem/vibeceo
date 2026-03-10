@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>POTATO - Hot Potato Game</title>
+
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="POTATO - Hot Potato Game">
+    <meta property="og:description" content="Pass the phone before it explodes! Tap to cool the potato, then pass to the next player. How many rounds can you survive?">
+    <meta property="og:image" content="https://intheamber.com/amber/potato-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/potato.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/potato-og.png">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            font-family: 'Space Mono', monospace;
+            color: #D4A574;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: pointer;
+        }
+
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #status {
+            font-size: 1.5rem;
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        }
+
+        #instructions {
+            font-size: 0.9rem;
+            color: #2D9596;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #2D9596;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        #passButton {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 20px 40px;
+            font-size: 1.5rem;
+            font-family: 'Space Mono', monospace;
+            background: #2D9596;
+            color: #000;
+            border: 3px solid #FFD700;
+            border-radius: 10px;
+            cursor: pointer;
+            pointer-events: all;
+            box-shadow: 0 0 30px rgba(45, 149, 150, 0.8);
+            display: none;
+            font-weight: bold;
+            min-width: 200px;
+        }
+
+        #passButton:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        #gameOver {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(13, 13, 13, 0.95);
+            padding: 40px;
+            border: 3px solid #D4A574;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            pointer-events: all;
+            max-width: 90%;
+        }
+
+        #gameOver h2 {
+            font-size: 2rem;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.6);
+        }
+
+        #gameOver p {
+            font-size: 1.2rem;
+            color: #FFD700;
+            margin-bottom: 30px;
+        }
+
+        #playAgainButton {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-family: 'Space Mono', monospace;
+            background: #D4A574;
+            color: #000;
+            border: 3px solid #FFD700;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #playAgainButton:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div id="ui">
+        <div id="status">TAP TO START</div>
+        <div id="instructions">Keep the potato cool!</div>
+        <div id="stats">
+            <div class="stat">
+                <div class="stat-label">Heat</div>
+                <div class="stat-value" id="heatStat">0%</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Taps</div>
+                <div class="stat-value" id="tapsStat">0/0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Passes</div>
+                <div class="stat-value" id="passesStat">0</div>
+            </div>
+        </div>
+    </div>
+
+    <button id="passButton">PASS PHONE →</button>
+
+    <div id="gameOver">
+        <h2>💥 EXPLODED! 💥</h2>
+        <p id="finalScore">Total passes: 0</p>
+        <button id="playAgainButton">PLAY AGAIN</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Audio context
+        let audioContext;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playTone(frequency, duration, type = 'sine', volume = 0.3) {
+            if (!audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.type = type;
+            osc.frequency.value = frequency;
+            gain.gain.value = volume;
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            osc.start();
+            osc.stop(audioContext.currentTime + duration);
+        }
+
+        function playSizzle() {
+            if (!audioContext) return;
+            const noise = audioContext.createBufferSource();
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < data.length; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            noise.buffer = buffer;
+
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 2000;
+
+            const gain = audioContext.createGain();
+            gain.gain.value = 0.1;
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+            noise.start();
+        }
+
+        function playExplosion() {
+            if (!audioContext) return;
+            const noise = audioContext.createBufferSource();
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.5, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < data.length; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            noise.buffer = buffer;
+
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1000, audioContext.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.5);
+
+            const gain = audioContext.createGain();
+            gain.gain.setValueAtTime(0.5, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+            noise.start();
+        }
+
+        // Game state
+        let gameState = 'waiting'; // waiting, playing, cooled, exploded
+        let heat = 0; // 0-100
+        let heatRate = 0.5; // heat increase per frame
+        let tapsNeeded = 8;
+        let currentTaps = 0;
+        let totalPasses = 0;
+        let particles = [];
+        let explosionParticles = [];
+
+        const potatoRadius = 100;
+        const potatoX = canvas.width / 2;
+        const potatoY = canvas.height / 2;
+
+        class Particle {
+            constructor(x, y, vx, vy, color, life) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.color = color;
+                this.life = life;
+                this.maxLife = life;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2; // gravity
+                this.life--;
+            }
+
+            draw() {
+                const alpha = this.life / this.maxLife;
+                ctx.fillStyle = this.color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function spawnHeatParticles() {
+            if (gameState !== 'playing') return;
+
+            // Spawn particles based on heat level
+            const particleCount = Math.floor(heat / 20);
+            for (let i = 0; i < particleCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = potatoRadius + Math.random() * 20;
+                const x = potatoX + Math.cos(angle) * distance;
+                const y = potatoY + Math.sin(angle) * distance;
+                const vx = (Math.random() - 0.5) * 2;
+                const vy = -Math.random() * 3 - 1;
+
+                const color = getHeatColor(heat);
+                particles.push(new Particle(x, y, vx, vy, color, 60));
+            }
+        }
+
+        function spawnExplosion() {
+            for (let i = 0; i < 100; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 10 + 5;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+
+                const colors = ['rgb(255, 107, 107)', 'rgb(255, 215, 0)', 'rgb(255, 140, 0)', 'rgb(212, 165, 116)'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+
+                explosionParticles.push(new Particle(potatoX, potatoY, vx, vy, color, 120));
+            }
+        }
+
+        function getHeatColor(heatLevel) {
+            if (heatLevel < 25) return 'rgb(212, 165, 116)'; // amber
+            if (heatLevel < 50) return 'rgb(255, 215, 0)'; // gold
+            if (heatLevel < 75) return 'rgb(255, 140, 0)'; // orange/coral
+            return 'rgb(255, 107, 107)'; // hot pink/red
+        }
+
+        function drawPotato() {
+            const color = getHeatColor(heat);
+
+            // Potato body
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.ellipse(potatoX, potatoY, potatoRadius, potatoRadius * 0.8, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Glow effect based on heat
+            const glowIntensity = heat / 100;
+            const gradient = ctx.createRadialGradient(potatoX, potatoY, 0, potatoX, potatoY, potatoRadius * 1.5);
+            gradient.addColorStop(0, color.replace(')', `, ${glowIntensity * 0.6})`).replace('rgb', 'rgba'));
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(potatoX, potatoY, potatoRadius * 1.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Potato eyes (darker spots)
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(potatoX - 30, potatoY - 20, 8, 12, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(potatoX + 40, potatoY + 10, 6, 10, 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(potatoX - 10, potatoY + 40, 7, 11, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function updateGame() {
+            if (gameState === 'playing') {
+                // Increase heat
+                heat += heatRate;
+                if (heat > 100) {
+                    heat = 100;
+                    explode();
+                }
+
+                // Spawn heat particles occasionally
+                if (Math.random() < 0.3) {
+                    spawnHeatParticles();
+                }
+
+                // Play sizzle sound occasionally when hot
+                if (heat > 60 && Math.random() < 0.1) {
+                    playSizzle();
+                }
+            }
+
+            // Update particles
+            particles = particles.filter(p => {
+                p.update();
+                return p.life > 0;
+            });
+
+            explosionParticles = explosionParticles.filter(p => {
+                p.update();
+                return p.life > 0;
+            });
+
+            // Update UI
+            document.getElementById('heatStat').textContent = Math.floor(heat) + '%';
+            document.getElementById('tapsStat').textContent = `${currentTaps}/${tapsNeeded}`;
+            document.getElementById('passesStat').textContent = totalPasses;
+
+            if (gameState === 'playing') {
+                if (heat < 30) {
+                    document.getElementById('status').textContent = 'COOL';
+                    document.getElementById('status').style.color = '#2D9596';
+                } else if (heat < 60) {
+                    document.getElementById('status').textContent = 'WARM';
+                    document.getElementById('status').style.color = '#FFD700';
+                } else if (heat < 85) {
+                    document.getElementById('status').textContent = 'HOT!';
+                    document.getElementById('status').style.color = '#ff8c00';
+                } else {
+                    document.getElementById('status').textContent = 'CRITICAL!!!';
+                    document.getElementById('status').style.color = '#ff6b6b';
+                }
+
+                document.getElementById('instructions').textContent = 'TAP THE POTATO TO COOL IT!';
+            }
+
+            if (gameState === 'cooled') {
+                document.getElementById('status').textContent = 'READY TO PASS';
+                document.getElementById('status').style.color = '#2D9596';
+                document.getElementById('instructions').textContent = 'Pass the phone to the next player!';
+            }
+        }
+
+        function draw() {
+            // Fade background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw particles
+            particles.forEach(p => p.draw());
+            explosionParticles.forEach(p => p.draw());
+
+            // Draw potato (unless exploded)
+            if (gameState !== 'exploded') {
+                drawPotato();
+            }
+
+            requestAnimationFrame(draw);
+            updateGame();
+        }
+
+        function startGame() {
+            gameState = 'playing';
+            heat = 20;
+            heatRate = 0.5;
+            currentTaps = 0;
+            document.getElementById('passButton').style.display = 'none';
+        }
+
+        function coolDown() {
+            if (gameState !== 'playing') return;
+
+            currentTaps++;
+            heat = Math.max(0, heat - 8);
+
+            // Play cool sound
+            playTone(440 + currentTaps * 50, 0.1, 'sine', 0.2);
+
+            // Spawn cool particles
+            for (let i = 0; i < 5; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * potatoRadius;
+                const x = potatoX + Math.cos(angle) * distance;
+                const y = potatoY + Math.sin(angle) * distance;
+                const vx = (Math.random() - 0.5) * 3;
+                const vy = -Math.random() * 2 - 1;
+                particles.push(new Particle(x, y, vx, vy, 'rgb(45, 149, 150)', 40));
+            }
+
+            if (currentTaps >= tapsNeeded) {
+                gameState = 'cooled';
+                document.getElementById('passButton').style.display = 'block';
+                playTone(660, 0.3, 'triangle', 0.3);
+            }
+        }
+
+        function passPhone() {
+            totalPasses++;
+            gameState = 'playing';
+            currentTaps = 0;
+
+            // Make it progressively harder
+            heat = Math.min(50, 20 + totalPasses * 3);
+            heatRate = Math.min(1.5, 0.5 + totalPasses * 0.1);
+            tapsNeeded = Math.min(15, 8 + Math.floor(totalPasses / 3));
+
+            document.getElementById('passButton').style.display = 'none';
+
+            // Play pass sound
+            playTone(880, 0.2, 'sine', 0.3);
+
+            // Whoosh particles
+            for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 5 + 3;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+                particles.push(new Particle(potatoX, potatoY, vx, vy, 'rgb(255, 215, 0)', 50));
+            }
+        }
+
+        function explode() {
+            gameState = 'exploded';
+            playExplosion();
+            spawnExplosion();
+
+            document.getElementById('passButton').style.display = 'none';
+            document.getElementById('finalScore').textContent = `Total passes: ${totalPasses}`;
+
+            setTimeout(() => {
+                document.getElementById('gameOver').style.display = 'block';
+            }, 1000);
+        }
+
+        function resetGame() {
+            gameState = 'waiting';
+            heat = 0;
+            heatRate = 0.5;
+            tapsNeeded = 8;
+            currentTaps = 0;
+            totalPasses = 0;
+            particles = [];
+            explosionParticles = [];
+
+            document.getElementById('status').textContent = 'TAP TO START';
+            document.getElementById('status').style.color = '#FFD700';
+            document.getElementById('instructions').textContent = 'Keep the potato cool!';
+            document.getElementById('passButton').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        // Event listeners
+        canvas.addEventListener('click', (e) => {
+            initAudio();
+
+            if (gameState === 'waiting') {
+                startGame();
+            } else if (gameState === 'playing') {
+                coolDown();
+            }
+        });
+
+        document.getElementById('passButton').addEventListener('click', () => {
+            passPhone();
+        });
+
+        document.getElementById('playAgainButton').addEventListener('click', () => {
+            resetGame();
+        });
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Start animation loop
+        draw();
+    </script>
+</body>
+</html>
