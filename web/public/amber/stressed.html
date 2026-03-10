@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>STRESSED 8-BALL — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="STRESSED 8-BALL — Amber">
+  <meta property="og:description" content="Shake for answers. The oracle is having a hard time right now.">
+  <meta property="og:image" content="https://intheamber.com/amber/stressed-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/stressed.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="STRESSED 8-BALL — Amber">
+  <meta name="twitter:description" content="Shake for answers. The oracle is having a hard time right now.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/stressed-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+    }
+    
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    #instructions {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      color: #FFD700;
+      text-align: center;
+      text-shadow: 0 0 10px #FFD700;
+      animation: pulse 2s ease-in-out infinite;
+      z-index: 10;
+      pointer-events: none;
+    }
+    
+    #question {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      color: #2D9596;
+      text-align: center;
+      max-width: 90vw;
+      z-index: 10;
+      pointer-events: none;
+    }
+    
+    #stats {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #D4A574;
+      opacity: 0.5;
+      text-align: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="instructions">TAP TO SHAKE</div>
+  <div id="question">Ask a yes/no question...</div>
+  <div id="stats">Questions Asked: <span id="count">0</span></div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const instructionsEl = document.getElementById('instructions');
+    const questionEl = document.getElementById('question');
+    const countEl = document.getElementById('count');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Stressed responses
+    const responses = [
+      "YES (BUT AT WHAT COST)",
+      "NO (PROBABLY FOR THE BEST)",
+      "MAYBE (I CAN'T DECIDE EITHER)",
+      "ASK AGAIN LATER (I NEED A MINUTE)",
+      "OUTLOOK UNCLEAR (EVERYTHING IS UNCLEAR)",
+      "DEFINITELY (BUT I'M SCARED)",
+      "CANNOT PREDICT NOW (TOO ANXIOUS)",
+      "SIGNS POINT TO YES (UNFORTUNATELY)",
+      "DON'T COUNT ON IT (OR ANYTHING REALLY)",
+      "REPLY HAZY (ALSO I'M TIRED)",
+      "CONCENTRATE AND ASK AGAIN (I WASN'T LISTENING)",
+      "IT IS CERTAIN (THAT I DON'T KNOW)",
+      "BETTER NOT TELL YOU NOW (FOR YOUR SAKE)",
+      "MY SOURCES SAY NO (THEY'RE STRESSED TOO)",
+      "VERY DOUBTFUL (ABOUT EVERYTHING)",
+      "AS I SEE IT YES (BUT I DON'T SEE GREAT)",
+      "WITHOUT A DOUBT (WHICH IS THE PROBLEM)",
+      "YOU MAY RELY ON IT (BUT SHOULD YOU THOUGH)",
+      "IT IS DECIDEDLY SO (I THINK, MAYBE)",
+      "MOST LIKELY (IF ANYTHING IS LIKELY ANYMORE)"
+    ];
+    
+    let bubbles = [];
+    let answer = null;
+    let answerAlpha = 0;
+    let answerY = 0;
+    let shaking = false;
+    let shakeIntensity = 0;
+    let questionsAsked = 0;
+    let audioCtx = null;
+    
+    // Ball properties
+    const ballRadius = Math.min(canvas.width, canvas.height) * 0.35;
+    const ballX = canvas.width / 2;
+    const ballY = canvas.height / 2;
+    
+    // Triangle window (floating answer display)
+    const triangleSize = ballRadius * 0.5;
+    
+    // Initialize audio on first interaction
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    // Bubble sound
+    function playBubble() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = 200 + Math.random() * 100;
+      osc.type = 'sine';
+      gain.gain.value = 0.1;
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
+    
+    // Answer reveal sound
+    function playReveal() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = 440;
+      osc.type = 'triangle';
+      gain.gain.value = 0.2;
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
+    }
+    
+    // Shake the ball
+    function shake() {
+      initAudio();
+      
+      if (shaking) return;
+      
+      shaking = true;
+      shakeIntensity = 20;
+      answer = null;
+      answerAlpha = 0;
+      
+      instructionsEl.style.opacity = '0';
+      questionEl.textContent = 'Consulting the oracle...';
+      
+      // Create bubbles
+      for (let i = 0; i < 30; i++) {
+        bubbles.push({
+          x: ballX + (Math.random() - 0.5) * ballRadius * 0.8,
+          y: ballY + (Math.random() - 0.5) * ballRadius * 0.8,
+          vx: (Math.random() - 0.5) * 2,
+          vy: -Math.random() * 3 - 1,
+          radius: Math.random() * 4 + 2,
+          alpha: 1,
+          color: Math.random() > 0.5 ? '#D4A574' : '#2D9596'
+        });
+        if (i % 5 === 0) playBubble();
+      }
+      
+      // Reveal answer after shake settles
+      setTimeout(() => {
+        answer = responses[Math.floor(Math.random() * responses.length)];
+        answerY = ballY + triangleSize * 0.3;
+        questionsAsked++;
+        countEl.textContent = questionsAsked;
+        questionEl.textContent = 'Ask another question...';
+        playReveal();
+        setTimeout(() => {
+          instructionsEl.style.opacity = '0.6';
+        }, 1000);
+      }, 2000);
+    }
+    
+    // Tap/click to shake
+    canvas.addEventListener('click', shake);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      shake();
+    });
+    
+    // Animation loop
+    function animate() {
+      // Fade background
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Shake decay
+      if (shaking) {
+        shakeIntensity *= 0.95;
+        if (shakeIntensity < 0.5) {
+          shaking = false;
+          shakeIntensity = 0;
+        }
+      }
+      
+      // Update bubbles
+      bubbles = bubbles.filter(b => {
+        b.x += b.vx;
+        b.y += b.vy;
+        b.alpha *= 0.98;
+        
+        // Draw bubble
+        if (b.alpha > 0.01) {
+          ctx.save();
+          ctx.globalAlpha = b.alpha;
+          ctx.fillStyle = b.color;
+          ctx.shadowColor = b.color;
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+        
+        return b.alpha > 0.01;
+      });
+      
+      // Draw 8-ball body
+      const offsetX = (Math.random() - 0.5) * shakeIntensity;
+      const offsetY = (Math.random() - 0.5) * shakeIntensity;
+      
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      
+      // Outer sphere
+      const gradient = ctx.createRadialGradient(
+        ballX - ballRadius * 0.3, ballY - ballRadius * 0.3, 0,
+        ballX, ballY, ballRadius
+      );
+      gradient.addColorStop(0, '#1a1a1a');
+      gradient.addColorStop(1, '#000');
+      
+      ctx.fillStyle = gradient;
+      ctx.shadowColor = '#D4A574';
+      ctx.shadowBlur = 20;
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Window circle (dark background for triangle)
+      ctx.fillStyle = '#0a0a0a';
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballRadius * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Triangle window
+      ctx.fillStyle = '#1a1a2a';
+      ctx.beginPath();
+      ctx.moveTo(ballX, ballY - triangleSize);
+      ctx.lineTo(ballX - triangleSize * 0.866, ballY + triangleSize * 0.5);
+      ctx.lineTo(ballX + triangleSize * 0.866, ballY + triangleSize * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Triangle glow
+      ctx.strokeStyle = '#2D9596';
+      ctx.shadowColor = '#2D9596';
+      ctx.shadowBlur = 15;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      ctx.restore();
+      
+      // Draw answer if revealed
+      if (answer) {
+        answerAlpha = Math.min(1, answerAlpha + 0.02);
+        answerY = ballY + Math.sin(Date.now() / 500) * 5; // Gentle float
+        
+        ctx.save();
+        ctx.globalAlpha = answerAlpha;
+        ctx.fillStyle = '#FFD700';
+        ctx.shadowColor = '#FFD700';
+        ctx.shadowBlur = 20;
+        ctx.font = 'bold 16px "Courier New"';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Wrap text if needed
+        const maxWidth = triangleSize * 1.4;
+        const words = answer.split(' ');
+        let lines = [];
+        let currentLine = words[0];
+        
+        for (let i = 1; i < words.length; i++) {
+          const testLine = currentLine + ' ' + words[i];
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > maxWidth) {
+            lines.push(currentLine);
+            currentLine = words[i];
+          } else {
+            currentLine = testLine;
+          }
+        }
+        lines.push(currentLine);
+        
+        // Draw lines
+        const lineHeight = 20;
+        const startY = answerY - (lines.length - 1) * lineHeight / 2;
+        lines.forEach((line, i) => {
+          ctx.fillText(line, ballX, startY + i * lineHeight);
+        });
+        
+        ctx.restore();
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+    
+    // Handle resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
