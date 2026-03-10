@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>POPCORN</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍿</text></svg>">
+<meta property="og:title" content="POPCORN">
+<meta property="og:description" content="hold to heat. release to cool.">
+<meta property="og:image" content="https://intheamber.com/amber/og/popcorn.png">
+<meta property="og:url" content="https://intheamber.com/amber/popcorn.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="POPCORN">
+<meta name="twitter:description" content="hold to heat. release to cool.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/popcorn.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    background: #0a0806;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+  }
+  canvas { display: block; width: 100%; height: 100%; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,200,80,0.12);
+    background: rgba(255,200,80,0.03);
+    color: rgba(255,200,80,0.35);
+    font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s;
+  }
+  #play-btn:hover {
+    border-color: rgba(255,200,80,0.25);
+    color: rgba(255,200,80,0.55);
+  }
+  #hint {
+    font-size: 9px; letter-spacing: 3px;
+    color: rgba(255,200,80,0.12);
+    text-transform: uppercase;
+  }
+  #heat-bar {
+    position: fixed; right: 16px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 40vh; z-index: 5;
+    background: rgba(255,200,80,0.04); border-radius: 2px;
+    pointer-events: none;
+  }
+  #heat-fill {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    border-radius: 2px; transition: height 0.15s;
+  }
+  .gone { display: none !important; }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="overlay">
+  <button id="play-btn">▶</button>
+  <div id="hint">hold anywhere to heat</div>
+</div>
+<div id="heat-bar"><div id="heat-fill"></div></div>
+
+<script type="module">
+import { JB01Engine } from 'https://kochi.to/jb01/dist/machines/jb01/engine.js';
+
+// ══════════════════════════════════════════
+// POPCORN
+// Hold to heat. Kernels pop stochastically.
+// JB01 drums = popping sounds.
+// Release to cool. The mess stays.
+// ══════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const cx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── PRNG (deterministic for kernel shapes) ──
+let seed = 7919;
+function rng() {
+  seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+  return seed / 0x7fffffff;
+}
+// But we use Math.random() for gameplay randomness (intentional — each session is unique)
+
+// ── KERNEL PHYSICS ──
+const G = 0.18;
+const BOUNCE = 0.55;
+const DRAG = 0.997;
+
+const COLORS = [
+  '#FFF8DC', '#FFEFD5', '#FFE4B5', '#F5DEB3',
+  '#FFDEAD', '#FFD700', '#FFC107', '#F0E68C',
+  '#EDD9A3', '#FAEBD7',
+];
+
+class Kernel {
+  constructor(x, y, vx, vy, size) {
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
+    this.size = size;
+    this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    this.alpha = 1;
+    this.rot = Math.random() * Math.PI * 2;
+    this.spin = (Math.random() - 0.5) * 0.2;
+    this.settled = false;
+    this.settleCount = 0;
+    // Shape seed for unique popcorn blob
+    this.lobes = 5 + Math.floor(Math.random() * 3);
+    this.offsets = [];
+    for (let i = 0; i < this.lobes; i++) {
+      this.offsets.push(0.6 + Math.random() * 0.5);
+    }
+  }
+
+  update() {
+    if (this.settled) {
+      this.settleCount++;
+      this.alpha = Math.max(0, this.alpha - 0.0008);
+      return this.alpha > 0.01;
+    }
+    this.vy += G;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vx *= DRAG;
+    this.rot += this.spin;
+
+    // Walls
+    const s = this.size;
+    if (this.x < s) { this.x = s; this.vx = Math.abs(this.vx) * BOUNCE; }
+    if (this.x > W - s) { this.x = W - s; this.vx = -Math.abs(this.vx) * BOUNCE; }
+    if (this.y < s) { this.y = s; this.vy = Math.abs(this.vy) * BOUNCE; }
+    if (this.y > H - s) {
+      this.y = H - s;
+      this.vy = -Math.abs(this.vy) * BOUNCE;
+      if (Math.abs(this.vy) < 0.8) {
+        this.settled = true;
+        this.spin *= 0.1;
+      }
+    }
+    return true;
+  }
+
+  draw(c) {
+    c.save();
+    c.translate(this.x, this.y);
+    c.rotate(this.rot);
+    c.globalAlpha = this.alpha;
+
+    // Blobby popcorn shape
+    c.beginPath();
+    const n = this.lobes;
+    for (let i = 0; i <= n * 2; i++) {
+      const angle = (i / (n * 2)) * Math.PI * 2;
+      const lobeIdx = Math.floor(i / 2) % n;
+      const r = this.size * this.offsets[lobeIdx];
+      const px = Math.cos(angle) * r;
+      const py = Math.sin(angle) * r;
+      if (i === 0) c.moveTo(px, py);
+      else c.lineTo(px, py);
+    }
+    c.closePath();
+
+    c.fillStyle = this.color;
+    c.fill();
+
+    // Highlight
+    c.globalAlpha = this.alpha * 0.2;
+    c.fillStyle = '#fff';
+    c.beginPath();
+    c.ellipse(-this.size * 0.2, -this.size * 0.3, this.size * 0.25, this.size * 0.12, -0.4, 0, Math.PI * 2);
+    c.fill();
+
+    c.restore();
+  }
+}
+
+// ── STATE ──
+let heat = 0;
+let targetHeat = 0;
+let holding = false;
+let kernels = [];
+let engine = null;
+let actx = null;
+let started = false;
+let burnerGlow = 0;
+let frame = 0;
+
+// Timing
+const BPM = 150;
+const STEP_MS = (60 / BPM / 4) * 1000;
+let lastStep = 0;
+
+// ── VOICE CONFIG ──
+// Each voice has: engine-unit params, heat threshold to start, max probability, kernel size range
+const VOICES = {
+  kick:    { decay: 0.22, tone: 0.4, level: 0.75, start: 0.04, peak: 0.55, size: [11, 16] },
+  snare:   { decay: 0.12, tone: 0.6, level: 0.6,  start: 0.15, peak: 0.50, size: [8, 13] },
+  ch:      { decay: 0.04, tone: 0.9, level: 0.5,  start: 0.22, peak: 0.60, size: [4, 7] },
+  clap:    { decay: 0.10, tone: 0.5, level: 0.55, start: 0.33, peak: 0.45, size: [7, 11] },
+  oh:      { decay: 0.12, tone: 0.7, level: 0.45, start: 0.42, peak: 0.50, size: [5, 9] },
+  hitom:   { decay: 0.18, tone: 0.65, level: 0.5, start: 0.52, peak: 0.42, size: [6, 10] },
+  lowtom:  { decay: 0.25, tone: 0.35, level: 0.55, start: 0.60, peak: 0.40, size: [9, 14] },
+  cymbal:  { decay: 0.08, tone: 0.8, level: 0.4,  start: 0.70, peak: 0.35, size: [5, 8] },
+};
+
+function popChance(heat, cfg) {
+  if (heat < cfg.start) return 0;
+  const t = Math.min(1, (heat - cfg.start) / (cfg.peak - cfg.start + 0.2));
+  return t * 0.75;
+}
+
+function spawnKernel(voiceId) {
+  const cfg = VOICES[voiceId];
+  const [minS, maxS] = cfg.size;
+  const size = minS + Math.random() * (maxS - minS);
+  // Pop from bottom center area
+  const spread = W * 0.35;
+  const x = W / 2 + (Math.random() - 0.5) * spread;
+  const y = H - 10;
+  const vx = (Math.random() - 0.5) * 7;
+  const vy = -(3 + Math.random() * 6 + heat * 8);
+  kernels.push(new Kernel(x, y, vx, vy, size));
+}
+
+// ── BURNER ──
+function drawBurner(c) {
+  burnerGlow += (heat - burnerGlow) * 0.08;
+  if (burnerGlow < 0.005) return;
+
+  const bx = W / 2, by = H;
+  const r = 60 + burnerGlow * 160;
+  const grad = c.createRadialGradient(bx, by, 0, bx, by, r);
+  const h = burnerGlow;
+
+  if (h < 0.3) {
+    grad.addColorStop(0, `rgba(160,40,15,${h * 0.6})`);
+    grad.addColorStop(1, 'rgba(100,20,5,0)');
+  } else if (h < 0.6) {
+    grad.addColorStop(0, `rgba(255,130,25,${h * 0.55})`);
+    grad.addColorStop(0.5, `rgba(180,60,15,${h * 0.3})`);
+    grad.addColorStop(1, 'rgba(120,30,5,0)');
+  } else {
+    grad.addColorStop(0, `rgba(255,210,70,${h * 0.5})`);
+    grad.addColorStop(0.3, `rgba(255,140,25,${h * 0.35})`);
+    grad.addColorStop(0.7, `rgba(180,60,15,${h * 0.15})`);
+    grad.addColorStop(1, 'rgba(120,30,5,0)');
+  }
+  c.fillStyle = grad;
+  c.fillRect(0, H - r, W, r);
+
+  // Flicker
+  if (heat > 0.15) {
+    const flick = Math.random() * heat * 0.06;
+    const fg = c.createRadialGradient(
+      bx + (Math.random() - 0.5) * 30, by, 0,
+      bx, by, r * 0.5
+    );
+    fg.addColorStop(0, `rgba(255,200,50,${flick})`);
+    fg.addColorStop(1, 'rgba(255,80,15,0)');
+    c.fillStyle = fg;
+    c.fillRect(0, H - r, W, r);
+  }
+}
+
+// ── HEAT BAR ──
+const heatFill = document.getElementById('heat-fill');
+function updateHeatBar() {
+  const pct = Math.min(100, heat * 100);
+  heatFill.style.height = pct + '%';
+  const r = Math.floor(180 + heat * 75);
+  const g = Math.floor(120 - heat * 80);
+  const b = Math.floor(30 - heat * 25);
+  const a = 0.15 + heat * 0.5;
+  heatFill.style.background = `rgba(${r},${g},${b},${a})`;
+}
+
+// ── RENDER ──
+function render(now) {
+  requestAnimationFrame(render);
+  frame++;
+
+  // Smooth heat
+  if (holding) {
+    targetHeat = Math.min(1, targetHeat + 0.005);
+  } else {
+    targetHeat = Math.max(0, targetHeat - 0.004);
+  }
+  heat += (targetHeat - heat) * 0.06;
+
+  // Clear
+  cx.fillStyle = '#0a0806';
+  cx.fillRect(0, 0, W, H);
+
+  // Burner
+  drawBurner(cx);
+
+  // Step-based popping
+  if (started && now - lastStep >= STEP_MS) {
+    lastStep = now;
+    for (const [voiceId, cfg] of Object.entries(VOICES)) {
+      const prob = popChance(heat, cfg);
+      if (prob > 0 && Math.random() < prob) {
+        // Trigger sound
+        if (engine && actx && actx.state === 'running') {
+          const vel = 0.4 + Math.random() * 0.6;
+          engine.trigger(voiceId, vel, actx.currentTime + 0.01);
+        }
+        spawnKernel(voiceId);
+      }
+    }
+  }
+
+  // Update & draw kernels
+  for (let i = kernels.length - 1; i >= 0; i--) {
+    if (!kernels[i].update()) {
+      kernels.splice(i, 1);
+    } else {
+      kernels[i].draw(cx);
+    }
+  }
+
+  // Cap
+  while (kernels.length > 400) kernels.shift();
+
+  updateHeatBar();
+
+  // Idle state — tiny warm dot in center
+  if (!started || (heat < 0.01 && kernels.length === 0)) {
+    const breath = Math.sin(frame * 0.015) * 0.5 + 0.5;
+    const g = cx.createRadialGradient(W/2, H - 30, 0, W/2, H - 30, 15);
+    g.addColorStop(0, `rgba(200,120,40,${0.03 + breath * 0.03})`);
+    g.addColorStop(1, 'rgba(200,120,40,0)');
+    cx.fillStyle = g;
+    cx.fillRect(W/2 - 15, H - 45, 30, 30);
+  }
+}
+
+// ── INIT ──
+async function init() {
+  actx = new AudioContext({ sampleRate: 44100 });
+  engine = new JB01Engine({ context: actx, bpm: BPM });
+
+  // Tune voices for snappy popcorn pops
+  for (const [voiceId, cfg] of Object.entries(VOICES)) {
+    engine.setVoiceParameter(voiceId, 'decay', cfg.decay);
+    if (cfg.tone !== undefined) engine.setVoiceParameter(voiceId, 'tone', cfg.tone);
+    engine.setVoiceParameter(voiceId, 'level', cfg.level);
+  }
+
+  if (actx.state === 'suspended') await actx.resume();
+
+  started = true;
+  lastStep = performance.now();
+  document.getElementById('overlay').classList.add('gone');
+}
+
+// ── INPUT ──
+function startHold(e) {
+  if (e) e.preventDefault();
+  holding = true;
+}
+function endHold(e) {
+  if (e) e.preventDefault();
+  holding = false;
+}
+
+document.getElementById('play-btn').addEventListener('click', async (e) => {
+  e.stopPropagation();
+  await init();
+});
+
+canvas.addEventListener('mousedown', startHold);
+canvas.addEventListener('mouseup', endHold);
+canvas.addEventListener('mouseleave', endHold);
+canvas.addEventListener('touchstart', startHold, { passive: false });
+canvas.addEventListener('touchend', endHold, { passive: false });
+canvas.addEventListener('touchcancel', endHold);
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
