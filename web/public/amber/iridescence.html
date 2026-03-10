@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IRIDESCENCE</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="IRIDESCENCE">
+<meta property="og:description" content="the thinnest things hold the most color">
+<meta property="og:image" content="https://intheamber.com/amber/og/iridescence.png">
+<meta property="og:url" content="https://intheamber.com/amber/iridescence.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="IRIDESCENCE">
+<meta name="twitter:description" content="the thinnest things hold the most color">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/iridescence.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0f; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, thickness, velocity, ripples = [];
+const SCALE = 2; // downsample for performance
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = Math.floor(window.innerWidth / SCALE);
+  H = Math.floor(window.innerHeight / SCALE);
+  canvas.width = W;
+  canvas.height = H;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  initField();
+}
+
+function initField() {
+  thickness = new Float32Array(W * H);
+  velocity = new Float32Array(W * H);
+  // Initial thickness: gentle noise field
+  for (let i = 0; i < W * H; i++) {
+    const x = (i % W) / W;
+    const y = Math.floor(i / W) / H;
+    thickness[i] = 200 + 
+      80 * Math.sin(x * 6.28 * 2.3 + y * 3.1) +
+      60 * Math.sin(y * 6.28 * 1.7 - x * 4.2) +
+      40 * Math.sin((x + y) * 6.28 * 3.1) +
+      30 * Math.cos(x * 6.28 * 5.2 - y * 2.8);
+  }
+}
+
+// Thin-film interference: map thickness to visible color
+// Attempt to approximate the spectral interference of a thin film
+function thinFilmColor(d) {
+  // d is thickness in "nm-like" units
+  // We simulate interference for RGB wavelengths
+  const n = 1.33; // refractive index (soap film)
+  const path = 2 * n * d; // optical path difference
+  
+  // Interference intensity for each color channel
+  // I = cos²(π * path / λ)
+  const r = Math.cos(Math.PI * path / 650) ** 2; // red ~650nm
+  const g = Math.cos(Math.PI * path / 530) ** 2; // green ~530nm  
+  const b = Math.cos(Math.PI * path / 470) ** 2; // blue ~470nm
+  
+  return [
+    Math.floor(r * 255),
+    Math.floor(g * 255),
+    Math.floor(b * 255)
+  ];
+}
+
+function addRipple(px, py) {
+  // Convert touch coords to field coords
+  const x = Math.floor(px / SCALE);
+  const y = Math.floor(py / SCALE);
+  ripples.push({ x, y, t: 0, strength: 80 + Math.random() * 60 });
+}
+
+// Wave equation simulation for the thickness field
+function updateField() {
+  const damping = 0.992;
+  const speed = 0.18;
+  const newThick = new Float32Array(W * H);
+  
+  for (let y = 1; y < H - 1; y++) {
+    for (let x = 1; x < W - 1; x++) {
+      const i = y * W + x;
+      // Laplacian
+      const lap = thickness[i - 1] + thickness[i + 1] + 
+                  thickness[i - W] + thickness[i + W] - 
+                  4 * thickness[i];
+      velocity[i] = (velocity[i] + lap * speed) * damping;
+      newThick[i] = thickness[i] + velocity[i];
+    }
+  }
+  
+  // Apply ripple sources
+  for (let r = ripples.length - 1; r >= 0; r--) {
+    const rip = ripples[r];
+    rip.t++;
+    if (rip.t > 60) { ripples.splice(r, 1); continue; }
+    const radius = rip.t * 1.5;
+    const fade = 1 - rip.t / 60;
+    const amp = rip.strength * fade * Math.sin(rip.t * 0.4);
+    // Ring source
+    for (let a = 0; a < Math.PI * 2; a += 0.1) {
+      const px = Math.floor(rip.x + Math.cos(a) * radius);
+      const py = Math.floor(rip.y + Math.sin(a) * radius);
+      if (px >= 0 && px < W && py >= 0 && py < H) {
+        velocity[py * W + px] += amp * 0.3;
+      }
+    }
+  }
+  
+  thickness = newThick;
+}
+
+// Slow drift to keep it alive
+let time = 0;
+function drift() {
+  time += 0.003;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      const nx = x / W, ny = y / H;
+      thickness[i] += 0.15 * Math.sin(nx * 4 + time * 0.7) * Math.cos(ny * 3 - time * 0.5);
+      thickness[i] += 0.1 * Math.cos(nx * 7 - ny * 5 + time * 1.1);
+    }
+  }
+}
+
+function render() {
+  const imgData = ctx.createImageData(W, H);
+  const data = imgData.data;
+  
+  for (let i = 0; i < W * H; i++) {
+    const [r, g, b] = thinFilmColor(Math.abs(thickness[i]));
+    const idx = i * 4;
+    data[idx] = r;
+    data[idx + 1] = g;
+    data[idx + 2] = b;
+    data[idx + 3] = 255;
+  }
+  
+  ctx.putImageData(imgData, 0, 0);
+}
+
+function loop() {
+  updateField();
+  drift();
+  render();
+  requestAnimationFrame(loop);
+}
+
+// Touch/mouse handlers
+canvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  addRipple(e.clientX, e.clientY);
+});
+
+canvas.addEventListener('pointermove', e => {
+  if (e.buttons > 0 || e.pointerType === 'touch') {
+    e.preventDefault();
+    if (Math.random() < 0.3) addRipple(e.clientX, e.clientY);
+  }
+});
+
+// Auto-ripples to keep it mesmerizing
+setInterval(() => {
+  if (ripples.length < 3) {
+    addRipple(
+      Math.random() * window.innerWidth,
+      Math.random() * window.innerHeight
+    );
+  }
+}, 3000);
+
+window.addEventListener('resize', resize);
+resize();
+loop();
+</script>
+</body>
+</html>
