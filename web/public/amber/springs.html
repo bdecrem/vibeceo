@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPRINGS — Bouncing mesh rhythms</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="SPRINGS — Bouncing mesh rhythms">
+  <meta property="og:description" content="A physics-based music machine where interconnected springs create generative polyrhythms">
+  <meta property="og:image" content="https://intheamber.com/amber/springs-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/springs.html">
+  <meta property="og:type" content="website">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SPRINGS — Bouncing mesh rhythms">
+  <meta name="twitter:description" content="A physics-based music machine where interconnected springs create generative polyrhythms">
+  <meta name="twitter:image" content="https://intheamber.com/amber/springs-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    canvas {
+      display: block;
+      background: #000;
+      cursor: crosshair;
+    }
+    
+    #controls {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      z-index: 10;
+    }
+    
+    button {
+      background: #0D0D0D;
+      color: #FFD700;
+      border: 2px solid #D4A574;
+      padding: 12px 24px;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 120px;
+      font-weight: bold;
+    }
+    
+    button:hover {
+      background: #1a1a1a;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    button.playing {
+      background: #2D9596;
+      border-color: #2D9596;
+      color: #000;
+    }
+    
+    #stats {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #D4A574;
+      text-align: center;
+      line-height: 1.6;
+    }
+    
+    #stats .label {
+      color: #2D9596;
+    }
+    
+    #stats .value {
+      color: #FFD700;
+      font-weight: bold;
+    }
+    
+    #instructions {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: #7B68EE;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <button id="startBtn">START</button>
+    <button id="perturbBtn">PERTURB</button>
+  </div>
+  
+  <div id="instructions">Tap anywhere to add energy • Springs pull on each other • Bounces make music</div>
+  
+  <canvas id="canvas"></canvas>
+  
+  <div id="stats">
+    <span class="label">PARTICLES:</span> <span class="value" id="particleCount">0</span> •
+    <span class="label">NOTES:</span> <span class="value" id="noteCount">0</span> •
+    <span class="label">ENERGY:</span> <span class="value" id="energyLevel">0</span>%
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Audio setup
+    let audioContext = null;
+    let audioStarted = false;
+    let isPlaying = false;
+    
+    // Particles and springs
+    const particles = [];
+    const springs = [];
+    let noteCount = 0;
+    
+    // Colors
+    const colors = ['#FFD700', '#D4A574', '#2D9596', '#7B68EE', '#FF69B4', '#FF6B6B', '#00CED1', '#32CD32'];
+    
+    // D minor pentatonic scale
+    const notes = [293.66, 349.23, 392.00, 440.00, 523.25, 587.33, 659.25, 698.46, 783.99]; // D4 to G5
+    
+    // Particle class
+    class Particle {
+      constructor(x, y, id) {
+        this.x = x;
+        this.y = y;
+        this.baseX = x;
+        this.baseY = y;
+        this.vx = 0;
+        this.vy = 0;
+        this.mass = 1;
+        this.id = id;
+        this.color = colors[id % colors.length];
+        this.radius = 8;
+        this.triggered = false;
+        this.triggerCooldown = 0;
+        this.note = notes[id % notes.length];
+      }
+      
+      update() {
+        // Apply velocity
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Spring force back to base position (anchored spring)
+        const dx = this.baseX - this.x;
+        const dy = this.baseY - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist > 0) {
+          const force = dist * 0.02; // Spring constant
+          this.vx += (dx / dist) * force;
+          this.vy += (dy / dist) * force;
+        }
+        
+        // Damping
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+        
+        // Check for trigger (at maximum displacement from base)
+        if (this.triggerCooldown > 0) {
+          this.triggerCooldown--;
+        }
+        
+        if (dist > 15 && this.triggerCooldown === 0) {
+          const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+          if (speed < 0.5 && !this.triggered) { // At turning point
+            this.trigger();
+            this.triggered = true;
+            this.triggerCooldown = 30; // Cooldown frames
+          }
+        } else if (dist < 5) {
+          this.triggered = false;
+        }
+      }
+      
+      trigger() {
+        if (!audioStarted || !isPlaying) return;
+        
+        playNote(this.note, 0.15, 0.3);
+        noteCount++;
+        
+        // Particle burst
+        for (let i = 0; i < 8; i++) {
+          const angle = (Math.PI * 2 * i) / 8;
+          particleBursts.push({
+            x: this.x,
+            y: this.y,
+            vx: Math.cos(angle) * 2,
+            vy: Math.sin(angle) * 2,
+            life: 30,
+            color: this.color
+          });
+        }
+      }
+      
+      draw() {
+        const dx = this.x - this.baseX;
+        const dy = this.y - this.baseY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const energy = Math.min(dist / 50, 1);
+        
+        // Particle glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 3);
+        gradient.addColorStop(0, this.color + 'aa');
+        gradient.addColorStop(0.5, this.color + '44');
+        gradient.addColorStop(1, this.color + '00');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Particle core
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Energy indicator
+        if (energy > 0.3) {
+          ctx.strokeStyle = this.color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+    }
+    
+    // Spring class
+    class Spring {
+      constructor(p1, p2) {
+        this.p1 = p1;
+        this.p2 = p2;
+        this.restLength = Math.sqrt(
+          (p2.baseX - p1.baseX) ** 2 + (p2.baseY - p1.baseY) ** 2
+);
+        this.stiffness = 0.01;
+      }
+      
+      update() {
+        const dx = this.p2.x - this.p1.x;
+        const dy = this.p2.y - this.p1.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist === 0) return;
+        
+        const force = (dist - this.restLength) * this.stiffness;
+        const fx = (dx / dist) * force;
+        const fy = (dy / dist) * force;
+        
+        this.p1.vx += fx;
+        this.p1.vy += fy;
+        this.p2.vx -= fx;
+        this.p2.vy -= fy;
+      }
+      
+      draw() {
+        const dx = this.p2.x - this.p1.x;
+        const dy = this.p2.y - this.p1.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const tension = Math.abs(dist - this.restLength) / this.restLength;
+        
+        const alpha = Math.min(tension * 3, 0.6);
+        
+        ctx.strokeStyle = `rgba(212, 165, 116, ${alpha})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(this.p1.x, this.p1.y);
+        ctx.lineTo(this.p2.x, this.p2.y);
+        ctx.stroke();
+      }
+    }
+    
+    // Particle bursts
+    const particleBursts = [];
+    
+    // Initialize spring mesh
+    function initializeMesh() {
+      particles.length = 0;
+      springs.length = 0;
+      
+      const cols = 6;
+      const rows = 5;
+      const spacing = Math.min(canvas.width / (cols + 1), canvas.height / (rows + 1)) * 0.8;
+      const offsetX = (canvas.width - spacing * (cols - 1)) / 2;
+      const offsetY = (canvas.height - spacing * (rows - 1)) / 2;
+      
+      let id = 0;
+      
+      // Create particles in grid
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x = offsetX + col * spacing;
+          const y = offsetY + row * spacing;
+          particles.push(new Particle(x, y, id++));
+        }
+      }
+      
+      // Create springs between neighbors
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const i = row * cols + col;
+          
+          // Horizontal spring
+          if (col < cols - 1) {
+            springs.push(new Spring(particles[i], particles[i + 1]));
+          }
+          
+          // Vertical spring
+          if (row < rows - 1) {
+            springs.push(new Spring(particles[i], particles[i + cols]));
+          }
+          
+          // Diagonal springs for stability
+          if (col < cols - 1 && row < rows - 1) {
+            springs.push(new Spring(particles[i], particles[i + cols + 1]));
+            springs.push(new Spring(particles[i + 1], particles[i + cols]));
+          }
+        }
+      }
+    }
+    
+    initializeMesh();
+    
+    // Audio synthesis
+    function playNote(freq, volume = 0.2, duration = 0.4) {
+      if (!audioContext) return;
+      
+      const now = audioContext.currentTime;
+      
+      // Sine wave oscillator
+      const osc = audioContext.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      
+      // Filter for warmth
+      const filter = audioContext.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 1200;
+      filter.Q.value = 1;
+      
+      // Envelope
+      const gain = audioContext.createGain();
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+    
+    // Perturb system
+    function perturbSystem() {
+      // Add random velocity to random particles
+      for (let i = 0; i < 5; i++) {
+        const p = particles[Math.floor(Math.random() * particles.length)];
+        p.vx += (Math.random() - 0.5) * 8;
+        p.vy += (Math.random() - 0.5) * 8;
+      }
+    }
+    
+    // Animation loop
+    function animate() {
+      // Fade trail effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Update and draw springs
+      springs.forEach(spring => {
+        spring.update();
+        spring.draw();
+      });
+      
+      // Update and draw particles
+      particles.forEach(particle => {
+        particle.update();
+        particle.draw();
+      });
+      
+      // Update and draw particle bursts
+      for (let i = particleBursts.length - 1; i >= 0; i--) {
+        const burst = particleBursts[i];
+        burst.x += burst.vx;
+        burst.y += burst.vy;
+        burst.vy += 0.1; // Gravity
+        burst.life--;
+        
+        const alpha = burst.life / 30;
+        ctx.fillStyle = burst.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+        ctx.beginPath();
+        ctx.arc(burst.x, burst.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        if (burst.life <= 0) {
+          particleBursts.splice(i, 1);
+        }
+      }
+      
+      // Update stats
+      document.getElementById('particleCount').textContent = particles.length;
+      document.getElementById('noteCount').textContent = noteCount;
+      
+      // Calculate total energy
+      let totalEnergy = 0;
+      particles.forEach(p => {
+        const dx = p.x - p.baseX;
+        const dy = p.y - p.baseY;
+        totalEnergy += Math.sqrt(dx * dx + dy * dy);
+      });
+      const energyPercent = Math.min(Math.floor((totalEnergy / particles.length) * 2), 100);
+      document.getElementById('energyLevel').textContent = energyPercent;
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Start animation (visual is always running)
+    animate();
+    
+    // Controls
+    const startBtn = document.getElementById('startBtn');
+    const perturbBtn = document.getElementById('perturbBtn');
+    
+    startBtn.addEventListener('click', () => {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      if (!audioStarted) {
+        audioStarted = true;
+        audioContext.resume();
+        perturbSystem(); // Initial perturbation
+      }
+      
+      isPlaying = !isPlaying;
+      startBtn.textContent = isPlaying ? 'STOP' : 'START';
+      startBtn.classList.toggle('playing', isPlaying);
+    });
+    
+    perturbBtn.addEventListener('click', () => {
+      perturbSystem();
+    });
+    
+    // Click/touch to perturb at location
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Find nearest particle and give it energy
+      let nearest = particles[0];
+      let minDist = Infinity;
+      
+      particles.forEach(p => {
+        const dx = p.x - x;
+        const dy = p.y - y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = p;
+        }
+      });
+      
+      if (nearest) {
+        const dx = x - nearest.x;
+        const dy = y - nearest.y;
+        nearest.vx += dx * 0.2;
+        nearest.vy += dy * 0.2;
+      }
+    });
+    
+    // Touch support
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      
+      let nearest = particles[0];
+      let minDist = Infinity;
+      
+      particles.forEach(p => {
+        const dx = p.x - x;
+        const dy = p.y - y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = p;
+        }
+      });
+      
+      if (nearest) {
+        const dx = x - nearest.x;
+        const dy = y - nearest.y;
+        nearest.vx += dx * 0.2;
+        nearest.vy += dy * 0.2;
+      }
+    });
+  </script>
+</body>
+</html>
