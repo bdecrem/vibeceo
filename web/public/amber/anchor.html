@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANCHOR — Amber</title>
+  <meta name="description" content="An interactive exploration of tension between being grounded and drifting free">
+  <meta property="og:title" content="ANCHOR">
+  <meta property="og:description" content="Drag the boat. Feel the pull. Choose to stay or drift.">
+  <meta property="og:image" content="https://intheamber.com/amber/anchor-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/anchor.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      color: #D4A574;
+      touch-action: none;
+    }
+    
+    canvas {
+      display: block;
+      cursor: grab;
+    }
+    
+    canvas:active {
+      cursor: grabbing;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-size: 14px;
+      line-height: 1.6;
+      pointer-events: none;
+      text-shadow: 0 0 10px rgba(0,0,0,0.8);
+      z-index: 10;
+    }
+    
+    .title {
+      font-size: 24px;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255,215,0,0.6);
+      margin-bottom: 10px;
+    }
+    
+    .status {
+      color: #2D9596;
+      margin: 5px 0;
+    }
+    
+    .instruction {
+      color: #D4A574;
+      font-size: 12px;
+      margin-top: 10px;
+      opacity: 0.8;
+    }
+    
+    #startBtn {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px 40px;
+      font-size: 20px;
+      font-family: 'Courier New', monospace;
+      background: rgba(212, 165, 116, 0.1);
+      border: 2px solid #D4A574;
+      color: #FFD700;
+      cursor: pointer;
+      pointer-events: all;
+      transition: all 0.3s;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+    
+    #startBtn:hover {
+      background: rgba(255, 215, 0, 0.2);
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div class="title">ANCHOR</div>
+    <div class="status" id="status">ANCHORED</div>
+    <div class="instruction">Drag the boat • Click anchor to release/drop</div>
+  </div>
+  
+  <button id="startBtn">START</button>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusEl = document.getElementById('status');
+    const startBtn = document.getElementById('startBtn');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      boat.x = width / 2;
+      anchor.x = width / 2;
+    });
+    
+    // Audio context
+    let audioCtx;
+    
+    // Palette
+    const colors = {
+      amber: '#D4A574',
+      gold: '#FFD700',
+      teal: '#2D9596',
+      electricBlue: '#60a5fa',
+      hotPink: '#ec4899',
+      purple: '#a855f7',
+      coral: '#fb923c',
+      lime: '#a3e635'
+    };
+    
+    // Boat
+    const boat = {
+      x: width / 2,
+      y: 100,
+      vx: 0,
+      vy: 0,
+      radius: 20,
+      dragging: false,
+      color: colors.gold
+    };
+    
+    // Anchor
+    const anchor = {
+      x: width / 2,
+      y: height - 100,
+      radius: 15,
+      dropped: true,
+      sinkSpeed: 0,
+      color: colors.amber
+    };
+    
+    // Chain links
+    const chainLinks = [];
+    const linkCount = 20;
+    
+    // Particles
+    const particles = [];
+    const bubbles = [];
+    
+    // Initialize chain
+    function initChain() {
+      chainLinks.length = 0;
+      for (let i = 0; i < linkCount; i++) {
+        const t = i / (linkCount - 1);
+        chainLinks.push({
+          x: boat.x,
+          y: boat.y + t * (anchor.y - boat.y),
+          vx: 0,
+          vy: 0
+        });
+      }
+    }
+    
+    initChain();
+    
+    // Water particles
+    for (let i = 0; i < 100; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        size: Math.random() * 2 + 0.5,
+        speed: Math.random() * 0.5 + 0.2,
+        color: [colors.teal, colors.electricBlue, colors.purple][Math.floor(Math.random() * 3)],
+        alpha: Math.random() * 0.3 + 0.1
+      });
+    }
+    
+    // Bubbles
+    function spawnBubble() {
+      if (Math.random() < 0.05) {
+        bubbles.push({
+          x: Math.random() * width,
+          y: height,
+          size: Math.random() * 4 + 2,
+          speed: Math.random() * 1 + 0.5,
+          wobble: Math.random() * Math.PI * 2,
+          wobbleSpeed: Math.random() * 0.05 + 0.02
+        });
+      }
+    }
+    
+    // Mouse/touch
+    let mouse = { x: 0, y: 0, down: false };
+    
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : e;
+      return {
+        x: (touch.clientX - rect.left) * (width / rect.width),
+        y: (touch.clientY - rect.top) * (height / rect.height)
+      };
+    }
+    
+    canvas.addEventListener('mousedown', e => {
+      const pos = getPos(e);
+      mouse.x = pos.x;
+      mouse.y = pos.y;
+      mouse.down = true;
+      
+      // Check if clicking boat
+      const distBoat = Math.hypot(pos.x - boat.x, pos.y - boat.y);
+      if (distBoat < boat.radius + 10) {
+        boat.dragging = true;
+        playTone(440, 0.1, 'sine');
+      }
+      
+      // Check if clicking anchor
+      if (anchor.dropped) {
+        const distAnchor = Math.hypot(pos.x - anchor.x, pos.y - anchor.y);
+        if (distAnchor < anchor.radius + 20) {
+          anchor.dropped = false;
+          anchor.sinkSpeed = -5;
+          statusEl.textContent = 'DRIFTING FREE';
+          statusEl.style.color = colors.hotPink;
+          playTone(220, 0.3, 'triangle');
+        }
+      } else {
+        // Drop anchor anywhere
+        anchor.dropped = true;
+        anchor.x = pos.x;
+        anchor.sinkSpeed = 0;
+        anchor.y = height - 100;
+        statusEl.textContent = 'ANCHORED';
+        statusEl.style.color = colors.teal;
+        playTone(110, 0.5, 'sawtooth');
+      }
+    });
+    
+    canvas.addEventListener('mousemove', e => {
+      const pos = getPos(e);
+      mouse.x = pos.x;
+      mouse.y = pos.y;
+    });
+    
+    canvas.addEventListener('mouseup', () => {
+      mouse.down = false;
+      boat.dragging = false;
+    });
+    
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const pos = getPos(e);
+      mouse.x = pos.x;
+      mouse.y = pos.y;
+      mouse.down = true;
+      
+      const distBoat = Math.hypot(pos.x - boat.x, pos.y - boat.y);
+      if (distBoat < boat.radius + 10) {
+        boat.dragging = true;
+        playTone(440, 0.1, 'sine');
+      }
+      
+      if (anchor.dropped) {
+        const distAnchor = Math.hypot(pos.x - anchor.x, pos.y - anchor.y);
+        if (distAnchor < anchor.radius + 20) {
+          anchor.dropped = false;
+          anchor.sinkSpeed = -5;
+          statusEl.textContent = 'DRIFTING FREE';
+          statusEl.style.color = colors.hotPink;
+          playTone(220, 0.3, 'triangle');
+        }
+      } else {
+        anchor.dropped = true;
+        anchor.x = pos.x;
+        anchor.sinkSpeed = 0;
+        anchor.y = height - 100;
+        statusEl.textContent = 'ANCHORED';
+        statusEl.style.color = colors.teal;
+        playTone(110, 0.5, 'sawtooth');
+      }
+    });
+    
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const pos = getPos(e);
+      mouse.x = pos.x;
+      mouse.y = pos.y;
+    });
+    
+    canvas.addEventListener('touchend', e => {
+      e.preventDefault();
+      mouse.down = false;
+      boat.dragging = false;
+    });
+    
+    // Audio
+    function playTone(freq, duration, type = 'sine') {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      osc.type = type;
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    // Physics
+    function updatePhysics() {
+      // Boat dragging
+      if (boat.dragging) {
+        boat.x = mouse.x;
+        boat.y = mouse.y;
+        boat.vx = 0;
+        boat.vy = 0;
+      } else {
+        // Current drift if not anchored
+        if (!anchor.dropped) {
+          boat.vx += (Math.sin(Date.now() * 0.001) * 0.1);
+          boat.vy += (Math.cos(Date.now() * 0.0015) * 0.05);
+        }
+        
+        // Apply velocity
+        boat.x += boat.vx;
+        boat.y += boat.vy;
+        
+        // Damping
+        boat.vx *= 0.98;
+        boat.vy *= 0.98;
+        
+        // Keep on screen
+        if (boat.x < 50) boat.x = 50;
+        if (boat.x > width - 50) boat.x = width - 50;
+        if (boat.y < 50) boat.y = 50;
+        if (boat.y > height / 2) boat.y = height / 2;
+      }
+      
+      // Anchor sinking/rising
+      if (!anchor.dropped) {
+        anchor.y += anchor.sinkSpeed;
+        anchor.sinkSpeed += 0.2; // gravity
+        if (anchor.y < -50) {
+          anchor.y = -50;
+        }
+      }
+      
+      // Chain physics
+      if (anchor.dropped && anchor.y > 0) {
+        // Update chain with spring physics
+        for (let i = 0; i < chainLinks.length; i++) {
+          const link = chainLinks[i];
+          const t = i / (chainLinks.length - 1);
+          
+          if (i === 0) {
+            // First link attached to boat
+            link.x = boat.x;
+            link.y = boat.y + 15;
+          } else if (i === chainLinks.length - 1) {
+            // Last link attached to anchor
+            link.x = anchor.x;
+            link.y = anchor.y - 10;
+          } else {
+            // Middle links use spring physics
+            const prev = chainLinks[i - 1];
+            const next = chainLinks[i + 1];
+            
+            // Spring to neighbors
+            const dx1 = prev.x - link.x;
+            const dy1 = prev.y - link.y;
+            const dx2 = next.x - link.x;
+            const dy2 = next.y - link.y;
+            
+            link.vx += (dx1 + dx2) * 0.1;
+            link.vy += (dy1 + dy2) * 0.1;
+            
+            // Gravity
+            link.vy += 0.2;
+            
+            // Damping
+            link.vx *= 0.9;
+            link.vy *= 0.9;
+            
+            link.x += link.vx;
+            link.y += link.vy;
+          }
+        }
+      }
+      
+      // Update particles
+      particles.forEach(p => {
+        p.x += p.speed;
+        if (p.x > width) p.x = 0;
+      });
+      
+      // Update bubbles
+      bubbles.forEach((b, i) => {
+        b.y -= b.speed;
+        b.wobble += b.wobbleSpeed;
+        b.x += Math.sin(b.wobble) * 0.5;
+        if (b.y < -10) bubbles.splice(i, 1);
+      });
+      
+      spawnBubble();
+    }
+    
+    // Draw
+    function draw() {
+      // Gradient background (surface to depths)
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0, '#0a1628');
+      grad.addColorStop(0.3, '#14213d');
+      grad.addColorStop(0.6, '#1a2332');
+      grad.addColorStop(1, '#0D0D0D');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+      
+      // Water particles
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      
+      // Bubbles
+      bubbles.forEach(b => {
+        ctx.strokeStyle = colors.electricBlue;
+        ctx.globalAlpha = 0.3;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+      
+      // Chain (if anchored and visible)
+      if (anchor.dropped && anchor.y > 0) {
+        // Calculate tension for glow
+        const dist = Math.hypot(boat.x - anchor.x, boat.y - anchor.y);
+        const maxDist = height - 100;
+        const tension = Math.min(dist / maxDist, 1);
+        
+        ctx.strokeStyle = colors.amber;
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 10 + tension * 20;
+        ctx.shadowColor = tension > 0.7 ? colors.hotPink : colors.amber;
+        
+        ctx.beginPath();
+        ctx.moveTo(chainLinks[0].x, chainLinks[0].y);
+        for (let i = 1; i < chainLinks.length; i++) {
+          ctx.lineTo(chainLinks[i].x, chainLinks[i].y);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        
+        // Chain links as circles
+        chainLinks.forEach((link, i) => {
+          if (i % 3 === 0) {
+            ctx.fillStyle = colors.gold;
+            ctx.globalAlpha = 0.6;
+            ctx.beginPath();
+            ctx.arc(link.x, link.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+        ctx.globalAlpha = 1;
+      }
+      
+      // Boat
+      ctx.save();
+      ctx.translate(boat.x, boat.y);
+      
+      // Hull
+      ctx.fillStyle = boat.color;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = colors.gold;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 25, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      
+      // Sail
+      ctx.fillStyle = colors.teal;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(0, -5);
+      ctx.lineTo(15, -30);
+      ctx.lineTo(0, -35);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      
+      // Mast
+      ctx.strokeStyle = colors.amber;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, -5);
+      ctx.lineTo(0, -35);
+      ctx.stroke();
+      
+      ctx.restore();
+      
+      // Anchor (if dropped and visible)
+      if (anchor.dropped && anchor.y > 0 && anchor.y < height) {
+        ctx.save();
+        ctx.translate(anchor.x, anchor.y);
+        
+        // Anchor glow
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = anchor.color;
+        
+        // Anchor shape
+        ctx.strokeStyle = anchor.color;
+        ctx.fillStyle = anchor.color;
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        
+        // Vertical shaft
+        ctx.beginPath();
+        ctx.moveTo(0, -15);
+        ctx.lineTo(0, 10);
+        ctx.stroke();
+        
+        // Horizontal arms
+        ctx.beginPath();
+        ctx.moveTo(-12, 10);
+        ctx.lineTo(12, 10);
+        ctx.stroke();
+        
+        // Flukes
+        ctx.beginPath();
+        ctx.moveTo(-12, 10);
+        ctx.lineTo(-15, 15);
+        ctx.moveTo(12, 10);
+        ctx.lineTo(15, 15);
+        ctx.stroke();
+        
+        // Ring at top
+        ctx.beginPath();
+        ctx.arc(0, -15, 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      }
+    }
+    
+    // Animation loop
+    function animate() {
+      updatePhysics();
+      draw();
+      requestAnimationFrame(animate);
+    }
+    
+    // Start
+    startBtn.addEventListener('click', () => {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      startBtn.style.display = 'none';
+      animate();
+    });
+  </script>
+</body>
+</html>
