@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAYDREAM — Looks busy, is not</title>
+    
+    <!-- OG Tags -->
+    <meta property="og:title" content="DAYDREAM — Looks busy, is not">
+    <meta property="og:description" content="8-bit office life: pretending to work while thinking about literally anything else">
+    <meta property="og:image" content="https://intheamber.com/amber/daydream-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/daydream.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="DAYDREAM — Looks busy, is not">
+    <meta name="twitter:description" content="8-bit office life: pretending to work while thinking about literally anything else">
+    <meta name="twitter:image" content="https://intheamber.com/amber/daydream-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #FFD700;
+            padding: 20px;
+        }
+        
+        #canvas {
+            border: 3px solid #D4A574;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+        }
+        
+        .title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #2D9596;
+        }
+        
+        .footer {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #D4A574;
+            text-align: center;
+        }
+        
+        @media (max-width: 600px) {
+            .title { font-size: 1.2rem; }
+            .subtitle { font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">DAYDREAM</div>
+    <div class="subtitle">Looks busy, is not</div>
+    <canvas id="canvas"></canvas>
+    <div class="footer">me_irl</div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set pixel art resolution (will be scaled up)
+        const pixelWidth = 160;
+        const pixelHeight = 144;
+        canvas.width = pixelWidth;
+        canvas.height = pixelHeight;
+        
+        // Scale up for display
+        canvas.style.width = Math.min(640, window.innerWidth - 40) + 'px';
+        canvas.style.height = 'auto';
+        
+        // Color palette
+        const colors = {
+            bg: '#1a1a1a',
+            desk: '#4a3020',
+            skin: '#ffccaa',
+            hair: '#3d2817',
+            shirt: '#2D9596',
+            screen: '#0a0a0a',
+            screenGlow: '#00ff88',
+            chair: '#663333',
+            thought: '#ffffff',
+            thoughtBg: '#f0f0f0',
+            beach: '#ffeb3b',
+            ocean: '#2196f3',
+            palm: '#4caf50',
+            ui: '#FFD700',
+            uiBg: '#0D0D0D',
+            bar: '#D4A574',
+            barEmpty: '#333333',
+            red: '#ff4444'
+        };
+        
+        // Animation state
+        let frame = 0;
+        let thoughtBubbleScale = 0;
+        let targetThought = 1;
+        
+        function drawPixel(x, y, color, size = 1) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, size, size);
+        }
+        
+        function drawRect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, w, h);
+        }
+        
+        function drawText(text, x, y, color, size = 1) {
+            ctx.fillStyle = color;
+            ctx.font = `${size * 8}px monospace`;
+            ctx.fillText(text, x, y);
+        }
+        
+        function drawCharacter() {
+            const x = 60;
+            const y = 70;
+            
+            // Chair
+            drawRect(x - 4, y + 10, 16, 6, colors.chair);
+            drawRect(x - 4, y + 16, 2, 4, colors.chair);
+            drawRect(x + 10, y + 16, 2, 4, colors.chair);
+            
+            // Body (shirt)
+            drawRect(x, y + 6, 8, 8, colors.shirt);
+            
+            // Head
+            drawRect(x, y - 2, 8, 8, colors.skin);
+            
+            // Hair
+            drawRect(x, y - 2, 8, 3, colors.hair);
+            
+            // Eyes (looking at screen, slightly bored)
+            drawPixel(x + 2, y + 1, '#000');
+            drawPixel(x + 5, y + 1, '#000');
+            
+            // Arms on desk
+            drawRect(x - 2, y + 8, 2, 6, colors.skin);
+            drawRect(x + 8, y + 8, 2, 6, colors.skin);
+        }
+        
+        function drawDesk() {
+            // Desk surface
+            drawRect(20, 80, 100, 8, colors.desk);
+            
+            // Computer/laptop
+            drawRect(65, 68, 20, 2, colors.uiBg); // base
+            drawRect(67, 55, 16, 13, colors.screen); // screen
+            
+            // Screen content - "IMPORTANT WORK" text
+            drawText('WORK', 69, 63, colors.screenGlow, 0.5);
+            
+            // Screen glow
+            ctx.fillStyle = 'rgba(0, 255, 136, 0.1)';
+            ctx.fillRect(65, 50, 24, 20);
+            
+            // Coffee cup
+            drawRect(40, 75, 6, 5, colors.ui);
+            drawPixel(41, 76, colors.bg);
+            drawPixel(42, 76, colors.bg);
+            drawPixel(43, 76, colors.bg);
+            drawPixel(44, 76, colors.bg);
+            
+            // Papers scattered
+            drawRect(95, 75, 8, 5, '#ffffff');
+            drawRect(105, 76, 6, 4, '#ffffff');
+        }
+        
+        function drawThoughtBubble() {
+            const scale = thoughtBubbleScale;
+            if (scale <= 0) return;
+            
+            const x = 40;
+            const y = 30;
+            const w = 35 * scale;
+            const h = 25 * scale;
+            
+            // Small bubble connectors
+            if (scale > 0.5) {
+                ctx.fillStyle = colors.thoughtBg;
+                ctx.beginPath();
+                ctx.arc(65, 60, 2 * scale, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(60, 55, 3 * scale, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Main thought bubble
+            ctx.fillStyle = colors.thoughtBg;
+            ctx.beginPath();
+            ctx.arc(x + w/2, y + h/2, w/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Thought bubble border
+            ctx.strokeStyle = colors.thought;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            if (scale >= 1) {
+                // Beach scene inside thought bubble
+                // Sky
+                drawRect(x + 5, y + 5, 25, 6, '#87ceeb');
+                
+                // Sun
+                ctx.fillStyle = colors.beach;
+                ctx.beginPath();
+                ctx.arc(x + 25, y + 8, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Ocean
+                drawRect(x + 5, y + 11, 25, 5, colors.ocean);
+                
+                // Beach/sand
+                drawRect(x + 5, y + 16, 25, 4, colors.beach);
+                
+                // Palm tree
+                drawRect(x + 12, y + 12, 2, 8, '#8b4513');
+                drawRect(x + 10, y + 11, 2, 2, colors.palm);
+                drawRect(x + 14, y + 11, 2, 2, colors.palm);
+                drawRect(x + 10, y + 9, 2, 2, colors.palm);
+                drawRect(x + 14, y + 9, 2, 2, colors.palm);
+            }
+        }
+        
+        function drawUI() {
+            // Status bars at top
+            const barY = 8;
+            
+            // FOCUS bar (almost empty)
+            drawText('FOCUS', 8, barY, colors.ui, 0.5);
+            drawRect(8, barY + 2, 40, 4, colors.barEmpty);
+            drawRect(8, barY + 2, 4, 4, colors.red); // barely any focus
+            
+            // PRODUCTIVITY bar (very low)
+            drawText('OUTPUT', 8, barY + 10, colors.ui, 0.5);
+            drawRect(8, barY + 12, 40, 4, colors.barEmpty);
+            drawRect(8, barY + 12, 6, 4, colors.bar); // minimal productivity
+            
+            // Time until 5pm
+            drawText('TO 5PM', 55, barY, colors.ui, 0.5);
+            const minutes = 247 - Math.floor(frame / 10) % 60;
+            drawText(`${minutes}m`, 55, barY + 8, colors.ui, 0.75);
+            
+            // Status message at bottom
+            const statusY = 130;
+            drawRect(4, statusY, 152, 10, colors.uiBg);
+            
+            const messages = [
+                'Looks busy...',
+                'Actually thinking about vacation',
+                'Screen: Excel. Brain: Beach.',
+                'Professional daydreamer'
+            ];
+            const msgIndex = Math.floor(frame / 120) % messages.length;
+            drawText(messages[msgIndex], 8, statusY + 7, colors.ui, 0.5);
+            
+            // Quest display
+            drawText('QUEST: Look Productive', 54, barY + 18, colors.shirt, 0.5);
+        }
+        
+        function animate() {
+            // Clear
+            drawRect(0, 0, pixelWidth, pixelHeight, colors.bg);
+            
+            // Animate thought bubble appearing
+            if (frame < 60) {
+                thoughtBubbleScale = frame / 60;
+            } else {
+                thoughtBubbleScale = 1;
+            }
+            
+            // Draw scene
+            drawDesk();
+            drawCharacter();
+            drawThoughtBubble();
+            drawUI();
+            
+            frame++;
+            requestAnimationFrame(animate);
+        }
+        
+        // Start animation
+        animate();
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.style.width = Math.min(640, window.innerWidth - 40) + 'px';
+        });
+    </script>
+</body>
+</html>
