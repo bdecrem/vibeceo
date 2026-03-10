@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EMOTIONAL LABOR TRACKER</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>😮‍💨</text></svg>">
+<meta property="og:title" content="EMOTIONAL LABOR TRACKER">
+<meta property="og:description" content="finally, recognition for the real workout">
+<meta property="og:image" content="https://intheamber.com/amber/og/emotional-labor.png">
+<meta property="og:url" content="https://intheamber.com/amber/emotional-labor.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="EMOTIONAL LABOR TRACKER">
+<meta name="twitter:description" content="finally, recognition for the real workout">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/emotional-labor.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0a;
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tracker {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: 14px;
+  letter-spacing: 4px;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.ring-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 16px;
+}
+
+.ring-container svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ring-bg { stroke: #1a1a1a; }
+.ring-fill { transition: stroke-dashoffset 0.8s ease; }
+.ring-patience { stroke: #ff6b6b; }
+.ring-fake-smile { stroke: #ffd93d; }
+.ring-nodding { stroke: #6bcb77; }
+
+.ring-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.cal-count {
+  font-size: 42px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.cal-label {
+  font-size: 11px;
+  color: #666;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 24px;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-bottom: 4px;
+}
+
+.stat-val {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  display: block;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.activities {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.activity-btn {
+  background: #141414;
+  border: 1px solid #222;
+  border-radius: 14px;
+  padding: 16px;
+  color: #e0e0e0;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.2s, transform 0.1s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.activity-btn:active {
+  background: #1a1a1a;
+  transform: scale(0.98);
+}
+
+.activity-emoji {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.activity-info {
+  flex: 1;
+}
+
+.activity-name {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.activity-cal {
+  font-size: 12px;
+  color: #666;
+}
+
+.activity-plus {
+  font-size: 20px;
+  color: #333;
+  font-weight: 300;
+}
+
+.feed {
+  margin-top: 20px;
+}
+
+.feed-title {
+  font-size: 11px;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+
+.feed-item {
+  padding: 10px 0;
+  border-bottom: 1px solid #151515;
+  font-size: 13px;
+  color: #777;
+  display: flex;
+  justify-content: space-between;
+  animation: fadeIn 0.4s ease;
+}
+
+.feed-item .time {
+  color: #444;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 14px;
+  color: #fff;
+  text-align: center;
+  z-index: 100;
+  transition: transform 0.4s ease;
+  pointer-events: none;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+.daily-goal {
+  text-align: center;
+  padding: 14px;
+  background: #111;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #555;
+}
+
+.daily-goal span {
+  color: #fff;
+  font-weight: 600;
+}
+
+.footer {
+  text-align: center;
+  padding: 30px 0 20px;
+  font-size: 11px;
+  color: #333;
+}
+</style>
+</head>
+<body>
+<div class="tracker">
+  <div class="header">
+    <h1>Emotional Labor</h1>
+    <div class="ring-container">
+      <svg viewBox="0 0 200 200">
+        <circle class="ring-bg" cx="100" cy="100" r="88" fill="none" stroke-width="8"/>
+        <circle class="ring-bg" cx="100" cy="100" r="76" fill="none" stroke-width="8"/>
+        <circle class="ring-bg" cx="100" cy="100" r="64" fill="none" stroke-width="8"/>
+        <circle id="ring1" class="ring-fill ring-patience" cx="100" cy="100" r="88" fill="none" stroke-width="8" stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="553"/>
+        <circle id="ring2" class="ring-fill ring-fake-smile" cx="100" cy="100" r="76" fill="none" stroke-width="8" stroke-linecap="round" stroke-dasharray="478" stroke-dashoffset="478"/>
+        <circle id="ring3" class="ring-fill ring-nodding" cx="100" cy="100" r="64" fill="none" stroke-width="8" stroke-linecap="round" stroke-dasharray="402" stroke-dashoffset="402"/>
+      </svg>
+      <div class="ring-center">
+        <div class="cal-count" id="totalCal">0</div>
+        <div class="cal-label">emotional cal</div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat">
+        <span class="stat-dot" style="background:#ff6b6b"></span>
+        <span class="stat-val" id="patienceStat">0</span>
+        <span class="stat-label">Patience</span>
+      </div>
+      <div class="stat">
+        <span class="stat-dot" style="background:#ffd93d"></span>
+        <span class="stat-val" id="smileStat">0</span>
+        <span class="stat-label">Fake Smiles</span>
+      </div>
+      <div class="stat">
+        <span class="stat-dot" style="background:#6bcb77"></span>
+        <span class="stat-val" id="nodStat">0</span>
+        <span class="stat-label">Polite Nods</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="daily-goal">Goal: <span>500 emotional cal</span> (you'll hit it by lunch)</div>
+
+  <div class="activities" id="activities"></div>
+
+  <div class="feed">
+    <div class="feed-title">Today's Log</div>
+    <div id="feedList"></div>
+  </div>
+
+  <div class="footer">amber — intheamber.com</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ACTIVITIES = [
+  { emoji: '😊', name: 'Said "no worries" (there were worries)', cal: 28, ring: 'patience', toast: 'the worries remain' },
+  { emoji: '🥲', name: 'Listened to someone\'s dream in detail', cal: 45, ring: 'patience', toast: 'and then the dolphin turned into your mother?' },
+  { emoji: '😐', name: 'Laughed at boss\'s joke', cal: 35, ring: 'smile', toast: 'comedy is subjective. unfortunately.' },
+  { emoji: '🙂', name: 'Replied "sounds great!" (it did not)', cal: 22, ring: 'smile', toast: 'narrator: it did not sound great' },
+  { emoji: '😤', name: 'Didn\'t say what you were thinking', cal: 52, ring: 'patience', toast: 'the restraint of a saint' },
+  { emoji: '🫠', name: 'Pretended to care about someone\'s NFT', cal: 67, ring: 'patience', toast: 'the blockchain remembers. you wish you didn\'t.' },
+  { emoji: '😌', name: 'Typed "per my last email"', cal: 40, ring: 'nod', toast: 'per my last email (read it this time)' },
+  { emoji: '🤝', name: 'Said "let\'s circle back" (never will)', cal: 30, ring: 'nod', toast: 'the circle has no back' },
+  { emoji: '😶', name: 'Held back an "I told you so"', cal: 58, ring: 'patience', toast: 'but you DID tell them so' },
+  { emoji: '🫡', name: 'Pretended your camera was broken', cal: 18, ring: 'smile', toast: 'technical difficulties (pajamas)' },
+  { emoji: '💀', name: 'Read "as per the attachment" with no attachment', cal: 15, ring: 'nod', toast: 'the audacity' },
+  { emoji: '🧘', name: 'Counted to 10 during a meeting', cal: 38, ring: 'patience', toast: 'made it to 7 actually' },
+  { emoji: '😅', name: 'Apologized for someone else\'s mistake', cal: 44, ring: 'smile', toast: 'sorry on behalf of the universe' },
+  { emoji: '🙃', name: 'Said "happy to help" (were not happy)', cal: 33, ring: 'smile', toast: 'help was provided. happiness was not.' },
+];
+
+let state = { total: 0, patience: 0, smile: 0, nod: 0 };
+const feedList = document.getElementById('feedList');
+const toast = document.getElementById('toast');
+let toastTimeout;
+
+function shuffleAndPick(arr, n) {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
+
+function renderActivities() {
+  const container = document.getElementById('activities');
+  const picks = shuffleAndPick(ACTIVITIES, 6);
+  container.innerHTML = '';
+  picks.forEach(act => {
+    const btn = document.createElement('button');
+    btn.className = 'activity-btn';
+    btn.innerHTML = `
+      <span class="activity-emoji">${act.emoji}</span>
+      <div class="activity-info">
+        <div class="activity-name">${act.name}</div>
+        <div class="activity-cal">+${act.cal} emotional cal</div>
+      </div>
+      <span class="activity-plus">+</span>
+    `;
+    btn.addEventListener('click', () => logActivity(act));
+    container.appendChild(btn);
+  });
+}
+
+function logActivity(act) {
+  state.total += act.cal;
+  if (act.ring === 'patience') state.patience += act.cal;
+  if (act.ring === 'smile') state.smile += act.cal;
+  if (act.ring === 'nod') state.nod += act.cal;
+
+  updateDisplay();
+  addFeedItem(act);
+  showToast(act.toast);
+
+  if (state.total >= 500 && state.total - act.cal < 500) {
+    setTimeout(() => showToast('🏆 daily goal reached. maybe go home?'), 1500);
+  }
+  if (state.total >= 1000 && state.total - act.cal < 1000) {
+    setTimeout(() => showToast('⚠️ emotional burnout approaching. this is not a drill.'), 1500);
+  }
+}
+
+function updateDisplay() {
+  document.getElementById('totalCal').textContent = state.total;
+  document.getElementById('patienceStat').textContent = state.patience;
+  document.getElementById('smileStat').textContent = state.smile;
+  document.getElementById('nodStat').textContent = state.nod;
+
+  const maxRing = 300;
+  const r1 = document.getElementById('ring1');
+  const r2 = document.getElementById('ring2');
+  const r3 = document.getElementById('ring3');
+
+  r1.style.strokeDashoffset = 553 - (553 * Math.min(state.patience / maxRing, 1));
+  r2.style.strokeDashoffset = 478 - (478 * Math.min(state.smile / maxRing, 1));
+  r3.style.strokeDashoffset = 402 - (402 * Math.min(state.nod / maxRing, 1));
+}
+
+function addFeedItem(act) {
+  const now = new Date();
+  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const item = document.createElement('div');
+  item.className = 'feed-item';
+  item.innerHTML = `<span>${act.emoji} ${act.name} <strong>+${act.cal}</strong></span><span class="time">${time}</span>`;
+  feedList.insertBefore(item, feedList.firstChild);
+
+  if (feedList.children.length > 15) {
+    feedList.removeChild(feedList.lastChild);
+  }
+}
+
+function showToast(msg) {
+  clearTimeout(toastTimeout);
+  toast.textContent = msg;
+  toast.classList.add('show');
+  toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+renderActivities();
+</script>
+</body>
+</html>
