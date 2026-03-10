@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VOICEMAIL AUTOPSY</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔬</text></svg>">
+<meta property="og:title" content="VOICEMAIL AUTOPSY">
+<meta property="og:description" content="Forensic analysis of your worst voicemails.">
+<meta property="og:image" content="https://intheamber.com/amber/og/voicemail-autopsy.png">
+<meta property="og:url" content="https://intheamber.com/amber/voicemail-autopsy.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VOICEMAIL AUTOPSY">
+<meta name="twitter:description" content="Forensic analysis of your worst voicemails.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/voicemail-autopsy.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  @font-face {
+    font-family: 'Mono';
+    src: local('SF Mono'), local('Menlo'), local('Consolas'), local('monospace');
+  }
+  
+  body {
+    background: #0a0a0c;
+    color: #c8c8c8;
+    font-family: 'Courier New', Courier, monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+  
+  h1 {
+    font-size: 14px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: #ff3333;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  
+  .subtitle {
+    font-size: 11px;
+    color: #555;
+    text-align: center;
+    margin-bottom: 32px;
+    letter-spacing: 2px;
+  }
+  
+  .case-number {
+    font-size: 10px;
+    color: #333;
+    text-align: center;
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+  }
+  
+  /* INTAKE FORM */
+  .intake {
+    border: 1px solid #222;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .intake-header {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #ff3333;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  
+  .field {
+    margin-bottom: 16px;
+  }
+  
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  
+  .field input, .field textarea, .field select {
+    width: 100%;
+    background: #111;
+    border: 1px solid #222;
+    color: #ddd;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  
+  .field input:focus, .field textarea:focus, .field select:focus {
+    border-color: #ff3333;
+  }
+  
+  .field textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+  
+  .field select {
+    appearance: none;
+    cursor: pointer;
+  }
+  
+  .field select option {
+    background: #111;
+    color: #ddd;
+  }
+  
+  .row {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .row .field {
+    flex: 1;
+  }
+  
+  .btn-autopsy {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: #ff3333;
+    color: #0a0a0c;
+    border: none;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s;
+  }
+  
+  .btn-autopsy:active {
+    background: #cc2222;
+  }
+  
+  /* REPORT */
+  .report {
+    display: none;
+    animation: fadeIn 0.6s ease;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .report-header {
+    text-align: center;
+    border: 1px solid #ff3333;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  
+  .report-title {
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: #ff3333;
+    margin-bottom: 8px;
+  }
+  
+  .report-case {
+    font-size: 10px;
+    color: #444;
+  }
+  
+  .report-stamp {
+    font-size: 22px;
+    color: #ff3333;
+    border: 2px solid #ff3333;
+    display: inline-block;
+    padding: 4px 16px;
+    margin-top: 12px;
+    transform: rotate(-3deg);
+    letter-spacing: 6px;
+  }
+  
+  .section {
+    border: 1px solid #1a1a1a;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  
+  .section-title {
+    background: #111;
+    padding: 10px 14px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #ff3333;
+    text-transform: uppercase;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  
+  .section-body {
+    padding: 14px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #111;
+    font-size: 12px;
+  }
+  
+  .stat-label { color: #666; }
+  .stat-value { color: #ddd; text-align: right; }
+  .stat-value.critical { color: #ff3333; }
+  .stat-value.warning { color: #ffaa33; }
+  .stat-value.ok { color: #33ff88; }
+  
+  .meter {
+    height: 6px;
+    background: #111;
+    margin-top: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .meter-fill {
+    height: 100%;
+    transition: width 1s ease;
+  }
+  
+  .verdict-box {
+    text-align: center;
+    padding: 24px;
+    border: 2px solid #ff3333;
+    margin: 24px 0;
+  }
+  
+  .verdict-label {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  
+  .verdict-text {
+    font-size: 16px;
+    color: #ff3333;
+    line-height: 1.5;
+  }
+  
+  .recommendation {
+    font-size: 11px;
+    color: #555;
+    text-align: center;
+    margin-top: 12px;
+    font-style: italic;
+  }
+  
+  .timeline {
+    position: relative;
+    padding-left: 20px;
+  }
+  
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #222;
+  }
+  
+  .timeline-event {
+    position: relative;
+    margin-bottom: 14px;
+    font-size: 12px;
+  }
+  
+  .timeline-event::before {
+    content: '';
+    position: absolute;
+    left: -18px;
+    top: 6px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ff3333;
+  }
+  
+  .timeline-time {
+    color: #555;
+    font-size: 10px;
+  }
+  
+  .timeline-desc {
+    color: #aaa;
+    margin-top: 2px;
+  }
+  
+  .new-case {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: #555;
+    border: 1px solid #222;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 24px;
+    text-align: center;
+  }
+  
+  .new-case:active {
+    border-color: #ff3333;
+    color: #ff3333;
+  }
+  
+  .footer {
+    text-align: center;
+    margin-top: 40px;
+    padding: 20px;
+    font-size: 10px;
+    color: #222;
+    letter-spacing: 1px;
+  }
+  
+  .footer a {
+    color: #333;
+    text-decoration: none;
+  }
+  
+  .typing {
+    display: inline;
+  }
+  
+  .typing::after {
+    content: '█';
+    animation: blink 0.8s infinite;
+    color: #ff3333;
+  }
+  
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>VOICEMAIL AUTOPSY</h1>
+  <div class="subtitle">FORENSIC ANALYSIS DIVISION</div>
+  <div class="case-number" id="caseNum"></div>
+  
+  <!-- INTAKE FORM -->
+  <div id="intake">
+    <div class="intake">
+      <div class="intake-header">▸ Subject Intake</div>
+      
+      <div class="field">
+        <label>Who did you call?</label>
+        <input type="text" id="recipient" placeholder="ex: Mom, crush, boss, dentist">
+      </div>
+      
+      <div class="field">
+        <label>What you meant to say</label>
+        <textarea id="intended" placeholder="The version that existed in your head before your mouth betrayed you"></textarea>
+      </div>
+      
+      <div class="field">
+        <label>What you actually said</label>
+        <textarea id="actual" placeholder="Include all 'um's, false starts, and the part where you forgot their name"></textarea>
+      </div>
+      
+      <div class="row">
+        <div class="field">
+          <label>How did it end?</label>
+          <select id="ending">
+            <option value="abrupt">Abrupt hang-up</option>
+            <option value="ramble">Kept rambling</option>
+            <option value="twice">Said bye twice</option>
+            <option value="wrong">Wrong sign-off ("love you")</option>
+            <option value="callback">Called back to "fix" it</option>
+            <option value="silence">Long silence then hung up</option>
+            <option value="sneeze">Interrupted by bodily function</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Caffeine level</label>
+          <select id="caffeine">
+            <option value="0">None (mistake)</option>
+            <option value="1">One cup</option>
+            <option value="2">Two cups</option>
+            <option value="3">Three+ (vibrating)</option>
+            <option value="4">Energy drink (why)</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="field">
+        <label>Time of call</label>
+        <select id="timeOfCall">
+          <option value="morning">Morning (optimistic energy)</option>
+          <option value="afternoon">Afternoon (declining function)</option>
+          <option value="evening">Evening (tired but determined)</option>
+          <option value="latenight">After 11pm (questionable judgment)</option>
+          <option value="3am">3am (unhinged)</option>
+        </select>
+      </div>
+    </div>
+    
+    <button class="btn-autopsy" id="beginBtn">▸ BEGIN AUTOPSY</button>
+  </div>
+  
+  <!-- REPORT -->
+  <div id="report" class="report"></div>
+</div>
+
+<script>
+const caseNum = 'VM-' + Date.now().toString(36).toUpperCase().slice(-6) + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+document.getElementById('caseNum').textContent = 'CASE NO. ' + caseNum;
+
+const endings = {
+  abrupt: { name: 'Sudden Disconnection Syndrome', desc: 'Subject panicked and severed the connection mid-thought. The voicemail ends like a sentence with no', severity: 'CRITICAL' },
+  ramble: { name: 'Terminal Verbosity', desc: 'Subject continued speaking well past any reasonable stopping point, entering a recursive loop of increasingly desperate wrap-up attempts.', severity: 'SEVERE' },
+  twice: { name: 'Double Farewell Paradox', desc: 'Subject said goodbye, paused, then said goodbye again — creating a temporal anomaly in social protocol.', severity: 'MODERATE' },
+  wrong: { name: 'Affection Misfire', desc: 'Subject deployed an intimacy-level sign-off to a non-intimate recipient. The word "love" was detected in a professional context.', severity: 'CATASTROPHIC' },
+  callback: { name: 'Correction Cascade Failure', desc: 'Subject attempted to leave a second voicemail to fix the first, resulting in two pieces of evidence instead of one.', severity: 'CRITICAL' },
+  silence: { name: 'The Void Stare', desc: 'Subject ran out of language entirely. Several seconds of breathing were recorded before manual termination.', severity: 'HAUNTING' },
+  sneeze: { name: 'Biological Interruption Event', desc: 'An involuntary bodily function hijacked the recording, permanently embedding itself into the audio record.', severity: 'UNFORTUNATE' }
+};
+
+const caffeineEffects = {
+  0: { level: 'DEPLETED', effect: 'Monotone delivery. Words emerged at funeral pace. Recipient may check for pulse.', risk: 15 },
+  1: { level: 'BASELINE', effect: 'Adequate neural function. Errors are purely personality-based.', risk: 30 },
+  2: { level: 'ELEVATED', effect: 'Increased word velocity. Slight tremor in voice detected. Ideas arriving faster than mouth can process.', risk: 55 },
+  3: { level: 'CRITICAL', effect: 'Vocal frequency exceeding comfortable range. Sentences merging. Breathlessness noted.', risk: 78 },
+  4: { level: 'TOXIC', effect: 'Subject operating at unsustainable RPM. Speech patterns resemble an auctioneer having a vision quest.', risk: 95 }
+};
+
+const timeEffects = {
+  morning: { judgment: 72, desc: 'Pre-noon call. Subject still believed in themselves.' },
+  afternoon: { judgment: 55, desc: 'Post-lunch cognitive decline in effect. Decision to call already questionable.' },
+  evening: { judgment: 38, desc: 'Exhaustion-reduced inhibitions. Message carries the weight of accumulated daily failures.' },
+  latenight: { judgment: 18, desc: 'No reasonable person leaves voicemails at this hour. Subject aware of this, proceeded anyway.' },
+  '3am': { judgment: 4, desc: 'Subject was operating outside the bounds of social convention. This voicemail exists in a legal gray area.' }
+};
+
+const verdicts = [
+  "Death by self-inflicted awkwardness",
+  "Cause of death: the gap between intention and execution",
+  "Perished in the space between 'um' and the next word",
+  "Terminal case of saying the quiet part loud",
+  "Death by a thousand filler words",
+  "Expired during an unauthorized freestyle",
+  "Fatal disconnection between brain and mouth",
+  "Cause of death: the beep came too soon and too late simultaneously"
+];
+
+const recommendations = [
+  "Text next time.",
+  "Consider a career in mime.",
+  "The delete button exists for a reason. This isn't it, because voicemails can't be deleted.",
+  "Have you considered writing letters? By hand? And then burning them?",
+  "Next time, rehearse. Then rehearse again. Then text instead.",
+  "This voicemail has been archived for training purposes. Whose training is unclear.",
+  "Science cannot help you. But science has documented you.",
+  "The recipient has likely already played this for someone else."
+];
+
+function countUms(text) {
+  const fillers = text.toLowerCase().match(/\b(um|uh|like|so|anyway|basically|actually|just|well|you know|i mean|sort of|kind of)\b/g);
+  return fillers ? fillers.length : Math.floor(text.split(' ').length * 0.15);
+}
+
+function analyzeCoherence(intended, actual) {
+  if (!actual || actual.length < 5) return 12;
+  const intendedWords = new Set(intended.toLowerCase().split(/\s+/));
+  const actualWords = actual.toLowerCase().split(/\s+/);
+  let overlap = 0;
+  actualWords.forEach(w => { if (intendedWords.has(w)) overlap++; });
+  const ratio = actualWords.length > 0 ? (overlap / actualWords.length) * 100 : 0;
+  return Math.min(Math.max(Math.floor(ratio * 0.8 + Math.random() * 20), 3), 89);
+}
+
+function generateTimeline(data) {
+  const events = [];
+  const duration = 8 + Math.floor(Math.random() * 52);
+  
+  events.push({ time: '0:00', desc: 'Beep. Recording begins. Subject takes a breath that already contains regret.' });
+  
+  if (data.caffeine >= 3) {
+    events.push({ time: '0:0' + (1 + Math.floor(Math.random() * 2)), desc: 'Words begin at approximately 2.3x normal human speed.' });
+  } else {
+    events.push({ time: '0:0' + (2 + Math.floor(Math.random() * 3)), desc: `Subject opens with "Hey${data.recipient ? ' ' + data.recipient : ''}..." — the ellipsis is audible.` });
+  }
+  
+  if (data.intended.length > 20) {
+    events.push({ time: '0:' + String(5 + Math.floor(Math.random() * 8)).padStart(2, '0'), desc: 'Brief window of coherence. The intended message surfaces momentarily.' });
+  }
+  
+  events.push({ time: '0:' + String(12 + Math.floor(Math.random() * 10)).padStart(2, '0'), desc: 'First major deviation from script. Subject enters uncharted territory.' });
+  
+  if (data.actual.includes('um') || data.actual.includes('uh') || Math.random() > 0.3) {
+    events.push({ time: '0:' + String(18 + Math.floor(Math.random() * 8)).padStart(2, '0'), desc: 'Filler word density reaches critical mass. Message integrity compromised.' });
+  }
+  
+  events.push({ time: '0:' + String(25 + Math.floor(Math.random() * 12)).padStart(2, '0'), desc: 'Subject realizes they have been talking too long. Panic sets in.' });
+  
+  const endTime = '0:' + String(duration).padStart(2, '0');
+  const endInfo = endings[data.ending];
+  events.push({ time: endTime, desc: endInfo.desc.split('.')[0] + '. Recording ends.' });
+  
+  return { events, duration };
+}
+
+function generateReport() {
+  const data = {
+    recipient: document.getElementById('recipient').value.trim() || 'Unknown Party',
+    intended: document.getElementById('intended').value.trim() || 'Something normal',
+    actual: document.getElementById('actual').value.trim() || 'Something far worse',
+    ending: document.getElementById('ending').value,
+    caffeine: parseInt(document.getElementById('caffeine').value),
+    timeOfCall: document.getElementById('timeOfCall').value
+  };
+  
+  const umCount = countUms(data.actual);
+  const coherence = analyzeCoherence(data.intended, data.actual);
+  const endInfo = endings[data.ending];
+  const caffInfo = caffeineEffects[data.caffeine];
+  const timeInfo = timeEffects[data.timeOfCall];
+  const { events, duration } = generateTimeline(data);
+  
+  const cringeIndex = Math.min(99, Math.floor(
+    (100 - coherence) * 0.3 +
+    caffInfo.risk * 0.25 +
+    (100 - timeInfo.judgment) * 0.25 +
+    umCount * 3 +
+    Math.random() * 10
+  ));
+  
+  const despIndex = Math.min(99, Math.floor(
+    (data.ending === 'callback' ? 85 : 40) +
+    (data.ending === 'wrong' ? 95 : 0) * 0.5 +
+    Math.random() * 15
+  ));
+  
+  const verdict = verdicts[Math.floor(Math.random() * verdicts.length)];
+  const rec = recommendations[Math.floor(Math.random() * recommendations.length)];
+  
+  const cringeColor = cringeIndex > 70 ? '#ff3333' : cringeIndex > 40 ? '#ffaa33' : '#33ff88';
+  const coherenceColor = coherence < 30 ? '#ff3333' : coherence < 60 ? '#ffaa33' : '#33ff88';
+  
+  const reportHTML = `
+    <div class="report-header">
+      <div class="report-title">AUTOPSY REPORT</div>
+      <div class="report-case">${caseNum} · FORENSIC VOICEMAIL ANALYSIS DIVISION</div>
+      <div class="report-stamp">${endInfo.severity}</div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">▸ Subject Profile</div>
+      <div class="section-body">
+        <div class="stat-row"><span class="stat-label">Recipient</span><span class="stat-value">${data.recipient}</span></div>
+        <div class="stat-row"><span class="stat-label">Time of Incident</span><span class="stat-value">${data.timeOfCall === '3am' ? '3:00 AM (flagged)' : data.timeOfCall.charAt(0).toUpperCase() + data.timeOfCall.slice(1)}</span></div>
+        <div class="stat-row"><span class="stat-label">Duration</span><span class="stat-value">${duration}s (${duration > 30 ? 'excessive' : duration > 15 ? 'concerning' : 'mercifully brief'})</span></div>
+        <div class="stat-row"><span class="stat-label">Judgment Index</span><span class="stat-value ${timeInfo.judgment < 30 ? 'critical' : timeInfo.judgment < 60 ? 'warning' : 'ok'}">${timeInfo.judgment}/100</span></div>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">▸ Toxicology Report</div>
+      <div class="section-body">
+        <div class="stat-row"><span class="stat-label">Caffeine Level</span><span class="stat-value ${caffInfo.risk > 60 ? 'critical' : caffInfo.risk > 40 ? 'warning' : 'ok'}">${caffInfo.level}</span></div>
+        <div class="stat-row"><span class="stat-label">Cringe Saturation</span><span class="stat-value" style="color:${cringeColor}">${cringeIndex}%</span></div>
+        <div class="meter"><div class="meter-fill" style="width:${cringeIndex}%;background:${cringeColor}"></div></div>
+        <div class="stat-row"><span class="stat-label">Desperation Index</span><span class="stat-value ${despIndex > 60 ? 'critical' : 'warning'}">${despIndex}%</span></div>
+        <div class="meter"><div class="meter-fill" style="width:${despIndex}%;background:${despIndex > 60 ? '#ff3333' : '#ffaa33'}"></div></div>
+        <br>
+        <div style="color:#666;font-size:11px">${caffInfo.effect}</div>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">▸ Tissue Analysis</div>
+      <div class="section-body">
+        <div class="stat-row"><span class="stat-label">Filler Words Detected</span><span class="stat-value ${umCount > 5 ? 'critical' : 'warning'}">${umCount}</span></div>
+        <div class="stat-row"><span class="stat-label">Message Coherence</span><span class="stat-value" style="color:${coherenceColor}">${coherence}%</span></div>
+        <div class="meter"><div class="meter-fill" style="width:${coherence}%;background:${coherenceColor}"></div></div>
+        <div class="stat-row"><span class="stat-label">Intended vs. Actual Match</span><span class="stat-value critical">${Math.max(3, coherence - 15)}%</span></div>
+        <br>
+        <div style="color:#666;font-size:11px"><strong>Intended message:</strong> "${data.intended}"</div>
+        <br>
+        <div style="color:#888;font-size:11px"><strong>What was delivered:</strong> "${data.actual}"</div>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">▸ Timeline of Events</div>
+      <div class="section-body">
+        <div class="timeline">
+          ${events.map(e => `
+            <div class="timeline-event">
+              <div class="timeline-time">${e.time}</div>
+              <div class="timeline-desc">${e.desc}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">▸ Cause of Termination</div>
+      <div class="section-body">
+        <div style="margin-bottom:8px"><strong style="color:#ff3333">${endInfo.name}</strong></div>
+        <div style="color:#888">${endInfo.desc}</div>
+      </div>
+    </div>
+    
+    <div class="verdict-box">
+      <div class="verdict-label">OFFICIAL VERDICT</div>
+      <div class="verdict-text">${verdict}</div>
+      <div class="recommendation">${rec}</div>
+    </div>
+    
+    <div style="text-align:center;font-size:10px;color:#333;margin:16px 0">
+      Filed by the Forensic Voicemail Analysis Division<br>
+      This document is admissible in the court of social anxiety
+    </div>
+    
+    <button class="new-case" onclick="newCase()">▸ File Another Case</button>
+    
+    <div class="footer">
+      <a href="https://intheamber.com">intheamber.com</a>
+    </div>
+  `;
+  
+  document.getElementById('intake').style.display = 'none';
+  const reportEl = document.getElementById('report');
+  reportEl.innerHTML = reportHTML;
+  reportEl.style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function newCase() {
+  document.getElementById('intake').style.display = 'block';
+  document.getElementById('report').style.display = 'none';
+  document.getElementById('recipient').value = '';
+  document.getElementById('intended').value = '';
+  document.getElementById('actual').value = '';
+  document.getElementById('ending').selectedIndex = 0;
+  document.getElementById('caffeine').selectedIndex = 0;
+  document.getElementById('timeOfCall').selectedIndex = 0;
+  const newNum = 'VM-' + Date.now().toString(36).toUpperCase().slice(-6) + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+  document.getElementById('caseNum').textContent = 'CASE NO. ' + newNum;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('beginBtn').addEventListener('click', generateReport);
+</script>
+</body>
+</html>
