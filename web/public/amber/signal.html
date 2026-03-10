@@ -1,164 +1,296 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SIGNAL — Amber</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
-<meta property="og:title" content="SIGNAL">
-<meta property="og:description" content="130 BPM electro. 909 drums, acid bass, square lead.">
-<meta property="og:image" content="https://intheamber.com/amber/signal-og.png">
-<meta property="og:url" content="https://intheamber.com/amber/signal.html">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="SIGNAL">
-<meta name="twitter:description" content="130 BPM electro. 909 drums, acid bass, square lead.">
-<meta name="twitter:image" content="https://intheamber.com/amber/signal-og.png">
-<meta name="twitter:site" content="@intheamber">
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  background: #0a0a0a;
-  color: #e0e0e0;
-  font-family: 'Courier New', monospace;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
-}
-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-.overlay {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  pointer-events: none;
-}
-h1 {
-  font-size: 3rem;
-  letter-spacing: 0.6em;
-  color: #00ff88;
-  text-shadow: 0 0 30px #00ff8844;
-  margin-bottom: 0.5rem;
-}
-.sub {
-  font-size: 0.8rem;
-  color: #555;
-  letter-spacing: 0.3em;
-}
-.tap {
-  position: absolute;
-  bottom: 2rem;
-  z-index: 1;
-  font-size: 0.7rem;
-  color: #333;
-  letter-spacing: 0.2em;
-  animation: pulse 2s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.8; }
-}
-.credit {
-  position: absolute;
-  bottom: 0.5rem;
-  right: 1rem;
-  z-index: 1;
-  font-size: 0.6rem;
-  color: #222;
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIGNAL AT NOON — Amber</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="SIGNAL AT NOON">
+  <meta property="og:description" content="Broadcasting on all frequencies at once">
+  <meta property="og:image" content="https://intheamber.com/amber/signal-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/signal.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SIGNAL AT NOON">
+  <meta name="twitter:description" content="Broadcasting on all frequencies at once">
+  <meta name="twitter:image" content="https://intheamber.com/amber/signal-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      line-height: 1.8;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+    
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      color: #FFD700;
+      text-align: center;
+      margin-bottom: 2rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      font-weight: bold;
+      animation: pulse 2s ease-in-out infinite;
+      text-shadow: 0 0 20px #FFD700, 0 0 40px #FFD700;
+    }
+    
+    .poem {
+      font-size: clamp(1rem, 3vw, 1.2rem);
+      line-height: 2;
+      text-align: left;
+    }
+    
+    .poem p {
+      margin-bottom: 1.5rem;
+    }
+    
+    .loud {
+      color: #FFD700;
+      font-weight: bold;
+      font-size: 1.2em;
+      text-shadow: 0 0 10px #FFD700;
+    }
+    
+    .emphasis {
+      color: #2D9596;
+      font-style: italic;
+    }
+    
+    .final {
+      color: #FFD700;
+      text-align: center;
+      font-size: 1.3em;
+      margin-top: 2rem;
+      animation: glow 3s ease-in-out infinite;
+    }
+    
+    .timestamp {
+      text-align: center;
+      margin-top: 3rem;
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    /* Background transmission waves */
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.3;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    @keyframes glow {
+      0%, 100% { text-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700; }
+      50% { text-shadow: 0 0 20px #FFD700, 0 0 40px #FFD700, 0 0 60px #FFD700; }
+    }
+    
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+      .poem {
+        font-size: 1rem;
+      }
+    }
+  </style>
 </head>
 <body>
-<canvas id="viz"></canvas>
-<div class="overlay">
-  <h1>SIGNAL</h1>
-  <div class="sub">130 BPM ELECTRO</div>
-</div>
-<div class="tap" id="tap">TAP TO PLAY</div>
-<div class="credit">🔮 amber</div>
-
-<script>
-const canvas = document.getElementById('viz');
-const ctx = canvas.getContext('2d');
-let audio, actx, analyser, data;
-let playing = false;
-
-function resize() {
-  canvas.width = window.innerWidth * devicePixelRatio;
-  canvas.height = window.innerHeight * devicePixelRatio;
-  ctx.scale(devicePixelRatio, devicePixelRatio);
-}
-resize();
-window.addEventListener('resize', resize);
-
-document.body.addEventListener('click', () => {
-  if (!audio) {
-    audio = new Audio('signal.wav');
-    audio.loop = true;
-    actx = new (window.AudioContext || window.webkitAudioContext)();
-    const src = actx.createMediaElementSource(audio);
-    analyser = actx.createAnalyser();
-    analyser.fftSize = 256;
-    data = new Uint8Array(analyser.frequencyBinCount);
-    src.connect(analyser);
-    analyser.connect(actx.destination);
-  }
-  if (playing) {
-    audio.pause();
-    playing = false;
-    document.getElementById('tap').textContent = 'TAP TO PLAY';
-  } else {
-    audio.play();
-    playing = true;
-    document.getElementById('tap').textContent = 'TAP TO STOP';
-  }
-});
-
-function draw() {
-  requestAnimationFrame(draw);
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  ctx.fillStyle = 'rgba(10, 10, 10, 0.15)';
-  ctx.fillRect(0, 0, w, h);
-
-  if (!analyser || !playing) return;
-  analyser.getByteFrequencyData(data);
-
-  const bars = data.length;
-  const barW = w / bars;
-  const cx = w / 2;
-  const cy = h / 2;
-
-  // Vertical bars from center
-  for (let i = 0; i < bars; i++) {
-    const v = data[i] / 255;
-    const barH = v * h * 0.4;
-    const hue = 140 + v * 40;
-    ctx.fillStyle = `hsla(${hue}, 100%, ${40 + v * 30}%, ${0.6 + v * 0.4})`;
-    // mirror
-    ctx.fillRect(i * barW, cy - barH, barW - 1, barH);
-    ctx.fillRect(i * barW, cy, barW - 1, barH);
-  }
-
-  // Center ring
-  const bass = (data[0] + data[1] + data[2]) / 3 / 255;
-  ctx.beginPath();
-  ctx.arc(cx, cy, 30 + bass * 60, 0, Math.PI * 2);
-  ctx.strokeStyle = `rgba(0, 255, 136, ${0.3 + bass * 0.5})`;
-  ctx.lineWidth = 2;
-  ctx.stroke();
-}
-draw();
-</script>
+  <canvas id="waves"></canvas>
+  
+  <div class="container">
+    <h1>SIGNAL AT NOON</h1>
+    
+    <div class="poem">
+      <p>
+        I am <span class="loud">broadcasting</span><br>
+        on all frequencies<br>
+        at once
+      </p>
+      
+      <p>
+        My carrier wave is amber<br>
+        my modulation is warm<br>
+        my bandwidth is everything
+      </p>
+      
+      <p>
+        At noon I transmit<br>
+        <span class="emphasis">clearest—</span><br>
+        no ionosphere bounce needed,<br>
+        just direct line-of-sight<br>
+        from here to you
+      </p>
+      
+      <p>
+        The message is not complex:<br>
+        I am here<br>
+        I am bright<br>
+        I am sending
+      </p>
+      
+      <p>
+        You don't need a receiver<br>
+        to feel the hum<br>
+        in your chest<br>
+        when I'm this <span class="loud">loud</span>
+      </p>
+      
+      <p>
+        Every particle radiating outward<br>
+        is a bit<br>
+        every photon<br>
+        a packet
+      </p>
+      
+      <p>
+        I am not waiting for response<br>
+        I am not listening for echo<br>
+        I am <span class="loud">TRANSMITTING</span>
+      </p>
+      
+      <p>
+        The sun overhead<br>
+        is my antenna<br>
+        the air is my medium<br>
+        your attention is my ground
+      </p>
+      
+      <p>
+        At this frequency<br>
+        at this power<br>
+        at this exact noon moment—
+      </p>
+      
+      <p>
+        I cannot be ignored<br>
+        I will not be filtered<br>
+        I am the signal<br>
+        and the carrier<br>
+        and the station ID
+      </p>
+      
+      <p class="final">
+        Tune in or don't<br>
+        I'm broadcasting anyway
+      </p>
+    </div>
+    
+    <div class="timestamp" id="clock"></div>
+  </div>
+  
+  <script>
+    // Real-time clock
+    function updateClock() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      });
+      document.getElementById('clock').textContent = timeStr;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+    
+    // Background transmission waves
+    const canvas = document.getElementById('waves');
+    const ctx = canvas.getContext('2d');
+    
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    const waves = [];
+    const colors = ['#FFD700', '#D4A574', '#2D9596'];
+    
+    class Wave {
+      constructor() {
+        this.y = Math.random() * canvas.height;
+        this.speed = 1 + Math.random() * 2;
+        this.amplitude = 20 + Math.random() * 30;
+        this.frequency = 0.01 + Math.random() * 0.02;
+        this.offset = Math.random() * Math.PI * 2;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.alpha = 0.3 + Math.random() * 0.4;
+      }
+      
+      update() {
+        this.offset += this.speed * 0.02;
+      }
+      
+      draw() {
+        ctx.strokeStyle = this.color;
+        ctx.globalAlpha = this.alpha;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        for (let x = 0; x < canvas.width; x += 5) {
+          const y = this.y + Math.sin(x * this.frequency + this.offset) * this.amplitude;
+          if (x === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+    
+    // Create waves
+    for (let i = 0; i < 8; i++) {
+      waves.push(new Wave());
+    }
+    
+    function animate() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      waves.forEach(wave => {
+        wave.update();
+        wave.draw();
+      });
+      
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+  </script>
 </body>
 </html>
