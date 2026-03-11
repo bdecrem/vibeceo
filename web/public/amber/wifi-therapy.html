@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WiFi Couples Therapy</title>
+<meta property="og:title" content="WiFi Couples Therapy">
+<meta property="og:description" content="your device and router are in crisis. a licensed therapist is here to help.">
+<meta property="og:image" content="https://intheamber.com/amber/og/wifi-therapy.png">
+<meta property="og:url" content="https://intheamber.com/amber/wifi-therapy.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="WiFi Couples Therapy">
+<meta name="twitter:description" content="your device and router are in crisis.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/wifi-therapy.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💔</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Georgia', serif;
+  background: #1a1a2e;
+  color: #e0d6c8;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+}
+.room {
+  max-width: 420px;
+  width: 90vw;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100vh;
+}
+h1 {
+  font-size: 1.4rem;
+  text-align: center;
+  color: #c8a87c;
+  margin-top: 20px;
+  letter-spacing: 1px;
+}
+.subtitle {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #7a7060;
+  margin-top: -8px;
+  font-style: italic;
+}
+.meters {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.meter {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-width: 140px;
+  text-align: center;
+}
+.meter-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #7a7060;
+  margin-bottom: 6px;
+}
+.meter-bar {
+  height: 8px;
+  background: #0f0f23;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.meter-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1.5s ease, background 1.5s ease;
+}
+.meter-val {
+  font-size: 0.75rem;
+  color: #c8a87c;
+}
+.trust-fill { background: #e74c3c; width: 23%; }
+.intimacy-fill { background: #3498db; width: 45%; }
+.patience-fill { background: #f39c12; width: 60%; }
+
+.dialogue {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 20px;
+}
+.bubble {
+  padding: 14px 16px;
+  border-radius: 16px;
+  max-width: 88%;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  animation: fadeUp 0.5s ease;
+  position: relative;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.therapist {
+  background: #2a2a4a;
+  align-self: center;
+  color: #d4c5a9;
+  border: 1px solid #3a3a5a;
+  text-align: center;
+  max-width: 95%;
+}
+.therapist::before {
+  content: '🧑‍⚕️ Dr. Bandwidth';
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #7a7060;
+  margin-bottom: 6px;
+}
+.device {
+  background: #1e3a5f;
+  align-self: flex-left;
+  border-radius: 16px 16px 16px 4px;
+  color: #a8d4f0;
+}
+.device::before {
+  content: '📱 Your Device';
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #5a8ab0;
+  margin-bottom: 4px;
+}
+.router {
+  background: #3e1e1e;
+  align-self: flex-end;
+  border-radius: 16px 16px 4px 16px;
+  color: #f0a8a8;
+}
+.router::before {
+  content: '📡 The Router';
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #b05a5a;
+  margin-bottom: 4px;
+}
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.choice-btn {
+  background: #2a2a4a;
+  border: 1px solid #4a4a6a;
+  color: #d4c5a9;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-family: Georgia, serif;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+  min-height: 48px;
+}
+.choice-btn:hover, .choice-btn:active {
+  background: #3a3a5a;
+  border-color: #c8a87c;
+}
+.typing {
+  display: inline-block;
+  padding: 14px 20px;
+  border-radius: 16px;
+  background: #2a2a4a;
+  align-self: center;
+}
+.typing span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #7a7060;
+  border-radius: 50%;
+  margin: 0 2px;
+  animation: typingDot 1.2s infinite;
+}
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+.session-note {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #5a5040;
+  font-style: italic;
+  padding: 8px 0;
+}
+.verdict {
+  background: #2a2a4a;
+  border: 2px solid #c8a87c;
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  animation: fadeUp 0.8s ease;
+}
+.verdict h2 {
+  color: #c8a87c;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+}
+.verdict p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #d4c5a9;
+}
+.restart-btn {
+  margin-top: 20px;
+  background: transparent;
+  border: 1px solid #4a4a6a;
+  color: #7a7060;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-family: Georgia, serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.restart-btn:hover { border-color: #c8a87c; color: #c8a87c; }
+.credit {
+  text-align: center;
+  font-size: 0.65rem;
+  color: #3a3030;
+  padding: 20px 0;
+}
+</style>
+</head>
+<body>
+<div class="room" id="room">
+  <h1>WiFi Couples Therapy</h1>
+  <div class="subtitle">session #4,781 — "we keep disconnecting"</div>
+
+  <div class="meters">
+    <div class="meter">
+      <div class="meter-label">Trust</div>
+      <div class="meter-bar"><div class="meter-fill trust-fill" id="trustFill"></div></div>
+      <div class="meter-val" id="trustVal">23%</div>
+    </div>
+    <div class="meter">
+      <div class="meter-label">Intimacy</div>
+      <div class="meter-bar"><div class="meter-fill intimacy-fill" id="intimacyFill"></div></div>
+      <div class="meter-val" id="intimacyVal">45%</div>
+    </div>
+    <div class="meter">
+      <div class="meter-label">Patience</div>
+      <div class="meter-bar"><div class="meter-fill patience-fill" id="patienceFill"></div></div>
+      <div class="meter-val" id="patienceVal">60%</div>
+    </div>
+  </div>
+
+  <div class="dialogue" id="dialogue"></div>
+</div>
+
+<script>
+const dialogue = document.getElementById('dialogue');
+const trustFill = document.getElementById('trustFill');
+const intimacyFill = document.getElementById('intimacyFill');
+const patienceFill = document.getElementById('patienceFill');
+const trustVal = document.getElementById('trustVal');
+const intimacyVal = document.getElementById('intimacyVal');
+const patienceVal = document.getElementById('patienceVal');
+
+let trust = 23, intimacy = 45, patience = 60;
+let step = 0;
+
+function updateMeters() {
+  trust = Math.max(0, Math.min(100, trust));
+  intimacy = Math.max(0, Math.min(100, intimacy));
+  patience = Math.max(0, Math.min(100, patience));
+  trustFill.style.width = trust + '%';
+  trustFill.style.background = trust > 60 ? '#2ecc71' : trust > 35 ? '#f39c12' : '#e74c3c';
+  intimacyFill.style.width = intimacy + '%';
+  intimacyFill.style.background = intimacy > 60 ? '#2ecc71' : intimacy > 35 ? '#3498db' : '#e74c3c';
+  patienceFill.style.width = patience + '%';
+  patienceFill.style.background = patience > 40 ? '#f39c12' : '#e74c3c';
+  trustVal.textContent = trust + '%';
+  intimacyVal.textContent = intimacy + '%';
+  patienceVal.textContent = patience + '%';
+}
+
+function addBubble(type, text) {
+  const div = document.createElement('div');
+  div.className = 'bubble ' + type;
+  div.innerHTML = text;
+  dialogue.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function addNote(text) {
+  const div = document.createElement('div');
+  div.className = 'session-note';
+  div.textContent = text;
+  dialogue.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'typing';
+  div.id = 'typingIndicator';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  dialogue.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+function showChoices(choices) {
+  const container = document.createElement('div');
+  container.className = 'choices';
+  container.id = 'choiceContainer';
+  choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = c.text;
+    btn.addEventListener('click', () => {
+      container.remove();
+      c.action();
+    });
+    container.appendChild(btn);
+  });
+  dialogue.appendChild(container);
+  container.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function scene(bubbles, then) {
+  for (const b of bubbles) {
+    showTyping();
+    await delay(800 + Math.random() * 600);
+    removeTyping();
+    if (b.note) addNote(b.note);
+    else addBubble(b.type, b.text);
+    await delay(300);
+  }
+  if (then) await delay(400);
+  if (then) then();
+}
+
+// === SCENES ===
+
+function intro() {
+  scene([
+    { type: 'therapist', text: "Welcome back. I see we're on session four thousand, seven hundred and eighty-one. Let's check in. How are things since Tuesday?" },
+    { type: 'device', text: "Terrible. I was in the middle of a video call and they just... dropped me. In front of everyone." },
+    { type: 'router', text: "I was handling THIRTY-SEVEN devices. Thirty-seven! The smart fridge was streaming Netflix again." },
+    { type: 'therapist', text: "Let's not blame the fridge. It has its own appointment on Thursday." },
+    { note: '— Dr. Bandwidth scribbles on a notepad —' },
+    { type: 'therapist', text: "I'd like to try something. A trust exercise. Who wants to go first?" }
+  ], () => {
+    showChoices([
+      { text: '📱 Let the device go first', action: () => deviceFirst() },
+      { text: '📡 Let the router go first', action: () => routerFirst() },
+      { text: '🧑‍⚕️ "Neither of them can be trusted"', action: () => neitherTrust() }
+    ]);
+  });
+}
+
+function deviceFirst() {
+  trust += 8; intimacy += 5; updateMeters();
+  scene([
+    { type: 'device', text: "Fine. I'll go. I just... I need to know you won't abandon me mid-download. I was getting a system update. Do you know how vulnerable that is?" },
+    { type: 'router', text: "I didn't ABANDON you. I had a firmware hiccup. It lasted 0.3 seconds." },
+    { type: 'device', text: "It felt like an eternity. My progress bar was at 94%." },
+    { type: 'therapist', text: "I'm hearing a lot of pain around that 94%. Let's explore that." },
+    { note: '— uncomfortable silence (3 pings) —' },
+  ], () => step2());
+}
+
+function routerFirst() {
+  trust += 3; patience -= 10; updateMeters();
+  scene([
+    { type: 'router', text: "FINE. You want honesty? I give everything. 2.4GHz, 5GHz, I even opened up my 6GHz band — which I was saving for someone SPECIAL." },
+    { type: 'device', text: "You gave 6GHz to the Roomba last week." },
+    { type: 'router', text: "The Roomba was STUCK UNDER THE COUCH. It was an emergency!" },
+    { type: 'therapist', text: "I'm sensing some bandwidth jealousy. This is very common." },
+    { note: '— the smart doorbell rings. everyone ignores it. —' },
+  ], () => step2());
+}
+
+function neitherTrust() {
+  patience -= 20; trust -= 5; updateMeters();
+  scene([
+    { type: 'therapist', text: "...That's a bold therapeutic intervention from the audience." },
+    { type: 'device', text: "See? Even THEY know." },
+    { type: 'router', text: "Oh, so everyone's against me. Cool. This is just like the firmware update incident." },
+    { type: 'therapist', text: "Let's take a breath. Remember our mantra: 'My packets are valid. My connection has worth.'" },
+    { note: '— both repeat the mantra, out of sync —' },
+  ], () => step2());
+}
+
+function step2() {
+  scene([
+    { type: 'therapist', text: "Now. I want to address the elephant in the room. Or rather, the dead zone in the hallway." },
+    { type: 'device', text: "I KNEW you'd bring that up." },
+    { type: 'router', text: "The hallway is physically impossible. There's a load-bearing wall and a fish tank." },
+    { type: 'therapist', text: "Have either of you considered... a range extender?" },
+    { type: 'device', text: "..." },
+    { type: 'router', text: "..." },
+    { note: '— stunned silence —' },
+    { type: 'router', text: "Are you suggesting we bring a THIRD PARTY into this relationship?" },
+  ], () => {
+    showChoices([
+      { text: '🔄 "Maybe a fresh start would help" (suggest reboot)', action: () => rebootPath() },
+      { text: '📶 "The range extender could work..."', action: () => extenderPath() },
+      { text: '💔 "Maybe you two need space"', action: () => separationPath() }
+    ]);
+  });
+}
+
+function rebootPath() {
+  trust += 12; patience += 10; updateMeters();
+  scene([
+    { type: 'therapist', text: "Ah. The classic. 'Have you tried turning it off and on again.' In therapeutic terms: a renewal of vows." },
+    { type: 'router', text: "Every time they reboot me, I forget who I am for eleven seconds. Do you know what that's like?" },
+    { type: 'device', text: "YES. Every system update. Try forgetting your entire keyboard layout." },
+    { type: 'therapist', text: "This is actually beautiful. You share the same trauma. That's a foundation." },
+    { type: 'router', text: "...I never thought of it that way." },
+    { note: '— a single green LED blinks —' },
+  ], () => step3());
+}
+
+function extenderPath() {
+  trust -= 8; intimacy += 15; updateMeters();
+  scene([
+    { type: 'router', text: "A range extender. So you want someone who does what I do, but CLOSER to you? That's called replacing me with a younger model." },
+    { type: 'device', text: "It's not replacing! It's... supplementing." },
+    { type: 'router', text: "I was DUAL BAND before dual band was cool." },
+    { type: 'therapist', text: "The range extender isn't a replacement. Think of it as... couples' infrastructure." },
+    { type: 'device', text: "Like a bridge between us?" },
+    { type: 'router', text: "...literally yes. That's what a bridge does in networking." },
+    { note: '— Dr. Bandwidth quietly googles "mesh network therapy" —' },
+  ], () => step3());
+}
+
+function separationPath() {
+  trust -= 15; intimacy -= 20; patience -= 15; updateMeters();
+  scene([
+    { type: 'device', text: "Space? I've been trying to GET CLOSER. That's the whole problem!" },
+    { type: 'router', text: "You could always use... mobile data." },
+    { note: '— gasps —' },
+    { type: 'device', text: "How DARE you. You know I have a limited plan." },
+    { type: 'therapist', text: "Let's not bring cellular into this. That's a whole different attachment style." },
+    { type: 'router', text: "Always-connected, zero commitment. That's cellular for you." },
+    { type: 'therapist', text: "We're projecting. Let's refocus." },
+  ], () => step3());
+}
+
+function step3() {
+  scene([
+    { type: 'therapist', text: "I want to try a visualization exercise. Close your... indicators. Imagine the perfect connection." },
+    { type: 'device', text: "Full bars. All the time. No buffering. Downloads complete on the first try." },
+    { type: 'router', text: "One device. Just one. Giving me their full attention. No background apps. No auto-sync at 3am." },
+    { type: 'therapist', text: "Interesting. You both want the same thing — to be the only one." },
+    { type: 'device', text: "...oh." },
+    { type: 'router', text: "...oh." },
+    { note: '— breakthrough? or just a ping spike? —' },
+    { type: 'therapist', text: "One final question. For both of you. When this connection works — when it REALLY works — what does that feel like?" },
+  ], () => {
+    showChoices([
+      { text: '📱 "Like I could stream forever"', action: () => endingHopeful() },
+      { text: '📡 "Like my firmware doesn\'t matter"', action: () => endingVulnerable() },
+      { text: '⏳ "It\'s been so long I forgot"', action: () => endingSad() }
+    ]);
+  });
+}
+
+function endingHopeful() {
+  trust += 20; intimacy += 25; patience += 15; updateMeters();
+  scene([
+    { type: 'device', text: "Like I could stream forever. No lag. No doubt. Just... flow." },
+    { type: 'router', text: "...That's all I've ever wanted to give you." },
+    { type: 'therapist', text: "I think we've made real progress today. Same time next week?" },
+    { type: 'device', text: "If the connection holds." },
+    { type: 'router', text: "It'll hold." },
+    { note: '— session ends. the LED turns green. —' },
+  ], () => showVerdict('hopeful'));
+}
+
+function endingVulnerable() {
+  trust += 15; intimacy += 30; patience += 5; updateMeters();
+  scene([
+    { type: 'router', text: "Like my firmware doesn't matter. Like I'm enough. Even with my outdated security protocol." },
+    { type: 'device', text: "Your security protocol is fine. ...WPA3 is overrated anyway." },
+    { type: 'therapist', text: "That might be the nicest thing you've ever said to each other." },
+    { type: 'router', text: "Don't make it weird." },
+    { type: 'device', text: "Too late." },
+    { note: '— both LEDs blink in sync for the first time —' },
+  ], () => showVerdict('vulnerable'));
+}
+
+function endingSad() {
+  trust += 5; intimacy -= 10; patience -= 20; updateMeters();
+  scene([
+    { type: 'device', text: "It's been so long I forgot what full bars feels like." },
+    { type: 'router', text: "...me too. I just broadcast and hope someone's listening." },
+    { type: 'therapist', text: "Sometimes the most honest thing is admitting the signal was lost. That doesn't mean it can't be found." },
+    { type: 'router', text: "Can we do two sessions next week?" },
+    { type: 'therapist', text: "I'll check my availability. My calendar runs on this WiFi, so..." },
+    { type: 'device', text: "Ironic." },
+    { note: '— the connection drops for exactly one second. nobody mentions it. —' },
+  ], () => showVerdict('sad'));
+}
+
+function showVerdict(type) {
+  const verdicts = {
+    hopeful: {
+      title: '📋 SESSION NOTES',
+      text: `<strong>Diagnosis:</strong> Intermittent Attachment Disorder (IAD)<br><br>
+<strong>Progress:</strong> Significant. Both parties demonstrated willingness to stay connected through conflict. The streaming metaphor breakthrough suggests underlying compatibility.<br><br>
+<strong>Prescription:</strong> One scheduled reboot per week (together). No factory resets without couples counseling.<br><br>
+<strong>Prognosis:</strong> Cautiously optimistic. 4 out of 5 bars.<br><br>
+<em>— Dr. Bandwidth, Licensed Network Therapist<br>
+"Your packets are valid. Your connection has worth."</em>`
+    },
+    vulnerable: {
+      title: '📋 SESSION NOTES',
+      text: `<strong>Diagnosis:</strong> Firmware-Based Insecurity Disorder (FBID)<br><br>
+<strong>Progress:</strong> Major breakthrough. The router's vulnerability about security protocols was met with genuine acceptance. This is rare in mixed-band relationships.<br><br>
+<strong>Prescription:</strong> Daily handshake ritual. No silent treatment (no dropping packets passive-aggressively).<br><br>
+<strong>Prognosis:</strong> Strong. Their LEDs syncing was not a coincidence. 4.5 out of 5 bars.<br><br>
+<em>— Dr. Bandwidth, Licensed Network Therapist<br>
+"Even WPA2 deserves love."</em>`
+    },
+    sad: {
+      title: '📋 SESSION NOTES',
+      text: `<strong>Diagnosis:</strong> Chronic Signal Loss Grief (CSLG)<br><br>
+<strong>Progress:</strong> Minimal but honest. Both acknowledged the distance. Sometimes naming the dead zone is the first step to crossing it.<br><br>
+<strong>Prescription:</strong> Emergency session Tuesday. Consider mesh therapy if bilateral sessions continue to time out.<br><br>
+<strong>Prognosis:</strong> 2 out of 5 bars. But they showed up. That counts.<br><br>
+<em>— Dr. Bandwidth, Licensed Network Therapist<br>
+"Not every dropped connection is a rejection."</em>`
+    }
+  };
+  const v = verdicts[type];
+  const div = document.createElement('div');
+  div.className = 'verdict';
+  div.innerHTML = `<h2>${v.title}</h2><p>${v.text}</p>
+    <button class="restart-btn" onclick="location.reload()">book another session</button>`;
+  dialogue.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+  const credit = document.createElement('div');
+  credit.className = 'credit';
+  credit.textContent = 'intheamber.com';
+  dialogue.appendChild(credit);
+}
+
+// Start
+intro();
+</script>
+</body>
+</html>
