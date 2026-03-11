@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>TILT</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="TILT">
+<meta property="og:description" content="pinball but it's a drum machine.">
+<meta property="og:image" content="https://intheamber.com/amber/og/tilt.png">
+<meta property="og:url" content="https://intheamber.com/amber/tilt.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TILT">
+<meta name="twitter:description" content="pinball but it's a drum machine.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/tilt.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050505; overflow: hidden; touch-action: none;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+    -webkit-user-select: none; user-select: none;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(0,0,0,0.6); color: rgba(255,255,255,0.35);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.5); }
+  #play-btn.hidden { opacity: 0; pointer-events: none; }
+  #hint {
+    font-size: 9px; letter-spacing: 3px; color: rgba(255,255,255,0.08);
+    text-transform: uppercase;
+  }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.06); z-index: 10;
+  }
+  #hits {
+    position: fixed; top: 14px; right: 18px;
+    font-size: 8px; letter-spacing: 2px;
+    color: rgba(255,255,255,0.0); z-index: 10;
+    transition: color 0.3s;
+  }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.05); z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="overlay">
+  <button id="play-btn">▶</button>
+  <div id="hint">tap to launch</div>
+</div>
+<div id="title">TILT</div>
+<div id="hits"></div>
+<div id="credits">AMBER · JB01</div>
+
+<script type="module">
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+
+// ══════════════════════════════════════════
+// TILT — pinball drum machine
+// Bumpers trigger drum sounds.
+// Tap to launch balls. Physics makes the beat.
+// ══════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  if (bumpers.length) layoutBumpers();
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── COLORS ──
+const AMBER = { r: 212, g: 165, b: 116 };
+const WHITE = { r: 220, g: 220, b: 220 };
+const GREY  = { r: 140, g: 140, b: 140 };
+const TEAL  = { r: 100, g: 200, b: 180 };
+
+// ── BUMPER DEFINITIONS ──
+// Each bumper maps to a JB01 voice
+const bumperDefs = [
+  // Kicks — large, amber
+  { voice: 'kick', baseR: 0.045, color: AMBER, glow: 1.0 },
+  { voice: 'kick', baseR: 0.045, color: AMBER, glow: 1.0 },
+  { voice: 'kick', baseR: 0.04, color: AMBER, glow: 1.0 },
+  // Snares — medium, white
+  { voice: 'snare', baseR: 0.032, color: WHITE, glow: 0.8 },
+  { voice: 'snare', baseR: 0.032, color: WHITE, glow: 0.8 },
+  { voice: 'snare', baseR: 0.028, color: WHITE, glow: 0.8 },
+  // Claps — medium, teal
+  { voice: 'clap', baseR: 0.025, color: TEAL, glow: 0.7 },
+  { voice: 'clap', baseR: 0.025, color: TEAL, glow: 0.7 },
+  // Closed hats — small, grey
+  { voice: 'ch', baseR: 0.018, color: GREY, glow: 0.5 },
+  { voice: 'ch', baseR: 0.018, color: GREY, glow: 0.5 },
+  { voice: 'ch', baseR: 0.018, color: GREY, glow: 0.5 },
+  { voice: 'ch', baseR: 0.018, color: GREY, glow: 0.5 },
+  { voice: 'ch', baseR: 0.016, color: GREY, glow: 0.5 },
+  { voice: 'ch', baseR: 0.016, color: GREY, glow: 0.5 },
+  // Open hat — medium, bright grey
+  { voice: 'oh', baseR: 0.022, color: { r: 180, g: 180, b: 180 }, glow: 0.6 },
+];
+
+// Bumper positions (normalized 0-1, laid out for good pinball flow)
+const bumperPositions = [
+  // Kicks — center column, spaced vertically
+  { nx: 0.5, ny: 0.25 },
+  { nx: 0.35, ny: 0.50 },
+  { nx: 0.65, ny: 0.50 },
+  // Snares — mid positions
+  { nx: 0.25, ny: 0.32 },
+  { nx: 0.75, ny: 0.32 },
+  { nx: 0.5, ny: 0.62 },
+  // Claps — upper area
+  { nx: 0.3, ny: 0.15 },
+  { nx: 0.7, ny: 0.15 },
+  // Closed hats — scattered, lower
+  { nx: 0.18, ny: 0.45 },
+  { nx: 0.82, ny: 0.45 },
+  { nx: 0.4, ny: 0.38 },
+  { nx: 0.6, ny: 0.38 },
+  { nx: 0.28, ny: 0.68 },
+  { nx: 0.72, ny: 0.68 },
+  // Open hat
+  { nx: 0.5, ny: 0.78 },
+];
+
+class Bumper {
+  constructor(def, pos) {
+    this.voice = def.voice;
+    this.color = def.color;
+    this.glowMax = def.glow;
+    this.baseR = def.baseR;
+    this.nx = pos.nx;
+    this.ny = pos.ny;
+    this.x = 0; this.y = 0; this.r = 0;
+    this.flash = 0;
+    this.pulsePhase = Math.random() * Math.PI * 2;
+  }
+  layout() {
+    const S = Math.min(W, H);
+    const pad = S * 0.08;
+    this.x = pad + this.nx * (W - pad * 2);
+    this.y = pad + this.ny * (H - pad * 2);
+    this.r = S * this.baseR;
+  }
+  hit() { this.flash = 1.0; }
+  draw(t) {
+    this.flash *= 0.92;
+    const pulse = Math.sin(t * 0.002 + this.pulsePhase) * 0.03 + 1;
+    const r = this.r * pulse;
+    const { r: cr, g: cg, b: cb } = this.color;
+    const baseAlpha = 0.12 + this.flash * 0.7;
+
+    // Glow
+    if (this.flash > 0.02) {
+      const glowR = r * (2 + this.flash * 3);
+      const grad = ctx.createRadialGradient(this.x, this.y, r * 0.5, this.x, this.y, glowR);
+      grad.addColorStop(0, `rgba(${cr},${cg},${cb},${this.flash * 0.15})`);
+      grad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, glowR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Body
+    const grad2 = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r);
+    grad2.addColorStop(0, `rgba(${cr},${cg},${cb},${baseAlpha * 1.2})`);
+    grad2.addColorStop(0.7, `rgba(${cr},${cg},${cb},${baseAlpha * 0.6})`);
+    grad2.addColorStop(1, `rgba(${cr},${cg},${cb},${baseAlpha * 0.2})`);
+    ctx.fillStyle = grad2;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Ring
+    ctx.strokeStyle = `rgba(${cr},${cg},${cb},${0.08 + this.flash * 0.5})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+const bumpers = [];
+for (let i = 0; i < bumperDefs.length; i++) {
+  bumpers.push(new Bumper(bumperDefs[i], bumperPositions[i]));
+}
+
+function layoutBumpers() {
+  bumpers.forEach(b => b.layout());
+}
+layoutBumpers();
+
+// ── BALLS ──
+const GRAVITY = 0.15;
+const DAMPING = 0.75;
+const MAX_BALLS = 8;
+const BALL_RADIUS_RATIO = 0.012;
+
+class Ball {
+  constructor(x, y, vx, vy) {
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
+    this.r = Math.min(W, H) * BALL_RADIUS_RATIO;
+    this.trail = [];
+    this.alive = true;
+    this.age = 0;
+    this.hue = 30 + Math.random() * 20; // warm amber range
+    this.lastTrigger = {};
+  }
+  update() {
+    this.vy += GRAVITY;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.age++;
+
+    // Trail
+    if (this.age % 2 === 0) {
+      this.trail.push({ x: this.x, y: this.y, a: 0.4 });
+    }
+    // Fade trail
+    for (let i = this.trail.length - 1; i >= 0; i--) {
+      this.trail[i].a *= 0.96;
+      if (this.trail[i].a < 0.01) this.trail.splice(i, 1);
+    }
+
+    // Wall bounces
+    if (this.x - this.r < 0) { this.x = this.r; this.vx = Math.abs(this.vx) * DAMPING; }
+    if (this.x + this.r > W) { this.x = W - this.r; this.vx = -Math.abs(this.vx) * DAMPING; }
+    if (this.y - this.r < 0) { this.y = this.r; this.vy = Math.abs(this.vy) * DAMPING; }
+
+    // Drain at bottom
+    if (this.y > H + this.r * 3) {
+      this.alive = false;
+    }
+  }
+  checkBumper(bumper) {
+    const dx = this.x - bumper.x;
+    const dy = this.y - bumper.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const minDist = this.r + bumper.r;
+    if (dist < minDist && dist > 0) {
+      // Cooldown per bumper
+      const now = performance.now();
+      const key = bumpers.indexOf(bumper);
+      if (this.lastTrigger[key] && now - this.lastTrigger[key] < 80) return null;
+      this.lastTrigger[key] = now;
+
+      // Bounce
+      const nx = dx / dist;
+      const ny = dy / dist;
+      const relV = this.vx * nx + this.vy * ny;
+      if (relV < 0) {
+        const bounce = 1.3 + Math.random() * 0.4;
+        this.vx -= (1 + bounce) * relV * nx;
+        this.vy -= (1 + bounce) * relV * ny;
+        // Speed cap
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        if (speed > 18) {
+          this.vx = (this.vx / speed) * 18;
+          this.vy = (this.vy / speed) * 18;
+        }
+      }
+      // Push out of overlap
+      const overlap = minDist - dist;
+      this.x += nx * overlap;
+      this.y += ny * overlap;
+
+      return bumper;
+    }
+    return null;
+  }
+  draw() {
+    // Trail
+    for (const t of this.trail) {
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, this.r * 0.6, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(212,165,116,${t.a * 0.3})`;
+      ctx.fill();
+    }
+    // Ball body
+    const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * 1.5);
+    grad.addColorStop(0, `rgba(240,210,170,0.9)`);
+    grad.addColorStop(0.5, `rgba(212,165,116,0.5)`);
+    grad.addColorStop(1, `rgba(212,165,116,0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Core
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,230,200,0.85)`;
+    ctx.fill();
+  }
+}
+
+const balls = [];
+
+// ── RIPPLE EFFECTS ──
+const ripples = [];
+class Ripple {
+  constructor(x, y, color) {
+    this.x = x; this.y = y;
+    this.color = color;
+    this.radius = 0;
+    this.maxRadius = Math.min(W, H) * 0.06;
+    this.alpha = 0.3;
+  }
+  update() {
+    this.radius += 2;
+    this.alpha *= 0.94;
+    return this.alpha > 0.005;
+  }
+  draw() {
+    const { r, g, b } = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${this.alpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+}
+
+// ── AUDIO ──
+let audioCtx = null;
+let engine = null;
+let started = false;
+let totalHits = 0;
+
+async function initAudio() {
+  audioCtx = new AudioContext({ sampleRate: 44100 });
+  engine = new JB01Engine({ context: audioCtx, bpm: 120 });
+  // Set voice params (engine units)
+  engine.setVoiceParam('kick', 'decay', 0.5);    // 25 in producer = 0.5 engine
+  engine.setVoiceParam('kick', 'level', 0.7);
+  engine.setVoiceParam('snare', 'decay', 0.4);
+  engine.setVoiceParam('snare', 'level', 0.6);
+  engine.setVoiceParam('clap', 'decay', 0.5);
+  engine.setVoiceParam('clap', 'level', 0.5);
+  engine.setVoiceParam('ch', 'decay', 0.15);
+  engine.setVoiceParam('ch', 'level', 0.55);
+  engine.setVoiceParam('ch', 'tone', 0.5);
+  engine.setVoiceParam('oh', 'decay', 0.6);
+  engine.setVoiceParam('oh', 'level', 0.45);
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+}
+
+function triggerVoice(voice) {
+  if (!engine || !audioCtx) return;
+  const now = audioCtx.currentTime;
+  engine.trigger(voice, 0.7 + Math.random() * 0.3, now);
+  totalHits++;
+  document.getElementById('hits').style.color = 'rgba(255,255,255,0.08)';
+  document.getElementById('hits').textContent = totalHits;
+}
+
+function launchBall(x) {
+  if (balls.length >= MAX_BALLS) {
+    // Remove oldest
+    balls.shift();
+  }
+  const launchX = x || W * (0.3 + Math.random() * 0.4);
+  const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.8;
+  const speed = 6 + Math.random() * 4;
+  balls.push(new Ball(
+    launchX,
+    H * 0.92,
+    Math.cos(angle) * speed,
+    Math.sin(angle) * speed
+  ));
+}
+
+// ── RENDER LOOP ──
+let lastTime = 0;
+function render(t) {
+  requestAnimationFrame(render);
+
+  // Fade
+  ctx.fillStyle = 'rgba(5,5,5,0.15)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw bumpers
+  for (const b of bumpers) {
+    b.draw(t);
+  }
+
+  // Update and draw balls
+  for (let i = balls.length - 1; i >= 0; i--) {
+    const ball = balls[i];
+    ball.update();
+
+    // Check collisions
+    for (const bumper of bumpers) {
+      const hit = ball.checkBumper(bumper);
+      if (hit) {
+        hit.hit();
+        triggerVoice(hit.voice);
+        ripples.push(new Ripple(hit.x, hit.y, hit.color));
+      }
+    }
+
+    if (!ball.alive) {
+      balls.splice(i, 1);
+    } else {
+      ball.draw();
+    }
+  }
+
+  // Ripples
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    if (!ripples[i].update()) {
+      ripples.splice(i, 1);
+    } else {
+      ripples[i].draw();
+    }
+  }
+
+  // Launch zone indicator
+  if (started && balls.length === 0) {
+    const breathe = Math.sin(t * 0.003) * 0.5 + 0.5;
+    const grad = ctx.createRadialGradient(W / 2, H * 0.92, 0, W / 2, H * 0.92, 30);
+    grad.addColorStop(0, `rgba(212,165,116,${0.03 + breathe * 0.04})`);
+    grad.addColorStop(1, 'rgba(212,165,116,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(W / 2, H * 0.92, 30, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+requestAnimationFrame(render);
+
+// ── INTERACTION ──
+async function handleTap(x, y) {
+  if (!started) {
+    started = true;
+    await initAudio();
+    document.getElementById('play-btn').classList.add('hidden');
+    document.getElementById('hint').style.display = 'none';
+  }
+  launchBall(x);
+}
+
+document.getElementById('play-btn').addEventListener('click', async (e) => {
+  e.stopPropagation();
+  await handleTap(W / 2);
+});
+
+canvas.addEventListener('click', (e) => {
+  if (!started) return;
+  handleTap(e.clientX);
+});
+
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  if (!started) {
+    handleTap(touch.clientX);
+  } else {
+    handleTap(touch.clientX);
+  }
+}, { passive: false });
+
+// Auto-launch periodically if no balls (keep it alive)
+setInterval(() => {
+  if (started && balls.length === 0) {
+    launchBall();
+  }
+}, 4000);
+</script>
+</body>
+</html>
