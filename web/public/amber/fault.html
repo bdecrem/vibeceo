@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>FAULT</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="FAULT">
+<meta property="og:description" content="the most beautiful things happen at breaking points">
+<meta property="og:image" content="https://intheamber.com/amber/og/fault.png">
+<meta property="og:url" content="https://intheamber.com/amber/fault.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FAULT">
+<meta name="twitter:description" content="the most beautiful things happen at breaking points">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/fault.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0806; touch-action: none; }
+canvas { display: block; width: 100%; height: 100%; }
+#hint { position: fixed; bottom: 20px; left: 0; right: 0; text-align: center;
+  font: 14px/1 'Courier New', monospace; color: rgba(255,120,40,0.4);
+  pointer-events: none; transition: opacity 1.5s; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">touch to add pressure</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('hint');
+
+let W, H, dpr;
+let plates = [];
+let cracks = [];
+let pressurePoints = [];
+let magmaParticles = [];
+let time = 0;
+let hintTimer = null;
+
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  initPlates();
+}
+
+// Voronoi-like tectonic plates
+function initPlates() {
+  plates = [];
+  const count = Math.floor(Math.max(W, H) / 120) + 5;
+  for (let i = 0; i < count; i++) {
+    plates.push({
+      cx: Math.random() * W,
+      cy: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: (Math.random() - 0.5) * 0.15,
+      pressure: 0,
+      hue: 15 + Math.random() * 25, // orange-red range
+      shiftX: 0, shiftY: 0,
+      shiftVX: 0, shiftVY: 0
+    });
+  }
+  rebuildCracks();
+}
+
+function rebuildCracks() {
+  cracks = [];
+  // Build Voronoi edges via brute force nearest-neighbor boundaries
+  const step = 4;
+  const grid = [];
+  for (let y = 0; y < H; y += step) {
+    for (let x = 0; x < W; x += step) {
+      let minD = Infinity, minI = -1, secD = Infinity;
+      for (let i = 0; i < plates.length; i++) {
+        const dx = x - (plates[i].cx + plates[i].shiftX);
+        const dy = y - (plates[i].cy + plates[i].shiftY);
+        const d = dx * dx + dy * dy;
+        if (d < minD) { secD = minD; minD = d; minI = i; }
+        else if (d < secD) { secD = d; }
+      }
+      const edgeness = 1 - (Math.sqrt(secD) - Math.sqrt(minD)) / (step * 3);
+      if (edgeness > 0.3) {
+        grid.push({ x, y, edge: edgeness, plate: minI });
+      }
+    }
+  }
+  cracks = grid;
+}
+
+function addPressure(px, py) {
+  pressurePoints.push({ x: px, y: py, strength: 1, age: 0 });
+  // Add pressure to nearby plates
+  for (const p of plates) {
+    const dx = px - p.cx;
+    const dy = py - p.cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 200) {
+      p.pressure += (1 - dist / 200) * 0.4;
+    }
+  }
+}
+
+function triggerShift(plateIdx) {
+  const p = plates[plateIdx];
+  const angle = Math.random() * Math.PI * 2;
+  const force = 3 + Math.random() * 5;
+  p.shiftVX += Math.cos(angle) * force;
+  p.shiftVY += Math.sin(angle) * force;
+  p.pressure = 0;
+
+  // Spawn magma at the boundary
+  for (const c of cracks) {
+    if (c.plate === plateIdx && c.edge > 0.5 && Math.random() < 0.15) {
+      magmaParticles.push({
+        x: c.x + (Math.random() - 0.5) * 6,
+        y: c.y + (Math.random() - 0.5) * 6,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: (Math.random() - 0.5) * 1.5 - 0.5,
+        life: 1,
+        decay: 0.003 + Math.random() * 0.005,
+        size: 2 + Math.random() * 4,
+        hue: 20 + Math.random() * 40
+      });
+    }
+  }
+}
+
+// Input
+let touching = false;
+function onStart(e) {
+  e.preventDefault();
+  touching = true;
+  const t = e.touches ? e.touches[0] : e;
+  addPressure(t.clientX, t.clientY);
+  if (hint.style.opacity !== '0') { hint.style.opacity = '0'; }
+}
+function onMove(e) {
+  e.preventDefault();
+  if (!touching) return;
+  const t = e.touches ? e.touches[0] : e;
+  addPressure(t.clientX, t.clientY);
+}
+function onEnd(e) { touching = false; }
+canvas.addEventListener('touchstart', onStart, { passive: false });
+canvas.addEventListener('touchmove', onMove, { passive: false });
+canvas.addEventListener('touchend', onEnd);
+canvas.addEventListener('mousedown', onStart);
+canvas.addEventListener('mousemove', onMove);
+canvas.addEventListener('mouseup', onEnd);
+
+function update() {
+  time += 0.016;
+
+  // Natural pressure buildup
+  for (const p of plates) {
+    p.pressure += 0.0008 + Math.random() * 0.0003;
+    // Move plates slowly
+    p.cx += p.vx;
+    p.cy += p.vy;
+    // Bounce off edges
+    if (p.cx < -50 || p.cx > W + 50) p.vx *= -1;
+    if (p.cy < -50 || p.cy > H + 50) p.vy *= -1;
+    // Apply and decay shift
+    p.shiftX += p.shiftVX;
+    p.shiftY += p.shiftVY;
+    p.shiftVX *= 0.92;
+    p.shiftVY *= 0.92;
+    p.shiftX *= 0.97;
+    p.shiftY *= 0.97;
+    // Trigger shift when pressure threshold reached
+    if (p.pressure > 1) {
+      triggerShift(plates.indexOf(p));
+    }
+  }
+
+  // Pressure points decay
+  for (let i = pressurePoints.length - 1; i >= 0; i--) {
+    pressurePoints[i].age += 0.016;
+    pressurePoints[i].strength *= 0.97;
+    if (pressurePoints[i].strength < 0.01) pressurePoints.splice(i, 1);
+  }
+
+  // Magma particles
+  for (let i = magmaParticles.length - 1; i >= 0; i--) {
+    const m = magmaParticles[i];
+    m.x += m.vx;
+    m.y += m.vy;
+    m.vy += 0.02; // slight gravity
+    m.life -= m.decay;
+    if (m.life <= 0) magmaParticles.splice(i, 1);
+  }
+
+  // Periodically rebuild cracks (when plates shift significantly)
+  if (Math.random() < 0.02) rebuildCracks();
+}
+
+function draw() {
+  // Dark stone background
+  ctx.fillStyle = '#0a0806';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle stone texture (noise-like)
+  const stoneTime = time * 0.1;
+  for (let i = 0; i < 200; i++) {
+    const sx = (Math.sin(i * 127.1 + stoneTime) * 0.5 + 0.5) * W;
+    const sy = (Math.cos(i * 311.7 + stoneTime) * 0.5 + 0.5) * H;
+    ctx.fillStyle = `rgba(30,25,20,${0.1 + Math.sin(i + time) * 0.05})`;
+    ctx.fillRect(sx, sy, 3, 3);
+  }
+
+  // Draw crack lines with pressure glow
+  for (const c of cracks) {
+    const plate = plates[c.plate];
+    if (!plate) continue;
+    const pressure = Math.min(plate.pressure, 1);
+    const baseAlpha = c.edge * 0.15;
+    const pressureAlpha = c.edge * pressure * 0.8;
+    const glow = pressure * c.edge;
+
+    // Dark crack line always visible
+    ctx.fillStyle = `rgba(20,15,10,${baseAlpha})`;
+    ctx.fillRect(c.x, c.y, 3, 3);
+
+    // Pressure glow — from deep red to bright orange to white-hot
+    if (pressure > 0.1) {
+      const hue = 20 - pressure * 15; // goes from orange toward red-white
+      const light = 30 + pressure * 55;
+      const sat = 100 - pressure * 30;
+      ctx.fillStyle = `hsla(${hue}, ${sat}%, ${light}%, ${pressureAlpha})`;
+      ctx.fillRect(c.x - 1, c.y - 1, 5, 5);
+
+      // Extra glow for high pressure
+      if (pressure > 0.6) {
+        ctx.fillStyle = `hsla(${hue + 10}, 90%, ${60 + pressure * 30}%, ${pressureAlpha * 0.3})`;
+        ctx.fillRect(c.x - 3, c.y - 3, 9, 9);
+      }
+    }
+  }
+
+  // Draw pressure points (touch ripples)
+  for (const pp of pressurePoints) {
+    const r = pp.age * 80;
+    const alpha = pp.strength * 0.3;
+    const grad = ctx.createRadialGradient(pp.x, pp.y, 0, pp.x, pp.y, r);
+    grad.addColorStop(0, `hsla(25, 100%, 60%, ${alpha})`);
+    grad.addColorStop(0.5, `hsla(15, 100%, 40%, ${alpha * 0.3})`);
+    grad.addColorStop(1, `hsla(5, 100%, 20%, 0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(pp.x, pp.y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Draw magma particles
+  for (const m of magmaParticles) {
+    const alpha = m.life;
+    const light = 50 + m.life * 40;
+    // Core
+    ctx.fillStyle = `hsla(${m.hue}, 100%, ${light}%, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, m.size * m.life, 0, Math.PI * 2);
+    ctx.fill();
+    // Glow
+    ctx.fillStyle = `hsla(${m.hue - 10}, 100%, ${light - 10}%, ${alpha * 0.3})`;
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, m.size * m.life * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Ambient heat shimmer along major cracks
+  for (let i = 0; i < cracks.length; i += 8) {
+    const c = cracks[i];
+    const plate = plates[c.plate];
+    if (!plate || plate.pressure < 0.3) continue;
+    const shimmer = Math.sin(time * 3 + c.x * 0.1 + c.y * 0.1) * 0.5 + 0.5;
+    ctx.fillStyle = `hsla(20, 100%, 50%, ${shimmer * plate.pressure * c.edge * 0.1})`;
+    ctx.fillRect(c.x - 2, c.y - 2, 7, 7);
+  }
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// Auto-hide hint
+hintTimer = setTimeout(() => { hint.style.opacity = '0'; }, 5000);
+
+window.addEventListener('resize', resize);
+resize();
+loop();
+</script>
+</body>
+</html>
