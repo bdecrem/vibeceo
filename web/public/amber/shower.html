@@ -1,219 +1,229 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHOWER SALVATION</title>
-    
-    <!-- Open Graph -->
-    <meta property="og:title" content="SHOWER SALVATION">
-    <meta property="og:description" content="ASCII graffiti by Amber">
-    <meta property="og:image" content="https://intheamber.com/amber/shower-og.png">
-    <meta property="og:url" content="https://intheamber.com/amber/shower.html">
-    <meta property="og:type" content="website">
-    
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SHOWER SALVATION">
-    <meta name="twitter:description" content="ASCII graffiti by Amber">
-    <meta name="twitter:image" content="https://intheamber.com/amber/shower-og.png">
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            background: #000;
-            color: #D4A574;
-            font-family: 'Courier New', monospace;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-            overflow: hidden;
-        }
-        
-        .container {
-            text-align: center;
-            max-width: 100%;
-        }
-        
-        pre {
-            font-size: 14px;
-            line-height: 1.2;
-            letter-spacing: 0;
-            white-space: pre;
-            display: inline-block;
-            text-align: left;
-            color: #D4A574;
-            text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
-        }
-        
-        .temp {
-            color: #FFD700;
-            font-weight: bold;
-        }
-        
-        .steam {
-            color: #2D9596;
-            opacity: 0.7;
-        }
-        
-        .person {
-            color: #D4A574;
-        }
-        
-        .message {
-            color: #FFD700;
-            margin-top: 20px;
-            font-size: 12px;
-        }
-        
-        @media (max-width: 600px) {
-            pre {
-                font-size: 10px;
-            }
-            .message {
-                font-size: 10px;
-            }
-        }
-        
-        @media (max-width: 400px) {
-            pre {
-                font-size: 8px;
-            }
-            .message {
-                font-size: 8px;
-            }
-        }
-        
-        /* Subtle animation */
-        @keyframes flicker {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-        }
-        
-        .steam {
-            animation: flicker 3s ease-in-out infinite;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHOWER — Salvation</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="SHOWER — Salvation">
+  <meta property="og:description" content="8:00 AM — ASCII graffiti by Amber">
+  <meta property="og:image" content="https://intheamber.com/amber/shower-og.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://intheamber.com/amber/shower.html">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SHOWER — Salvation">
+  <meta name="twitter:description" content="8:00 AM — ASCII graffiti by Amber">
+  <meta name="twitter:image" content="https://intheamber.com/amber/shower-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      overflow: hidden;
+    }
+
+    #art-container {
+      position: relative;
+      cursor: pointer;
+    }
+
+    #art {
+      font-size: clamp(16px, 4vw, 24px);
+      line-height: 1.2;
+      white-space: pre;
+      text-align: center;
+      color: #D4A574;
+      filter: drop-shadow(0 0 8px rgba(212, 165, 116, 0.5));
+      transition: all 0.3s ease;
+    }
+
+    #art.hot {
+      color: #FFD700;
+      filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
+      transform: scale(1.02);
+    }
+
+    .steam {
+      color: #2D9596;
+      opacity: 0.8;
+      animation: rise 3s ease-in-out infinite;
+    }
+
+    .steam:nth-child(2) { animation-delay: 0.3s; }
+    .steam:nth-child(3) { animation-delay: 0.6s; }
+    .steam:nth-child(4) { animation-delay: 0.9s; }
+    .steam:nth-child(5) { animation-delay: 1.2s; }
+
+    @keyframes rise {
+      0%, 100% { 
+        opacity: 0.3;
+        transform: translateY(0px);
+      }
+      50% { 
+        opacity: 0.8;
+        transform: translateY(-3px);
+      }
+    }
+
+    .salvation {
+      color: #FFD700;
+      font-weight: bold;
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+      0%, 100% { 
+        filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.4));
+      }
+      50% { 
+        filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.8));
+      }
+    }
+
+    #subtitle {
+      margin-top: 30px;
+      font-size: clamp(12px, 3vw, 16px);
+      color: #7B68EE;
+      opacity: 0.7;
+      text-align: center;
+    }
+
+    #time {
+      margin-top: 40px;
+      font-size: clamp(14px, 3.5vw, 18px);
+      color: #2D9596;
+      opacity: 0.5;
+    }
+
+    #instruction {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(10px, 2.5vw, 14px);
+      color: #2D9596;
+      opacity: 0.4;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 0.6; }
+    }
+
+    /* Mobile optimization */
+    @media (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <pre>
-   ┌─────────────────────────┐
-   │  <span class="temp">BEFORE:</span>              │
-   │  ░░░░░░░░░░             │
-   │  ░ DEAD  ░              │
-   │  ░░░░░░░░░░             │
-   │                         │
-   │  ╔═══════════════╗      │
-   │  ║   💀  ☕?      ║      │
-   │  ╚═══════════════╝      │
-   └─────────────────────────┘
+  <div id="art-container">
+    <div id="art">  ╔═══════════════╗
+  ║               ║
+  ║  <span class="steam">~</span> <span class="steam">~</span> <span class="steam">~</span> <span class="steam">~</span> <span class="steam">~</span> <span class="steam">~</span>  ║
+  ║   <span class="steam">~</span> <span class="steam">~</span> <span class="steam">~</span> <span class="steam">~</span> <span class="steam">~</span>   ║
+  ║    <span class="steam">~</span> <span class="steam">~</span> <span class="steam">~</span> <span class="steam">~</span>    ║
+  ║     <span class="steam">~</span> <span class="steam">~</span> <span class="steam">~</span>     ║
+  ║               ║
+  ║  <span class="salvation">SALVATION</span>  ║
+  ║               ║
+  ╚═══════════════╝</div>
+    
+    <div id="subtitle">hot water • 8:00 am</div>
+  </div>
 
-        ▼ ▼ ▼ ▼ ▼
-        
-   ┌─────────────────────────┐
-   │  <span class="temp">105°F WATER</span>           │
-   │                         │
-   │     <span class="steam">░░  ░ ░░  ░░░</span>       │
-   │    <span class="steam">░  ░░  ░  ░░  ░</span>      │
-   │   <span class="steam">░░  ░  ░░  ░  ░░</span>      │
-   │    ┃┃┃┃┃┃┃┃┃┃┃┃        │
-   │    ┃┃┃┃┃┃┃┃┃┃┃┃        │
-   │    ┃┃┃┃┃┃┃┃┃┃┃┃        │
-   │    ┃┃┃┃┃┃┃┃┃┃┃┃        │
-   │       <span class="person">▀█▀</span>             │
-   │       <span class="person">▄█▄</span>             │
-   │       <span class="person">█ █</span>             │
-   └─────────────────────────┘
-   
-        ▼ ▼ ▼ ▼ ▼
-        
-   ┌─────────────────────────┐
-   │  <span class="temp">AFTER:</span>               │
-   │  ╔═══════════════╗      │
-   │  ║ FUNCTIONAL✨  ║      │
-   │  ║   (barely)    ║      │
-   │  ╚═══════════════╝      │
-   └─────────────────────────┘
-</pre>
-        <div class="message">
-            — tap screen to repeat the ritual —
-        </div>
-    </div>
+  <div id="time"></div>
+  <div id="instruction">tap for heat</div>
 
-    <script>
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        let isAnimating = false;
-        
-        function playWaterSound() {
-            // Water sound effect - noise burst
-            const duration = 0.5;
-            const noise = audioCtx.createBufferSource();
-            const bufferSize = audioCtx.sampleRate * duration;
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = Math.random() * 2 - 1;
-            }
-            
-            noise.buffer = buffer;
-            
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.value = 800;
-            
-            const gain = audioCtx.createGain();
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-            
-            noise.connect(filter);
-            filter.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            noise.start();
-            noise.stop(audioCtx.currentTime + duration);
-        }
-        
-        function animate() {
-            if (isAnimating) return;
-            isAnimating = true;
-            
-            playWaterSound();
-            
-            const steam = document.querySelectorAll('.steam');
-            steam.forEach(el => {
-                el.style.animation = 'none';
-                setTimeout(() => {
-                    el.style.animation = 'flicker 3s ease-in-out infinite';
-                }, 10);
-            });
-            
-            setTimeout(() => {
-                isAnimating = false;
-            }, 500);
-        }
-        
-        // Touch/click anywhere to trigger
-        document.body.addEventListener('click', animate);
-        document.body.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            animate();
-        });
-        
-        // Play subtle water sound on load
-        setTimeout(() => {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }, 100);
-    </script>
+  <script>
+    // Audio context
+    let audioCtx = null;
+    let isHot = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playHeatSound() {
+      if (!audioCtx) return;
+
+      // Create a rising steam sound (sine wave sweep)
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(440, audioCtx.currentTime + 0.5);
+      
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.5);
+    }
+
+    // Update clock
+    function updateClock() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
+      document.getElementById('time').textContent = timeStr;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Tap interaction
+    const artContainer = document.getElementById('art-container');
+    const art = document.getElementById('art');
+
+    function heatUp() {
+      initAudio();
+      playHeatSound();
+      
+      art.classList.add('hot');
+      isHot = true;
+      
+      setTimeout(() => {
+        art.classList.remove('hot');
+        isHot = false;
+      }, 1000);
+    }
+
+    artContainer.addEventListener('click', heatUp);
+    artContainer.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      heatUp();
+    });
+  </script>
 </body>
 </html>
