@@ -159,6 +159,7 @@ export default function FloodGame() {
   const [cumulative, setCumulative] = useState(0);
   const [magicColor, setMagicColor] = useState<string>('');
   const [gotMagicBonus, setGotMagicBonus] = useState(false);
+  const [scoreToSubmit, setScoreToSubmit] = useState(0);
   const [animating, setAnimating] = useState(false);
   const animTimeouts = useRef<NodeJS.Timeout[]>([]);
 
@@ -278,6 +279,7 @@ export default function FloodGame() {
     setHasStartedPlaying(false);
     setBlinkOn(true);
     setGotMagicBonus(false);
+    setScoreToSubmit(0);
     setAnimating(false);
     animTimeouts.current.forEach(clearTimeout);
     animTimeouts.current = [];
@@ -338,6 +340,7 @@ export default function FloodGame() {
         setScore(finalScore);
         setStreak(newStreak);
         setCumulative(newCumulative);
+        setScoreToSubmit(newCumulative);
         saveStreak(newStreak, newCumulative);
         setMessage(`Solved in ${movesUsed} moves!`);
         setMessageType('win');
@@ -350,6 +353,7 @@ export default function FloodGame() {
         setGameState('gameover');
       } else if (newMovesLeft === 0) {
         setScore(0);
+        setScoreToSubmit(cumulative); // preserve streak score for leaderboard
         setStreak(0);
         setCumulative(0);
         saveStreak(0, 0);
@@ -627,7 +631,7 @@ export default function FloodGame() {
               marginBottom: 8,
               lineHeight: 1,
             }}>
-              {cumulative}
+              {scoreToSubmit}
             </div>
 
             <div style={{
@@ -690,17 +694,19 @@ export default function FloodGame() {
               </div>
             )}
 
-            {/* Score submission */}
-            <ScoreFlow
-              score={cumulative}
-              gameId={GAME_ID}
-              colors={SCORE_FLOW_COLORS}
-              maxScore={2000}
-              onRankReceived={(rank, entryId) => {
-                setSubmittedEntryId(entryId ?? null);
-              }}
-              onProgression={(prog) => setProgression(prog)}
-            />
+            {/* Score submission — only show if there's a score worth submitting */}
+            {scoreToSubmit > 0 && (
+              <ScoreFlow
+                score={scoreToSubmit}
+                gameId={GAME_ID}
+                colors={SCORE_FLOW_COLORS}
+                maxScore={2000}
+                onRankReceived={(rank, entryId) => {
+                  setSubmittedEntryId(entryId ?? null);
+                }}
+                onProgression={(prog) => setProgression(prog)}
+              />
+            )}
 
             {/* Actions */}
             <div style={{
@@ -766,8 +772,8 @@ export default function FloodGame() {
               ) : (
                 <ShareButtonContainer
                   id="share-btn-container"
-                  url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/${GAME_ID}/share/${cumulative}` : ''}
-                  text={`I scored ${cumulative} on FLOOD! (${streak} game streak) 🎨`}
+                  url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/${GAME_ID}/share/${scoreToSubmit}` : ''}
+                  text={`I scored ${scoreToSubmit} on FLOOD! 🎨`}
                   style="minimal"
                   socialLoaded={socialLoaded}
                 />
@@ -794,7 +800,7 @@ export default function FloodGame() {
         {showShareModal && user && (
           <ShareModal
             gameUrl={GAME_URL}
-            score={cumulative}
+            score={scoreToSubmit}
             colors={LEADERBOARD_COLORS}
             onClose={() => setShowShareModal(false)}
           />
