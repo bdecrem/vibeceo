@@ -397,57 +397,9 @@ export default function FloodGame() {
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Scattered confetti dots */}
-        {(gameState === 'start' || gameState === 'playing') && (
-          <>
-            {Array.from({ length: 30 }, (_, i) => {
-              const seed = i * 137.508; // golden angle spread
-              const x = ((seed * 7) % 100);
-              const y = ((seed * 13) % 100);
-              const size = 8 + (i % 5) * 8;
-              const color = PALETTE[i % PALETTE.length];
-              const shapes = ['50%', '3px', '50% 3px 50% 3px'] as const;
-              const shape = shapes[i % 3];
-              const rotate = (i * 37) % 360;
-              return (
-                <div key={i} style={{
-                  position: 'absolute',
-                  left: `${x}%`,
-                  top: `${y}%`,
-                  width: size,
-                  height: size,
-                  background: color,
-                  borderRadius: shape,
-                  transform: `rotate(${rotate}deg)`,
-                  opacity: 0.15 + (i % 3) * 0.08,
-                  pointerEvents: 'none',
-                }} />
-              );
-            })}
-          </>
-        )}
-
         {/* START SCREEN */}
         {gameState === 'start' && (
           <div style={{ textAlign: 'center' }}>
-            {/* Mini grid decoration */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(5, 1fr)',
-              gap: 4,
-              width: 140,
-              margin: '0 auto 24px',
-            }}>
-              {Array.from({ length: 25 }, (_, i) => (
-                <div key={i} style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 5,
-                  background: PALETTE[i % PALETTE.length],
-                  opacity: 0.85,
-                }} />
-              ))}
-            </div>
             <h1 style={{
               fontSize: 56,
               fontWeight: 900,
