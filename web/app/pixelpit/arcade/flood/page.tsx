@@ -266,6 +266,12 @@ export default function FloodGame() {
   }, [grid]);
 
   const startGame = useCallback(() => {
+    // Reset streak after a loss (deferred so gameover screen could submit the earned score)
+    if (messageType === 'lose') {
+      setStreak(0);
+      setCumulative(0);
+      saveStreak(0, 0);
+    }
     const newGrid = generateGrid();
     setGrid(newGrid);
     setMovesLeft(MAX_MOVES);
@@ -285,7 +291,7 @@ export default function FloodGame() {
     const available = PALETTE.filter(c => c !== newGrid[0][0]);
     setMagicColor(available[Math.floor(Math.random() * available.length)]);
     setGameState('playing');
-  }, []);
+  }, [messageType]);
 
   const handleColorPick = useCallback((color: string) => {
     if (gameState !== 'playing' || animating) return;
@@ -350,9 +356,6 @@ export default function FloodGame() {
         setGameState('gameover');
       } else if (newMovesLeft === 0) {
         setScore(0);
-        setStreak(0);
-        setCumulative(0);
-        saveStreak(0, 0);
         setMessage(`Out of moves! ${pct}% filled`);
         setMessageType('lose');
         playLoseSound();
