@@ -3,316 +3,341 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RESONANCE — Ambient particle collisions by Amber</title>
-  
+  <title>RESONANCE — Bell tones expanding</title>
+
+  <!-- Open Graph -->
   <meta property="og:title" content="RESONANCE">
-  <meta property="og:description" content="Sound particles drift and collide. Each touch creates a bell tone. Tap to add more particles. Generative ambient music.">
+  <meta property="og:description" content="Bell tones expanding — Amber Art">
   <meta property="og:image" content="https://intheamber.com/amber/resonance-og.png">
-  <meta property="og:url" content="https://kochi.to/amber/resonance.html">
+  <meta property="og:url" content="https://intheamber.com/amber/resonance.html">
+  <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://intheamber.com/amber/resonance-og.png">
-  
+
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
       background: #000;
       overflow: hidden;
-      font-family: 'Space Mono', monospace;
+      font-family: 'Space Mono', 'Courier New', monospace;
       color: #D4A574;
+      touch-action: none;
     }
-    
+
     canvas {
       display: block;
-      width: 100%;
-      height: 100vh;
-      cursor: pointer;
+      cursor: crosshair;
     }
-    
-    #ui {
-      position: fixed;
-      top: 20px;
-      left: 20px;
+
+    #info {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 14px;
+      color: #D4A574;
+      opacity: 0.7;
+      pointer-events: none;
       z-index: 10;
     }
-    
-    h1 {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      margin-bottom: 8px;
-      color: #D4A574;
-    }
-    
-    p {
-      font-size: 11px;
-      color: #2D9596;
-      line-height: 1.6;
-    }
-    
-    #start {
-      position: fixed;
-      top: 50%;
+
+    #title {
+      position: absolute;
+      top: 30px;
       left: 50%;
-      transform: translate(-50%, -50%);
-      background: #D4A574;
-      color: #000;
-      border: none;
-      padding: 20px 40px;
-      font-family: 'Space Mono', monospace;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      cursor: pointer;
-      transition: all 0.3s;
-      z-index: 100;
+      transform: translateX(-50%);
+      font-size: 36px;
+      font-weight: bold;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+      letter-spacing: 8px;
+      pointer-events: none;
+      z-index: 10;
     }
-    
-    #start:hover {
-      background: #FFD700;
-      transform: translate(-50%, -50%) scale(1.05);
+
+    #stats {
+      position: absolute;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #2D9596;
+      opacity: 0.6;
+      pointer-events: none;
+      z-index: 10;
     }
-    
-    #start.hidden {
-      display: none;
+
+    @media (max-width: 768px) {
+      #title {
+        font-size: 24px;
+        top: 20px;
+        letter-spacing: 4px;
+      }
+      #info {
+        font-size: 12px;
+        bottom: 10px;
+      }
+      #stats {
+        font-size: 10px;
+        top: 60px;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="ui">
-    <h1>RESONANCE</h1>
-    <p>Particles collide and sing.<br>Tap to add more voices.</p>
-  </div>
-  
-  <button id="start">START</button>
+  <div id="title">RESONANCE</div>
+  <div id="stats">active rings: <span id="ringCount">0</span> • bells rung: <span id="bellCount">0</span></div>
   <canvas id="canvas"></canvas>
+  <div id="info">tap anywhere to ring a bell</div>
 
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const startBtn = document.getElementById('start');
-    
-    let audioCtx;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Bell definitions (color, frequency, name)
+    const bells = [
+      { color: '#FFD700', freq: 440, name: 'GOLD' },      // A4
+      { color: '#ec4899', freq: 523, name: 'PINK' },      // C5
+      { color: '#3b82f6', freq: 587, name: 'BLUE' },      // D5
+      { color: '#2D9596', freq: 659, name: 'TEAL' },      // E5
+      { color: '#f97316', freq: 698, name: 'CORAL' },     // F5
+      { color: '#8b5cf6', freq: 784, name: 'PURPLE' },    // G5
+      { color: '#D4A574', freq: 880, name: 'AMBER' }      // A5
+    ];
+
+    let currentBellIndex = 0;
+    let rings = [];
     let particles = [];
-    let audioStarted = false;
-    
-    // Pentatonic scale (E minor pentatonic: E, G, A, B, D)
-    const scale = [164.81, 196.00, 220.00, 246.94, 293.66, 329.63, 392.00, 440.00];
-    
-    // Particle colors
-    const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE'];
-    
-    function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    
-    resize();
-    window.addEventListener('resize', resize);
-    
-    class Particle {
-      constructor(x, y) {
+    let audioContext;
+    let bellsRung = 0;
+
+    // Ring class
+    class Ring {
+      constructor(x, y, color, maxRadius) {
         this.x = x;
         this.y = y;
-        this.radius = Math.random() * 15 + 10; // 10-25px
-        this.vx = (Math.random() - 0.5) * 2; // Slow drift
-        this.vy = (Math.random() - 0.5) * 2;
-        this.color = colors[Math.floor(Math.random() * colors.length)];
-        this.freq = scale[Math.floor(Math.random() * scale.length)];
-        this.glow = 0;
+        this.color = color;
+        this.radius = 0;
+        this.maxRadius = maxRadius;
+        this.opacity = 1;
+        this.speed = 2 + Math.random() * 2; // 2-4 pixels per frame
+        this.thickness = 3 + Math.random() * 3; // 3-6px thick
+        this.alive = true;
       }
-      
+
+      update() {
+        this.radius += this.speed;
+        this.opacity = 1 - (this.radius / this.maxRadius);
+
+        if (this.radius >= this.maxRadius || this.opacity <= 0) {
+          this.alive = false;
+        }
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.thickness;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.color;
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    }
+
+    // Particle class
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
+        this.size = 2 + Math.random() * 3;
+        this.opacity = 1;
+        this.life = 1;
+        this.decay = 0.02;
+        this.alive = true;
+      }
+
       update() {
         this.x += this.vx;
         this.y += this.vy;
-        
-        // Bounce off edges
-        if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
-          this.vx *= -1;
-          this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+        this.vx *= 0.98; // damping
+        this.vy *= 0.98;
+        this.life -= this.decay;
+        this.opacity = this.life;
+
+        if (this.life <= 0) {
+          this.alive = false;
         }
-        if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
-          this.vy *= -1;
-          this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-        }
-        
-        // Fade glow
-        if (this.glow > 0) this.glow -= 0.05;
       }
-      
+
       draw() {
         ctx.save();
-        
-        // Outer glow when resonating
-        if (this.glow > 0) {
-          ctx.shadowBlur = 40 * this.glow;
-          ctx.shadowColor = this.color;
-        }
-        
-        // Particle
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.globalAlpha = this.opacity;
         ctx.fillStyle = this.color;
-        ctx.globalAlpha = 0.6 + (this.glow * 0.4);
-        ctx.fill();
-        
-        // Inner ring
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius * 0.6, 0, Math.PI * 2);
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.restore();
       }
-      
-      collidesWith(other) {
-        const dx = this.x - other.x;
-        const dy = this.y - other.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance < this.radius + other.radius;
-      }
-      
-      resolveCollision(other) {
-        // Simple elastic collision
-        const dx = other.x - this.x;
-        const dy = other.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance === 0) return;
-        
-        const nx = dx / distance;
-        const ny = dy / distance;
-        
-        const dvx = other.vx - this.vx;
-        const dvy = other.vy - this.vy;
-        const dotProduct = dvx * nx + dvy * ny;
-        
-        this.vx += dotProduct * nx;
-        this.vy += dotProduct * ny;
-        other.vx -= dotProduct * nx;
-        other.vy -= dotProduct * ny;
-        
-        // Separate particles
-        const overlap = this.radius + other.radius - distance;
-        this.x -= nx * overlap * 0.5;
-        this.y -= ny * overlap * 0.5;
-        other.x += nx * overlap * 0.5;
-        other.y += ny * overlap * 0.5;
+    }
+
+    // Initialize audio context
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
       }
     }
-    
-    function playTone(freq) {
-      if (!audioCtx) return;
-      
-      const now = audioCtx.currentTime;
-      
-      // Bell-like tone using multiple oscillators
-      const osc1 = audioCtx.createOscillator();
-      const osc2 = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      
-      osc1.type = 'sine';
+
+    // Play bell tone
+    function playBell(frequency) {
+      if (!audioContext) return;
+
+      const now = audioContext.currentTime;
+
+      // Triangle wave for bell-like tone
+      const osc = audioContext.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(frequency, now);
+
+      // Add a second oscillator for richness
+      const osc2 = audioContext.createOscillator();
       osc2.type = 'sine';
-      osc1.frequency.value = freq;
-      osc2.frequency.value = freq * 2.01; // Slight detuning for richness
-      
-      osc1.connect(gain);
-      osc2.connect(gain);
-      gain.connect(audioCtx.destination);
-      
-      // Envelope
-      gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(0.1, now + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
-      
-      osc1.start(now);
+      osc2.frequency.setValueAtTime(frequency * 2.01, now); // slight detune
+
+      // Envelope for bell decay
+      const gain = audioContext.createGain();
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 3); // 3 second decay
+
+      const gain2 = audioContext.createGain();
+      gain2.gain.setValueAtTime(0.1, now);
+      gain2.gain.exponentialRampToValueAtTime(0.01, now + 2);
+
+      // Filter for brightness
+      const filter = audioContext.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(3000, now);
+      filter.Q.setValueAtTime(1, now);
+
+      osc.connect(gain);
+      osc2.connect(gain2);
+      gain.connect(filter);
+      gain2.connect(filter);
+      filter.connect(audioContext.destination);
+
+      osc.start(now);
       osc2.start(now);
-      osc1.stop(now + 1.5);
-      osc2.stop(now + 1.5);
+      osc.stop(now + 3);
+      osc2.stop(now + 2);
     }
-    
-    function addParticle(x, y) {
-      particles.push(new Particle(x, y));
-    }
-    
-    function init() {
-      // Start with 8 particles in random positions
-      for (let i = 0; i < 8; i++) {
-        addParticle(
-          Math.random() * canvas.width,
-          Math.random() * canvas.height
-        );
+
+    // Ring a bell at position
+    function ringBell(x, y) {
+      initAudio();
+
+      const bell = bells[currentBellIndex];
+
+      // Create 5-7 expanding rings
+      const numRings = 5 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < numRings; i++) {
+        setTimeout(() => {
+          const maxRadius = 200 + Math.random() * 300;
+          rings.push(new Ring(x, y, bell.color, maxRadius));
+        }, i * 100); // stagger the rings
       }
+
+      // Create particle burst
+      for (let i = 0; i < 20; i++) {
+        particles.push(new Particle(x, y, bell.color));
+      }
+
+      // Play sound
+      playBell(bell.freq);
+
+      // Cycle to next bell
+      currentBellIndex = (currentBellIndex + 1) % bells.length;
+      bellsRung++;
+
+      document.getElementById('bellCount').textContent = bellsRung;
     }
-    
+
+    // Handle interaction
+    function handleInteraction(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+      ringBell(x, y);
+    }
+
+    canvas.addEventListener('mousedown', handleInteraction);
+    canvas.addEventListener('touchstart', handleInteraction);
+
+    // Animation loop
     function animate() {
       // Fade trail effect
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Update particles
-      particles.forEach(p => p.update());
-      
-      // Check collisions
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          if (particles[i].collidesWith(particles[j])) {
-            particles[i].resolveCollision(particles[j]);
-            
-            // Play collision sound
-            const avgFreq = (particles[i].freq + particles[j].freq) / 2;
-            playTone(avgFreq);
-            
-            // Trigger glow
-            particles[i].glow = 1;
-            particles[j].glow = 1;
-          }
+
+      // Update and draw rings
+      for (let i = rings.length - 1; i >= 0; i--) {
+        rings[i].update();
+        rings[i].draw();
+
+        if (!rings[i].alive) {
+          rings.splice(i, 1);
         }
       }
-      
-      // Draw particles
-      particles.forEach(p => p.draw());
-      
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+
+        if (!particles[i].alive) {
+          particles.splice(i, 1);
+        }
+      }
+
+      document.getElementById('ringCount').textContent = rings.length;
+
       requestAnimationFrame(animate);
     }
-    
-    // Start button
-    startBtn.addEventListener('click', () => {
-      if (!audioStarted) {
-        audioCtx = new AudioContext();
-        audioStarted = true;
-        startBtn.classList.add('hidden');
-        init();
-        animate();
-      }
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     });
-    
-    // Add particle on tap
-    canvas.addEventListener('click', (e) => {
-      if (audioStarted) {
-        const rect = canvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-        const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-        addParticle(x, y);
-      }
-    });
-    
-    // Mobile touch
-    canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      if (audioStarted) {
-        const rect = canvas.getBoundingClientRect();
-        const touch = e.touches[0];
-        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
-        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
-        addParticle(x, y);
-      }
-    });
+
+    // Start animation
+    animate();
+
+    // Ring a few bells on load for visual interest
+    setTimeout(() => ringBell(canvas.width / 2, canvas.height / 2), 500);
+    setTimeout(() => ringBell(canvas.width * 0.3, canvas.height * 0.6), 1000);
+    setTimeout(() => ringBell(canvas.width * 0.7, canvas.height * 0.4), 1500);
   </script>
 </body>
 </html>
