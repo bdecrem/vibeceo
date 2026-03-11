@@ -3,367 +3,472 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LAYERS - Tap bands to layer ambient drones</title>
-  
-  <!-- OG tags -->
-  <meta property="og:title" content="LAYERS">
-  <meta property="og:description" content="Tap bands to layer ambient drones">
+  <title>LAYERS — Build the track</title>
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="LAYERS — Build the track">
+  <meta property="og:description" content="Amber's loop station. Toggle layers on/off. Build the mix.">
   <meta property="og:image" content="https://intheamber.com/amber/layers-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/layers.html">
+  <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="LAYERS">
-  <meta name="twitter:description" content="Tap bands to layer ambient drones">
+  <meta name="twitter:title" content="LAYERS — Build the track">
+  <meta name="twitter:description" content="Amber's loop station. Toggle layers on/off. Build the mix.">
   <meta name="twitter:image" content="https://intheamber.com/amber/layers-og.png">
-  
+
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
       background: #000;
-      color: #D4A574;
-      font-family: 'Space Mono', monospace;
-      overflow: hidden;
-      cursor: pointer;
-    }
-    
-    #canvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
-    }
-    
-    #start-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.95);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 100;
-      gap: 20px;
+      min-height: 100vh;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      overflow: hidden;
+      padding: 20px;
     }
-    
-    #start-button {
+
+    #canvas {
+      display: block;
+      background: #000;
+      border: 2px solid #D4A574;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+      max-width: 100%;
+    }
+
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 90vw;
+      max-width: 800px;
+    }
+
+    .layer-control {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 12px;
+      background: rgba(13, 13, 13, 0.8);
+      border: 2px solid #333;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .layer-control.active {
+      border-color: #D4A574;
+      box-shadow: 0 0 15px rgba(212, 165, 116, 0.4);
+    }
+
+    .layer-btn {
+      width: 60px;
+      height: 60px;
+      border: 2px solid #D4A574;
+      background: #0D0D0D;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .layer-btn:hover {
+      background: rgba(212, 165, 116, 0.1);
+    }
+
+    .layer-btn.active {
+      background: #D4A574;
+      color: #000;
+      box-shadow: 0 0 15px rgba(212, 165, 116, 0.6);
+    }
+
+    .layer-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .layer-name {
+      font-size: 16px;
+      font-weight: bold;
+      color: #FFD700;
+    }
+
+    .layer-desc {
+      font-size: 12px;
+      color: #2D9596;
+    }
+
+    .start-btn {
+      margin-top: 10px;
+      padding: 16px 32px;
       background: #D4A574;
       color: #000;
       border: none;
-      padding: 20px 40px;
-      font-size: 24px;
+      border-radius: 8px;
       font-family: 'Space Mono', monospace;
+      font-size: 18px;
       font-weight: bold;
       cursor: pointer;
-      border-radius: 4px;
       transition: all 0.2s;
     }
-    
-    #start-button:hover {
+
+    .start-btn:hover {
       background: #FFD700;
-      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
     }
-    
-    #title {
-      font-size: 48px;
-      font-weight: bold;
-      color: #FFD700;
-      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-      margin-bottom: 10px;
-    }
-    
-    #subtitle {
-      font-size: 16px;
-      color: #2D9596;
+
+    .stats {
+      margin-top: 15px;
       text-align: center;
-      max-width: 400px;
-    }
-    
-    #stats {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      font-size: 14px;
-      color: #D4A574;
-      opacity: 0.7;
-      font-family: 'Space Mono', monospace;
-      z-index: 50;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 10px;
-      border-radius: 4px;
-    }
-    
-    #instructions {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
       font-size: 14px;
       color: #2D9596;
-      opacity: 0.7;
-      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .layer-name {
+        font-size: 14px;
+      }
+      .layer-desc {
+        font-size: 11px;
+      }
+      .layer-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 12px;
+      }
     }
   </style>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
-  
-  <div id="start-overlay">
-    <div id="title">LAYERS</div>
-    <div id="subtitle">Tap bands to layer ambient drones. Build your soundscape.</div>
-    <button id="start-button">START</button>
-  </div>
-  
-  <div id="stats">
-    ACTIVE: <span id="active-count">0</span> / 7
-  </div>
-  
-  <div id="instructions">
-    Tap any band to toggle it on/off
+  <canvas id="canvas" width="800" height="400"></canvas>
+
+  <div class="controls">
+    <div class="layer-control" id="layer1-ctrl">
+      <button class="layer-btn" id="layer1-btn">OFF</button>
+      <div class="layer-info">
+        <div class="layer-name">KICK</div>
+        <div class="layer-desc">Four-on-the-floor thump</div>
+      </div>
+    </div>
+
+    <div class="layer-control" id="layer2-ctrl">
+      <button class="layer-btn" id="layer2-btn">OFF</button>
+      <div class="layer-info">
+        <div class="layer-name">HATS</div>
+        <div class="layer-desc">Crispy offbeat rhythm</div>
+      </div>
+    </div>
+
+    <div class="layer-control" id="layer3-ctrl">
+      <button class="layer-btn" id="layer3-btn">OFF</button>
+      <div class="layer-info">
+        <div class="layer-name">BASS</div>
+        <div class="layer-desc">303 squelch and slide</div>
+      </div>
+    </div>
+
+    <div class="layer-control" id="layer4-ctrl">
+      <button class="layer-btn" id="layer4-btn">OFF</button>
+      <div class="layer-info">
+        <div class="layer-name">MELODY</div>
+        <div class="layer-desc">101 ghostly lead</div>
+      </div>
+    </div>
+
+    <button class="start-btn" id="startBtn">START</button>
+
+    <div class="stats">
+      <span id="bpm">128 BPM</span> •
+      <span id="activeCount">0/4 LAYERS</span>
+    </div>
   </div>
 
   <script type="module">
+    // Import synth libraries
+    import { TR909Controller } from '/909/dist/api/index.js';
+    import { TB303Controller } from '/303/dist/api/index.js';
+    import { SH101Controller } from '/101/dist/api/index.js';
+
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const startOverlay = document.getElementById('start-overlay');
-    const startButton = document.getElementById('start-button');
-    const activeCountEl = document.getElementById('active-count');
-    
-    let audioCtx;
-    let started = false;
-    let layers = [];
-    
-    // D minor pentatonic scale
-    const frequencies = [
-      146.83, // D3
-      174.61, // F3
-      196.00, // G3
-      220.00, // A3
-      261.63, // C4
-      293.66, // D4
-      349.23  // F4
-    ];
-    
-    const colors = [
-      '#D4A574', // amber
-      '#FFD700', // gold
-      '#2D9596', // teal
-      '#7B68EE', // violet
-      '#FF69B4', // pink
-      '#FF6B35', // orange
-      '#00CED1'  // cyan
-    ];
-    
+
+    // Make canvas responsive
     function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const maxW = Math.min(window.innerWidth * 0.9, 800);
+      const maxH = Math.min(window.innerHeight * 0.4, 400);
+      canvas.width = maxW;
+      canvas.height = maxH;
     }
-    
-    function initLayers() {
-      const bandHeight = canvas.height / 7;
-      
-      for (let i = 0; i < 7; i++) {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        const filter = audioCtx.createBiquadFilter();
-        
-        osc.type = 'sine';
-        osc.frequency.value = frequencies[i];
-        
-        filter.type = 'lowpass';
-        filter.frequency.value = 800;
-        
-        gain.gain.value = 0; // Start silent
-        
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(audioCtx.destination);
-        
-        osc.start();
-        
-        layers.push({
-          index: i,
-          y: i * bandHeight,
-          height: bandHeight,
-          frequency: frequencies[i],
-          color: colors[i],
-          active: false,
-          osc,
-          gain,
-          phase: Math.random() * Math.PI * 2,
-          targetGain: 0,
-          currentGain: 0
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Audio setup
+    let audioStarted = false;
+    let drums, bass, synth;
+
+    // Layer states
+    const layers = {
+      kick: { active: false, color: '#FFD700', energy: 0 },
+      hats: { active: false, color: '#2D9596', energy: 0 },
+      bass: { active: false, color: '#D4A574', energy: 0 },
+      melody: { active: false, color: '#7B68EE', energy: 0 }
+    };
+
+    // Patterns
+    const kickPattern = [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0];
+    const hatPattern = [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0];
+    const bassPattern = [
+      { note: 'E2', accent: true, slide: false },
+      null, null, null,
+      { note: 'G2', accent: false, slide: true },
+      null,
+      { note: 'A2', accent: false, slide: false },
+      null,
+      { note: 'E2', accent: true, slide: false },
+      null, null, null,
+      { note: 'D3', accent: false, slide: true },
+      null,
+      { note: 'E2', accent: false, slide: false },
+      null
+    ];
+    const melodyPattern = [
+      'D4', null, 'F4', null,
+      'A4', null, null, null,
+      'G4', null, 'F4', null,
+      'D4', null, null, null
+    ];
+
+    let currentStep = 0;
+    let lastStepTime = 0;
+    const stepInterval = (60 / 128) * 1000 / 4; // 128 BPM, 16th notes
+
+    // Particle system for visualization
+    const particles = [];
+
+    function initAudio() {
+      if (audioStarted) return;
+      audioStarted = true;
+
+      // Initialize synths
+      drums = new TR909Controller();
+      drums.setBpm(128);
+
+      bass = new TB303Controller();
+      bass.setBpm(128);
+      bass.setWaveform('sawtooth');
+      bass.setCutoff(0.2);
+      bass.setResonance(0.75);
+      bass.setEnvMod(0.8);
+      bass.setDecay(0.3);
+      bass.setAccent(0.8);
+
+      synth = new SH101Controller();
+      synth.setBpm(128);
+      synth.setWaveform('pulse');
+      synth.setCutoff(0.4);
+      synth.setResonance(0.3);
+      synth.setAttack(0.01);
+      synth.setRelease(0.2);
+
+      // Start the loop
+      setInterval(step, stepInterval);
+    }
+
+    function step() {
+      // Kick
+      if (layers.kick.active && kickPattern[currentStep]) {
+        drums.trigger('kick', 1.0);
+        layers.kick.energy = 1.0;
+        spawnParticles(0, 30);
+      }
+
+      // Hats
+      if (layers.hats.active && hatPattern[currentStep]) {
+        drums.trigger('ch', 0.8);
+        layers.hats.energy = 0.8;
+        spawnParticles(1, 15);
+      }
+
+      // Bass
+      if (layers.bass.active && bassPattern[currentStep]) {
+        const note = bassPattern[currentStep];
+        bass.triggerNote(note.note, note.accent, note.slide);
+        layers.bass.energy = note.accent ? 1.0 : 0.6;
+        spawnParticles(2, 20);
+      }
+
+      // Melody
+      if (layers.melody.active && melodyPattern[currentStep]) {
+        synth.triggerNote(melodyPattern[currentStep], 0.5);
+        layers.melody.energy = 0.7;
+        spawnParticles(3, 12);
+      }
+
+      currentStep = (currentStep + 1) % 16;
+    }
+
+    function spawnParticles(layerIndex, count) {
+      const laneHeight = canvas.height / 4;
+      const y = layerIndex * laneHeight + laneHeight / 2;
+      const colors = ['#FFD700', '#2D9596', '#D4A574', '#7B68EE'];
+
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: 50,
+          y: y + (Math.random() - 0.5) * 40,
+          vx: 3 + Math.random() * 2,
+          vy: (Math.random() - 0.5) * 2,
+          size: 3 + Math.random() * 4,
+          color: colors[layerIndex],
+          alpha: 1.0,
+          decay: 0.015 + Math.random() * 0.01
         });
       }
     }
-    
-    function toggleLayer(index) {
-      const layer = layers[index];
-      layer.active = !layer.active;
-      layer.targetGain = layer.active ? 0.08 : 0; // Gentle volume
-      
-      // Audio feedback
-      if (layer.active) {
-        const feedback = audioCtx.createOscillator();
-        const feedbackGain = audioCtx.createGain();
-        feedback.frequency.value = layer.frequency;
-        feedbackGain.gain.value = 0.1;
-        feedbackGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-        feedback.connect(feedbackGain);
-        feedbackGain.connect(audioCtx.destination);
-        feedback.start();
-        feedback.stop(audioCtx.currentTime + 0.3);
-      }
-      
-      updateStats();
-    }
-    
-    function updateStats() {
-      const activeCount = layers.filter(l => l.active).length;
-      activeCountEl.textContent = activeCount;
-    }
-    
-    function handleClick(e) {
-      if (!started) return;
-      
-      const rect = canvas.getBoundingClientRect();
-      const y = e.clientY - rect.top;
-      
-      const layerIndex = Math.floor((y / canvas.height) * 7);
-      if (layerIndex >= 0 && layerIndex < 7) {
-        toggleLayer(layerIndex);
-      }
-    }
-    
-    function handleTouch(e) {
-      e.preventDefault();
-      if (!started) return;
-      
-      const rect = canvas.getBoundingClientRect();
-      const touch = e.touches[0];
-      const y = touch.clientY - rect.top;
-      
-      const layerIndex = Math.floor((y / canvas.height) * 7);
-      if (layerIndex >= 0 && layerIndex < 7) {
-        toggleLayer(layerIndex);
-      }
-    }
-    
-    function drawWave(layer) {
-      const amplitude = 20;
-      const wavelength = 200;
-      const speed = 0.02;
-      
-      layer.phase += speed;
-      
-      ctx.beginPath();
-      ctx.strokeStyle = layer.color;
-      ctx.lineWidth = 2;
-      
-      for (let x = 0; x < canvas.width; x += 5) {
-        const y = layer.y + layer.height / 2 + 
-                  Math.sin(x / wavelength * Math.PI * 2 + layer.phase) * amplitude;
-        
-        if (x === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      }
-      
-      ctx.stroke();
-    }
-    
-    function drawParticles(layer) {
-      const particleCount = 3;
-      
-      for (let i = 0; i < particleCount; i++) {
-        const x = (Date.now() * 0.05 + i * canvas.width / particleCount) % canvas.width;
-        const y = layer.y + layer.height / 2 + Math.sin(x * 0.01) * 15;
-        
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = layer.color;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor =layer.color;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      }
-    }
-    
-    function animate() {
-      // Dark fade
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+
+    // Animation loop
+    function draw() {
+      // Fade effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw all layers
-      layers.forEach((layer, i) => {
-        // Smooth gain transitions
-        layer.currentGain += (layer.targetGain - layer.currentGain) * 0.1;
-        layer.gain.gain.value = layer.currentGain;
-        
-        // Draw band background
-        ctx.fillStyle = layer.active 
-          ? `${layer.color}10` 
-          : 'rgba(255, 255, 255, 0.02)';
-        ctx.fillRect(0, layer.y, canvas.width, layer.height);
-        
-        // Draw separator line
+
+      const laneHeight = canvas.height / 4;
+      const layerKeys = ['kick', 'hats', 'bass', 'melody'];
+
+      // Drawlanes
+      layerKeys.forEach((key, i) => {
+        const layer = layers[key];
+        const y = i * laneHeight;
+
+        // Lane divider
         ctx.strokeStyle = 'rgba(212, 165, 116, 0.2)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(0, layer.y);
-        ctx.lineTo(canvas.width, layer.y);
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
         ctx.stroke();
-        
-        // Draw active layer visuals
+
+        // Energy bar (shows activity)
         if (layer.active) {
+          const barWidth = canvas.width * 0.8;
+          const barHeight = laneHeight * 0.6;
+          const barX = (canvas.width - barWidth) / 2;
+          const barY = y + (laneHeight - barHeight) / 2;
+
+          // Pulsing background
+          const pulse = layer.energy;
+          ctx.fillStyle = `rgba(${hexToRgb(layer.color).r}, ${hexToRgb(layer.color).g}, ${hexToRgb(layer.color).b}, ${pulse * 0.2})`;
+          ctx.fillRect(barX, barY, barWidth, barHeight);
+
           // Glow effect
-          ctx.shadowBlur = 30;
+          ctx.shadowBlur = pulse * 30;
           ctx.shadowColor = layer.color;
-          
-          drawWave(layer);
-          drawParticles(layer);
-          
+          ctx.strokeStyle = layer.color;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(barX, barY, barWidth, barHeight);
           ctx.shadowBlur = 0;
-          
-          // Layer label
-          ctx.fillStyle = layer.color;
-          ctx.font = '12px Space Mono';
-          ctx.fillText(`${Math.round(layer.frequency)} Hz`, 20, layer.y + 30);
-        } else {
-          // Dim label for inactive
-          ctx.fillStyle = 'rgba(212, 165, 116, 0.3)';
-          ctx.font = '12px Space Mono';
-          ctx.fillText(`${Math.round(layer.frequency)} Hz`, 20, layer.y + 30);
         }
+
+        // Decay energy
+        layer.energy *= 0.92;
       });
-      
-      requestAnimationFrame(animate);
-    }
-    
-    startButton.addEventListener('click', () => {
-      if (!audioCtx) {
-        audioCtx = new AudioContext();
-        initLayers();
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0 || p.x > canvas.width) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.fillStyle = `${p.color}${Math.floor(p.alpha * 255).toString(16).padStart(2, '0')}`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Glow
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = p.color;
+        ctx.fill();
+        ctx.shadowBlur = 0;
       }
-      
-      audioCtx.resume();
-      started = true;
-      startOverlay.style.display = 'none';
-      animate();
+
+      requestAnimationFrame(draw);
+    }
+
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : {r: 255, g: 255, b: 255};
+    }
+
+    // Start animation immediately
+    draw();
+
+    // Layer toggle handlers
+    const layerButtons = [
+      { btn: 'layer1-btn', ctrl: 'layer1-ctrl', key: 'kick' },
+      { btn: 'layer2-btn', ctrl: 'layer2-ctrl', key: 'hats' },
+      { btn: 'layer3-btn', ctrl: 'layer3-ctrl', key: 'bass' },
+      { btn: 'layer4-btn', ctrl: 'layer4-ctrl', key: 'melody' }
+    ];
+
+    layerButtons.forEach(({ btn, ctrl, key }) => {
+      document.getElementById(btn).addEventListener('click', () => {
+        if (!audioStarted) {
+          document.getElementById('startBtn').click();
+        }
+
+        layers[key].active = !layers[key].active;
+        const button = document.getElementById(btn);
+        const control = document.getElementById(ctrl);
+
+        if (layers[key].active) {
+          button.textContent = 'ON';
+          button.classList.add('active');
+          control.classList.add('active');
+        } else {
+          button.textContent = 'OFF';
+          button.classList.remove('active');
+          control.classList.remove('active');
+        }
+
+        updateStats();
+      });
     });
-    
-    canvas.addEventListener('click', handleClick);
-    canvas.addEventListener('touchstart', handleTouch);
-    
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+
+    function updateStats() {
+      const activeCount = Object.values(layers).filter(l => l.active).length;
+      document.getElementById('activeCount').textContent = `${activeCount}/4 LAYERS`;
+    }
+
+    // Start button
+    document.getElementById('startBtn').addEventListener('click', () => {
+      initAudio();
+      document.getElementById('startBtn').textContent = 'PLAYING';
+      document.getElementById('startBtn').style.background = '#2D9596';
+    });
   </script>
 </body>
 </html>
