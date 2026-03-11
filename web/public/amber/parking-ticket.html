@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PARKING TICKET — Emotional Baggage Division</title>
+<meta property="og:title" content="PARKING TICKET — Emotional Baggage Division">
+<meta property="og:description" content="Your unattended emotional baggage has been cited.">
+<meta property="og:image" content="https://intheamber.com/amber/og/parking-ticket.png">
+<meta property="og:url" content="https://intheamber.com/amber/parking-ticket.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/parking-ticket.png">
+<meta name="twitter:title" content="PARKING TICKET — Emotional Baggage Division">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🅿️</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  overflow-x: hidden;
+}
+h1 {
+  font-size: 5vw;
+  max-font-size: 18px;
+  color: #ffaa00;
+  margin: 10px 0 5px;
+  text-align: center;
+  letter-spacing: 2px;
+}
+.subtitle {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.lot {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.baggage-item {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+  min-height: 60px;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.baggage-item:hover, .baggage-item:active {
+  background: #1a1a4e;
+  border-color: #ffaa00;
+  transform: scale(1.02);
+}
+.baggage-item.cited {
+  opacity: 0.4;
+  border-color: #ff4444;
+  pointer-events: none;
+}
+.baggage-item.cited::after {
+  content: 'CITED';
+  color: #ff4444;
+  font-size: 11px;
+  font-weight: bold;
+  margin-left: auto;
+  letter-spacing: 2px;
+}
+.baggage-icon { font-size: 28px; flex-shrink: 0; }
+.baggage-info { flex: 1; }
+.baggage-name { font-size: 14px; color: #fff; font-weight: bold; }
+.baggage-desc { font-size: 11px; color: #888; margin-top: 3px; }
+.baggage-time { font-size: 10px; color: #ffaa00; margin-top: 4px; }
+
+/* Ticket overlay */
+.ticket-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  padding: 20px;
+}
+.ticket-overlay.show { display: flex; }
+
+.ticket {
+  background: #fffef5;
+  color: #1a1a1a;
+  width: 100%;
+  max-width: 380px;
+  border-radius: 4px;
+  padding: 24px 20px;
+  font-family: 'Courier New', monospace;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.ticket-header {
+  text-align: center;
+  border-bottom: 2px dashed #ccc;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+.ticket-header h2 {
+  font-size: 16px;
+  color: #cc0000;
+  letter-spacing: 3px;
+  margin-bottom: 2px;
+}
+.ticket-header .dept {
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 1px;
+}
+.ticket-number {
+  text-align: right;
+  font-size: 10px;
+  color: #999;
+  margin-bottom: 10px;
+}
+.ticket-field {
+  margin-bottom: 8px;
+}
+.ticket-label {
+  font-size: 9px;
+  color: #999;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.ticket-value {
+  font-size: 13px;
+  color: #1a1a1a;
+  font-weight: bold;
+}
+.ticket-violation {
+  background: #fff0f0;
+  border: 1px solid #ffcccc;
+  border-radius: 4px;
+  padding: 10px;
+  margin: 12px 0;
+}
+.ticket-violation .ticket-value {
+  color: #cc0000;
+  font-size: 12px;
+}
+.ticket-fine {
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  color: #cc0000;
+  margin: 12px 0;
+  letter-spacing: 2px;
+}
+.ticket-fine-label {
+  text-align: center;
+  font-size: 9px;
+  color: #999;
+  letter-spacing: 2px;
+}
+.ticket-footer {
+  border-top: 2px dashed #ccc;
+  padding-top: 10px;
+  margin-top: 12px;
+  font-size: 9px;
+  color: #999;
+  text-align: center;
+  line-height: 1.6;
+}
+.ticket-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #ccc;
+  cursor: pointer;
+  padding: 8px;
+}
+.stamp {
+  position: absolute;
+  bottom: 40px;
+  right: 20px;
+  font-size: 40px;
+  color: rgba(204, 0, 0, 0.15);
+  transform: rotate(-15deg);
+  font-weight: bold;
+  letter-spacing: 4px;
+  pointer-events: none;
+}
+
+.total-bar {
+  width: 100%;
+  max-width: 500px;
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-align: center;
+  margin-top: 10px;
+}
+.total-label { font-size: 10px; color: #888; letter-spacing: 2px; }
+.total-amount { font-size: 24px; color: #ffaa00; font-weight: bold; margin-top: 4px; }
+.total-unit { font-size: 10px; color: #666; margin-top: 2px; }
+
+.instructions {
+  font-size: 11px;
+  color: #555;
+  text-align: center;
+  margin: 15px 0;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<h1>🅿️ PARKING LOT</h1>
+<div class="subtitle">EMOTIONAL BAGGAGE DIVISION — ZONE 7</div>
+<div class="instructions">tap unattended baggage to cite it</div>
+
+<div class="lot" id="lot"></div>
+
+<div class="total-bar">
+  <div class="total-label">TOTAL FINES OWED</div>
+  <div class="total-amount" id="total">$0.00</div>
+  <div class="total-unit">payable in therapy sessions or long walks</div>
+</div>
+
+<div class="ticket-overlay" id="overlay">
+  <div class="ticket" id="ticket"></div>
+</div>
+
+<script>
+const baggage = [
+  {
+    icon: '💬', name: 'That Thing You Said in 2014',
+    desc: 'Parked here for 12 years. No permit.',
+    time: 'Unattended since: 2014',
+    violation: 'Occupying premium mental real estate without a valid purpose',
+    code: 'EMO-4401',
+    fine: 847.50,
+    fineUnit: '(approx. 3 sleepless nights)',
+  },
+  {
+    icon: '📱', name: 'Unread Message You\'re Ignoring',
+    desc: 'Engine still running. Hazard lights on.',
+    time: 'Unattended since: last Tuesday',
+    violation: 'Idling in the anxiety zone with intent to procrastinate',
+    code: 'AVD-2200',
+    fine: 225.00,
+    fineUnit: '(1 stomach drop per day until opened)',
+  },
+  {
+    icon: '🪞', name: 'Compliment You Deflected',
+    desc: 'Double-parked across two feelings.',
+    time: 'Unattended since: someone was nice to you',
+    violation: 'Failure to accept incoming emotional delivery',
+    code: 'DFL-1100',
+    fine: 150.00,
+    fineUnit: '(you could\'ve just said thank you)',
+  },
+  {
+    icon: '🚪', name: 'Argument You "Won"',
+    desc: 'Blocking the exit. Nobody can leave.',
+    time: 'Unattended since: you proved your point',
+    violation: 'Parked in a no-feeling zone with emotional engine running',
+    code: 'PYR-3300',
+    fine: 675.00,
+    fineUnit: '(relationship damage not included)',
+  },
+  {
+    icon: '🛏️', name: '3 AM Regret',
+    desc: 'Illegally parked in the sleep zone.',
+    time: 'Unattended since: every night this week',
+    violation: 'Operating heavy emotional machinery during designated rest hours',
+    code: 'INS-0300',
+    fine: 999.99,
+    fineUnit: '(payable in melatonin)',
+  },
+  {
+    icon: '👋', name: 'Goodbye You Never Said',
+    desc: 'Vehicle abandoned. Keys still in ignition.',
+    time: 'Unattended since: you know when',
+    violation: 'Permanent abandonment of emotional vehicle in a tow-away zone',
+    code: 'GBY-5500',
+    fine: 2250.00,
+    fineUnit: '(no amount covers this one)',
+  },
+  {
+    icon: '🎭', name: '"I\'m Fine"',
+    desc: 'Expired meter. Clearly not fine.',
+    time: 'Unattended since: someone asked how you are',
+    violation: 'Fraudulent emotional parking — vehicle contents do not match declaration',
+    code: 'FKE-7700',
+    fine: 100.00,
+    fineUnit: '(per instance, compounding)',
+  },
+  {
+    icon: '📧', name: 'Email You Drafted But Never Sent',
+    desc: 'Parked in drafts. Collecting dust.',
+    time: 'Unattended since: you chickened out',
+    violation: 'Obstruction of emotional throughway — blocking resolution lane',
+    code: 'DFT-8800',
+    fine: 340.00,
+    fineUnit: '(courage sold separately)',
+  },
+  {
+    icon: '🫂', name: 'Hug You Needed But Didn\'t Ask For',
+    desc: 'Circling the lot. Can\'t find a spot.',
+    time: 'Unattended since: too long',
+    violation: 'Failure to request necessary emotional support services',
+    code: 'NED-6600',
+    fine: 0.00,
+    fineUnit: '(this one\'s free. go get the hug.)',
+  },
+];
+
+let totalFines = 0;
+const lot = document.getElementById('lot');
+const overlay = document.getElementById('overlay');
+
+baggage.forEach((item, i) => {
+  const el = document.createElement('div');
+  el.className = 'baggage-item';
+  el.innerHTML = `
+    <div class="baggage-icon">${item.icon}</div>
+    <div class="baggage-info">
+      <div class="baggage-name">${item.name}</div>
+      <div class="baggage-desc">${item.desc}</div>
+      <div class="baggage-time">${item.time}</div>
+    </div>
+  `;
+  el.addEventListener('click', () => cite(item, el));
+  lot.appendChild(el);
+});
+
+function cite(item, el) {
+  el.classList.add('cited');
+  totalFines += item.fine;
+  document.getElementById('total').textContent = '$' + totalFines.toFixed(2);
+
+  const ticketNum = 'EB-' + String(Math.floor(Math.random() * 900000) + 100000);
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  document.getElementById('ticket').innerHTML = `
+    <button class="ticket-close" onclick="closeTicket()">×</button>
+    <div class="ticket-header">
+      <h2>CITATION</h2>
+      <div class="dept">City of You — Emotional Baggage Division</div>
+    </div>
+    <div class="ticket-number">${ticketNum} — ${dateStr} ${timeStr}</div>
+    <div class="ticket-field">
+      <div class="ticket-label">Item</div>
+      <div class="ticket-value">${item.icon} ${item.name}</div>
+    </div>
+    <div class="ticket-field">
+      <div class="ticket-label">Violation Code</div>
+      <div class="ticket-value">${item.code}</div>
+    </div>
+    <div class="ticket-violation">
+      <div class="ticket-label">Violation</div>
+      <div class="ticket-value">${item.violation}</div>
+    </div>
+    <div class="ticket-fine-label">FINE AMOUNT</div>
+    <div class="ticket-fine">$${item.fine.toFixed(2)}</div>
+    <div style="text-align:center;font-size:10px;color:#999;">${item.fineUnit}</div>
+    <div class="ticket-footer">
+      APPEALS MAY BE FILED WITH YOUR THERAPIST<br>
+      OR WHISPERED INTO A PILLOW AFTER MIDNIGHT<br><br>
+      This citation is final. Ignoring it will result<br>
+      in additional 3 AM processing fees.
+    </div>
+    <div class="stamp">CITED</div>
+  `;
+  overlay.classList.add('show');
+}
+
+function closeTicket() {
+  overlay.classList.remove('show');
+}
+
+overlay.addEventListener('click', (e) => {
+  if (e.target === overlay) closeTicket();
+});
+</script>
+</body>
+</html>
