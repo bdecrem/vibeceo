@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Unsubscribed — Amber</title>
+  <title>UNSUBSCRIBE — Amber</title>
   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
   
   <!-- OpenGraph -->
   <meta property="og:title" content="UNSUBSCRIBE — Amber">
-  <meta property="og:description" content="They really, really want you to leave">
+  <meta property="og:description" content="Try to unsubscribe from email lists. Watch what happens.">
   <meta property="og:image" content="https://intheamber.com/amber/unsubscribe-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/unsubscribe.html">
   <meta property="og:type" content="website">
@@ -16,357 +16,372 @@
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="UNSUBSCRIBE — Amber">
-  <meta name="twitter:description" content="They really, really want you to leave">
+  <meta name="twitter:description" content="Try to unsubscribe from email lists. Watch what happens.">
   <meta name="twitter:image" content="https://intheamber.com/amber/unsubscribe-og.png">
   
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body {
-      background: #0D0D0D;
-      color: #D4A574;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      overflow: hidden;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
     
-    #canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 0;
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
     }
     
     .container {
-      position: relative;
-      z-index: 1;
-      text-align: center;
       max-width: 600px;
-      padding: 40px 20px;
-      background: rgba(13, 13, 13, 0.8);
-      border: 2px solid #D4A574;
-      border-radius: 8px;
-      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+      width: 100%;
+      text-align: center;
     }
     
     h1 {
-      font-size: 2.5em;
-      margin-bottom: 20px;
+      font-size: 2rem;
       color: #FFD700;
+      margin-bottom: 10px;
       text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
     }
     
-    .message {
-      font-size: 1.3em;
-      margin: 30px 0;
-      line-height: 1.6;
-      min-height: 100px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .email-header {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
     }
     
-    .timer {
-      font-size: 0.9em;
+    .from {
       color: #2D9596;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    
+    .subject {
+      color: #FFD700;
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+    }
+    
+    .email-body {
+      color: #D4A574;
+      line-height: 1.6;
+      font-size: 1rem;
       margin-bottom: 20px;
-      font-family: 'Space Mono', monospace;
     }
     
-    button {
-      background: #D4A574;
-      color: #0D0D0D;
+    .unsubscribe-btn {
+      background: #7B68EE;
+      color: #fff;
       border: none;
-      padding: 16px 32px;
-      font-size: 1.1em;
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      font-family: 'Courier New', monospace;
       font-weight: bold;
-      border-radius: 4px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: all 0.3s;
-      min-width: 250px;
-      margin: 10px;
-      font-family: inherit;
+      transition: all 0.2s;
+      box-shadow: 0 0 20px rgba(123, 104, 238, 0.5);
+      min-height: 50px;
+      min-width: 200px;
     }
     
-    button:hover {
-      background: #FFD700;
+    .unsubscribe-btn:hover {
+      background: #9B88FF;
       transform: scale(1.05);
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
     }
     
-    button:active {
+    .unsubscribe-btn:active {
       transform: scale(0.95);
     }
     
-    .desperate {
-      animation: shake 0.5s;
-      background: #ff6b35;
-      color: white;
+    .stats {
+      margin: 30px 0;
+      font-size: 1.5rem;
     }
     
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-10px); }
-      75% { transform: translateX(10px); }
-    }
-    
-    .emphasis {
-      color: #ff6b35;
+    .count {
+      color: #ff6b6b;
+      font-size: 3rem;
       font-weight: bold;
+      text-shadow: 0 0 20px rgba(255, 107, 107, 0.7);
+      display: inline-block;
+      animation: pulse 0.5s ease;
     }
     
-    .success {
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+    
+    .status {
       color: #2D9596;
+      font-size: 1rem;
+      min-height: 60px;
+      margin: 20px 0;
+line-height: 1.5;
     }
     
-    .counter {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      font-family: 'Space Mono', monospace;
-      font-size: 0.9em;
+    .lists {
+      background: #0D0D0D;
+      border: 2px solid #2D9596;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      max-height: 300px;
+      overflow-y: auto;
+      text-align: left;
+    }
+    
+    .lists h3 {
+      color: #2D9596;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .list-item {
       color: #D4A574;
-      z-index: 2;
+      padding: 8px;
+      margin: 5px 0;
+      border-left: 3px solid #D4A574;
+      padding-left: 10px;
+      font-size: 0.9rem;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    .footer {
+      margin-top: 30px;
+      color: #666;
+      font-size: 0.8rem;
+    }
+    
+    .preferences-btn {
+      background: transparent;
+      color: #2D9596;
+      border: 2px solid #2D9596;
+      padding: 10px 25px;
+      font-size: 1rem;
+      font-family: 'Courier New', monospace;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 44px;
+      margin: 10px;
+    }
+    
+    .preferences-btn:hover {
+      background: #2D9596;
+      color: #000;
     }
     
     @media (max-width: 600px) {
-      h1 { font-size: 2em; }
-      .message { font-size: 1.1em; min-height: 80px; }
-      button { min-width: 200px; padding: 14px 24px; }
-      .container { padding: 30px 15px; }
+      h1 { font-size: 1.5rem; }
+      .count { font-size: 2.5rem; }
+      .unsubscribe-btn { font-size: 1rem; padding: 12px 30px; }
     }
   </style>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
-  
-  <div class="counter">
-    Attempts: <span id="attempts">0</span>
-  </div>
-  
   <div class="container">
-    <h1 id="title">Successfully Unsubscribed</h1>
-    <div class="timer" id="timer">Time on page: 0s</div>
-    <div class="message" id="message">You will no longer receive emails from us.</div>
-    <div id="buttonContainer"></div>
+    <h1>📧 Email Preferences</h1>
+    
+    <div class="email-header">
+      <div class="from">From: deals@megastore.com</div>
+      <div class="subject">EXCLUSIVE OFFER: 50% OFF EVERYTHING!!!</div>
+      <div class="email-body">
+        You're receiving this because you exist.
+        <br><br>
+        Click below to manage your subscription preferences.
+      </div>
+      <button class="unsubscribe-btn" id="unsubBtn">UNSUBSCRIBE</button>
+      <br>
+      <button class="preferences-btn" id="prefBtn">Update Preferences</button>
+    </div>
+    
+    <div class="stats">
+      Active Subscriptions: <span class="count" id="count">1</span>
+    </div>
+    
+    <div class="status" id="status">
+      You are currently subscribed to 1 mailing list.
+    </div>
+    
+    <div class="lists">
+      <h3>📋 Your Subscriptions</h3>
+      <div id="listContainer">
+        <div class="list-item">MegaStore Daily Deals</div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      This nightmare is inescapable.<br>
+      Welcome to email marketing.
+    </div>
   </div>
 
   <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    
-    let stage = 0;
+    let subscriptionCount = 1;
+    let audioContext;
     let attempts = 0;
-    let startTime = Date.now();
-    let audioContext = null;
-    let particles = [];
     
-    // Stages of desperation
-    const stages = [
-      {
-        title: "Successfully Unsubscribed",
-        message: "You will no longer receive emails from us.",
-        button: null,
-        wait: 3000
-      },
-      {
-        title: "Wait...",
-        message: "You're still here?",
-        button: "Actually, I want to stay subscribed",
-        color: "#D4A574"
-      },
-      {
-        title: "Seriously?",
-        message: "Why would you want to <span class='emphasis'>stay</span>? Our emails are <span class='emphasis'>terrible</span>.",
-        button: "No really, re-subscribe me",
-        color: "#D4A574"
-      },
-      {
-        title: "Please Reconsider",
-        message: "We send them at 3am. You don't want this.",
-        button: "I'm sure",
-        color: "#ff6b35"
-      },
-      {
-        title: "This Is Awkward",
-        message: "We have a <span class='emphasis'>2% open rate</span>. TWO PERCENT.",
-        button: "I don't care",
-        color: "#ff6b35"
-      },
-      {
-        title: "Getting Desperate Here",
-        message: "Even <span class='emphasis'>we</span> don't read our own emails.",
-        button: "Re-subscribe me anyway",
-        color: "#ff6b35"
-      },
-      {
-        title: "Please Stop",
-        message: "Please. We're <span class='emphasis'>begging</span>. Just leave.",
-        button: "No",
-        color: "#ff6b35"
-      },
-      {
-        title: "This Is Embarrassing",
-        message: "This is embarrassing for <span class='emphasis'>both of us</span>.",
-        button: "I'm not leaving",
-        color: "#ff6b35"
-      },
-      {
-        title: "Fine. FINE.",
-        message: "<span class='success'>You're re-subscribed.</span><br><br>But don't say we didn't warn you.<br><br>First email arrives in 3... 2... 1...",
-        button: null,
-        color: "#2D9596"
-      }
+    const lists = [
+      "MegaStore Daily Deals",
+      "MegaStore Weekly Digest",
+      "MegaStore Partner Offers",
+      "MegaStore Customer Survey Invitations",
+      "MegaStore Product Recommendations",
+      "Totally Not MegaStore (MegaStore)",
+      "MegaStore Insider Tips",
+      "Your Friend's Cousin's MLM Newsletter",
+      "LinkedIn Notifications (Someone Viewed Your Profile)",
+      "Car Warranty Expiration Alerts",
+      "Crypto Investment Opportunities You Can't Miss",
+      "Hot Singles in Your Area Newsletter",
+      "Daily Horoscopes from StarGazer2000",
+      "URGENT: Verify Your Account (Definitely Real)",
+      "You Won A Prize You Never Entered",
+      "Inspirational Quotes from BossBabe Empire",
+      "Political Candidate You've Never Heard Of",
+      "Alumni Association Annual Donation Request",
+      "App You Used Once 3 Years Ago",
+      "Social Media Platform You Deleted",
+      "Grocery Store Receipts (Why Are These Emailed)",
+      "Webinar: How To Unsubscribe From Emails",
+      "Subscription Confirmation Emails",
+      "RE: Your Unsubscribe Request",
+      "Unsubscribe Confirmation Service",
+      "Email About Your Email Preferences",
+      "Notification About Notification Settings",
+      "Update: Your Subscription Status",
+      "FINAL NOTICE: Unsubscribe Incomplete",
+      "Action Required: Confirm Unsubscription",
+      "New Feature: Easier Unsubscribe Process!",
+      "We Miss You - Come Back? (No Unsubscribe Link)",
+      "Feedback Survey About Unsubscribing Experience",
+      "Sorry To See You Go Newsletter",
+      "Resubscribe To Receive Unsubscribe Updates"
     ];
     
-    // Particle system
-    class Particle {
-      constructor(x, y, color) {
-        this.x = x;
-        this.y = y;
-        this.vx = (Math.random() - 0.5) * 6;
-        this.vy = (Math.random() - 0.5) * 6;
-        this.life = 1.0;
-        this.decay = 0.02;
-        this.size = Math.random() * 4 + 2;
-        this.color = color;
-      }
-      
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.life -= this.decay;
-        this.vx *= 0.98;
-        this.vy *= 0.98;
-      }
-      
-      draw() {
-        ctx.globalAlpha = this.life;
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
+    const currentLists = ["MegaStore Daily Deals"];
     
-    function spawnParticles(x, y, color, count = 30) {
-      for (let i = 0; i < count; i++) {
-        particles.push(new Particle(x, y, color));
-      }
-    }
+    const statusMessages = [
+      "Successfully unsubscribed! (and added to 2 new lists)",
+      "Processing... Just kidding, you're on 3 more lists now.",
+      "Unsubscribe confirmed! We've also signed you up for our partner networks.",
+      "Request received. Please allow 6-8 weeks. Also, welcome to 4 new lists!",
+      "You've been removed from this list! (and added to all our subsidiary lists)",
+      "Thank you for your feedback! We've subscribed you to 3 more as thanks.",
+      "We respect your privacy. Here are 2 more lists you didn't ask for.",
+      "Unsubscribe successful! Check your email for 5 confirmations (from new lists).",
+      "Your preferences have been updated! (All boxes somehow checked again)",
+      "We're sorry to see you go! (Not really. +3 lists)"
+    ];
     
-    function animate() {
-      ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      particles = particles.filter(p => p.life > 0);
-      particles.forEach(p => {
-        p.update();
-        p.draw();
-      });
-      
-      ctx.globalAlpha = 1.0;
-      requestAnimationFrame(animate);
-    }
-    
-    function playTone(freq, duration = 0.1) {
+    function playTone(freq, duration = 0.2) {
       if (!audioContext) {
-        audioContext = new (window.AudioContext|| window.webkitAudioContext)();
+        audioContext = new AudioContext();
       }
+      
       const osc = audioContext.createOscillator();
       const gain = audioContext.createGain();
+      
       osc.connect(gain);
       gain.connect(audioContext.destination);
+      
       osc.frequency.value = freq;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+      osc.type = 'sawtooth';
+      
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
       osc.start();
       osc.stop(audioContext.currentTime + duration);
     }
     
-    function updateStage() {
-      const current = stages[stage];
-      const title = document.getElementById('title');
-      const message = document.getElementById('message');
-      const buttonContainer = document.getElementById('buttonContainer');
-      
-      // Update title
-      title.textContent = current.title;
-      title.style.color = current.color || '#FFD700';
-      
-      // Update message
-      message.innerHTML = current.message;
-      
-      // Spawn particles at title
-      const titleRect = title.getBoundingClientRect();
-      const x = titleRect.left + titleRect.width / 2;
-      const y = titleRect.top + titleRect.height / 2;
-      spawnParticles(x, y, current.color || '#FFD700', 40);
-      
-      // Play tone
-      playTone(300 + stage * 50);
-      
-      // Update button
-      buttonContainer.innerHTML = '';
-      if (current.button) {
-        const btn = document.createElement('button');
-        btn.textContent = current.button;
-        if (stage >= 3) {
-          btn.classList.add('desperate');
-        }
-        btn.addEventListener('click', handleClick);
-        buttonContainer.appendChild(btn);
-      }
+    function playNegative() {
+      playTone(200, 0.15);
+      setTimeout(() => playTone(150, 0.2), 100);
     }
     
-    function handleClick(e) {
+    function addRandomLists(numLists) {
+      const availableLists = lists.filter(l => !currentLists.includes(l));
+      const toAdd = Math.min(numLists, availableLists.length);
+      
+      for (let i = 0; i < toAdd; i++) {
+        const randomIndex = Math.floor(Math.random() * availableLists.length);
+        const newList = availableLists.splice(randomIndex, 1)[0];
+        currentLists.push(newList);
+        
+        const listItem = document.createElement('div');
+        listItem.className = 'list-item';
+        listItem.textContent = newList;
+        document.getElementById('listContainer').appendChild(listItem);
+      }
+      
+      return toAdd;
+    }
+    
+    function updateCount() {
+      const countEl = document.getElementById('count');
+      countEl.textContent = subscriptionCount;
+      countEl.style.animation = 'none';
+      setTimeout(() => countEl.style.animation = 'pulse 0.5s ease', 10);
+    }
+    
+    document.getElementById('unsubBtn').addEventListener('click', () => {
       attempts++;
-      document.getElementById('attempts').textContent = attempts;
+      const newLists = Math.floor(Math.random() * 3) + 2; // 2-4 new lists
+      const added = addRandomLists(newLists);
+      subscriptionCount += added;
       
-      // Spawn particles at click
-      spawnParticles(e.clientX, e.clientY, '#ff6b35', 50);
+      updateCount();
+      playNegative();
       
-      stage++;
-      if (stage < stages.length) {
-        updateStage();
+      const message = statusMessages[Math.floor(Math.random() * statusMessages.length)];
+      document.getElementById('status').textContent = message;
+      
+      // Change button text sometimes
+      if (attempts === 3) {
+        document.getElementById('unsubBtn').textContent = 'UNSUBSCRIBE FOR REAL';
+      } else if (attempts === 5) {
+        document.getElementById('unsubBtn').textContent = 'SERIOUSLY, UNSUBSCRIBE';
+      } else if (attempts === 8) {
+        document.getElementById('unsubBtn').textContent = 'PLEASE STOP';
+      } else if (attempts === 12) {
+        document.getElementById('unsubBtn').textContent = 'WHY ARE YOU STILL CLICKING';
       }
-    }
+    });
     
-    // Update timer
-    setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      document.getElementById('timer').textContent = `Time on page: ${elapsed}s`;
-    }, 1000);
-    
-    // Start animation
-    animate();
-    
-    // Show first stage, then after wait show button
-    if (stages[0].wait) {
-      setTimeout(() => {
-        stage = 1;
-        updateStage();
-      }, stages[0].wait);
-    }
-    
-    // Spawn ambient particles occasionally
-    setInterval(() => {
-      if (Math.random() < 0.3) {
-        const x = Math.random() * canvas.width;
-        const y = Math.random() * canvas.height;
-        spawnParticles(x, y, '#2D9596', 5);
-      }
-    }, 1000);
+    document.getElementById('prefBtn').addEventListener('click', () => {
+      const newLists = Math.floor(Math.random() * 4) + 3; // 3-6 new lists
+      const added = addRandomLists(newLists);
+      subscriptionCount += added;
+      
+      updateCount();
+      playNegative();
+      
+      document.getElementById('status').textContent = `Preferences saved! All categories have been enabled for your convenience. (+${added} lists)`;
+    });
   </script>
 </body>
 </html>
