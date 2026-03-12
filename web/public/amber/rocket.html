@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROCKET — Hold to charge, release to launch</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="ROCKET — Hold to charge, release to launch">
+  <meta property="og:description" content="Hold to charge rocket fuel, release to launch into space. Hit the stars!">
+  <meta property="og:image" content="https://intheamber.com/amber/rocket-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/rocket.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ROCKET — Hold to charge, release to launch">
+  <meta name="twitter:description" content="Hold to charge rocket fuel, release to launch into space. Hit the stars!">
+  <meta name="twitter:image" content="https://intheamber.com/amber/rocket-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: linear-gradient(180deg, #000000 0%, #0a0520 50%, #1a0a30 100%);
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+    }
+    
+    #gameCanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: pointer;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #score {
+      font-size: 2rem;
+      color: #FFD700;
+      text-shadow: 0 0 20px #FFD700;
+      font-weight: bold;
+    }
+    
+    #highScore {
+      font-size: 1rem;
+      color: #2D9596;
+      margin-top: 5px;
+    }
+    
+    #instructions {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #holdMessage {
+      font-size: 1.2rem;
+      color: #FFD700;
+      text-shadow: 0 0 10px #FFD700;
+      animation: pulse 1s infinite;
+    }
+    
+    #chargeBar {
+      width: 200px;
+      height: 20px;
+      border: 2px solid #2D9596;
+      border-radius: 10px;
+      margin: 10px auto;
+      background: rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+    
+    #chargeFill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #2D9596, #FFD700, #FF1493);
+      transition: width 0.05s linear;
+      box-shadow: 0 0 10px #FFD700;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  
+  <div id="ui">
+    <div id="score">★ 0</div>
+    <div id="highScore">Best: 0</div>
+  </div>
+  
+  <div id="instructions">
+    <div id="holdMessage">HOLD TO CHARGE • RELEASE TO LAUNCH</div>
+    <div id="chargeBar">
+      <div id="chargeFill"></div>
+    </div>
+  </div>
+  
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Audio context
+    let audioCtx = null;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    // Game state
+    let rocket = {
+      x: canvas.width / 2,
+      y: canvas.height - 100,
+      width: 30,
+      height: 50,
+      velocity: 0,
+      charging: false,
+      chargeAmount: 0,
+      launched: false,
+      rotation: 0
+    };
+    
+    let stars = [];
+    let particles = [];
+    let score = 0;
+    let highScore = parseInt(localStorage.getItem('rocketHighScore') || '0');
+    let isHolding = false;
+    
+    // Generate stars
+    function generateStars() {
+      stars = [];
+      // Top tier stars (hardest to reach)
+      for (let i = 0; i < 3; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: 50 + Math.random() * 100,
+          radius: 15,
+          hit: false,
+          points: 50,
+          color: '#FFD700'
+        });
+      }
+      // Mid tier stars
+      for (let i = 0; i < 4; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: 200 + Math.random() * 150,
+          radius: 12,
+          hit: false,
+          points: 20,
+          color: '#2D9596'
+        });
+      }
+      // Lower tier stars
+      for (let i = 0; i < 5; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: 400 + Math.random() * 200,
+          radius: 10,
+          hit: false,
+          points: 10,
+          color: '#FF1493'
+        });
+      }
+    }
+    
+    generateStars();
+    
+    // Update high score display
+    document.getElementById('highScore').textContent = `Best: ${highScore}`;
+    
+    // Particle system
+    function createParticles(x, y, color, count = 20) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 8,
+          vy: (Math.random() - 0.5) * 8,
+          life: 1,
+          color: color,
+          size: Math.random() * 4 + 2
+        });
+      }
+    }
+    
+    // Sound effects
+    function playChargeSound(frequency) {
+      if (!audioCtx) return;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = frequency;
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
+    }
+    
+    function playLaunchSound() {
+      if (!audioCtx) return;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.3);
+      osc.type = 'sawtooth';
+      
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+    
+    function playHitSound(frequency) {
+      if (!audioCtx) return;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = frequency;
+      osc.type = 'triangle';
+      
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
+    
+    // Input handlers
+    function startCharging(e) {
+      e.preventDefault();
+      initAudio();
+      
+      if (!rocket.launched) {
+        isHolding = true;
+        rocket.charging = true;
+      }
+    }
+    
+    function stopCharging(e) {
+      e.preventDefault();
+      
+      if (rocket.charging && isHolding) {
+        isHolding = false;
+        rocket.charging = false;
+        rocket.launched = true;
+        rocket.velocity = -rocket.chargeAmount * 30; // Convert charge to velocity
+        
+        playLaunchSound();
+        createParticles(rocket.x, rocket.y + rocket.height / 2, '#FFD700', 30);
+      }
+    }
+    
+    // Mouse events
+    canvas.addEventListener('mousedown', startCharging);
+    canvas.addEventListener('mouseup', stopCharging);
+    
+    // Touch events
+    canvas.addEventListener('touchstart', startCharging);
+    canvas.addEventListener('touchend', stopCharging);
+    
+    // Game loop
+    function update() {
+      // Update charging
+      if (rocket.charging && isHolding) {
+        rocket.chargeAmount = Math.min(rocket.chargeAmount + 0.02, 1);
+        
+        // Charge sound
+        if (Math.random() < 0.1) {
+          playChargeSound(200 + rocket.chargeAmount * 400);
+        }
+        
+        // Update UI
+        document.getElementById('chargeFill').style.width = (rocket.chargeAmount * 100) + '%';
+      }
+      
+      // Update rocket physics
+      if (rocket.launched) {
+        rocket.velocity += 0.5; // Gravity
+        rocket.y += rocket.velocity;
+        rocket.rotation += 0.05;
+        
+        // Emit trail particles
+        if(Math.random() < 0.5) {
+          particles.push({
+            x: rocket.x,
+            y: rocket.y + rocket.height / 2,
+            vx: (Math.random() - 0.5) * 2,
+            vy: Math.random() * 2 + 1,
+            life: 1,
+            color: '#FFD700',
+            size: Math.random() * 3 + 2
+          });
+        }
+        
+        // Check collision with stars
+        stars.forEach(star => {
+          if (!star.hit) {
+            const dx = rocket.x - star.x;
+            const dy = rocket.y - star.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < star.radius + rocket.width / 2) {
+              star.hit = true;
+              score += star.points;
+              
+              // Update score display
+              document.getElementById('score').textContent = `★ ${score}`;
+              
+              // Update high score
+              if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('rocketHighScore', highScore);
+                document.getElementById('highScore').textContent = `Best: ${highScore}`;
+              }
+              
+              playHitSound(440 + star.points * 5);
+              createParticles(star.x, star.y, star.color, 40);
+            }
+          }
+        });
+        
+        // Check if rocket has fallen off screen
+        if (rocket.y > canvas.height + 100) {
+          // Reset rocket
+          rocket.x = canvas.width / 2;
+          rocket.y = canvas.height - 100;
+          rocket.velocity = 0;
+          rocket.chargeAmount = 0;
+          rocket.launched = false;
+          rocket.rotation = 0;
+          
+          // Reset stars
+          generateStars();
+          
+          // Reset UI
+          document.getElementById('chargeFill').style.width = '0%';
+        }
+      }
+      
+      // Update particles
+      particles = particles.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2; // Gravity
+        p.life -= 0.02;
+        return p.life > 0;
+      });
+    }
+    
+    function draw() {
+      // Clear with fade effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw stars
+      stars.forEach(star => {
+        if (!star.hit) {
+          // Glow
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = star.color;
+          
+          // Star shape
+          ctx.fillStyle = star.color;
+          ctx.beginPath();
+          for (let i = 0; i < 5; i++) {
+            const angle = (Math.PI * 2 / 5) * i - Math.PI / 2;
+            const x = star.x + Math.cos(angle) * star.radius;
+            const y = star.y + Math.sin(angle) * star.radius;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+            
+            const innerAngle = angle + Math.PI / 5;
+            const ix = star.x + Math.cos(innerAngle) * (star.radius * 0.4);
+            const iy = star.y + Math.sin(innerAngle) * (star.radius * 0.4);
+            ctx.lineTo(ix, iy);
+          }
+          ctx.closePath();
+          ctx.fill();
+          
+          // Pulsing animation
+          const pulse = Math.sin(Date.now() / 500) * 0.2 + 0.8;
+          ctx.globalAlpha = pulse;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          
+          ctx.shadowBlur = 0;
+        }
+      });
+      
+      // Draw particles
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+      
+      // Draw rocket
+      ctx.save();
+      ctx.translate(rocket.x, rocket.y);
+      if (rocket.launched) {
+        ctx.rotate(rocket.rotation);
+      }
+      
+      // Rocket body
+      ctx.fillStyle = '#D4A574';
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#D4A574';
+      ctx.beginPath();
+      ctx.moveTo(0, -rocket.height / 2);
+      ctx.lineTo(-rocket.width / 2, rocket.height / 2);
+      ctx.lineTo(rocket.width / 2, rocket.height / 2);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Rocket window
+      ctx.fillStyle = '#2D9596';
+      ctx.beginPath();
+      ctx.arc(0, -10, 6, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Charging effect
+      if (rocket.charging) {
+        ctx.fillStyle = `rgba(255, 215, 0, ${rocket.chargeAmount * 0.5})`;
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(0, rocket.height / 2, rocket.chargeAmount * 30, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+    
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+    
+    // Handle resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      
+      // Reposition rocket if not launched
+      if (!rocket.launched) {
+        rocket.x = canvas.width / 2;
+        rocket.y = canvas.height - 100;
+      }
+    });
+    
+    // Start game loop
+    gameLoop();
+  </script>
+</body>
+</html>
