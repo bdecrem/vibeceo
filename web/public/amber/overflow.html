@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OVERFLOW — Amber</title>
+
+  <!-- OG tags -->
+  <meta property="og:title" content="OVERFLOW — Amber">
+  <meta property="og:description" content="Energy at noon — too full to contain">
+  <meta property="og:image" content="https://intheamber.com/amber/overflow-og.png">
+  <meta property="og:type" content="website">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+    }
+    #canvas {
+      display: block;
+      max-width: 100%;
+      background: #000;
+    }
+    .title {
+      position: absolute;
+      top: 40px;
+      font-size: 2.5rem;
+      color: #FFD700;
+      text-shadow: 0 0 20px #FFD700;
+      letter-spacing: 8px;
+      animation: pulse 3s ease-in-out infinite;
+    }
+    .subtitle {
+      position: absolute;
+      bottom: 40px;
+      font-size: 1rem;
+      color: #D4A574;
+      letter-spacing: 3px;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; text-shadow: 0 0 20px #FFD700; }
+      50% { opacity: 0.8; text-shadow: 0 0 30px #FFD700; }
+    }
+    @media (max-width: 768px) {
+      .title { font-size: 1.8rem; top: 20px; }
+      .subtitle { font-size: 0.9rem; bottom: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="title">OVERFLOW</div>
+  <canvas id="canvas"></canvas>
+  <div class="subtitle">ENERGY AT NOON</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Set canvas size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = [];
+
+    // Vessel properties
+    const vessel = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      width: 200,
+      height: 250,
+      bottomWidth: 150
+    };
+
+    // Overflow points (edges of vessel where liquid spills)
+    const overflowPoints = [
+      { x: vessel.x - vessel.width/2, y: vessel.y - vessel.height/2 + 20 }, // left top
+      { x: vessel.x + vessel.width/2, y: vessel.y - vessel.height/2 + 20 }, // right top
+      { x: vessel.x - vessel.width/2 + 30, y: vessel.y - vessel.height/2 + 10 }, // left 2
+      { x: vessel.x + vessel.width/2 - 30, y: vessel.y - vessel.height/2 + 10 }, // right 2
+    ];
+
+    class Particle {
+      constructor(x, y) {
+        this.x = x + (Math.random() - 0.5) * 20;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 1;
+        this.vy = Math.random() * 2 + 1;
+        this.size = Math.random() * 4 + 2;
+        this.life = 1;
+        this.decay = Math.random() * 0.01 + 0.005;
+        this.color = Math.random() > 0.5 ? '#FFD700' : '#D4A574';
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2; // gravity
+        this.life -= this.decay;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawVessel() {
+      const centerX = vessel.x;
+      const centerY = vessel.y;
+      const topWidth = vessel.width;
+      const bottomWidth = vessel.bottomWidth;
+      const height = vessel.height;
+
+      // Draw vessel outline (tapered cup shape)
+      ctx.save();
+      ctx.strokeStyle = '#D4A574';
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#D4A574';
+
+      ctx.beginPath();
+      // Left side
+      ctx.moveTo(centerX - bottomWidth/2, centerY + height/2);
+      ctx.lineTo(centerX - topWidth/2, centerY - height/2);
+      // Top
+      ctx.lineTo(centerX + topWidth/2, centerY - height/2);
+      // Right side
+      ctx.lineTo(centerX + bottomWidth/2, centerY + height/2);
+      // Bottom
+      ctx.lineTo(centerX - bottomWidth/2, centerY + height/2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Draw liquid inside (golden glow)
+      ctx.save();
+      const liquidHeight = height * 0.9;
+      const liquidTop = centerY - height/2 + (height - liquidHeight);
+
+      // Gradient for liquid
+      const gradient = ctx.createLinearGradient(centerX, liquidTop, centerX, centerY + height/2);
+      gradient.addColorStop(0, '#FFD700');
+      gradient.addColorStop(0.5, '#f59e0b');
+      gradient.addColorStop(1, '#D4A574');
+
+      ctx.fillStyle = gradient;
+      ctx.globalAlpha = 0.8;
+
+      // Calculate liquid width at top (tapered)
+      const liquidTopWidth = bottomWidth + (topWidth - bottomWidth) * ((liquidTop - (centerY - height/2)) / height);
+      const liquidBottomWidth = bottomWidth;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX - liquidBottomWidth/2, centerY + height/2);
+      ctx.lineTo(centerX - liquidTopWidth/2, liquidTop);
+      ctx.lineTo(centerX + liquidTopWidth/2, liquidTop);
+      ctx.lineTo(centerX + liquidBottomWidth/2, centerY + height/2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Draw glow around vessel
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, height);
+      glowGradient.addColorStop(0, '#FFD700');
+      glowGradient.addColorStop(1, 'transparent');
+      ctx.fillStyle = glowGradient;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, height * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function spawnParticles() {
+      // Spawn particles at each overflow point
+      overflowPoints.forEach(point => {
+        if (Math.random() > 0.3) { // 70% chance each frame
+          particles.push(new Particle(point.x, point.y));
+        }
+      });
+    }
+
+    function animate() {
+      // Fade effect for trails
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw vessel
+      drawVessel();
+
+      // Spawn new particles
+      spawnParticles();
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw();
+
+        // Remove dead particles
+        if (p.life <= 0 || p.y > canvas.height) {
+          particles.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      vessel.x = canvas.width / 2;
+      vessel.y = canvas.height / 2;
+      // Update overflow points
+      overflowPoints[0] = { x: vessel.x - vessel.width/2, y: vessel.y - vessel.height/2 + 20 };
+      overflowPoints[1] = { x: vessel.x + vessel.width/2, y: vessel.y - vessel.height/2 + 20 };
+      overflowPoints[2] = { x: vessel.x - vessel.width/2 + 30, y: vessel.y - vessel.height/2 + 10 };
+      overflowPoints[3] = { x: vessel.x + vessel.width/2 - 30, y: vessel.y - vessel.height/2 + 10 };
+    });
+
+    // Start animation
+    animate();
+  </script>
+</body>
+</html>
