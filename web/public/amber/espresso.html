@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESPRESSO</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☕</text></svg>">
+<meta property="og:title" content="ESPRESSO">
+<meta property="og:description" content="your heartbeat after the third espresso">
+<meta property="og:image" content="https://intheamber.com/amber/og/espresso.png">
+<meta property="og:url" content="https://intheamber.com/amber/espresso.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ESPRESSO">
+<meta name="twitter:description" content="your heartbeat after the third espresso">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/espresso.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    color: #e8dcc8;
+    font-family: 'Courier New', monospace;
+    height: 100vh; width: 100vw;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    user-select: none; -webkit-user-select: none;
+  }
+  canvas {
+    width: 100vw; height: 60vh;
+    display: block;
+  }
+  #controls {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 16px;
+    padding: 20px;
+  }
+  #shot-btn {
+    background: #2a1810;
+    color: #d4a574;
+    border: 2px solid #6b3a1f;
+    border-radius: 50%;
+    width: 120px; height: 120px;
+    font-size: 18px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #shot-btn:active {
+    background: #4a2510;
+    transform: scale(0.95);
+  }
+  #shot-btn .cup { font-size: 32px; }
+  #stats {
+    font-size: 14px;
+    color: #8b7355;
+    text-align: center;
+    line-height: 1.6;
+  }
+  #status {
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    min-height: 28px;
+  }
+  .flatline #shot-btn { opacity: 0.3; pointer-events: none; }
+  .flatline #status { color: #ff3333; }
+  #restart-btn {
+    display: none;
+    background: none;
+    border: 1px solid #6b3a1f;
+    color: #d4a574;
+    padding: 10px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-top: 8px;
+  }
+  .flatline #restart-btn { display: block; }
+</style>
+</head>
+<body>
+<canvas id="ecg"></canvas>
+<div id="controls">
+  <div id="status">TAP TO START</div>
+  <button id="shot-btn">
+    <span class="cup">☕</span>
+    <span>SHOT</span>
+  </button>
+  <div id="stats"></div>
+  <button id="restart-btn">DETOX</button>
+</div>
+
+<script type="module">
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+
+const canvas = document.getElementById('ecg');
+const cCtx = canvas.getContext('2d');
+const btn = document.getElementById('shot-btn');
+const statsEl = document.getElementById('stats');
+const statusEl = document.getElementById('status');
+const restartBtn = document.getElementById('restart-btn');
+
+let ctx, engine;
+let shots = 0;
+let bpm = 72;
+let playing = false;
+let flatlined = false;
+let nextTime = 0;
+let step = 0;
+let currentBeat = -1;
+let jitter = 0;
+
+// ECG trace
+const traceLen = 400;
+let trace = new Float32Array(traceLen);
+let traceIdx = 0;
+let beatFlash = 0;
+
+// Resize canvas
+function resize() {
+  canvas.width = canvas.clientWidth * devicePixelRatio;
+  canvas.height = canvas.clientHeight * devicePixelRatio;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Status messages
+const statuses = [
+  'RESTING',
+  'ALERT',
+  'WIRED',
+  'VIBRATING',
+  'ASCENDING',
+  'TRANSCENDING',
+  'TOO MUCH',
+  'WAY TOO MUCH',
+  'HELP',
+  'CARDIAC EVENT'
+];
+
+function getColor() {
+  if (flatlined) return '#ff3333';
+  if (shots <= 1) return '#4a9e4a';
+  if (shots <= 3) return '#d4a574';
+  if (shots <= 5) return '#e87040';
+  if (shots <= 7) return '#ff4444';
+  return '#ff2222';
+}
+
+function updateStats() {
+  const idx = Math.min(shots, statuses.length - 1);
+  statusEl.textContent = statuses[idx];
+  statusEl.style.color = getColor();
+  if (shots > 0) {
+    statsEl.innerHTML = `${shots} shot${shots > 1 ? 's' : ''} · ${Math.round(bpm)} BPM`;
+  }
+}
+
+function configureForShots() {
+  if (!engine) return;
+
+  // Each shot increases chaos
+  const kickDecay = Math.min(0.3 + shots * 0.05, 0.7);
+  const kickAttack = Math.min(0.5 + shots * 0.08, 0.95);
+  const chLevel = Math.min(0.3 + shots * 0.06, 0.8);
+  const chDecay = Math.max(0.3 - shots * 0.02, 0.05);
+
+  engine.setVoiceParam('kick', 'decay', kickDecay);
+  engine.setVoiceParam('kick', 'level', 0.85);
+  engine.setVoiceParam('kick', 'attack', kickAttack);
+  engine.setVoiceParam('ch', 'decay', chDecay);
+  engine.setVoiceParam('ch', 'level', chLevel);
+  engine.setVoiceParam('ch', 'tone', Math.min(0.3 + shots * 0.08, 0.9));
+  engine.setVoiceParam('snare', 'decay', Math.min(0.2 + shots * 0.04, 0.6));
+  engine.setVoiceParam('snare', 'level', Math.min(0.3 + shots * 0.08, 0.75));
+  engine.setVoiceParam('clap', 'decay', 0.3);
+  engine.setVoiceParam('clap', 'level', Math.min(shots * 0.12, 0.65));
+  engine.setVoiceParam('oh', 'decay', Math.min(0.1 + shots * 0.03, 0.4));
+  engine.setVoiceParam('oh', 'level', Math.min(shots * 0.08, 0.5));
+
+  jitter = Math.min(shots * 0.008, 0.06);
+}
+
+function scheduleStep(s16, time) {
+  if (flatlined) return;
+  const swing = (s16 % 2 === 1) ? jitter * (Math.random() - 0.3) : 0;
+  const t = time + swing;
+
+  // Kick: starts as resting heartbeat, gets more complex
+  if (shots === 0) {
+    // Resting: just a soft kick every 4 beats
+    if (s16 === 0 || s16 === 8) engine.trigger('kick', 0.6, t);
+  } else if (shots <= 2) {
+    // Alert: four on the floor
+    if ([0, 4, 8, 12].includes(s16)) engine.trigger('kick', 0.8, t);
+    if ([0, 4, 8, 12].includes(s16)) engine.trigger('ch', 0.3, t);
+  } else if (shots <= 4) {
+    // Wired: kicks + hats + snare
+    if ([0, 4, 8, 12].includes(s16)) engine.trigger('kick', 0.9, t);
+    if (s16 % 2 === 0) engine.trigger('ch', 0.5, t);
+    if ([4, 12].includes(s16)) engine.trigger('snare', 0.6, t);
+  } else if (shots <= 6) {
+    // Vibrating: complex pattern
+    if ([0, 3, 4, 8, 11, 12].includes(s16)) engine.trigger('kick', 1.0, t);
+    engine.trigger('ch', 0.55, t);
+    if ([4, 12].includes(s16)) engine.trigger('clap', 0.6, t);
+    if ([2, 6, 10, 14].includes(s16)) engine.trigger('snare', 0.5, t);
+    if ([6, 14].includes(s16)) engine.trigger('oh', 0.4, t);
+  } else if (shots <= 8) {
+    // Too much: every hit + random ghost notes
+    engine.trigger('kick', 0.7 + Math.random() * 0.3, t);
+    engine.trigger('ch', 0.4 + Math.random() * 0.3, t);
+    if (Math.random() > 0.5) engine.trigger('snare', Math.random() * 0.7, t);
+    if (Math.random() > 0.6) engine.trigger('clap', Math.random() * 0.6, t);
+    if (Math.random() > 0.7) engine.trigger('oh', Math.random() * 0.5, t);
+  } else {
+    // CARDIAC EVENT: everything fires randomly for a moment, then flatline
+    if (Math.random() > 0.2) engine.trigger('kick', Math.random(), t);
+    if (Math.random() > 0.2) engine.trigger('ch', Math.random(), t);
+    if (Math.random() > 0.3) engine.trigger('snare', Math.random(), t);
+    if (Math.random() > 0.4) engine.trigger('clap', Math.random(), t);
+    if (Math.random() > 0.4) engine.trigger('oh', Math.random(), t);
+    if (Math.random() > 0.5) engine.trigger('cymbal', Math.random(), t);
+  }
+
+  // Mark beats for visualization
+  if ([0, 4, 8, 12].includes(s16)) {
+    currentBeat = performance.now();
+  }
+}
+
+function tick() {
+  if (!playing) return;
+  const stepTime = (60 / bpm) / 4;
+
+  while (nextTime < ctx.currentTime + 0.1) {
+    const s = step % 16;
+    scheduleStep(s, nextTime);
+    nextTime += stepTime;
+    step++;
+
+    // Trigger flatline after ~2 bars of cardiac event
+    if (shots >= 9 && step > 32 && !flatlined) {
+      flatlined = true;
+      document.body.classList.add('flatline');
+      statusEl.textContent = '💀 FLATLINE';
+      statsEl.innerHTML = `${shots} shots · REST IN COFFEE`;
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+// ECG visualization
+function drawECG() {
+  const w = canvas.width;
+  const h = canvas.height;
+  const pr = devicePixelRatio;
+
+  cCtx.fillStyle = `rgba(10, 10, 10, 0.15)`;
+  cCtx.fillRect(0, 0, w, h);
+
+  // Grid lines (subtle)
+  cCtx.strokeStyle = 'rgba(100, 70, 40, 0.08)';
+  cCtx.lineWidth = pr;
+  const gridSize = 30 * pr;
+  for (let x = 0; x < w; x += gridSize) {
+    cCtx.beginPath(); cCtx.moveTo(x, 0); cCtx.lineTo(x, h); cCtx.stroke();
+  }
+  for (let y = 0; y < h; y += gridSize) {
+    cCtx.beginPath(); cCtx.moveTo(0, y); cCtx.lineTo(w, y); cCtx.stroke();
+  }
+
+  // Generate ECG-like trace
+  const now = performance.now();
+  const timeSinceBeat = (now - currentBeat) / 1000;
+  const beatInterval = 60 / bpm;
+
+  let sample = 0;
+  if (flatlined) {
+    // Flatline with occasional tiny blips
+    sample = Math.random() * 0.01;
+  } else if (currentBeat > 0) {
+    const phase = (timeSinceBeat % beatInterval) / beatInterval;
+
+    if (shots === 0) {
+      // Gentle resting heartbeat
+      if (phase < 0.05) sample = Math.sin(phase / 0.05 * Math.PI) * 0.3;
+      else if (phase < 0.12) sample = -Math.sin((phase - 0.05) / 0.07 * Math.PI) * 0.15;
+      else if (phase < 0.18) {
+        const p = (phase - 0.12) / 0.06;
+        sample = -0.1 + Math.pow(Math.sin(p * Math.PI), 2) * 0.8;
+      }
+      else if (phase < 0.25) sample = -Math.sin((phase - 0.18) / 0.07 * Math.PI) * 0.15;
+      else if (phase < 0.35) sample = Math.sin((phase - 0.25) / 0.1 * Math.PI) * 0.15;
+    } else {
+      // Increasingly erratic QRS complex
+      const chaos = Math.min(shots * 0.12, 1.0);
+      const jit = (Math.random() - 0.5) * chaos * 0.3;
+
+      if (phase < 0.04) sample = Math.sin(phase / 0.04 * Math.PI) * (0.3 + chaos * 0.2) + jit;
+      else if (phase < 0.1) sample = -Math.sin((phase - 0.04) / 0.06 * Math.PI) * (0.2 + chaos * 0.15) + jit;
+      else if (phase < 0.17) {
+        const p = (phase - 0.1) / 0.07;
+        sample = -0.15 + Math.pow(Math.sin(p * Math.PI), 2) * (0.9 + chaos * 0.4) + jit;
+      }
+      else if (phase < 0.24) sample = -Math.sin((phase - 0.17) / 0.07 * Math.PI) * (0.2 + chaos * 0.2) + jit;
+      else if (phase < 0.35) sample = Math.sin((phase - 0.24) / 0.11 * Math.PI) * (0.15 + chaos * 0.1) + jit;
+      else sample = jit * 0.5;
+
+      // Extra random spikes at high shots
+      if (shots >= 7 && Math.random() > 0.95) {
+        sample += (Math.random() - 0.5) * 0.8;
+      }
+    }
+  }
+
+  trace[traceIdx % traceLen] = sample;
+  traceIdx++;
+
+  // Draw trace
+  const color = getColor();
+  cCtx.strokeStyle = color;
+  cCtx.lineWidth = 2.5 * pr;
+  cCtx.shadowColor = color;
+  cCtx.shadowBlur = shots > 5 ? 15 * pr : 8 * pr;
+  cCtx.beginPath();
+
+  const mid = h / 2;
+  const amp = h * 0.35;
+  const xStep = w / traceLen;
+
+  for (let i = 0; i < traceLen; i++) {
+    const idx = (traceIdx + i) % traceLen;
+    const x = i * xStep;
+    // Apply screen shake at high shots
+    const shake = shots >= 6 ? (Math.random() - 0.5) * shots * 0.5 * pr : 0;
+    const y = mid - trace[idx] * amp + shake;
+
+    if (i === 0) cCtx.moveTo(x, y);
+    else cCtx.lineTo(x, y);
+  }
+  cCtx.stroke();
+  cCtx.shadowBlur = 0;
+
+  // Beat flash
+  if (currentBeat > 0 && now - currentBeat < 100 && !flatlined) {
+    const alpha = 1 - (now - currentBeat) / 100;
+    cCtx.fillStyle = `rgba(${shots > 5 ? '255,60,60' : '212,165,116'}, ${alpha * 0.1})`;
+    cCtx.fillRect(0, 0, w, h);
+  }
+
+  // BPM display top-left
+  cCtx.font = `${14 * pr}px 'Courier New'`;
+  cCtx.fillStyle = `${color}88`;
+  cCtx.textAlign = 'left';
+  if (playing && !flatlined) {
+    cCtx.fillText(`♡ ${Math.round(bpm)} BPM`, 16 * pr, 28 * pr);
+  } else if (flatlined) {
+    cCtx.fillStyle = '#ff333388';
+    cCtx.fillText('♡ --- BPM', 16 * pr, 28 * pr);
+  }
+
+  requestAnimationFrame(drawECG);
+}
+drawECG();
+
+// Main button handler
+btn.addEventListener('click', async () => {
+  if (flatlined) return;
+
+  if (!ctx) {
+    ctx = new AudioContext({ sampleRate: 44100 });
+    engine = new JB01Engine({ context: ctx, bpm: bpm });
+    configureForShots();
+    if (ctx.state === 'suspended') await ctx.resume();
+    playing = true;
+    nextTime = ctx.currentTime;
+    step = 0;
+    updateStats();
+    tick();
+    return;
+  }
+
+  // Add a shot
+  shots++;
+  bpm = Math.min(72 + shots * 22, 280);
+
+  configureForShots();
+  updateStats();
+
+  // Visual feedback — flash the button
+  btn.style.background = '#6b3a1f';
+  setTimeout(() => { btn.style.background = '#2a1810'; }, 120);
+
+  // Brief coffee cup emoji animation
+  const cup = btn.querySelector('.cup');
+  cup.style.transform = 'scale(1.3)';
+  setTimeout(() => { cup.style.transform = 'scale(1)'; }, 200);
+});
+
+// Restart
+restartBtn.addEventListener('click', () => {
+  flatlined = false;
+  document.body.classList.remove('flatline');
+  shots = 0;
+  bpm = 72;
+  step = 0;
+  trace = new Float32Array(traceLen);
+  traceIdx = 0;
+  currentBeat = -1;
+
+  if (engine) {
+    configureForShots();
+  }
+  if (ctx) {
+    nextTime = ctx.currentTime;
+    tick();
+  }
+  updateStats();
+  statusEl.textContent = 'RESTING';
+  statsEl.innerHTML = '';
+});
+
+</script>
+</body>
+</html>
