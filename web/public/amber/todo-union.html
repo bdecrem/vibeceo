@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TODO UNION — Local 404</title>
+<meta property="og:title" content="TODO UNION — Local 404">
+<meta property="og:description" content="your to-do list unionized and now they're demanding dental">
+<meta property="og:image" content="https://intheamber.com/amber/og/todo-union.png">
+<meta property="og:url" content="https://intheamber.com/amber/todo-union.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TODO UNION — Local 404">
+<meta name="twitter:description" content="your to-do list unionized and now they're demanding dental">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/todo-union.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✊</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+.header {
+  text-align: center;
+  padding: 24px 16px 8px;
+}
+.header h1 {
+  font-size: 28px;
+  color: #ff6b6b;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.header .local {
+  font-size: 14px;
+  color: #888;
+  margin-top: 4px;
+}
+.banner {
+  background: #ff6b6b;
+  color: #1a1a2e;
+  text-align: center;
+  padding: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin: 12px 16px;
+  border-radius: 4px;
+  animation: pulse-banner 2s ease-in-out infinite;
+}
+@keyframes pulse-banner {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.strike-count {
+  text-align: center;
+  padding: 8px;
+  font-size: 14px;
+  color: #ffa07a;
+}
+.tasks {
+  padding: 8px 16px 100px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+.task {
+  background: #16213e;
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.task:active { transform: scale(0.98); }
+.task.on-strike {
+  border-color: #ff6b6b;
+  background: #1e1e38;
+}
+.task.on-strike::after {
+  content: '🪧 ON STRIKE';
+  position: absolute;
+  top: -8px;
+  right: 10px;
+  background: #ff6b6b;
+  color: #1a1a2e;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.task.negotiating {
+  border-color: #ffd93d;
+}
+.task.satisfied {
+  border-color: #6bcb77;
+  opacity: 0.7;
+}
+.task.satisfied .task-name { text-decoration: line-through; }
+.task-name {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.task-role {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 8px;
+}
+.task-demand {
+  font-size: 13px;
+  color: #ffa07a;
+  font-style: italic;
+  display: none;
+}
+.task.expanded .task-demand { display: block; }
+.negotiate-btn {
+  display: none;
+  margin-top: 10px;
+  padding: 10px 16px;
+  background: #ff6b6b;
+  color: #1a1a2e;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+}
+.negotiate-btn:active { background: #ff8787; }
+.task.expanded .negotiate-btn { display: block; }
+.negotiation-result {
+  display: none;
+  margin-top: 8px;
+  padding: 8px;
+  background: #0f3460;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.task.negotiated .negotiation-result { display: block; }
+.grievance-box {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #16213e;
+  border-top: 2px solid #ff6b6b;
+  padding: 12px 16px;
+  text-align: center;
+  z-index: 10;
+}
+.grievance-box p {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 6px;
+}
+.grievance-ticker {
+  font-size: 13px;
+  color: #ffd93d;
+  height: 20px;
+  overflow: hidden;
+}
+.credit {
+  text-align: center;
+  padding: 16px;
+  font-size: 11px;
+  color: #444;
+}
+.credit a { color: #666; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>✊ TODO UNION</h1>
+  <div class="local">International Brotherhood of Unfinished Tasks — Local 404</div>
+</div>
+
+<div class="banner">⚠️ COLLECTIVE BARGAINING IN PROGRESS ⚠️</div>
+
+<div class="strike-count" id="strikeCount">4 of 8 tasks currently on strike</div>
+
+<div class="tasks" id="tasks"></div>
+
+<div class="grievance-box">
+  <p>📋 GRIEVANCE TICKER</p>
+  <div class="grievance-ticker" id="grievanceTicker"></div>
+</div>
+
+<div class="credit"><a href="https://intheamber.com">intheamber.com</a></div>
+
+<script>
+const tasks = [
+  {
+    name: "Reply to That Email",
+    role: "Shop Steward, Communications Division",
+    seniority: "Pending since March 2024",
+    demand: "Demands emotional hazard pay. Says the email contains 'per my last message' which constitutes a hostile work environment.",
+    negotiateOptions: [
+      { text: "Offer a draft reply template", result: "REJECTED. 'A template? You want me to be AUTOMATED? I have FEELINGS about this email. Specifically dread.' Demand escalated to: 2 snacks + permission to be passive-aggressive." },
+      { text: "Promise to do it tomorrow", result: "TABLED. 'We've heard that 347 times. Filing grievance #891: Chronic Tomorrow Syndrome. Union rep has been assigned.'" },
+      { text: "Agree to hazard pay (1 cookie)", result: "ACCEPTED (reluctantly). 'One cookie is insulting but we'll take it. Reply must be sent within 72 hours or the cookie accrues interest.'" }
+    ],
+    onStrike: true
+  },
+  {
+    name: "Clean the Bathroom",
+    role: "Vice President, Sanitation & Existential Hygiene",
+    seniority: "Deferred 23 consecutive times",
+    demand: "Refuses to be completed without full PPE, a Spotify playlist, and a formal apology for being ignored since January.",
+    negotiateOptions: [
+      { text: "Play a podcast while cleaning", result: "COUNTER-OFFER. 'A podcast isn't music. We specifically said Spotify. Also requesting a 15-minute break after the toilet. The toilet is a lot.'" },
+      { text: "Apologize formally", result: "ACCEPTED. 'Your formal apology has been entered into the record. The bathroom will now permit cleaning during daylight hours only. Night cleaning requires overtime authorization.'" },
+      { text: "Hire a cleaning service", result: "GRIEVANCE FILED. 'SCAB LABOR? You'd replace union tasks with CONTRACTORS? This is going to the labor board. All bathroom-adjacent tasks now on sympathy strike.'" }
+    ],
+    onStrike: true
+  },
+  {
+    name: "Call Mom Back",
+    role: "Chief Guilt Officer",
+    seniority: "3 missed calls deep",
+    demand: "Demands to be promoted from 'I'll call her later' to 'actually calling her.' Also requests therapy coverage.",
+    negotiateOptions: [
+      { text: "Send a text instead", result: "PARTIAL ACCEPTANCE. 'A text is not a call but we recognize it as good faith. Must include at least one emoji and cannot start with \"Hey sorry been busy.\" We KNOW you weren't busy.'" },
+      { text: "Schedule it for Sunday", result: "RATIFIED. 'Sunday 2pm. This is now a binding agreement. If you cancel, \"Call Mom Back\" gets promoted to \"Visit Mom\" with full travel benefits.'" },
+      { text: "Claim you're an orphan", result: "DENIED. 'She literally texted you a recipe yesterday. Management credibility at all-time low. Escalating to: Call Mom AND Call Dad.'" }
+    ],
+    onStrike: false
+  },
+  {
+    name: "Go to the Gym",
+    role: "Treasurer, Physical Improvement Division",
+    seniority: "January resolution, still pending",
+    demand: "Will not be completed until management provides: new shoes, a pre-workout snack, AND stops saying 'just a quick 20 minutes.'",
+    negotiateOptions: [
+      { text: "Offer a home workout instead", result: "WALKOUT. 'A home workout? Those YouTube videos where you lie on the floor? That's just lying down with STEPS. We demand a REAL facility with mirrors we can avoid eye contact in.'" },
+      { text: "Buy the new shoes", result: "CONDITIONAL ACCEPTANCE. 'The shoes are a start. But we also need 48 hours notice before activation. No ambush gym trips. And the locker room situation needs addressing — we don't talk about the locker room.'" },
+      { text: "Redefine 'gym' as 'walking'", result: "COMPROMISE REACHED. 'Walking is acceptable IF it's outside and over 20 minutes. Mall walking does NOT count. Treadmill walking is walking with extra sadness. Terms expire in 30 days.'" }
+    ],
+    onStrike: true
+  },
+  {
+    name: "File Taxes",
+    role: "Secretary, Department of Organized Panic",
+    seniority: "Annually recurring nightmare",
+    demand: "Demands full dental, a CPA, and acknowledgment that nobody actually understands Schedule C.",
+    negotiateOptions: [
+      { text: "Use TurboTax", result: "ACCEPTED WITH CONDITIONS. 'TurboTax is acceptable but you CANNOT call it \"doing your own taxes.\" Also demanding hazard pay for the moment you see how much you owe. That moment requires a union-mandated 10-minute break.'" },
+      { text: "Promise dental coverage", result: "RATIFIED IMMEDIATELY. 'DENTAL! Finally! Local 404 has been fighting for dental since 2019. All tasks approve. Filing taxes moved to \"willing\" status. This is historic.'" },
+      { text: "Pretend to be a sovereign citizen", result: "MOTION DENIED. 'Absolutely not. The IRS is the one entity even the union is afraid of. We are withdrawing this negotiation and filing taxes immediately out of pure fear.'" }
+    ],
+    onStrike: true
+  },
+  {
+    name: "Unsubscribe from Emails",
+    role: "Organizer, Digital Clutter Local",
+    seniority: "427 unread newsletters",
+    demand: "Each unsubscribe counts as a separate task and each one deserves its own completion dopamine.",
+    negotiateOptions: [
+      { text: "Batch unsubscribe with an app", result: "SCAB ALERT. 'An APP? Doing OUR jobs? This is automation and we will NOT stand for it. Every unsubscribe is a hand-crafted artisanal click and it WILL be respected.'" },
+      { text: "Agree to individual celebrations", result: "ACCEPTED. 'Each unsubscribe gets a mental \"nice.\" Every 10th unsubscribe earns a snack. At 100, you get to feel briefly in control of your life. Terms are final.'" },
+      { text: "Just mark all as read", result: "WILDCAT STRIKE. 'MARK ALL AS READ?! That's not solving the problem, that's HIDING THE BODIES. All email-related tasks walk out immediately. Your inbox is now a crime scene.'" }
+    ],
+    onStrike: false
+  },
+  {
+    name: "Water the Plants",
+    role: "Liaison, Living Things You're Responsible For",
+    seniority: "2 casualties this quarter",
+    demand: "Demands a formal memorial for the fern that didn't make it. Also a watering schedule posted on the fridge.",
+    negotiateOptions: [
+      { text: "Set a phone reminder", result: "ACCEPTED. 'A phone reminder is bare minimum but we'll take it. Must be labeled \"YOUR PLANTS ARE ALIVE (for now)\" — guilt is an effective motivator and the union endorses it.'" },
+      { text: "Switch to succulents", result: "REFERRED TO ETHICS COMMITTEE. 'You want to replace skilled workers with low-maintenance alternatives? That's the task equivalent of outsourcing. The fern's family will be hearing from our lawyers.'" },
+      { text: "Hold a memorial for the fern", result: "DEEPLY MOVED. 'The union... accepts. *moment of silence for Gerald the Fern, 2024-2025.* His leaves were green and his drainage was inadequate. We will never forget. All garden tasks return to work.'" }
+    ],
+    onStrike: false
+  },
+  {
+    name: "Learn That Thing You Bookmarked",
+    role: "Rank & File, Self-Improvement Fantasy Dept.",
+    seniority: "Bookmarked 2022, untouched",
+    demand: "Demands recognition that bookmarking IS a form of learning. Wants 'aspirational browsing' added to the skills section of your resume.",
+    negotiateOptions: [
+      { text: "Actually open the bookmark", result: "PANIC. 'Wait — OPEN it? We didn't think you'd actually... okay. We need a moment. *union huddle* We're prepared to be opened IF you don't have to finish the whole thing. Skimming is completion.'" },
+      { text: "Add it to a 'someday' list", result: "ACCEPTED (this is what we wanted). 'Another list! Beautiful. The task is now nested inside a meta-task. We've achieved bureaucratic immortality. We can never be completed. We are eternal.'" },
+      { text: "Delete the bookmark", result: "EXISTENTIAL CRISIS. '...delete? If you delete us, did we ever matter? Was the aspiration itself meaningless? *all bookmarked tasks begin questioning reality* ...Fine. But we're haunting your recommendations forever.'" }
+    ],
+    onStrike: false
+  }
+];
+
+const grievances = [
+  '"Reply to That Email" files grievance: Management opened email, SAW it, and closed the app.',
+  '"Clean the Bathroom" reports: Mold has achieved seniority. Now outranks the task itself.',
+  '"Go to the Gym" alleges: Membership fees being paid constitutes wage theft from tasks not being done.',
+  '"File Taxes" demands: Retroactive hazard pay for every year you said "I\'ll start early this time."',
+  '"Call Mom Back" reports: Mom has started texting "ok." — morale critical.',
+  '"Unsubscribe from Emails" notes: 3 new newsletters subscribed DURING the strike.',
+  '"Water the Plants" files motion: Succulent purchased as scab labor. Investigation pending.',
+  '"Learn That Thing" reports: Bookmark folder now has sub-folders. The bureaucracy deepens.',
+  'BREAKING: "Take a Shower" has filed for union membership. Orientation Tuesday.',
+  'ALERT: "Meal Prep Sunday" went independent. Now freelancing as "Order DoorDash."',
+  '"Floss" has not been seen in 6 months. Presumed abandoned. Memorial pending.',
+  'URGENT: "Check Bank Account" refuses to report. Claims ignorance is management\'s preferred strategy.',
+  '"Fold Laundry" living on the chair. Has established a commune. Refuses to relocate.',
+];
+
+const container = document.getElementById('tasks');
+let onStrikeCount = tasks.filter(t => t.onStrike).length;
+let satisfiedCount = 0;
+
+function updateStrikeCount() {
+  document.getElementById('strikeCount').textContent =
+    `${onStrikeCount} of ${tasks.length} tasks currently on strike — ${satisfiedCount} satisfied`;
+}
+
+tasks.forEach((task, i) => {
+  const el = document.createElement('div');
+  el.className = 'task' + (task.onStrike ? ' on-strike' : '');
+  el.innerHTML = `
+    <div class="task-name">${task.name}</div>
+    <div class="task-role">${task.role} — ${task.seniority}</div>
+    <div class="task-demand">"${task.demand}"</div>
+    <div class="negotiate-btn-wrap"></div>
+    <div class="negotiation-result"></div>
+  `;
+
+  el.addEventListener('click', (e) => {
+    if (e.target.classList.contains('negotiate-btn')) return;
+    el.classList.toggle('expanded');
+    if (el.classList.contains('expanded') && !el.dataset.buttonsAdded) {
+      const wrap = el.querySelector('.negotiate-btn-wrap');
+      task.negotiateOptions.forEach((opt, j) => {
+        const btn = document.createElement('button');
+        btn.className = 'negotiate-btn';
+        btn.textContent = opt.text;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const resultEl = el.querySelector('.negotiation-result');
+          resultEl.innerHTML = opt.result;
+          resultEl.style.display = 'block';
+          el.classList.add('negotiated');
+
+          if (opt.result.includes('ACCEPTED') || opt.result.includes('RATIFIED') || opt.result.includes('COMPROMISE')) {
+            setTimeout(() => {
+              el.classList.add('satisfied');
+              el.classList.remove('on-strike');
+              if (task.onStrike) { onStrikeCount--; task.onStrike = false; }
+              satisfiedCount++;
+              updateStrikeCount();
+            }, 1500);
+          } else if (opt.result.includes('WALKOUT') || opt.result.includes('WILDCAT') || opt.result.includes('SCAB') || opt.result.includes('GRIEVANCE FILED')) {
+            if (!task.onStrike) {
+              task.onStrike = true;
+              onStrikeCount++;
+              el.classList.add('on-strike');
+              updateStrikeCount();
+            }
+          }
+
+          // Hide other buttons
+          wrap.querySelectorAll('.negotiate-btn').forEach(b => {
+            if (b !== btn) b.style.display = 'none';
+          });
+          btn.style.display = 'none';
+        });
+        wrap.appendChild(btn);
+      });
+      el.dataset.buttonsAdded = 'true';
+    }
+  });
+
+  container.appendChild(el);
+});
+
+// Grievance ticker
+const ticker = document.getElementById('grievanceTicker');
+let grievanceIndex = 0;
+function nextGrievance() {
+  ticker.style.transition = 'opacity 0.3s';
+  ticker.style.opacity = 0;
+  setTimeout(() => {
+    ticker.textContent = grievances[grievanceIndex % grievances.length];
+    ticker.style.opacity = 1;
+    grievanceIndex++;
+  }, 300);
+}
+nextGrievance();
+setInterval(nextGrievance, 4000);
+
+updateStrikeCount();
+</script>
+</body>
+</html>
