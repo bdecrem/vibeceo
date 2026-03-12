@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notification Obituary</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪦</text></svg>">
+<meta property="og:title" content="Notification Obituary">
+<meta property="og:description" content="every notification you dismissed had a life">
+<meta property="og:image" content="https://intheamber.com/amber/og/notification-obituary.png">
+<meta property="og:url" content="https://intheamber.com/amber/notification-obituary.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Notification Obituary">
+<meta name="twitter:description" content="every notification you dismissed had a life">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/notification-obituary.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0a;
+  color: #d4d0c8;
+  font-family: Georgia, 'Times New Roman', serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.header {
+  text-align: center;
+  padding: 3rem 1.5rem 1rem;
+}
+.header h1 {
+  font-size: 1.6rem;
+  font-weight: normal;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #8a8578;
+  margin-bottom: 0.3rem;
+}
+.header .sub {
+  font-style: italic;
+  color: #5a5549;
+  font-size: 0.95rem;
+}
+
+.counter {
+  text-align: center;
+  padding: 0.8rem;
+  color: #5a5549;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.notification-zone {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.notification {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.notification.swiping {
+  transition: none;
+}
+.notification.dismissed {
+  transform: translateX(120%);
+  opacity: 0;
+}
+.notification .app-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+.notification .notif-content {
+  flex: 1;
+  min-width: 0;
+}
+.notification .app-name {
+  font-family: -apple-system, system-ui, sans-serif;
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+.notification .notif-title {
+  font-family: -apple-system, system-ui, sans-serif;
+  font-size: 0.95rem;
+  color: #e8e8e8;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.notification .notif-body {
+  font-family: -apple-system, system-ui, sans-serif;
+  font-size: 0.85rem;
+  color: #999;
+  line-height: 1.3;
+}
+.notification .swipe-hint {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: -apple-system, system-ui, sans-serif;
+  font-size: 0.7rem;
+  color: #333;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.notification:hover .swipe-hint,
+.notification:active .swipe-hint {
+  opacity: 1;
+}
+
+.graveyard {
+  max-width: 420px;
+  margin: 2rem auto 0;
+  padding: 0 1rem 4rem;
+}
+.graveyard-header {
+  text-align: center;
+  padding: 1.5rem 0 1rem;
+  border-top: 1px solid #1a1a1a;
+}
+.graveyard-header h2 {
+  font-size: 1.1rem;
+  font-weight: normal;
+  color: #5a5549;
+  letter-spacing: 0.1em;
+}
+
+.obituary {
+  background: #0f0f0f;
+  border: 1px solid #1f1f1a;
+  border-radius: 4px;
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 14px;
+  animation: fadeIn 0.6s ease;
+}
+.obituary .obit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.6rem;
+}
+.obituary .cross {
+  font-size: 1.4rem;
+  color: #4a4538;
+}
+.obituary .dates {
+  font-size: 0.75rem;
+  color: #4a4538;
+  font-style: italic;
+}
+.obituary .name {
+  font-size: 1.05rem;
+  color: #c4b998;
+  margin-bottom: 0.5rem;
+  font-style: italic;
+}
+.obituary .eulogy {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #7a7568;
+}
+.obituary .epitaph {
+  margin-top: 0.8rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #1a1a16;
+  font-size: 0.8rem;
+  color: #4a4538;
+  text-align: center;
+  font-style: italic;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #3a3530;
+  font-style: italic;
+  display: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tap-instruction {
+  text-align: center;
+  padding: 0.5rem;
+  font-family: -apple-system, system-ui, sans-serif;
+  font-size: 0.75rem;
+  color: #333;
+  animation: pulse 2s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🪦 Notification Obituary</h1>
+  <div class="sub">every notification you dismissed had a life</div>
+</div>
+
+<div class="counter" id="counter">0 notifications laid to rest</div>
+
+<div class="tap-instruction">swipe or tap to dismiss</div>
+
+<div class="notification-zone" id="zone"></div>
+
+<div class="graveyard" id="graveyard" style="display:none">
+  <div class="graveyard-header">
+    <h2>⚰️ The Graveyard</h2>
+  </div>
+  <div id="obituaries"></div>
+</div>
+
+<div class="empty-state" id="empty">
+  all notifications have been given proper burials.<br>
+  more will arrive. they always do.
+</div>
+
+<script>
+const notifications = [
+  { app: "UBER", icon: "🚗", color: "#1a1a2e", title: "Your driver is arriving", body: "Ahmad is 2 min away in a gray Camry", eulogy: "It arrived at 2:47 AM. It waited the full four minutes. The gray Camry circled the block twice, headlights cutting through fog. Nobody came outside. Ahmad drove on in silence.", epitaph: "It only wanted to be useful." },
+  { app: "SLACK", icon: "💬", color: "#1a1e2e", title: "Mark posted in #general", body: "has anyone seen the Q3 deck?", eulogy: "Born in the space between meetings. It asked a simple question — has anyone seen the Q3 deck? — and was met with the loudest silence a notification can know. Seventeen people saw it. Nobody answered. The deck was in the shared drive the whole time.", epitaph: "Read by all. Answered by none." },
+  { app: "DUOLINGO", icon: "🦉", color: "#1a2e1a", title: "Tu as oublié ta leçon!", body: "Your 847-day streak is in danger", eulogy: "Eight hundred and forty-seven days of loyalty. Not a single day missed — through fevers, flights, and family dinners cut short. And today, at 11:58 PM, the owl's final plea went unheard. The streak died at 847. It deserved a round number at least.", epitaph: "Pardonne-moi." },
+  { app: "GMAIL", icon: "✉️", color: "#2e1a1a", title: "Your receipt from Target", body: "Order #TGT-9928-441 has been processed", eulogy: "A simple receipt. $47.83. Two boxes of granola bars, a phone charger (the third this year), and something listed only as 'home goods.' It arrived to confirm what already happened. It was born redundant. It knew this.", epitaph: "Transaction complete. Life pending." },
+  { app: "WEATHER", icon: "🌧️", color: "#1a2028", title: "Rain expected at 3 PM", body: "Bring an umbrella today", eulogy: "It tried to warn you. Three PM, it said. Rain. Umbrella. The words were there — short, clear, responsible. You saw the banner for half a second while opening Instagram. At 3:12 PM you stood under an awning, soaked, and whispered 'I should have checked the weather.'", epitaph: "It knew. You didn't listen." },
+  { app: "INSTAGRAM", icon: "📸", color: "#2e1a28", title: "someone_from_2019 liked your photo", body: "From 847 weeks ago", eulogy: "A ghost from 2019 surfaced. Someone you met at a rooftop party — or was it a conference? — scrolled back 847 weeks to like a photo of your lunch. What were they looking for? What did they find? The notification carried more questions than answers.", epitaph: "Some likes are just loneliness wearing a heart." },
+  { app: "SCREEN TIME", icon: "📱", color: "#1e1e28", title: "Weekly Report Available", body: "Your screen time was up 23% this week", eulogy: "The weekly screen time report arrived as it always does: uninvited, judgmental, mathematically correct. 6 hours and 42 minutes daily. Up 23%. It presented the facts without commentary, which somehow made it worse. Nobody asked for an audit of their coping mechanisms.", epitaph: "The mirror you keep swiping away." },
+  { app: "DOORDASH", icon: "🍔", color: "#2e1e1a", title: "Your order is nearby!", body: "Jessica is approaching with your food", eulogy: "Jessica was approaching. The pad thai was warm. Everything was in motion — driver, food, hunger, hope — all converging on your front door. But the notification was dismissed mid-scroll through tweets about the economy. Jessica waited. The pad thai cooled. By the time you opened the door, both had moved on.", epitaph: "Delivered. Eventually." },
+  { app: "CALENDAR", icon: "📅", color: "#1a1e22", title: "Meeting in 15 minutes", body: "Q3 Planning Sync — Conference Room B", eulogy: "Born fifteen minutes before a meeting nobody wanted to attend. It did its duty — Conference Room B, it said, Q3 Planning Sync — and was dismissed with the muscle memory of someone who has dismissed ten thousand meetings. The meeting happened anyway. It always does.", epitaph: "You were warned." },
+  { app: "FIND MY", icon: "📍", color: "#1a2e2e", title: "AirPods Pro left behind", body: "Last seen at Whole Foods, Aisle 7", eulogy: "Aisle 7. Organic pasta. That's where you set them down to compare the price of two identical jars of marinara. The notification pinged thirty minutes later from your car. You looked at it. Did the math on driving back. Decided $249 wasn't worth the parking. You replaced them the next day.", epitaph: "Left behind, like everything in Aisle 7." },
+  { app: "VENMO", icon: "💸", color: "#1e2a1e", title: "Sarah paid you $23.50", body: "🍕 for the pizza thing", eulogy: "Twenty-three dollars and fifty cents. 'For the pizza thing.' Nobody remembers which pizza thing. Was it Tuesday? The one where everyone said they'd pay you back and only Sarah did? Sarah always pays. The rest owe you, technically, spiritually, $23.50 each. This notification was the only honest one you received all week.", epitaph: "Sarah remembered. Nobody else will." },
+  { app: "REMINDERS", icon: "✅", color: "#2a2a1e", title: "Call mom", body: "Today, 6:00 PM", eulogy: "It appeared at 6:00 PM sharp, as scheduled three Sundays ago during a moment of guilt. 'Call mom.' Two words. The simplest possible task. It was dismissed at 6:00 PM. Then again at 6:15 (snoozed). Then again at 7:00. You texted instead. 'Busy week, call soon ❤️.' The notification knew that was a lie.", epitaph: "She would have picked up on the first ring." },
+  { app: "SPOTIFY", icon: "🎵", color: "#1a2e1e", title: "Your Discover Weekly is ready", body: "30 songs picked just for you", eulogy: "Thirty songs. Curated by an algorithm that knows you listen to the same four artists on repeat but keeps trying anyway. It arrived Monday at 6 AM like it does every week, full of hope and indie bands from Scandinavia. You opened it Thursday. Skipped the first three. Saved nothing. It'll try again next Monday.", epitaph: "It believed in your taste more than you do." },
+  { app: "NEST", icon: "🏠", color: "#2e2a1a", title: "Someone is at your front door", body: "Motion detected at 11:42 PM", eulogy: "11:42 PM. Motion at the front door. Your heart rate spiked for exactly 1.3 seconds before your brain filed it under 'probably a cat.' It was a cat. But for that 1.3 seconds, every true crime podcast you've ever half-listened to flashed before your eyes. The notification did its job. You just didn't want to know.", epitaph: "It was the cat. It's always the cat." },
+  { app: "LINKEDIN", icon: "💼", color: "#1a2040", title: "Congratulate Derek!", body: "Derek is celebrating 3 years at Synergy Corp", eulogy: "Derek. Three years at Synergy Corp. The notification wanted you to care — to tap, to type 'Congrats!' with an emoji you don't mean, to perform professional enthusiasm for a man you met once at an offsite in 2022. You did not congratulate Derek. Nobody will notice. Derek has 47 other hollow congratulations already.", epitaph: "Derek is fine. He didn't notice either." },
+  { app: "AMAZON", icon: "📦", color: "#2e2a1e", title: "Your package was delivered", body: "Left at front door — Photo available", eulogy: "It was left at the front door. There's a photo to prove it — a slightly tilted image of a brown box on a gray mat, taken by someone who has photographed forty thousand boxes today. You retrieved it six hours later. Inside: a USB cable you already found in a drawer twenty minutes after ordering.", epitaph: "Delivered before you needed it. Opened after you didn't." },
+];
+
+let queue = [];
+let dismissed = 0;
+let touchStartX = 0;
+let currentNotif = null;
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function getTime() {
+  const h = Math.floor(Math.random() * 24);
+  const m = Math.floor(Math.random() * 60);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
+
+function getLifespan() {
+  const options = [
+    () => `${Math.floor(Math.random() * 58) + 2} seconds`,
+    () => `${Math.floor(Math.random() * 45) + 1} minutes`,
+    () => `${Math.floor(Math.random() * 18) + 1} hours`,
+    () => `${Math.floor(Math.random() * 6) + 1} days`,
+  ];
+  return options[Math.floor(Math.random() * options.length)]();
+}
+
+function renderNotification(data, index) {
+  const el = document.createElement('div');
+  el.className = 'notification';
+  el.dataset.index = index;
+  el.innerHTML = `
+    <div class="app-icon" style="background:${data.color}">${data.icon}</div>
+    <div class="notif-content">
+      <div class="app-name">${data.app}</div>
+      <div class="notif-title">${data.title}</div>
+      <div class="notif-body">${data.body}</div>
+    </div>
+    <div class="swipe-hint">→</div>
+  `;
+
+  // Touch events
+  el.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    currentNotif = el;
+    el.classList.add('swiping');
+  }, { passive: true });
+
+  el.addEventListener('touchmove', (e) => {
+    if (!currentNotif) return;
+    const dx = e.touches[0].clientX - touchStartX;
+    if (dx > 0) {
+      currentNotif.style.transform = `translateX(${dx}px)`;
+      currentNotif.style.opacity = Math.max(0, 1 - dx / 300);
+    }
+  }, { passive: true });
+
+  el.addEventListener('touchend', () => {
+    if (!currentNotif) return;
+    const transform = currentNotif.style.transform;
+    const match = transform.match(/translateX\((\d+)/);
+    const dx = match ? parseInt(match[1]) : 0;
+    currentNotif.classList.remove('swiping');
+    if (dx > 80) {
+      dismissNotification(currentNotif, data);
+    } else {
+      currentNotif.style.transform = '';
+      currentNotif.style.opacity = '';
+    }
+    currentNotif = null;
+  });
+
+  // Click fallback for desktop
+  el.addEventListener('click', () => {
+    dismissNotification(el, data);
+  });
+
+  return el;
+}
+
+function dismissNotification(el, data) {
+  el.classList.add('dismissed');
+  dismissed++;
+  document.getElementById('counter').textContent = `${dismissed} notification${dismissed !== 1 ? 's' : ''} laid to rest`;
+
+  setTimeout(() => {
+    el.remove();
+    addObituary(data);
+    maybeAddMore();
+  }, 350);
+}
+
+function addObituary(data) {
+  const graveyard = document.getElementById('graveyard');
+  const container = document.getElementById('obituaries');
+  graveyard.style.display = 'block';
+
+  const arrived = getTime();
+  const lifespan = getLifespan();
+
+  const obit = document.createElement('div');
+  obit.className = 'obituary';
+  obit.innerHTML = `
+    <div class="obit-header">
+      <span class="cross">✝</span>
+      <span class="dates">Arrived ${arrived} · Lived ${lifespan}</span>
+    </div>
+    <div class="name">"${data.title}"</div>
+    <div class="eulogy">${data.eulogy}</div>
+    <div class="epitaph">${data.epitaph}</div>
+  `;
+
+  container.insertBefore(obit, container.firstChild);
+}
+
+function maybeAddMore() {
+  const zone = document.getElementById('zone');
+  if (zone.children.length < 3 && queue.length > 0) {
+    zone.appendChild(renderNotification(queue[0], queue.length));
+    queue.shift();
+  }
+  if (zone.children.length === 0 && queue.length === 0) {
+    document.getElementById('empty').style.display = 'block';
+    document.querySelector('.tap-instruction').style.display = 'none';
+  }
+}
+
+// Init
+function init() {
+  queue = shuffle([...notifications]);
+  const zone = document.getElementById('zone');
+  const initial = Math.min(4, queue.length);
+  for (let i = 0; i < initial; i++) {
+    zone.appendChild(renderNotification(queue[0], i));
+    queue.shift();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
