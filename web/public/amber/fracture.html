@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>FRACTURE</title>
+<meta property="og:title" content="FRACTURE">
+<meta property="og:description" content="what you're looking for is on the other side of what's holding together.">
+<meta property="og:image" content="https://intheamber.com/amber/og/fracture.png">
+<meta property="og:url" content="https://intheamber.com/amber/fracture.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FRACTURE">
+<meta name="twitter:description" content="what you're looking for is on the other side of what's holding together.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/fracture.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #080808; touch-action: none; -webkit-user-select: none; user-select: none; }
+  canvas { display: block; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; }
+  #hint {
+    position: fixed; bottom: 24px; left: 0; right: 0; text-align: center;
+    font-family: 'Courier New', monospace; font-size: 14px; color: rgba(255,180,80,0.45);
+    pointer-events: none; transition: opacity 2s; z-index: 10; letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<canvas id="fg"></canvas>
+<div id="hint">tap to fracture</div>
+<script>
+(() => {
+  const bgC = document.getElementById('bg');
+  const fgC = document.getElementById('fg');
+  const bgX = bgC.getContext('2d');
+  const fgX = fgC.getContext('2d');
+  const hint = document.getElementById('hint');
+
+  let W, H;
+  let seeds, numCells;
+  let cellRevealed, cellTarget;
+  let shockwaves = [];
+  let tapped = false;
+  let time = 0;
+
+  // Low-res grid for Voronoi
+  const RES = 4;
+  let gw, gh, grid;
+  let edgeList; // [{x,y,cell,glow,target}]
+
+  // Offscreen buffer for cell rendering
+  let cellBuf, cellCtx, cellImg;
+
+  const PAL = [
+    [255, 90, 40],  [255, 55, 95],  [255, 175, 25],
+    [200, 45, 175], [255, 125, 55], [220, 35, 115],
+    [255, 195, 75], [170, 25, 210], [255, 140, 100],
+    [230, 80, 50],  [240, 60, 160], [255, 210, 120],
+  ];
+
+  function setup() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    [bgC, fgC].forEach(c => {
+      c.width = W * dpr; c.height = H * dpr;
+      c.style.width = W + 'px'; c.style.height = H + 'px';
+    });
+    bgX.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fgX.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Seeds
+    numCells = Math.max(50, Math.min(250, Math.floor((W * H) / 5000)));
+    seeds = [];
+    for (let i = 0; i < numCells; i++) {
+      seeds.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        col: PAL[Math.floor(Math.random() * PAL.length)],
+      });
+    }
+    cellRevealed = new Float32Array(numCells);
+    cellTarget = new Float32Array(numCells);
+
+    // Build grid
+    gw = Math.ceil(W / RES);
+    gh = Math.ceil(H / RES);
+    grid = new Uint16Array(gw * gh);
+
+    for (let gy = 0; gy < gh; gy++) {
+      const py = gy * RES + RES / 2;
+      for (let gx = 0; gx < gw; gx++) {
+        const px = gx * RES + RES / 2;
+        let best = 0, bestD = Infinity;
+        for (let i = 0; i < numCells; i++) {
+          const dx = px - seeds[i].x, dy = py - seeds[i].y;
+          const d = dx * dx + dy * dy;
+          if (d < bestD) { bestD = d; best = i; }
+        }
+        grid[gy * gw + gx] = best;
+      }
+    }
+
+    // Find edges
+    edgeList = [];
+    for (let gy = 1; gy < gh - 1; gy++) {
+      for (let gx = 1; gx < gw - 1; gx++) {
+        const idx = gy * gw + gx;
+        const c = grid[idx];
+        if (c !== grid[idx + 1] || c !== grid[idx - 1] ||
+            c !== grid[idx + gw] || c !== grid[idx - gw]) {
+          edgeList.push({ x: gx * RES, y: gy * RES, cell: c, glow: 0, tgt: 0 });
+        }
+      }
+    }
+
+    // Offscreen buffer at grid resolution
+    cellBuf = document.createElement('canvas');
+    cellBuf.width = gw;
+    cellBuf.height = gh;
+    cellCtx = cellBuf.getContext('2d');
+    cellImg = cellCtx.createImageData(gw, gh);
+
+    shockwaves = [];
+  }
+
+  function nearest(px, py) {
+    let best = 0, bestD = Infinity;
+    for (let i = 0; i < numCells; i++) {
+      const dx = px - seeds[i].x, dy = py - seeds[i].y;
+      const d = dx * dx + dy * dy;
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return best;
+  }
+
+  function fracture(px, py) {
+    if (!tapped) { tapped = true; hint.style.opacity = '0'; }
+
+    const maxR = Math.min(W, H) * 0.38;
+
+    for (let i = 0; i < numCells; i++) {
+      const dx = seeds[i].x - px, dy = seeds[i].y - py;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < maxR) {
+        const t = Math.pow(1 - dist / maxR, 1.6);
+        cellTarget[i] = Math.min(1, cellTarget[i] + t * 0.65);
+      }
+    }
+
+    for (let i = 0; i < edgeList.length; i++) {
+      const e = edgeList[i];
+      const dx = e.x - px, dy = e.y - py;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < maxR) {
+        e.tgt = Math.min(1, e.tgt + Math.pow(1 - dist / maxR, 1.3));
+      }
+    }
+
+    shockwaves.push({ x: px, y: py, r: 0, max: maxR, spd: Math.min(W, H) * 0.7 });
+  }
+
+  function renderCells() {
+    const d = cellImg.data;
+    for (let gy = 0; gy < gh; gy++) {
+      for (let gx = 0; gx < gw; gx++) {
+        const ci = grid[gy * gw + gx];
+        const rev = cellRevealed[ci];
+        const pi = (gy * gw + gx) * 4;
+        if (rev > 0.01) {
+          const c = seeds[ci].col;
+          const breath = 0.82 + 0.18 * Math.sin(time * 1.3 + ci * 0.6);
+          const a = rev * breath;
+          d[pi]     = Math.floor(8 + c[0] * a * 0.72);
+          d[pi + 1] = Math.floor(8 + c[1] * a * 0.72);
+          d[pi + 2] = Math.floor(10 + c[2] * a * 0.72);
+          d[pi + 3] = 255;
+        } else {
+          d[pi] = 8; d[pi + 1] = 8; d[pi + 2] = 10; d[pi + 3] = 255;
+        }
+      }
+    }
+    cellCtx.putImageData(cellImg, 0, 0);
+
+    // Scale up to full size
+    bgX.imageSmoothingEnabled = true;
+    bgX.imageSmoothingQuality = 'high';
+    bgX.drawImage(cellBuf, 0, 0, gw, gh, 0, 0, W, H);
+  }
+
+  function draw() {
+    time += 1 / 60;
+
+    // Animate reveals
+    for (let i = 0; i < numCells; i++) {
+      if (cellRevealed[i] < cellTarget[i]) {
+        cellRevealed[i] += (cellTarget[i] - cellRevealed[i]) * 0.035;
+      }
+    }
+
+    // Slow organic spread
+    if (tapped && time % 0.5 < 0.017) {
+      for (let i = 0; i < numCells; i++) {
+        if (cellRevealed[i] > 0.2) {
+          for (let j = 0; j < numCells; j++) {
+            if (j === i) continue;
+            const dx = seeds[j].x - seeds[i].x, dy = seeds[j].y - seeds[i].y;
+            if (dx * dx + dy * dy < 15000 && cellTarget[j] < cellRevealed[i] * 0.4) {
+              cellTarget[j] += 0.006;
+            }
+          }
+        }
+      }
+    }
+
+    // Background: cells
+    renderCells();
+
+    // Foreground: cracks + shockwaves
+    fgX.clearRect(0, 0, W, H);
+
+    // Cracks (edge glow)
+    for (let i = 0; i < edgeList.length; i++) {
+      const e = edgeList[i];
+      if (e.tgt > e.glow) e.glow += (e.tgt - e.glow) * 0.025;
+      if (e.glow < 0.03) continue;
+
+      const c = seeds[e.cell].col;
+      const pulse = 0.7 + 0.3 * Math.sin(time * 2.2 + i * 0.04);
+      const a = e.glow * pulse;
+
+      // Core crack pixel
+      const r = Math.min(255, c[0] + 110);
+      const g = Math.min(255, c[1] + 90);
+      const b = Math.min(255, c[2] + 70);
+      fgX.fillStyle = `rgba(${r},${g},${b},${a * 0.85})`;
+      fgX.fillRect(e.x - 0.5, e.y - 0.5, RES * 0.6, RES * 0.6);
+
+      // Soft glow
+      if (a > 0.15) {
+        fgX.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${a * 0.1})`;
+        fgX.fillRect(e.x - 3, e.y - 3, 7, 7);
+      }
+      if (a > 0.45) {
+        fgX.fillStyle = `rgba(${r},${g},${b},${a * 0.04})`;
+        fgX.fillRect(e.x - 7, e.y - 7, 15, 15);
+      }
+    }
+
+    // Shockwaves
+    for (let i = shockwaves.length - 1; i >= 0; i--) {
+      const s = shockwaves[i];
+      s.r += s.spd / 60;
+      const p = s.r / s.max;
+      if (p >= 1) { shockwaves.splice(i, 1); continue; }
+      const al = (1 - p) * 0.3;
+
+      fgX.beginPath();
+      fgX.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      fgX.strokeStyle = `rgba(255,190,90,${al})`;
+      fgX.lineWidth = 1.5;
+      fgX.stroke();
+
+      fgX.beginPath();
+      fgX.arc(s.x, s.y, s.r * 0.96, 0, Math.PI * 2);
+      fgX.strokeStyle = `rgba(255,230,160,${al * 0.4})`;
+      fgX.lineWidth = 3;
+      fgX.stroke();
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  function onTap(e) {
+    e.preventDefault();
+    const ts = e.touches || [e];
+    for (let i = 0; i < ts.length; i++) fracture(ts[i].clientX, ts[i].clientY);
+  }
+
+  fgC.addEventListener('touchstart', onTap, { passive: false });
+  fgC.addEventListener('mousedown', onTap);
+  fgC.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for (let i = 0; i < e.touches.length; i++) {
+      if (Math.random() < 0.25) fracture(e.touches[i].clientX, e.touches[i].clientY);
+    }
+  }, { passive: false });
+
+  window.addEventListener('resize', setup);
+  setup();
+  draw();
+})();
+</script>
+</body>
+</html>
