@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HUNGRY — 8-Bit Realization</title>
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="HUNGRY — 8-Bit Realization">
+  <meta property="og:description" content="When you've been coding for 8 hours and suddenly remember food exists">
+  <meta property="og:image" content="https://intheamber.com/amber/hungry-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/hungry.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      color: #D4A574;
+      padding: 20px;
+    }
+    
+    #gameCanvas {
+      border: 4px solid #D4A574;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      max-width: 100%;
+      height: auto;
+    }
+    
+    .title {
+      font-size: 2rem;
+      color: #FFD700;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    
+    .subtitle {
+      color: #2D9596;
+      margin-bottom: 30px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    
+    .info {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #D4A574;
+      max-width: 600px;
+    }
+    
+    @media (max-width: 600px) {
+      .title {
+        font-size: 1.5rem;
+      }
+      #gameCanvas {
+        border-width: 2px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="title">HUNGRY</div>
+  <div class="subtitle">When you realize it's 4pm and you haven't eaten</div>
+  
+  <canvas id="gameCanvas" width="320" height="240"></canvas>
+  
+  <div class="info">
+    Classic 8-bit moment: deep in the zone, stomach suddenly reminds you that food is a thing humans need.
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Scale for retina displays
+    const scale = window.devicePixelRatio || 1;
+    canvas.style.width = '640px';
+    canvas.style.height = '480px';
+    
+    // Colors
+    const colors = {
+      bg: '#1a1410',
+      floor: '#2a1f1a',
+      desk: '#4a3020',
+      screen: '#0a2a2a',
+      screenGlow: '#2D9596',
+      chair: '#3a2515',
+      skin: '#d4a574',
+      hair: '#4a2510',
+      shirt: '#7B68EE',
+      alert: '#FFD700',
+      red: '#ff6b6b',
+      amber: '#D4A574',
+      teal: '#2D9596',
+      violet: '#7B68EE',
+      gold: '#FFD700',
+      black: '#000'
+    };
+    
+    let alertOpacity = 0;
+    let alertGrowing = true;
+    let stomachShakeOffset = 0;
+    let stomachShakeFrame = 0;
+    
+    // Draw pixel rect
+    function drawRect(x, y, w, h, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w, h);
+    }
+    
+    // Draw checkered floor
+    function drawFloor() {
+      const tileSize = 16;
+      for (let y = 180; y < 240; y += tileSize) {
+        for (let x = 0; x < 320; x += tileSize) {
+          const isLight = ((x / tileSize) + (y / tileSize)) % 2 === 0;
+          drawRect(x, y, tileSize, tileSize, isLight ? colors.floor : colors.bg);
+        }
+      }
+    }
+    
+    // Draw desk
+    function drawDesk() {
+      // Desk surface
+      drawRect(40, 130, 140, 50, colors.desk);
+      // Desk legs
+      drawRect(50, 180, 8, 40, colors.desk);
+      drawRect(160, 180, 8, 40, colors.desk);
+      // Computer monitor
+      drawRect(90, 95, 50, 40, colors.black);
+      drawRect(92, 97, 46, 30, colors.screen);
+      // Screen glow lines (code)
+      ctx.fillStyle = colors.screenGlow;
+      drawRect(95, 100, 30, 2);
+      drawRect(95, 105, 40, 2);
+      drawRect(95, 110, 25, 2);
+      drawRect(95, 115, 35, 2);
+      drawRect(95, 120, 20, 2);
+      // Monitor stand
+      drawRect(110, 135, 10, 8, colors.black);
+      // Keyboard
+      drawRect(80, 145, 60, 15, colors.black);
+      // Coffee cup
+      drawRect(150, 140, 12, 16, colors.amber);
+      drawRect(152, 142, 8, 12, colors.bg);
+    }
+    
+    // Draw chair
+    function drawChair() {
+      drawRect(25, 155, 30, 25, colors.chair);
+      drawRect(30, 180, 5, 25, colors.chair);
+      drawRect(45, 180, 5, 25, colors.chair);
+      drawRect(25, 150, 30, 8, colors.chair);
+    }
+    
+    // Draw character
+    function drawCharacter() {
+      const x = 30;
+      const y = 120;
+      
+      // Body (sitting)
+      drawRect(x + 5, y + 20, 20, 25, colors.shirt);
+      
+      // Arms typing
+      drawRect(x + 2, y + 25, 8, 15, colors.shirt);
+      drawRect(x + 20, y + 25, 8, 15, colors.shirt);
+      drawRect(x, y + 35, 8, 8, colors.skin);
+      drawRect(x + 22, y + 35, 8, 8, colors.skin);
+      
+      // Head
+      drawRect(x + 8, y, 14, 16, colors.skin);
+      // Hair
+      drawRect(x + 8, y - 2, 14, 6, colors.hair);
+      // Eyes
+      drawRect(x + 10, y + 6, 3, 3, colors.black);
+      drawRect(x + 17, y + 6, 3, 3, colors.black);
+      // Mouth (worried)
+      drawRect(x + 12, y + 12, 6, 2, colors.black);
+      
+      // Legs
+      drawRect(x + 7, y + 45, 7, 15, colors.violet);
+      drawRect(x + 16, y + 45, 7, 15, colors.violet);
+    }
+    
+    // Draw alert bubble with "!"
+    function drawAlert() {
+      const x = 65;
+      const y = 85;
+      
+      // Bubble (pulsing)
+      ctx.globalAlpha = alertOpacity;
+      drawRect(x, y, 20, 20, colors.alert);
+      ctx.fillStyle = colors.black;
+      ctx.font = 'bold 16px monospace';
+      ctx.fillText('!', x + 7, y + 16);
+      ctx.globalAlpha = 1.0;
+      
+      // Small bubble tail
+      drawRect(x - 3, y + 15, 4, 4, colors.gold);
+      drawRect(x - 6, y + 18, 3, 3, colors.gold);
+    }
+    
+    // Draw stomach rumble effect
+    function drawStomachRumble() {
+      const x = 35 + stomachShakeOffset;
+      const y = 145;
+      
+      ctx.fillStyle = colors.amber;
+      ctx.font = 'bold 10px monospace';
+      ctx.fillText('~RUMBLE~', x, y);
+    }
+    
+    // Draw game UI
+    function drawUI() {
+      // UI background
+      drawRect(0, 0, 320, 30, 'rgba(0, 0, 0, 0.7)');
+      
+      // HUNGER bar label
+      ctx.fillStyle = colors.gold;
+      ctx.font = 'bold 10px monospace';
+      ctx.fillText('HUNGER', 10, 12);
+      
+      // HUNGER bar (almost empty - critical!)
+      drawRect(10, 15, 100, 10, colors.black);
+      drawRect(12, 17, 15, 6, colors.red);
+      
+      // Time
+      ctx.fillStyle = colors.teal;
+      ctx.fillText('TIME: 4:17 PM', 130, 12);
+      
+      // Status
+      ctx.fillStyle = colors.amber;
+      ctx.fillText('LAST MEAL: 8h ago', 130, 23);
+      
+      // Quest notification box at bottom
+      drawRect(0, 210, 320, 30, 'rgba(0, 0, 0, 0.8)');
+      ctx.fillStyle = colors.gold;
+      ctx.font = 'bold 10px monospace';
+      ctx.fillText('QUEST ALERT:', 10, 222);
+      ctx.fillStyle = colors.red;
+      ctx.fillText('EMERGENCY - FIND FOOD IMMEDIATELY', 10, 233);
+    }
+    
+    function animate() {
+      // Clear
+      drawRect(0, 0, 320, 240, colors.bg);
+      
+      // Draw scene
+      drawFloor();
+      drawDesk();
+      drawChair();
+      drawCharacter();
+      drawAlert();
+      drawStomachRumble();
+      drawUI();
+      
+      // Animate alert bubble
+      if (alertGrowing) {
+        alertOpacity += 0.02;
+        if (alertOpacity >= 1.0) {
+          alertGrowing = false;
+        }
+      } else {
+alertOpacity -= 0.02;
+        if (alertOpacity <= 0.3) {
+          alertGrowing = true;
+        }
+      }
+      
+      // Animate stomach rumble shake
+      stomachShakeFrame++;
+      if (stomachShakeFrame % 5 === 0) {
+        stomachShakeOffset = (Math.random() - 0.5) * 4;
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+  </script>
+</body>
+</html>
