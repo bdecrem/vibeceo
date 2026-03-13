@@ -174,7 +174,7 @@ export default function SushiTrainGame() {
     resize();
     window.addEventListener('resize', resize);
 
-    const beltY = () => canvas!.height * 0.7;
+    const beltY = () => canvas!.height * 0.85;
     const beltHeight = 80;
 
     const gs: GameState = {
@@ -210,10 +210,34 @@ export default function SushiTrainGame() {
     function spawnCustomer() {
       if (gs.customers.length >= 3) return;
       const type = SUSHI_TYPES[Math.floor(Math.random() * SUSHI_TYPES.length)];
-      const x = 100 + Math.random() * (canvas!.width - 200);
+
+      // Distribute customers in lanes so they never overlap each other or the HUD
+      // HUD is top ~80px, belt is at 85% height — customers sit in the middle zone
+      const topMargin = 100; // below HUD
+      const bottomMargin = beltY() - 80; // above belt
+      const availableHeight = bottomMargin - topMargin;
+      const maxCustomers = 3;
+      const slot = gs.customers.length; // 0, 1, or 2
+      const slotHeight = availableHeight / maxCustomers;
+      const y = topMargin + slotHeight * slot + slotHeight / 2;
+
+      // Spread horizontally too — avoid overlap with existing customers
+      const padding = 100;
+      const minX = padding;
+      const maxX = canvas!.width - padding;
+      let x: number;
+      let attempts = 0;
+      do {
+        x = minX + Math.random() * (maxX - minX);
+        attempts++;
+      } while (
+        attempts < 20 &&
+        gs.customers.some(c => Math.abs(c.x - x) < 120)
+      );
+
       gs.customers.push({
         x,
-        y: 100,
+        y,
         wantedType: type,
         radius: 40,
         patience: 1.0,
