@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KILN — Amber</title>
+<meta property="og:title" content="KILN">
+<meta property="og:description" content="the glaze never listens.">
+<meta property="og:image" content="https://intheamber.com/amber/og/kiln.png">
+<meta property="og:url" content="https://intheamber.com/amber/kiln.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="KILN">
+<meta name="twitter:description" content="the glaze never listens.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/kiln.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#1a0e08}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#hint{position:fixed;bottom:24px;left:0;right:0;text-align:center;
+color:rgba(212,165,116,0.35);font:14px Georgia,serif;letter-spacing:3px;
+pointer-events:none;transition:opacity 2s}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">touch to pour</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H,dpr,frame=0,touched=false;
+
+// Glaze palette — real ceramic chemistry colors
+const GLAZES=[
+  {r:210,g:160,b:110}, // ash glaze / amber
+  {r:30,g:55,b:140},   // cobalt oxide
+  {r:140,g:200,b:155},  // copper celadon
+  {r:155,g:45,b:15},   // iron red tenmoku
+  {r:250,g:242,b:220}, // shino cream
+  {r:75,g:35,b:95},    // manganese purple
+  {r:45,g:90,b:80},    // oribe green
+];
+const CLAY={r:42,g:24,b:14};
+
+// Offscreen glaze accumulation
+let gL,gX;
+
+function resize(){
+  dpr=Math.min(devicePixelRatio||1,2);
+  W=innerWidth;H=innerHeight;
+  C.width=W*dpr;C.height=H*dpr;
+  X.setTransform(dpr,0,0,dpr,0,0);
+  const old=gL;
+  gL=document.createElement('canvas');
+  gL.width=W*dpr;gL.height=H*dpr;
+  gX=gL.getContext('2d');
+  gX.setTransform(dpr,0,0,dpr,0,0);
+  if(old)gX.drawImage(old,0,0,W,H);
+}
+
+// --- Glaze particles ---
+const particles=[];
+const MAX_P=2000;
+
+function spawnPour(px,py,count,color){
+  const c=color||GLAZES[Math.random()*GLAZES.length|0];
+  for(let i=0;i<count;i++){
+    if(particles.length>=MAX_P)break;
+    particles.push({
+      x:px+(Math.random()-.5)*18,
+      y:py+(Math.random()-.5)*10,
+      vx:(Math.random()-.5)*2,
+      vy:Math.random()*1.5+0.2,
+      r:Math.random()*4+2.5,
+      life:1,
+      fade:0.002+Math.random()*0.003,
+      visc:0.96+Math.random()*0.03,
+      c
+    });
+  }
+}
+
+function updateParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.vy+=0.03; // gravity
+    p.vx*=p.visc;p.vy*=p.visc;
+    p.vx+=(Math.random()-.5)*0.12;
+    p.x+=p.vx;p.y+=p.vy;
+    p.life-=p.fade;
+    // deposit on glaze layer
+    const a=p.life*0.12;
+    if(a>0.005){
+      gX.globalCompositeOperation='source-over';
+      gX.fillStyle=`rgba(${p.c.r},${p.c.g},${p.c.b},${a})`;
+      gX.beginPath();
+      gX.arc(p.x,p.y,p.r*p.life,0,6.283);
+      gX.fill();
+    }
+    if(p.life<=0||p.y>H+20)particles.splice(i,1);
+  }
+}
+
+function drawParticles(){
+  for(const p of particles){
+    const a=p.life*0.7;
+    X.fillStyle=`rgba(${p.c.r},${p.c.g},${p.c.b},${a})`;
+    X.beginPath();
+    X.arc(p.x,p.y,p.r*p.life,0,6.283);
+    X.fill();
+  }
+}
+
+// --- Crystals (hexagonal dendrites) ---
+const crystals=[];
+
+function spawnCrystal(cx,cy,color){
+  const c=color||GLAZES[Math.random()*GLAZES.length|0];
+  const bright={r:Math.min(c.r+60,255),g:Math.min(c.g+60,255),b:Math.min(c.b+60,255)};
+  const arms=6;
+  const branches=[];
+  for(let i=0;i<arms;i++){
+    branches.push({
+      pts:[{x:cx,y:cy}],
+      a:(i/arms)*Math.PI*2+Math.random()*0.3,
+      len:0,max:15+Math.random()*45,
+      growing:true,kids:[]
+    });
+  }
+  crystals.push({branches,c:bright,maxB:25+Math.random()*30|0,age:0,done:false});
+}
+
+function updateCrystals(){
+  for(const cr of crystals){
+    if(cr.done)continue;
+    cr.age++;
+    let any=false;
+    for(const b of cr.branches){
+      if(!b.growing)continue;
+      any=true;
+      b.len+=0.35;
+      const last=b.pts[b.pts.length-1];
+      b.pts.push({x:last.x+Math.cos(b.a)*0.35,y:last.y+Math.sin(b.a)*0.35});
+      if(b.len>=b.max)b.growing=false;
+      if(b.len>6&&Math.random()<0.012&&cr.branches.length<cr.maxB){
+        const ca=b.a+(Math.random()>.5?1:-1)*(Math.PI/3+(Math.random()-.5)*.3);
+        const kid={pts:[{x:last.x,y:last.y}],a:ca,len:0,max:b.max*(0.3+Math.random()*0.35),growing:true,kids:[]};
+        b.kids.push(kid);cr.branches.push(kid);
+      }
+    }
+    if(!any)cr.done=true;
+    // draw to glaze layer
+    if(cr.age%3===0){
+      const alpha=Math.min(cr.age/80,0.55);
+      gX.strokeStyle=`rgba(${cr.c.r},${cr.c.g},${cr.c.b},${alpha})`;
+      gX.lineWidth=0.7;
+      for(const b of cr.branches){
+        if(b.pts.length<2)continue;
+        gX.beginPath();
+        gX.moveTo(b.pts[0].x,b.pts[0].y);
+        for(let i=1;i<b.pts.length;i++)gX.lineTo(b.pts[i].x,b.pts[i].y);
+        gX.stroke();
+      }
+    }
+  }
+}
+
+// --- Crackle lines ---
+const cracks=[];
+
+function spawnCrackle(cx,cy){
+  cracks.push({
+    pts:[{x:cx,y:cy}],a:Math.random()*6.283,
+    len:0,max:25+Math.random()*70,spd:0.4+Math.random()*0.4,
+    done:false,branched:false
+  });
+}
+
+function updateCrackles(){
+  for(const c of cracks){
+    if(c.done)continue;
+    c.len+=c.spd;
+    if(c.len>=c.max){c.done=true;continue}
+    c.a+=(Math.random()-.5)*0.5;
+    const last=c.pts[c.pts.length-1];
+    const nx=last.x+Math.cos(c.a)*c.spd;
+    const ny=last.y+Math.sin(c.a)*c.spd;
+    c.pts.push({x:nx,y:ny});
+    if(!c.branched&&c.len>12&&Math.random()<0.015){
+      c.branched=true;
+      const nc={pts:[{x:nx,y:ny}],a:c.a+(Math.random()>.5?1:-1)*(0.4+Math.random()*0.7),
+        len:0,max:c.max*0.45,spd:c.spd*0.8,done:false,branched:false};
+      cracks.push(nc);
+    }
+    // draw
+    if(c.pts.length>=2){
+      gX.strokeStyle='rgba(18,10,5,0.2)';
+      gX.lineWidth=0.4;
+      gX.beginPath();
+      gX.moveTo(c.pts[c.pts.length-2].x,c.pts[c.pts.length-2].y);
+      gX.lineTo(nx,ny);
+      gX.stroke();
+    }
+  }
+}
+
+// --- Pooling glow (soft highlights where glaze accumulates) ---
+function drawPoolGlow(){
+  if(frame%60!==0)return;
+  // Add subtle warm glow spots
+  const spots=2+Math.random()*2|0;
+  for(let i=0;i<spots;i++){
+    const gx=Math.random()*W;
+    const gy=Math.random()*H;
+    const gr=20+Math.random()*40;
+    const gc=GLAZES[Math.random()*GLAZES.length|0];
+    const grad=gX.createRadialGradient(gx,gy,0,gx,gy,gr);
+    grad.addColorStop(0,`rgba(${gc.r},${gc.g},${gc.b},0.03)`);
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    gX.fillStyle=grad;
+    gX.fillRect(gx-gr,gy-gr,gr*2,gr*2);
+  }
+}
+
+// --- Clay texture (fine speckle) ---
+let clayTex;
+function makeClayTexture(){
+  clayTex=document.createElement('canvas');
+  clayTex.width=256;clayTex.height=256;
+  const tc=clayTex.getContext('2d');
+  tc.fillStyle=`rgb(${CLAY.r},${CLAY.g},${CLAY.b})`;
+  tc.fillRect(0,0,256,256);
+  for(let i=0;i<3000;i++){
+    const v=Math.random()*20-10|0;
+    tc.fillStyle=`rgba(${CLAY.r+v},${CLAY.g+v},${CLAY.b+v},0.4)`;
+    tc.fillRect(Math.random()*256|0,Math.random()*256|0,1,1);
+  }
+}
+
+// --- Init ---
+function seed(){
+  // Initial generous pours from top
+  for(let i=0;i<6;i++){
+    const px=W*0.1+Math.random()*W*0.8;
+    const py=Math.random()*H*0.25;
+    spawnPour(px,py,60+Math.random()*40|0);
+  }
+  // A couple mid-canvas pours for coverage
+  for(let i=0;i<3;i++){
+    spawnPour(Math.random()*W,H*0.3+Math.random()*H*0.4,40+Math.random()*30|0);
+  }
+  // Crystals
+  for(let i=0;i<7;i++){
+    spawnCrystal(Math.random()*W,Math.random()*H);
+  }
+  // Crackle
+  for(let i=0;i<10;i++){
+    spawnCrackle(Math.random()*W,Math.random()*H);
+  }
+}
+
+// --- Main loop ---
+function loop(){
+  frame++;
+  X.clearRect(0,0,W,H);
+
+  // Clay background with texture
+  if(clayTex){
+    const pat=X.createPattern(clayTex,'repeat');
+    X.fillStyle=pat;
+    X.fillRect(0,0,W,H);
+  }
+
+  updateParticles();
+  updateCrystals();
+  updateCrackles();
+  drawPoolGlow();
+
+  // Periodic new crystals
+  if(frame%300===0&&crystals.filter(c=>!c.done).length<12){
+    spawnCrystal(Math.random()*W,Math.random()*H);
+  }
+  // Periodic crackle
+  if(frame%200===0&&cracks.filter(c=>!c.done).length<15){
+    spawnCrackle(Math.random()*W,Math.random()*H);
+  }
+  // Periodic slow drip from top
+  if(frame%180===0){
+    spawnPour(Math.random()*W,Math.random()*H*0.1,15+Math.random()*20|0);
+  }
+
+  // Draw accumulated glaze
+  X.drawImage(gL,0,0,W,H);
+
+  // Draw active particles on top
+  drawParticles();
+
+  // Vignette
+  const vg=X.createRadialGradient(W/2,H/2,Math.min(W,H)*0.25,W/2,H/2,Math.max(W,H)*0.75);
+  vg.addColorStop(0,'rgba(0,0,0,0)');
+  vg.addColorStop(1,'rgba(0,0,0,0.35)');
+  X.fillStyle=vg;
+  X.fillRect(0,0,W,H);
+
+  requestAnimationFrame(loop);
+}
+
+// --- Input ---
+function pour(ex,ey){
+  if(!touched){touched=true;document.getElementById('hint').style.opacity='0'}
+  spawnPour(ex,ey,35+Math.random()*25|0);
+  if(Math.random()>.4)spawnCrystal(ex+(Math.random()-.5)*50,ey+20+Math.random()*60);
+  if(Math.random()>.6)spawnCrackle(ex+(Math.random()-.5)*30,ey+(Math.random()-.5)*30);
+}
+
+C.addEventListener('pointerdown',e=>{e.preventDefault();pour(e.clientX,e.clientY)});
+C.addEventListener('pointermove',e=>{if(e.pressure>0&&frame%3===0)pour(e.clientX,e.clientY)});
+
+// Boot
+resize();
+addEventListener('resize',resize);
+makeClayTexture();
+seed();
+loop();
+</script>
+</body>
+</html>
