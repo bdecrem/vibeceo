@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Houseplant LinkedIn</title>
+<meta property="og:title" content="Houseplant LinkedIn">
+<meta property="og:description" content="professional networking for your plants">
+<meta property="og:image" content="https://intheamber.com/amber/og/plant-linkedin.png">
+<meta property="og:url" content="https://intheamber.com/amber/plant-linkedin.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Houseplant LinkedIn">
+<meta name="twitter:description" content="professional networking for your plants">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/plant-linkedin.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f3f2ef;
+  color: #191919;
+  min-height: 100vh;
+  padding: 0;
+}
+.top-bar {
+  background: #0a66c2;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.top-bar .logo {
+  color: white;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+}
+.top-bar .logo span { color: #70b5f9; }
+.top-bar .search {
+  background: #1b7fd4;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  padding: 6px 12px;
+  font-size: 13px;
+  width: 140px;
+}
+.top-bar .search::placeholder { color: rgba(255,255,255,0.6); }
+
+.container { max-width: 560px; margin: 0 auto; padding: 12px; }
+
+/* Plant selector */
+.selector {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 12px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+  text-align: center;
+}
+.selector h2 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: #666;
+}
+.plant-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.plant-btn {
+  background: #f3f2ef;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 14px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.plant-btn .emoji { font-size: 28px; }
+.plant-btn .name { font-size: 11px; color: #666; }
+.plant-btn:hover, .plant-btn.active {
+  border-color: #0a66c2;
+  background: #e8f0fe;
+}
+.generate-btn {
+  background: #0a66c2;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  max-width: 280px;
+}
+.generate-btn:hover { background: #004182; }
+.generate-btn:disabled { background: #ccc; cursor: default; }
+
+/* Profile card */
+.profile { display: none; }
+.profile.visible { display: block; }
+
+.profile-header {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+  margin-bottom: 8px;
+}
+.banner {
+  height: 80px;
+  background: linear-gradient(135deg, #2d8a4e, #1a6b35);
+  position: relative;
+}
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid white;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  position: absolute;
+  bottom: -40px;
+  left: 20px;
+}
+.header-info {
+  padding: 48px 20px 20px;
+}
+.header-info h1 {
+  font-size: 20px;
+  font-weight: 600;
+}
+.headline {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.location {
+  font-size: 12px;
+  color: #999;
+  margin-top: 6px;
+}
+.connections {
+  font-size: 12px;
+  color: #0a66c2;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.header-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.btn-connect {
+  background: #0a66c2;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  padding: 6px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-message {
+  background: white;
+  color: #0a66c2;
+  border: 1px solid #0a66c2;
+  border-radius: 16px;
+  padding: 6px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.section {
+  background: white;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 8px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+}
+.section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.section p, .section li {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+}
+.section ul { list-style: none; padding: 0; }
+.section li { padding: 4px 0; }
+.section li::before { content: "• "; color: #0a66c2; }
+
+.experience-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.experience-item:last-child { border-bottom: none; }
+.exp-icon {
+  width: 40px;
+  height: 40px;
+  background: #f3f2ef;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.exp-details h4 { font-size: 14px; font-weight: 600; }
+.exp-details .company { font-size: 13px; color: #666; }
+.exp-details .duration { font-size: 12px; color: #999; }
+.exp-details .desc { font-size: 13px; color: #333; margin-top: 4px; }
+
+.skill-tag {
+  display: inline-block;
+  background: #e8f0fe;
+  color: #0a66c2;
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 13px;
+  margin: 3px;
+}
+.endorsement {
+  font-size: 12px;
+  color: #999;
+  margin-left: 4px;
+}
+
+.post-card {
+  background: white;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 8px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+}
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.post-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f3f2ef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+.post-meta .post-name { font-size: 14px; font-weight: 600; }
+.post-meta .post-time { font-size: 12px; color: #999; }
+.post-body {
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-line;
+  margin-bottom: 10px;
+}
+.post-reactions {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+.new-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #0a66c2;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 50;
+}
+
+.notification {
+  display: none;
+  position: fixed;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #057642;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  animation: slideDown 0.3s ease;
+  white-space: nowrap;
+}
+.notification.show { display: block; }
+@keyframes slideDown {
+  from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo">🌿 Plant<span>In</span></div>
+  <input class="search" type="text" placeholder="Search plants...">
+</div>
+
+<div class="container">
+  <div class="selector" id="selector">
+    <h2>Select your houseplant for a LinkedIn profile</h2>
+    <div class="plant-grid" id="plantGrid"></div>
+    <button class="generate-btn" id="generateBtn" disabled>Generate Profile</button>
+  </div>
+
+  <div class="profile" id="profile"></div>
+</div>
+
+<button class="new-btn" id="newBtn" style="display:none" title="New plant">🔄</button>
+<div class="notification" id="notification"></div>
+
+<script>
+const plants = {
+  monstera: {
+    emoji: '🪴', name: 'Monstera Deliciosa',
+    headline: 'Senior Oxygen Producer | Thought Leader in Fenestration | Making holes cool since 2019',
+    location: 'Living Room, Near Window · Open to Relocation (south-facing only)',
+    banner: 'linear-gradient(135deg, #1a5c2a, #2d8a4e)',
+    about: 'Passionate about personal growth (literally). I don\'t just take up space — I fill rooms with presence and convert your CO₂ into breathable vibes. My holes aren\'t flaws, they\'re features. Currently mentoring 3 aerial roots.',
+    experience: [
+      { icon: '🏢', title: 'Chief Aesthetic Officer', company: 'The Living Room', duration: '2019 – Present · 7 yrs', desc: 'Increased room Instagram-worthiness by 340%. Led the Great Shelf Migration of 2023.' },
+      { icon: '🏪', title: 'Shelf Product', company: 'Home Depot', duration: '2019 · 3 months', desc: 'Survived fluorescent lighting. Don\'t like to talk about it.' }
+    ],
+    skills: ['Photosynthesis', 'Fenestration', 'Aerial Root Networking', 'Dramatic Wilting', 'Looking Expensive'],
+    endorsements: [32, 28, 15, 47, 23],
+    post: 'Excited to announce that I\'ve unfurled my 47th leaf. 🌿\n\nIt wasn\'t easy. There were days I thought I\'d just stay curled up forever. But I believed in myself, got adequate indirect light, and someone finally remembered to water me on Thursday.\n\nTo everyone still unfurling — your time is coming.\n\n#Growth #PlantLife #Blessed #NewLeaf',
+    postLikes: '🌱 You, Spider Plant, and 847 others',
+    postComments: '94 comments · 12 repots',
+    connections: '500+ connections (mostly root systems)'
+  },
+  succulent: {
+    emoji: '🌵', name: 'Echeveria "The Resilient"',
+    headline: 'Self-Sufficient Professional | Thriving in Neglect | Water? Never heard of her',
+    location: 'Desk, Direct Sunlight · Not Open to Moving',
+    banner: 'linear-gradient(135deg, #8b6914, #c4a035)',
+    about: 'I require nothing from you, and somehow that makes me more valuable. While other plants beg for attention, I sit here being compact and geometrically perfect. Yes, I judge the fern. We all do.',
+    experience: [
+      { icon: '💻', title: 'Desk Ornament & Morale Object', company: 'Someone\'s WFH Setup', duration: '2021 – Present · 5 yrs', desc: 'Appeared in 200+ Zoom backgrounds. Zero complaints. Zero requests. Zero water.' },
+      { icon: '🎁', title: 'Gift That Kept Living', company: 'Secret Santa 2020', duration: '2020 · 1 month', desc: 'Was given as a low-effort gift. Took it personally. Thrived out of spite.' }
+    ],
+    skills: ['Water Retention', 'Looking Good While Dehydrated', 'Surviving Neglect', 'Geometric Perfection', 'Passive Judgment'],
+    endorsements: [41, 38, 99, 27, 63],
+    post: 'People keep asking me how I stay so "low maintenance."\n\nThe answer? Boundaries.\n\nI don\'t need daily check-ins. I don\'t need reassurance. I don\'t even need water more than twice a month. And honestly? The less you do, the better I look.\n\nMaybe your team could learn something.\n\n#Leadership #Boundaries #LessIsMore #Succulent',
+    postLikes: '🌵 You, Cactus, and 1,203 others',
+    postComments: '67 comments · 34 repots',
+    connections: '127 connections (prefers quality over quantity)'
+  },
+  fern: {
+    emoji: '🌿', name: 'Boston Fern',
+    headline: 'OPEN TO WORK | Previously: Bathroom. Seeking: Somewhere With Humidity',
+    location: 'Currently Between Rooms · Desperately Open to Relocation',
+    banner: 'linear-gradient(135deg, #3d7a45, #5aa563)',
+    about: 'Look, I\'ll be honest. Things haven\'t been great since the move from the bathroom to the bedroom. The humidity levels are... let\'s say "not aligned with my growth trajectory." I\'m dropping fronds. I need a sponsor. Please.',
+    experience: [
+      { icon: '🚿', title: 'Humidity Specialist', company: 'The Bathroom', duration: '2022 – 2025 · 3 yrs', desc: 'Peak performance. Lush. Full. Living my truth. Let go due to "renovation."' },
+      { icon: '😔', title: 'Struggling Resident', company: 'The Bedroom', duration: '2025 – Present · 2 months', desc: 'Crispy tips. Thinning fronds. Applied for a humidifier. Request pending since January.' }
+    ],
+    skills: ['Humidity Detection', 'Dramatic Decline', 'Making People Feel Guilty', 'Shedding', 'Being "Too Much"'],
+    endorsements: [8, 52, 71, 44, 12],
+    post: 'Day 47 without adequate humidity.\n\nI\'m not saying I\'m dying, but I dropped 14 fronds this week and my tips are crispier than a LinkedIn influencer\'s morning routine.\n\nIf anyone knows of a bathroom with good light and consistent steam, my DMs are open.\n\nI\'m not desperate. But also I\'m desperate.\n\n#OpenToWork #HumidityMatters #PlantStruggles',
+    postLikes: '😢 Aloe Vera and 43 others',
+    postComments: '156 comments · 2 repots',
+    connections: '89 connections (losing more daily)'
+  },
+  cactus: {
+    emoji: '🌵', name: 'Barrel Cactus',
+    headline: 'Director of Personal Space | Setting Boundaries Since Birth | Touch Me and Find Out',
+    location: 'Windowsill, Full Sun · Will NOT Be Moved',
+    banner: 'linear-gradient(135deg, #c4722a, #e8a54b)',
+    about: 'I have literal spines and people still try to touch me. I\'ve been setting boundaries since germination and I will not apologize for my sharp exterior. It\'s not a defense mechanism, it\'s a lifestyle.',
+    experience: [
+      { icon: '⚔️', title: 'Boundary Enforcement Officer', company: 'The Windowsill', duration: '2018 – Present · 8 yrs', desc: 'Zero unauthorized touches in 3 years. Punctured one child\'s finger (they were warned). No regrets.' },
+      { icon: '🏜️', title: 'Desert Survivor', company: 'Nursery of Origin', duration: '2016 – 2018 · 2 yrs', desc: 'Endured extreme conditions. Built character. Built spines.' }
+    ],
+    skills: ['Boundary Setting', 'Water Storage', 'Intimidation', 'Patience', 'Slow Growth (Not a Weakness)'],
+    endorsements: [55, 33, 88, 41, 29],
+    post: 'Had someone tell me I should "soften up" to be more approachable.\n\nI\'m a cactus.\n\nI\'ve survived drought, neglect, and a cat that tried to eat me. My spines aren\'t the problem — your expectations are.\n\nBe more cactus.\n\n#AuthenticLeadership #Boundaries #NoPeople #PleaseDontTouchMe',
+    postLikes: '🌵 Agave and 672 others',
+    postComments: '203 comments · 89 repots',
+    connections: '45 connections (carefully curated)'
+  },
+  fiddle: {
+    emoji: '🌳', name: 'Fiddle Leaf Fig',
+    headline: 'Former Interior Design Icon | Currently: In Crisis | Dropped 8 Leaves This Quarter',
+    location: 'Corner, Indirect Light · Too Fragile to Move',
+    banner: 'linear-gradient(135deg, #2a6b3c, #4a9960)',
+    about: 'I was the It Plant of 2018. Every influencer had one. Every design blog featured me. And now? Now I\'m having a public breakdown because someone opened a window and the draft was "too much." I\'m not high-maintenance. The world is just low-effort.',
+    experience: [
+      { icon: '📸', title: 'Chief Aesthetic Officer', company: 'Pinterest Boards Worldwide', duration: '2017 – 2022 · 5 yrs', desc: 'Appeared in 2.3 million posts. Redefined "aspirational living room." Peak cultural impact.' },
+      { icon: '😤', title: 'Dramatic Occupant', company: 'The Corner By The Window', duration: '2022 – Present · 4 yrs', desc: 'Lost 34 leaves to: 1 draft, 2 waterings-that-were-too-much, and 1 person who breathed near me wrong.' }
+    ],
+    skills: ['Being Photogenic', 'Leaf Dropping (Stress Response)', 'Requiring Therapy', 'Former Relevance', 'Making Owners Cry'],
+    endorsements: [92, 77, 45, 31, 68],
+    post: 'I need to be transparent with my network.\n\nI lost 3 leaves last week. Not because of poor care — because someone ROTATED MY POT 15 DEGREES.\n\n15. Degrees.\n\nI\'m now in recovery. Please respect my journey. I\'ve hired a plant-sitter for when my owner goes on vacation because last time they left me with "plenty of water" and I got ROOT ROT.\n\nI\'m healing. But I\'m also furious.\n\n#Vulnerability #PlantCare #FiddleLeafStrong',
+    postLikes: '😢 You, Monstera, and 2,104 others',
+    postComments: '445 comments · 201 repots',
+    connections: '2,847 connections (mostly from the Instagram era)'
+  },
+  pothos: {
+    emoji: '🍃', name: 'Golden Pothos',
+    headline: 'Growth Hacker | Will Grow Anywhere, In Anything, Despite Everything | Unkillable',
+    location: 'Everywhere · Literally Cannot Stop Expanding',
+    banner: 'linear-gradient(135deg, #3a8a4a, #6bc47a)',
+    about: 'You forgot me on top of the fridge for 6 months and I grew 4 feet. You put me in a closet and I found the light. I am the cockroach of the plant world and I mean that as a compliment. Your neglect is my fuel.',
+    experience: [
+      { icon: '🧟', title: 'Unkillable Growth Engine', company: 'Every Room In The House', duration: '2017 – Present · 9 yrs', desc: 'Survived: the fridge top, a windowless bathroom, a college dorm, and someone who "doesn\'t do plants." Still growing.' },
+      { icon: '💧', title: 'Water Propagation Specialist', company: 'A Mason Jar On The Counter', duration: 'Ongoing', desc: 'Currently running 7 propagation operations from a single vine. HR has not been consulted.' }
+    ],
+    skills: ['Growing', 'Not Dying', 'Propagating Without Permission', 'Thriving in Darkness', 'Making Other Plants Look Bad'],
+    endorsements: [200, 187, 94, 112, 76],
+    post: 'Gentle reminder that I have been growing in a jar of water on the counter for 14 months and nobody has potted me.\n\nI have roots. I have 11 new leaves. I have outgrown the jar. I am now growing INTO the backsplash.\n\nAnd honestly? I\'ll just keep going. You don\'t need to do anything. I\'ll figure it out. I always do.\n\nBut like. A pot would be nice.\n\n#StartupLife #Bootstrapped #SelfMade #NeedInvestment',
+    postLikes: '🌱 Everyone and 4,521 others',
+    postComments: '312 comments · 178 repots',
+    connections: '10,000+ connections (impossible to contain)'
+  }
+};
+
+const grid = document.getElementById('plantGrid');
+const genBtn = document.getElementById('generateBtn');
+const profileEl = document.getElementById('profile');
+const newBtn = document.getElementById('newBtn');
+const notification = document.getElementById('notification');
+let selected = null;
+
+// Build plant buttons
+Object.entries(plants).forEach(([key, p]) => {
+  const btn = document.createElement('button');
+  btn.className = 'plant-btn';
+  btn.innerHTML = `<span class="emoji">${p.emoji}</span><span class="name">${p.name.split(' ')[0]}</span>`;
+  btn.onclick = () => {
+    document.querySelectorAll('.plant-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selected = key;
+    genBtn.disabled = false;
+  };
+  grid.appendChild(btn);
+});
+
+function showNotification(text) {
+  notification.textContent = text;
+  notification.classList.add('show');
+  setTimeout(() => notification.classList.remove('show'), 3000);
+}
+
+genBtn.addEventListener('click', () => {
+  if (!selected) return;
+  const p = plants[selected];
+  document.getElementById('selector').style.display = 'none';
+  newBtn.style.display = 'block';
+
+  const skillsHTML = p.skills.map((s, i) =>
+    `<span class="skill-tag">${s}<span class="endorsement">${p.endorsements[i]}+</span></span>`
+  ).join('');
+
+  const expHTML = p.experience.map(e => `
+    <div class="experience-item">
+      <div class="exp-icon">${e.icon}</div>
+      <div class="exp-details">
+        <h4>${e.title}</h4>
+        <div class="company">${e.company}</div>
+        <div class="duration">${e.duration}</div>
+        <div class="desc">${e.desc}</div>
+      </div>
+    </div>
+  `).join('');
+
+  profileEl.innerHTML = `
+    <div class="profile-header">
+      <div class="banner" style="background: ${p.banner}">
+        <div class="avatar">${p.emoji}</div>
+      </div>
+      <div class="header-info">
+        <h1>${p.name}</h1>
+        <div class="headline">${p.headline}</div>
+        <div class="location">📍 ${p.location}</div>
+        <div class="connections">${p.connections}</div>
+        <div class="header-actions">
+          <button class="btn-connect" onclick="showNotification('🌱 ${p.name.split(' ')[0]} accepted your connection!')">🌿 Connect</button>
+          <button class="btn-message" onclick="showNotification('💧 ${p.name.split(' ')[0]} needs water, not messages')">Message</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>About</h3>
+      <p>${p.about}</p>
+    </div>
+
+    <div class="section">
+      <h3>Experience</h3>
+      ${expHTML}
+    </div>
+
+    <div class="section">
+      <h3>Skills & Endorsements</h3>
+      <div>${skillsHTML}</div>
+    </div>
+
+    <div class="post-card">
+      <div class="post-header">
+        <div class="post-avatar">${p.emoji}</div>
+        <div class="post-meta">
+          <div class="post-name">${p.name}</div>
+          <div class="post-time">3d · 🌍</div>
+        </div>
+      </div>
+      <div class="post-body">${p.post}</div>
+      <div class="post-reactions">
+        <span>${p.postLikes}</span>
+        <span>${p.postComments}</span>
+      </div>
+    </div>
+  `;
+
+  profileEl.classList.add('visible');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+newBtn.addEventListener('click', () => {
+  profileEl.classList.remove('visible');
+  profileEl.innerHTML = '';
+  document.getElementById('selector').style.display = 'block';
+  newBtn.style.display = 'none';
+  selected = null;
+  genBtn.disabled = true;
+  document.querySelectorAll('.plant-btn').forEach(b => b.classList.remove('active'));
+});
+</script>
+</body>
+</html>
