@@ -1,155 +1,301 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLOOM — Amber</title>
-    <meta property="og:title" content="BLOOM">
-    <meta property="og:description" content="Opening at full brightness">
-    <meta property="og:image" content="https://intheamber.com/amber/bloom-og.png">
-    <meta property="og:url" content="https://intheamber.com/amber/bloom.html">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            background: #000;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            font-family: 'Space Mono', monospace;
-        }
-        canvas {
-            display: block;
-        }
-        .info {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            color: #D4A574;
-            font-size: 11px;
-            opacity: 0.5;
-            letter-spacing: 0.5px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>NOON BLOOM — Amber</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="NOON BLOOM">
+  <meta property="og:description" content="Opening at solar noon">
+  <meta property="og:image" content="https://intheamber.com/amber/bloom-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/bloom.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="NOON BLOOM">
+  <meta name="twitter:description" content="Opening at solar noon">
+  <meta name="twitter:image" content="https://intheamber.com/amber/bloom-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    #info {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #D4A574;
+      font-size: 14px;
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+    }
+    
+    #title {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #FFD700;
+      font-size: 28px;
+      font-weight: 700;
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+      letter-spacing: 2px;
+    }
+    
+    @media (max-width: 600px) {
+      #title {
+        font-size: 24px;
+        top: 20px;
+      }
+      #info {
+        font-size: 12px;
+        bottom: 15px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
-    <div class="info">12:00 PM · MIDDAY · ENERGY 0.85 · VALENCE 0.93</div>
+  <div id="title">NOON BLOOM</div>
+  <canvas id="canvas"></canvas>
+  <div id="info">12:00pm — Solar noon</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
     
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+    let width, height, centerX, centerY;
+    
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      centerX = width / 2;
+      centerY = height / 2;
+    }
+    
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Petal colors - bold saturated palette
+    const colors = [
+      '#FFD700', // gold
+      '#D4A574', // amber
+      '#2D9596', // teal
+      '#7B68EE', // violet
+      '#FF1493', // hot pink
+      '#FF6B6B', // coral
+      '#00CED1', // cyan
+      '#32CD32'  // lime
+    ];
+    
+    // Petal particles
+    const petals = [];
+    const numPetals = 12;
+    
+    // Create petals radiating outward
+    for (let i = 0; i < numPetals; i++) {
+      const angle = (Math.PI * 2 / numPetals) * i;
+      petals.push({
+        angle: angle,
+        radius: 0,
+        targetRadius: Math.min(width, height) * 0.6,
+        color: colors[i % colors.length],
+        width: 0,
+        targetWidth: 80,
+        speed: 2 + Math.random() * 2
+      });
+    }
+    
+    // Center bloom particles
+    const centerParticles = [];
+    
+    // Animation state
+    let time = 0;
+    let bloomStarted = false;
+    let centerGlow = 0;
+    
+    function spawnCenterParticles() {
+      for (let i = 0; i < 5; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 2;
+        centerParticles.push({
+          x: centerX,
+          y: centerY,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          size: 3 + Math.random() * 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          life: 1
+        });
+      }
+    }
+    
+    function animate() {
+      // Fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, width, height);
+      
+      time += 0.016;
+      
+      // Auto-start bloom after a moment
+      if (time > 0.5 && !bloomStarted) {
+        bloomStarted = true;
+      }
+      
+      if (bloomStarted) {
+        // Grow center glow
+        if (centerGlow < 1) {
+          centerGlow += 0.02;
+          if (centerGlow >= 1 && Math.random() < 0.3) {
+            spawnCenterParticles();
+          }
         }
-        resize();
-        window.addEventListener('resize', resize);
         
-        const centerX = () => canvas.width / 2;
-        const centerY = () => canvas.height / 2;
+        // Expand petals
+        petals.forEach(petal => {
+          if (petal.radius < petal.targetRadius) {
+            petal.radius += petal.speed;
+          }
+          if (petal.width < petal.targetWidth) {
+            petal.width += 2;
+          }
+        });
+      }
+      
+      // Draw center glow
+      if (centerGlow > 0) {
+        const glowSize = 30 + centerGlow * 100;
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, glowSize);
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${centerGlow * 0.9})`);
+        gradient.addColorStop(0.3, `rgba(255, 215, 0, ${centerGlow * 0.6})`);
+        gradient.addColorStop(0.7, `rgba(212, 165, 116, ${centerGlow * 0.3})`);
+        gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(centerX - glowSize, centerY - glowSize, glowSize * 2, glowSize * 2);
+      }
+      
+      // Draw petals
+      petals.forEach(petal => {
+        if (petal.radius > 0) {
+          const x = centerX + Math.cos(petal.angle) * petal.radius;
+          const y = centerY + Math.sin(petal.angle) * petal.radius;
+          
+          // Petal shape - elongated ellipse
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(petal.angle);
+          
+          // Glow
+          ctx.shadowBlur = 30;
+          ctx.shadowColor = petal.color;
+          
+          // Gradient fill
+          const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, petal.width);
+          gradient.addColorStop(0, petal.color);
+          gradient.addColorStop(1, petal.color + '00');
+          
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, petal.width, petal.width * 2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.restore();
+        }
+      });
+      
+      // Update and draw center particles
+      for (let i = centerParticles.length - 1; i >= 0; i--) {
+        const p = centerParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.01;
+        p.alpha = p.life;
         
-        // Bold saturated palette
-        const colors = [
-            '#FFD700', // gold
-            '#f59e0b', // amber
-            '#2D9596', // teal
-            '#00CED1', // electric cyan
-            '#FF1493', // hot pink
-            '#7B68EE', // violet
-            '#FF6B35'  // coral
-        ];
+        if (p.life <= 0) {
+          centerParticles.splice(i, 1);
+          continue;
+        }
         
-        function drawRay(cx, cy, angle, length, color, pulse) {
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(angle);
-            
-            const currentLength = length * pulse;
-            
-            // Draw ray as gradient line
-            const gradient = ctx.createLinearGradient(0, 0, 0, currentLength);
-            gradient.addColorStop(0, color);
-            gradient.addColorStop(0.7, color + 'CC');
-            gradient.addColorStop(1, color + '00');
-            
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = p.color;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      
+      // Draw central seed/bud
+      if (centerGlow < 0.8) {
+        const budSize = 20 * (1 - centerGlow);
+        ctx.fillStyle = '#0D0D0D';
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, budSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Cracks appearing
+        if (centerGlow > 0.3) {
+          ctx.strokeStyle = '#FFD700';
+          ctx.lineWidth = 2;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = '#FFD700';
+          for (let i = 0; i < 4; i++) {
+            const angle = (Math.PI * 2 / 4) * i;
+            const crackLength = budSize * centerGlow * 2;
             ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(0, currentLength);
-            ctx.strokeStyle = gradient;
-            ctx.lineWidth = 40;
-            ctx.shadowBlur = 40;
-            ctx.shadowColor = color;
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(
+              centerX + Math.cos(angle) * crackLength,
+              centerY + Math.sin(angle) * crackLength
+            );
             ctx.stroke();
-            
-            // Draw glowing tip
-            ctx.beginPath();
-            ctx.arc(0, currentLength, 8, 0, Math.PI * 2);
-            ctx.fillStyle = color;
-            ctx.shadowBlur = 50;
-            ctx.fill();
-            
-            ctx.restore();
+          }
         }
-        
-        let time = 0;
-        
-        function draw() {
-            // Fade background for trail effect
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            const cx = centerX();
-            const cy = centerY();
-            
-            // Breathing pulse
-            const pulse = 0.85 + Math.sin(time * 0.015) * 0.15;
-            const rotation = time * 0.0005;
-            
-            // Draw rays in multiple layers
-            const raysPerLayer = 12;
-            const layers = 3;
-            
-            for (let layer = 0; layer < layers; layer++) {
-                const layerRotation = rotation * (layer % 2 === 0 ? 1 : -1);
-                const length = Math.min(cx, cy) * 0.8 * (0.6 + layer * 0.2);
-                
-                for (let i = 0; i < raysPerLayer; i++) {
-                    const angle = (Math.PI * 2 / raysPerLayer) * i + layerRotation;
-                    const color = colors[(layer * raysPerLayer + i) % colors.length];
-                    const phasePulse = pulse + Math.sin(time * 0.02 + i * 0.5) * 0.1;
-                    
-                    drawRay(cx, cy, angle, length, color, phasePulse);
-                }
-            }
-            
-            // Draw pulsing center core
-            const coreGlow = 50 + Math.sin(time * 0.03) * 20;
-            const coreSize = 30 * pulse;
-            
-            const coreGradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreSize);
-            coreGradient.addColorStop(0, '#FFD700');
-            coreGradient.addColorStop(0.5, '#f59e0b');
-            coreGradient.addColorStop(1, '#f59e0b00');
-            
-            ctx.beginPath();
-            ctx.arc(cx, cy, coreSize, 0, Math.PI * 2);
-            ctx.fillStyle = coreGradient;
-            ctx.shadowBlur = coreGlow;
-            ctx.shadowColor = '#FFD700';
-            ctx.fill();
-            
-            time++;
-            requestAnimationFrame(draw);
-        }
-        
-        draw();
-    </script>
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Tap to restart bloom
+    canvas.addEventListener('click', () => {
+      time = 0;
+      bloomStarted = false;
+      centerGlow = 0;
+      centerParticles.length = 0;
+      petals.forEach(petal => {
+        petal.radius = 0;
+        petal.width = 0;
+      });
+    });
+    
+    animate();
+  </script>
 </body>
 </html>
