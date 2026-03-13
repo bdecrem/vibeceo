@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASCEND — The Impossible Staircase</title>
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="ASCEND — The Impossible Staircase">
+  <meta property="og:description" content="Always climbing. Never arriving. The geometry lies.">
+  <meta property="og:image" content="https://intheamber.com/amber/ascend-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/ascend.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@intheamber">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Space Mono', 'Courier New', monospace;
+      color: #D4A574;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #info {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 3rem);
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      margin-bottom: 8px;
+      letter-spacing: 0.15em;
+    }
+
+    .subtitle {
+      font-size: clamp(0.8rem, 2.5vw, 1rem);
+      color: #2D9596;
+      font-style: italic;
+    }
+
+    #message {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+      color: #D4A574;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0.9;
+      max-width: 90vw;
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.8rem; }
+      .subtitle { font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="info">
+    <h1>ASCEND</h1>
+    <div class="subtitle">always climbing • never arriving</div>
+  </div>
+
+  <div id="message">The geometry lies. The stairs loop. You keep climbing.</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let audioContext = null;
+
+    // Color palette
+    const COLORS = {
+      amber: '#D4A574',
+      gold: '#FFD700',
+      teal: '#2D9596',
+      electricBlue: '#3b82f6',
+      hotPink: '#ec4899',
+      purple: '#8b5cf6',
+      coral: '#f97316',
+      lime: '#84cc16'
+    };
+
+    const palette = [
+      COLORS.gold,
+      COLORS.coral,
+      COLORS.hotPink,
+      COLORS.purple,
+      COLORS.electricBlue,
+      COLORS.teal,
+      COLORS.lime,
+      COLORS.amber
+    ];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Initialize audio on first interaction
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    // Play footstep sound
+    function playFootstep(frequency = 200) {
+      if (!audioContext) return;
+      
+      const now = audioContext.currentTime;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(frequency, now);
+      osc.frequency.exponentialRampToValueAtTime(frequency * 0.5, now + 0.05);
+      
+      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.start(now);
+      osc.stop(now + 0.1);
+    }
+
+    // Particle system
+    const particles = [];
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2 - 1;
+        this.life = 1;
+        this.color = color;
+        this.size = Math.random() * 3 + 2;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.1; // gravity
+        this.life -= 0.02;
+      }
+
+      draw() {
+        if (this.life <= 0) return;
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Penrose staircase structure (4 segments forming impossible loop)
+    class PenroseStairs {
+      constructor() {
+        this.rotation = 0;
+        this.climberProgress = 0; // 0-1 around the loop
+        this.stepCount = 0;
+        this.colorIndex = 0;
+      }
+
+      // Get 3D point projected to 2D isometric
+      project(x, y, z) {
+        const angle = this.rotation;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        
+        // Rotate around Y axis
+        const rx = x * cos - z * sin;
+        const rz = x * sin + z * cos;
+        
+        // Isometric projection
+        const scale = Math.min(width, height) * 0.012;
+        const px = width / 2 + (rx - rz) * scale;
+        const py = height / 2 + (y * scale * 0.8) + ((rx + rz) * scale * 0.5);
+        
+        return { x: px, y: py, depth: rz };
+      }
+
+      // Draw a single step
+      drawStep(x, y, z, colorIndex, alpha = 1) {
+        const stepWidth = 4;
+        const stepDepth = 4;
+        const stepHeight = 1;
+
+        const color = palette[colorIndex % palette.length];
+
+        // Step corners
+        const corners = [
+          this.project(x, y, z),
+          this.project(x + stepWidth, y, z),
+          this.project(x + stepWidth, y, z + stepDepth),
+          this.project(x, y, z + stepDepth),
+          this.project(x, y + stepHeight, z),
+          this.project(x + stepWidth, y + stepHeight, z),
+          this.project(x + stepWidth, y + stepHeight, z + stepDepth),
+          this.project(x, y + stepHeight, z + stepDepth)
+        ];
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+
+        // Top face
+        ctx.fillStyle = color;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = color;
+        ctx.beginPath();
+        ctx.moveTo(corners[4].x, corners[4].y);
+        ctx.lineTo(corners[5].x, corners[5].y);
+        ctx.lineTo(corners[6].x, corners[6].y);
+        ctx.lineTo(corners[7].x, corners[7].y);
+        ctx.closePath();
+        ctx.fill();
+
+        // Front face (darker)
+        const frontColor = this.adjustBrightness(color, 0.6);
+        ctx.fillStyle = frontColor;
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.moveTo(corners[0].x, corners[0].y);
+        ctx.lineTo(corners[1].x, corners[1].y);
+        ctx.lineTo(corners[5].x, corners[5].y);
+        ctx.lineTo(corners[4].x, corners[4].y);
+        ctx.closePath();
+        ctx.fill();
+
+        // Side face (darkest)
+        const sideColor = this.adjustBrightness(color, 0.4);
+        ctx.fillStyle = sideColor;
+        ctx.beginPath();
+        ctx.moveTo(corners[1].x, corners[1].y);
+        ctx.lineTo(corners[2].x, corners[2].y);
+        ctx.lineTo(corners[6].x, corners[6].y);
+        ctx.lineTo(corners[5].x, corners[5].y);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+
+        return corners[4]; // Return top-front corner for climber position
+      }
+
+      adjustBrightness(color, factor) {
+        const hex = color.replace('#', '');
+        const r = Math.floor(parseInt(hex.substr(0, 2), 16) * factor);
+        const g = Math.floor(parseInt(hex.substr(2, 2), 16) * factor);
+        const b = Math.floor(parseInt(hex.substr(4, 2), 16) * factor);
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+
+      // Get position on the impossible loop for climber
+      getClimberPosition(progress) {
+        const segment = Math.floor(progress * 4);
+        const localProgress = (progress * 4) % 1;
+        const step = Math.floor(localProgress * 8);
+        
+        let x, y, z, colorIndex;
+        
+        // Four segments forming impossible square
+        switch(segment) {
+          case 0: // Bottom horizontal
+            x = -16 + step * 4;
+            y = 0 + step;
+            z = -16;
+            colorIndex = step;
+            break;
+          case 1: // Right vertical 
+            x = 16;
+            y = 8 + step;
+            z = -16 + step * 4;
+            colorIndex = step;
+            break;
+          case 2: // Top horizontal
+            x = 16 - step * 4;
+            y = 16 + step;
+            z = 16;
+            colorIndex = step;
+            break;
+          case 3: // Left vertical
+            x = -16;
+            y = 24 + step;
+            z = 16 - step * 4;
+            colorIndex = step;
+            break;
+        }
+        
+        return { x, y, z, colorIndex };
+      }
+
+      // Draw complete staircase
+      draw() {
+        // Draw all steps in 4 segments
+        const stepsPerSegment = 8;
+        
+        for (let segment = 0; segment < 4; segment++) {
+          for (let i = 0; i < stepsPerSegment; i++) {
+            const progress = (segment * stepsPerSegment + i) / (4 * stepsPerSegment);
+            const pos = this.getClimberPosition(progress);
+            this.drawStep(pos.x, pos.y, pos.z, pos.colorIndex);
+          }
+        }
+
+        // Draw climber
+        const climberPos = this.getClimberPosition(this.climberProgress);
+        const projected = this.project(climberPos.x + 2, climberPos.y + 3, climberPos.z + 2);
+        
+        // Climber as glowing figure
+        ctx.save();
+        ctx.fillStyle = COLORS.gold;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = COLORS.gold;
+        ctx.beginPath();
+        ctx.arc(projected.x, projected.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Head
+        ctx.fillStyle = COLORS.amber;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(projected.x, projected.y - 6, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Spawn particles behind climber
+        if (Math.random() < 0.3) {
+          const color = palette[climberPos.colorIndex % palette.length];
+          for (let i = 0; i < 2; i++) {
+            particles.push(new Particle(projected.x, projected.y, color));
+          }
+        }
+      }
+
+      update(deltaTime) {
+        // Slow rotation to reveal the impossibility
+        this.rotation += 0.0003 * deltaTime;
+        
+        // Climber progresses
+        const stepSpeed = 0.00015;
+        const oldProgress = this.climberProgress;
+        this.climberProgress += stepSpeed * deltaTime;
+        
+        if (this.climberProgress >= 1) {
+          this.climberProgress = 0;
+        }
+
+        // Play footstep sound every step
+        const stepsTotal = 32;
+        const oldStep = Math.floor(oldProgress * stepsTotal);
+        const newStep = Math.floor(this.climberProgress * stepsTotal);
+        
+        if (newStep !== oldStep) {
+          const frequency = 180 + (newStep % 8) * 20;
+          playFootstep(frequency);
+          this.stepCount++;
+          
+          // Change message occasionally
+          if (this.stepCount % 16 === 0) {
+            updateMessage();
+          }
+        }
+      }
+    }
+
+    const messages = [
+      "The geometry lies. The stairs loop. You keep climbing.",
+      "Step 1000. Still ascending. Still nowhere.",
+      "The top is a myth. The bottom is forgotten.",
+      "Escher knew something we pretend not to.",
+      "Every step up is somehow also down.",
+      "The journey is infinite. The destination doesn't exist.",
+      "You've been here before. You'll be here again.",
+      "Climbing forever. Never arriving.",
+      "The paradox is the point."
+    ];
+
+    let messageIndex = 0;
+    function updateMessage() {
+      messageIndex = (messageIndex + 1) % messages.length;
+      document.getElementById('message').textContent = messages[messageIndex];
+    }
+
+    const stairs = new PenroseStairs();
+    let lastTime = performance.now();
+
+    function animate(currentTime) {
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+
+      // Fade trail effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+
+      // Draw staircase
+      stairs.update(deltaTime);
+      stairs.draw();
+
+      requestAnimationFrame(animate);
+    }
+
+    // Start animation
+    animate(performance.now());
+
+    // Initialize audio on first touch/click
+    document.body.addEventListener('click', initAudio, { once: true });
+    document.body.addEventListener('touchstart', initAudio, { once: true });
+  </script>
+</body>
+</html>
