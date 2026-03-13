@@ -1,10 +1,10 @@
 "use client";
 
-import { theme } from "../theme";
+import { useTheme } from "../ThemeContext";
 import type { ProjectStatus } from "../projects";
 
 export function StatusIndicator({ status, emoji }: { status: ProjectStatus; emoji?: string }) {
-  const t = theme;
+  const t = useTheme();
   const label = t.statusLabels[status] ?? status;
 
   if (status === "active") {

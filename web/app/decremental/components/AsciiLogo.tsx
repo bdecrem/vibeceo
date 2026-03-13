@@ -1,9 +1,9 @@
 "use client";
 
-import { theme } from "../theme";
+import { useTheme } from "../ThemeContext";
 
 export function AsciiLogo() {
-  const t = theme;
+  const t = useTheme();
   const grid = [
     [0,1,0,0,0,1,0],
     [0,2,0,0,0,2,0],

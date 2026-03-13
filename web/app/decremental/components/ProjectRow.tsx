@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { theme } from "../theme";
-import { fontClass } from "../fonts";
+import { useTheme } from "../ThemeContext";
+import { useFontClass } from "../fonts";
 import type { Project } from "../projects";
 import { StatusIndicator } from "./StatusIndicator";
 
 export function ProjectRow({ project, isExpanded, onToggle }: { project: Project; isExpanded: boolean; onToggle: () => void }) {
-  const t = theme;
+  const t = useTheme();
+  const fontClass = useFontClass();
   const isRetired = project.status === "retired" || project.status === "abandonware" || project.status === "neglected";
 
   return (

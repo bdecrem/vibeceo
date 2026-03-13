@@ -1,10 +1,10 @@
 // ── Theme system ──────────────────────────────────────────────
 // Change ACTIVE_THEME to flip the entire look and feel.
 
-export type ThemeName = "terminal" | "phosphor" | "paper" | "inkigayo";
+export type ThemeName = "terminal" | "phosphor" | "paper" | "inkigayo" | "citrus" | "punk" | "blueprint";
 
 // ★ FLIP HERE ★
-export const ACTIVE_THEME: ThemeName = "terminal";
+export const ACTIVE_THEME: ThemeName = "blueprint";
 
 // ──────────────────────────────────────────────────────────────
 
@@ -15,8 +15,8 @@ export interface Theme {
   pageBg: string;
 
   // typography
-  headingFont: "jetbrains" | "poppins" | "inter";
-  bodyFont: "poppins" | "jetbrains" | "inter";
+  headingFont: "jetbrains" | "poppins" | "inter" | "fredoka" | "quicksand";
+  bodyFont: "poppins" | "jetbrains" | "inter" | "fredoka" | "quicksand";
 
   // colors
   textPrimary: string;   // headings, project names
@@ -154,5 +154,111 @@ const inkigayo: Theme = {
   tagline: "♡ · · ·",
 };
 
-export const themes: Record<ThemeName, Theme> = { terminal, phosphor, paper, inkigayo };
+// ── CITRUS ────────────────────────────────────────────────────
+// Warm dark brown-black, like soil under a grove. Headlines in
+// bright tangerine orange. Body text in ripe lemon. Lime green
+// accent for live status. Grapefruit pink for "booting up."
+// Title-bar dots: lemon → orange → lime. Smells like summer.
+const citrus: Theme = {
+  name: "citrus",
+  pageBg: "#f2ffe0",           // electric lime wash — almost hurts
+  headingFont: "fredoka",       // bubbly, rounded, bouncy
+  bodyFont: "quicksand",        // light, airy, friendly
+  textPrimary: "#d94a00",     // bright persimmon — pops hard on green
+  textBody: "#3d5a1e",        // forest green — reads clean
+  textMuted: "#6b8f3a",       // sage
+  textFaint: "#a4c46a",       // spring leaf
+  textGhost: "#d2e8a8",       // faded grass
+  accent: "#a3e635",          // electric chartreuse
+  accentYellow: "#f97316",    // tangerine
+  link: "#d94a00",            // persimmon
+  terminalBg: "#f8ffed",      // barely-there lime white
+  terminalBorder: "#c8e880",  // chartreuse edge
+  titleBarBg: "#eefacc",      // pale acid yellow
+  titleBarDots: ["#facc15", "#a3e635", "#22c55e"],  // yellow → chartreuse → green
+  divider: "#ddf0a0",         // soft chartreuse
+  statusLabels: {
+    active: "live",
+    wip: "wip",
+    respinning: "booting up",
+    neglected: "neglect (benign)",
+    abandonware: "~",
+    retired: "🫗†",
+  },
+  intro: `nine months of building with ai. one repo, lots of seeds planted. some bore fruit. some are still in the dirt. all of it is organic, none of it is polished.`,
+  tagline: "squeeze harder.",
+};
+
+// ── PUNK ──────────────────────────────────────────────────────
+// Xeroxed zine on a black floor. High contrast. Ugly on purpose.
+// Safety yellow headlines on flat black. Body text in raw white —
+// no antialiasing energy. Red for anything alive. Everything looks
+// like it was stapled to a telephone pole at 3am.
+const punk: Theme = {
+  name: "punk",
+  pageBg: "#000000",
+  headingFont: "jetbrains",
+  bodyFont: "jetbrains",
+  textPrimary: "#ffe600",     // safety yellow — screams
+  textBody: "#ccc",           // photocopy grey
+  textMuted: "#888",          // worn ink
+  textFaint: "#555",          // smudged
+  textGhost: "#333",          // barely legible
+  accent: "#ff0040",          // fire engine red
+  accentYellow: "#ffe600",    // same yellow — no hierarchy, no rules
+  link: "#ff0040",            // red underline like a correction
+  terminalBg: "#0a0a0a",     // not quite black — like cheap paper
+  terminalBorder: "#ffe600",  // yellow border — taped edges
+  titleBarBg: "#000",
+  titleBarDots: ["#ff0040", "#ff0040", "#ff0040"],  // all red. uniform. angry.
+  divider: "#222",            // barely there
+  statusLabels: {
+    active: "live",
+    wip: "wip",
+    respinning: "booting up",
+    neglected: "neglect (benign)",
+    abandonware: "~",
+    retired: "🫗†",
+  },
+  intro: `nine months. one repo. ai did most of the typing. i did most of the yelling. nothing here is finished. everything here is real.`,
+  tagline: "NO FUTURE",
+};
+
+// ── BLUEPRINT ─────────────────────────────────────────────────
+// Architect's drawing table. Rich Prussian blue ground, white
+// chalk lines, faint cyan grid energy. Everything looks like it
+// was drafted at 4am with a T-square and a pot of coffee.
+// The terminal window is a drawing frame. You are looking at
+// plans for things that may or may not get built.
+const blueprint: Theme = {
+  name: "blueprint",
+  pageBg: "#0a1e3d",         // deep Prussian blue
+  headingFont: "jetbrains",   // technical lettering
+  bodyFont: "quicksand",      // lighter for annotations
+  textPrimary: "#e8f0ff",     // bright chalk white-blue
+  textBody: "#8badd4",        // faded ink on blue paper
+  textMuted: "#5a82aa",       // old notation
+  textFaint: "#3a6080",       // ghosted dimension line
+  textGhost: "#1e405e",       // nearly invisible grid
+  accent: "#ffffff",          // pure white — the one markup color
+  accentYellow: "#7dd3fc",    // light cyan — revision marks
+  link: "#bae6fd",            // pale sky — soft enough to not fight
+  terminalBg: "#0c2244",      // slightly lighter blue field
+  terminalBorder: "#1e4870",  // drafting frame edge
+  titleBarBg: "#0e2a50",
+  titleBarDots: ["#e8f0ff", "#e8f0ff", "#e8f0ff"],  // three white rivets
+  divider: "#163558",         // faint grid line
+  statusLabels: {
+    active: "live",
+    wip: "wip",
+    respinning: "booting up",
+    neglected: "neglect (benign)",
+    abandonware: "~",
+    retired: "🫗†",
+  },
+  intro: `nine months of drafts, revisions, and things that looked right on paper. one repo. some of it built. some of it still in pencil. scale: 1:1.`,
+  tagline: "REV. 47 — NOT FOR CONSTRUCTION",
+};
+
+export const themes: Record<ThemeName, Theme> = { terminal, phosphor, paper, inkigayo, citrus, punk, blueprint };
 export const theme: Theme = themes[ACTIVE_THEME];

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { theme } from "../theme";
+import { useTheme } from "../ThemeContext";
 
 type ContactState = "message" | "email" | "sending" | "sent";
 
 export function EasterEggCLI({ isVisible, onClose }: { isVisible: boolean; onClose: () => void }) {
-  const t = theme;
+  const t = useTheme();
   const [input, setInput] = useState("");
   const [state, setState] = useState<ContactState>("message");
   const [message, setMessage] = useState("");
