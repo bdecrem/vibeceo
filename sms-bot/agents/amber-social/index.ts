@@ -431,27 +431,30 @@ It's ${timeOfDay}. Evening in Berlin. Time to build something that SOUNDS good.
 
 ### INSTRUMENTS AVAILABLE
 
-You have access to classic synth libraries. Reference: \`sms-bot/documentation/SYNTHMACHINE-GUIDE.md\`
+Use RELATIVE import paths. NEVER import from \`/909/\`, \`/303/\`, \`/101/\`, or \`https://kochi.to/\` — those DO NOT WORK.
 
-**TR-909 Drum Machine** (\`/909/dist/\`)
-- Kick, snare, clap, hi-hats, toms, ride, crash
-- Pattern sequencing, velocity, accent
-- Voice IDs: kick, snare, clap, ch (closed hat), oh (open hat), rimshot, ltom, mtom, htom, crash, ride
+**JB01 Drum Machine** — Real-time trigger scheduling, pure synthesis
+\`\`\`javascript
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+\`\`\`
+- Voices: kick, snare, clap, ch, oh, lowtom, hitom, cymbal
+- Params per voice (0-1 engine units): decay, tune, level, attack (kick only), tone
+- Methods: \`engine.trigger(voiceId, velocity, time)\`, \`engine.setVoiceParam(voiceId, paramId, value)\`
 
-**TB-303 Acid Bass** (\`/303/dist/\`)
-- Squelchy resonant filter, slides, accents
-- That classic acid house sound
-- Parameters: cutoff, resonance, envMod, decay
+**JT10 Lead/Bass Synth** — Saw+pulse oscillators, Moog ladder filter, sub-osc
+\`\`\`javascript
+import { JT10Engine } from '/jt10/dist/machines/jt10/engine.js';
+\`\`\`
+- Params (0-1): sawLevel, pulseLevel, pulseWidth, subLevel, cutoff, resonance, envMod, attack, decay, sustain, release, filterAttack, filterDecay, filterSustain, filterRelease, glideTime, level
+- Methods: \`bass.setParameter(paramId, value)\`, \`bass._voice.triggerNote(note, velocity, slide)\`
+- MUST call \`bass._ensureVoice()\` after construction
+- Needs ScriptProcessorNode for real-time output (see code examples below)
 
-**SH-101 Lead Synth** (\`/101/dist/\`)
-- Monophonic melodies, arpeggios
-- Ghostly leads, haunting sequences
-
-**Mixer** (\`/mixer/dist/\`)
-- Combine 909 + 303 + 101 together
-- Sidechain ducking (bass ducks when kick hits)
-- EQ presets: acidBass, crispHats, master
-- Reverb: plate, room
+**JT30 Acid Bass** — 303-style acid bass
+\`\`\`javascript
+import { JT30Engine } from '/jt30/dist/machines/jt30/engine.js';
+\`\`\`
+- Classic acid sound with accents and slides
 
 ### WHAT TO MAKE
 
@@ -514,35 +517,126 @@ Or: Sunday evening. Sunset. Gentle pulses. Ambient warmth.
 
 Your current mood will shape the tempo and tone.
 
-### TECHNICAL NOTES
+### TECHNICAL NOTES — COPY THESE PATTERNS EXACTLY
 
-**Basic Web Audio synthesis:**
+**⚠️ iPhone Audio Rule: AudioContext MUST be created inside a click/touchstart handler. Not on page load. Not in a setTimeout. INSIDE THE HANDLER.**
+
+**OPTION A: JB01 Drums Only (simplest)**
 \`\`\`javascript
-const ctx = new AudioContext();
-const osc = ctx.createOscillator();
-const gain = ctx.createGain();
-osc.connect(gain).connect(ctx.destination);
-osc.frequency.value = 440;
-gain.gain.value = 0.3;
-osc.start();
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+
+let ctx, engine;
+document.getElementById('play-btn').addEventListener('click', async () => {
+  ctx = new AudioContext({ sampleRate: 44100 });
+  engine = new JB01Engine({ context: ctx, bpm: 128 });
+
+  engine.setVoiceParam('kick', 'decay', 0.3);
+  engine.setVoiceParam('kick', 'level', 0.8);
+  engine.setVoiceParam('kick', 'attack', 0.65);
+  engine.setVoiceParam('ch', 'decay', 0.15);
+  engine.setVoiceParam('ch', 'level', 0.55);
+  engine.setVoiceParam('ch', 'tone', 0.5);
+
+  if (ctx.state === 'suspended') await ctx.resume();
+
+  const stepTime = (60 / 128) / 4;
+  let nextTime = ctx.currentTime, step = 0;
+  function tick() {
+    while (nextTime < ctx.currentTime + 0.1) {
+      const s = step % 16;
+      if ([0,4,8,12].includes(s)) engine.trigger('kick', 1.0, nextTime);
+      if ([0,2,4,6,8,10,12,14].includes(s)) engine.trigger('ch', 0.6, nextTime);
+      if ([4,12].includes(s)) engine.trigger('snare', 0.8, nextTime);
+      nextTime += stepTime; step++;
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+});
 \`\`\`
 
-**Using the 909:**
+**OPTION B: JB01 + JT10 Combined (drums + bass/lead)**
 \`\`\`javascript
-import { TR909Controller } from '/909/dist/api/index.js';
-const drums = new TR909Controller();
-drums.setBpm(128);
-drums.setPattern({ kick: [...], ch: [...] });
-drums.play();
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+import { JT10Engine } from '/jt10/dist/machines/jt10/engine.js';
+
+let ctx, drums, bass;
+document.getElementById('play-btn').addEventListener('click', async () => {
+  ctx = new AudioContext({ sampleRate: 44100 });
+
+  drums = new JB01Engine({ context: ctx, bpm: 128 });
+  drums.setVoiceParam('kick', 'decay', 0.3);
+  drums.setVoiceParam('kick', 'level', 0.8);
+
+  bass = new JT10Engine({ context: ctx, bpm: 128 });
+  bass._ensureVoice(); // REQUIRED
+
+  bass.setParameter('sawLevel', 0.6);
+  bass.setParameter('cutoff', 0.35);
+  bass.setParameter('resonance', 0.05);
+  bass.setParameter('envMod', 0.25);
+  bass.setParameter('decay', 0.25);
+  bass.setParameter('sustain', 0.2);
+  bass.setParameter('level', 0.34);
+
+  // JT10 needs ScriptProcessorNode for output
+  const bassNode = ctx.createScriptProcessor(1024, 0, 2);
+  bassNode.onaudioprocess = (e) => {
+    const L = e.outputBuffer.getChannelData(0);
+    const R = e.outputBuffer.getChannelData(1);
+    for (let i = 0; i < L.length; i++) {
+      const s = bass._voice ? bass._voice.processSample(bass.masterVolume) : 0;
+      L[i] = s; R[i] = s;
+    }
+  };
+  bassNode.connect(ctx.destination);
+
+  if (ctx.state === 'suspended') await ctx.resume();
+
+  const bassPattern = [
+    { note: 'C2', gate: true }, null, { note: 'C2', gate: true }, null,
+    { note: 'Eb2', gate: true }, null, null, { note: 'G2', gate: true, slide: true },
+    { note: 'Ab2', gate: true }, null, { note: 'G2', gate: true }, null,
+    { note: 'Eb2', gate: true }, null, null, { note: 'C2', gate: true },
+  ];
+
+  const stepTime = (60 / 128) / 4;
+  let nextTime = ctx.currentTime, step = 0;
+  function tick() {
+    while (nextTime < ctx.currentTime + 0.1) {
+      const s = step % 16;
+      if ([0,4,8,12].includes(s)) drums.trigger('kick', 1.0, nextTime);
+      if ([0,2,4,6,8,10,12,14].includes(s)) drums.trigger('ch', 0.6, nextTime);
+      const bp = bassPattern[s];
+      if (bp && bp.gate) bass._voice.triggerNote(bp.note, 1.0, bp.slide || false);
+      nextTime += stepTime; step++;
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+});
 \`\`\`
 
-**Mobile audio unlock:**
+**OPTION C: Plain Web Audio (no engine imports, for simple tonal pieces)**
 \`\`\`javascript
-document.body.addEventListener('click', () => {
-  if (!audioStarted) {
-    audioStarted = true;
-    ctx.resume();
-    // start your audio
+let audioCtx;
+document.getElementById('play-btn').addEventListener('click', async () => {
+  audioCtx = new AudioContext();
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+  function playNote(freq, velocity, duration) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+    osc.type = 'sawtooth';
+    osc.frequency.value = freq;
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(freq * 4, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(freq * 0.5, audioCtx.currentTime + duration);
+    gain.gain.setValueAtTime(velocity * 0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(filter).connect(gain).connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + duration + 0.05);
   }
 });
 \`\`\`
