@@ -174,6 +174,67 @@ export default function SushiTrainGame() {
     resize();
     window.addEventListener('resize', resize);
 
+    // --- Upbeat K-pop-ish background music via Web Audio ---
+    let musicPlaying = true;
+    const musicCtx = audioCtx!;
+    const masterGain = musicCtx.createGain();
+    masterGain.gain.value = 0.12;
+    masterGain.connect(musicCtx.destination);
+
+    // Bass line loop
+    const bassNotes = [261.63, 329.63, 293.66, 349.23, 261.63, 329.63, 392.00, 349.23]; // C4 E4 D4 F4 C4 E4 G4 F4
+    let bassIndex = 0;
+    const bassInterval = setInterval(() => {
+      if (!musicPlaying) return;
+      const osc = musicCtx.createOscillator();
+      const g = musicCtx.createGain();
+      osc.connect(g);
+      g.connect(masterGain);
+      osc.type = 'triangle';
+      osc.frequency.value = bassNotes[bassIndex % bassNotes.length] / 2;
+      g.gain.value = 0.3;
+      osc.start();
+      g.gain.exponentialRampToValueAtTime(0.01, musicCtx.currentTime + 0.2);
+      osc.stop(musicCtx.currentTime + 0.25);
+      bassIndex++;
+    }, 250);
+
+    // Melody loop — bouncy synth
+    const melodyNotes = [523.25, 659.25, 783.99, 659.25, 587.33, 523.25, 698.46, 783.99, 0, 523.25, 659.25, 587.33, 523.25, 783.99, 698.46, 659.25];
+    let melodyIndex = 0;
+    const melodyInterval = setInterval(() => {
+      if (!musicPlaying) return;
+      const note = melodyNotes[melodyIndex % melodyNotes.length];
+      melodyIndex++;
+      if (note === 0) return; // rest
+      const osc = musicCtx.createOscillator();
+      const g = musicCtx.createGain();
+      osc.connect(g);
+      g.connect(masterGain);
+      osc.type = 'square';
+      osc.frequency.value = note;
+      g.gain.value = 0.08;
+      osc.start();
+      g.gain.exponentialRampToValueAtTime(0.01, musicCtx.currentTime + 0.12);
+      osc.stop(musicCtx.currentTime + 0.15);
+    }, 125);
+
+    // Hi-hat rhythm
+    const hatInterval = setInterval(() => {
+      if (!musicPlaying) return;
+      const bufferSize = musicCtx.sampleRate * 0.03;
+      const buffer = musicCtx.createBuffer(1, bufferSize, musicCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
+      const src = musicCtx.createBufferSource();
+      const g = musicCtx.createGain();
+      src.buffer = buffer;
+      src.connect(g);
+      g.connect(masterGain);
+      g.gain.value = 0.15;
+      src.start();
+    }, 125);
+
     const beltY = () => canvas!.height * 0.85;
     const beltHeight = 80;
 
@@ -253,6 +314,7 @@ export default function SushiTrainGame() {
 
     function endGame() {
       gs.gameOver = true;
+      musicPlaying = false;
       scoreRef.current = gs.score;
       setScore(gs.score);
       playTone(300, 0.5, 'sawtooth');
@@ -267,9 +329,9 @@ export default function SushiTrainGame() {
 
     function drawBelt() {
       const by = beltY();
-      ctx!.fillStyle = '#1a1a1a';
+      ctx!.fillStyle = '#8B7355';
       ctx!.fillRect(0, by - beltHeight / 2, canvas!.width, beltHeight);
-      ctx!.strokeStyle = '#D4A574';
+      ctx!.strokeStyle = '#5C4033';
       ctx!.lineWidth = 2;
       ctx!.beginPath();
       ctx!.moveTo(0, by - beltHeight / 2);
@@ -357,9 +419,11 @@ export default function SushiTrainGame() {
       });
 
       // Update customers — patience drains smoothly, game over when ANY bar hits 0
-      // ~0.0003 per frame @ 60fps = ~55 seconds to drain (generous but tense)
+      // Drain rate scales with difficulty: 0.0003 (easy) → 0.0008 (hard)
+      const drainProgress = gs.served >= 5 ? Math.min((gs.served - 5) / 15, 1) : 0;
+      const drainRate = 0.0003 + drainProgress * 0.0005;
       gs.customers = gs.customers.filter(customer => {
-        customer.patience -= 0.0003;
+        customer.patience -= drainRate;
         if (customer.patience <= 0) {
           customer.patience = 0;
           gs.statusText = 'Customer left hungry!';
@@ -371,24 +435,32 @@ export default function SushiTrainGame() {
         return true;
       });
 
-      // Difficulty ramp
-      if (gs.served > 0 && gs.served % 5 === 0) {
-        gs.beltSpeed = Math.min(3, 1.5 + gs.served * 0.05);
-        gs.customerRate = Math.max(2000, 4000 - gs.served * 50);
+      // Difficulty ramp — gradual from 5 served, challenging by 20
+      // Belt: 1.5 → 4.0 | Customer spawn: 4000ms → 1500ms | Patience drain: 0.0003 → 0.0008
+      if (gs.served >= 5) {
+        const progress = Math.min((gs.served - 5) / 15, 1); // 0 at 5 served, 1 at 20 served
+        gs.beltSpeed = 1.5 + progress * 2.5;           // 1.5 → 4.0
+        gs.customerRate = 4000 - progress * 2500;       // 4000ms → 1500ms
+        gs.spawnRate = 2000 - progress * 1000;          // 2000ms → 1000ms (more plates)
       }
     }
 
     function draw() {
-      ctx!.fillStyle = '#000';
+      // Light color gradient background
+      const grad = ctx!.createLinearGradient(0, 0, 0, canvas!.height);
+      grad.addColorStop(0, '#FFF5E6');    // warm cream top
+      grad.addColorStop(0.5, '#FFE0F0');  // soft pink middle
+      grad.addColorStop(1, '#E6F0FF');    // light blue bottom
+      ctx!.fillStyle = grad;
       ctx!.fillRect(0, 0, canvas!.width, canvas!.height);
 
-      // Score HUD
+      // Score HUD — dark text on light bg
       ctx!.font = 'bold 32px ui-monospace, monospace';
       ctx!.textAlign = 'left';
       ctx!.textBaseline = 'top';
-      ctx!.fillStyle = '#FFD700';
-      ctx!.shadowColor = '#FFD700';
-      ctx!.shadowBlur = 20;
+      ctx!.fillStyle = '#B8860B';
+      ctx!.shadowColor = '#FFD70080';
+      ctx!.shadowBlur = 10;
       ctx!.fillText(`${gs.score} pts`, 20, 20);
       ctx!.shadowBlur = 0;
 
@@ -500,6 +572,10 @@ export default function SushiTrainGame() {
     animRef.current = requestAnimationFrame(gameLoop);
 
     return () => {
+      musicPlaying = false;
+      clearInterval(bassInterval);
+      clearInterval(melodyInterval);
+      clearInterval(hatInterval);
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animRef.current);
       canvas.removeEventListener('touchstart', handleStart);
