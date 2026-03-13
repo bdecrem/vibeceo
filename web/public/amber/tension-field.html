@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>TENSION FIELD</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⊕</text></svg>">
+<meta property="og:title" content="TENSION FIELD">
+<meta property="og:description" content="invisible forces made visible">
+<meta property="og:image" content="https://intheamber.com/amber/og/tension-field.png">
+<meta property="og:url" content="https://intheamber.com/amber/tension-field.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TENSION FIELD">
+<meta name="twitter:description" content="invisible forces made visible">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/tension-field.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #f5f3ee;
+    overflow: hidden;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    font-family: 'Courier New', monospace;
+  }
+  canvas { display: block; }
+  #clear {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    font: 10px 'Courier New', monospace;
+    color: #bbb;
+    background: none;
+    border: 1px solid #ddd;
+    padding: 4px 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    z-index: 10;
+    transition: color 0.3s, border-color 0.3s;
+  }
+  #clear:hover { color: #888; border-color: #aaa; }
+  #hint {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font: 13px 'Courier New', monospace;
+    color: #ccc;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: opacity 1s;
+    text-align: center;
+    line-height: 2;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<button id="clear">clear</button>
+<div id="hint">tap to place attractor<br>hold to place repeller</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('hint');
+
+let W, H;
+let elements = [];
+let forces = []; // { x, y, type: 'attract'|'repel', age: 0, wobble: 0 }
+let cols, rows;
+const SPACING = 12;
+const JITTER = 3;
+let longPressTimer = null;
+let longPressTriggered = false;
+let ripples = []; // { x, y, age, maxAge }
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  initElements();
+}
+
+function initElements() {
+  elements = [];
+  cols = Math.floor(W / SPACING);
+  rows = Math.floor(H / SPACING);
+  const ox = (W - cols * SPACING) / 2;
+  const oy = (H - rows * SPACING) / 2;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      elements.push({
+        x: ox + c * SPACING + (Math.random() - 0.5) * JITTER,
+        y: oy + r * SPACING + (Math.random() - 0.5) * JITTER,
+        angle: 0,
+        targetAngle: 0,
+        magnitude: 0,
+        targetMag: 0,
+        tension: 0,
+        targetTension: 0,
+      });
+    }
+  }
+}
+
+function addForce(x, y, type) {
+  forces.push({ x, y, type, age: 0, wobble: Math.random() * Math.PI * 2 });
+  ripples.push({ x, y, age: 0, maxAge: 60 });
+  if (hint.style.opacity !== '0') {
+    hint.style.opacity = '0';
+  }
+}
+
+function computeField() {
+  const t = performance.now() * 0.001;
+  for (const el of elements) {
+    if (forces.length === 0) {
+      el.targetMag = 0;
+      el.targetTension = 0;
+      continue;
+    }
+
+    let fx = 0, fy = 0;
+    let forceVectors = [];
+
+    for (const f of forces) {
+      const dx = el.x - f.x;
+      const dy = el.y - f.y;
+      const distSq = dx * dx + dy * dy;
+      const dist = Math.sqrt(distSq) + 1;
+      const strength = 8000 / (distSq + 400);
+      const sign = f.type === 'attract' ? -1 : 1;
+
+      const vx = sign * (dx / dist) * strength;
+      const vy = sign * (dy / dist) * strength;
+      fx += vx;
+      fy += vy;
+      forceVectors.push({ vx, vy, strength });
+    }
+
+    // Compute tension: how much forces disagree
+    let tension = 0;
+    if (forceVectors.length > 1) {
+      const totalMag = Math.sqrt(fx * fx + fy * fy);
+      let sumMag = 0;
+      for (const v of forceVectors) {
+        sumMag += Math.sqrt(v.vx * v.vx + v.vy * v.vy);
+      }
+      // tension = 1 when forces cancel perfectly, 0 when they agree
+      tension = sumMag > 0.01 ? 1 - (totalMag / sumMag) : 0;
+    }
+
+    el.targetAngle = Math.atan2(fy, fx);
+    el.targetMag = Math.min(Math.sqrt(fx * fx + fy * fy), 1);
+    el.targetTension = tension;
+  }
+}
+
+function updateElements() {
+  const lerp = 0.08;
+  const t = performance.now() * 0.001;
+
+  for (const el of elements) {
+    // Smooth angle interpolation
+    let da = el.targetAngle - el.angle;
+    while (da > Math.PI) da -= Math.PI * 2;
+    while (da < -Math.PI) da += Math.PI * 2;
+    el.angle += da * lerp;
+
+    el.magnitude += (el.targetMag - el.magnitude) * lerp;
+    el.tension += (el.targetTension - el.tension) * lerp;
+
+    // Ripple influence
+    for (const rip of ripples) {
+      const dx = el.x - rip.x;
+      const dy = el.y - rip.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const rippleRadius = rip.age * 8;
+      const rippleWidth = 40;
+      const rippleDist = Math.abs(dist - rippleRadius);
+      if (rippleDist < rippleWidth) {
+        const influence = (1 - rippleDist / rippleWidth) * (1 - rip.age / rip.maxAge) * 0.3;
+        el.magnitude = Math.min(el.magnitude + influence, 1);
+      }
+    }
+  }
+}
+
+function drawElements() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw force sources
+  const t = performance.now() * 0.001;
+  for (const f of forces) {
+    f.age++;
+    const pulse = f.type === 'attract'
+      ? 0.6 + 0.4 * Math.sin(t * 2 + f.wobble)
+      : 0.6 + 0.4 * Math.sin(t * 3.7 + f.wobble);
+
+    ctx.beginPath();
+    if (f.type === 'attract') {
+      const r = 4 + pulse * 2;
+      ctx.arc(f.x, f.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(45, 149, 150, ${0.3 + pulse * 0.3})`;
+    } else {
+      // Repeller wobble
+      const wobX = Math.sin(t * 5 + f.wobble) * 1.5;
+      const wobY = Math.cos(t * 4.3 + f.wobble) * 1.5;
+      const r = 4 + pulse * 2;
+      ctx.arc(f.x + wobX, f.y + wobY, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 51, 102, ${0.3 + pulse * 0.3})`;
+    }
+    ctx.fill();
+  }
+
+  // Draw field elements
+  for (const el of elements) {
+    if (el.magnitude < 0.01) continue;
+
+    const len = 2 + el.magnitude * 6;
+    const thickness = 0.5 + el.magnitude * 2;
+
+    // Color from tension
+    let r, g, b, a;
+    if (el.tension < 0.3) {
+      // Low tension: gray → amber
+      const p = el.tension / 0.3;
+      r = Math.floor(160 + p * 95); // → 255
+      g = Math.floor(160 + p * 55); // → 215
+      b = Math.floor(160 - p * 160); // → 0
+      a = 0.15 + el.magnitude * 0.6;
+    } else if (el.tension < 0.6) {
+      // Medium: amber → hot
+      const p = (el.tension - 0.3) / 0.3;
+      r = 255;
+      g = Math.floor(215 - p * 164); // → 51
+      b = Math.floor(0 + p * 102); // → 102
+      a = 0.3 + el.magnitude * 0.7;
+    } else {
+      // High tension: hot pink/magenta — flicker
+      const flicker = 0.7 + 0.3 * Math.sin(t * 12 + el.x * 0.1 + el.y * 0.1);
+      r = 255;
+      g = 51;
+      b = Math.floor(102 + (el.tension - 0.6) * 200);
+      a = (0.4 + el.magnitude * 0.6) * flicker;
+    }
+
+    // Add stutter at high tension
+    let angle = el.angle;
+    if (el.tension > 0.5) {
+      const stutter = (el.tension - 0.5) * 2;
+      angle += Math.sin(t * 20 + el.x + el.y) * stutter * 0.5;
+    }
+
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const x1 = el.x - cos * len;
+    const y1 = el.y - sin * len;
+    const x2 = el.x + cos * len;
+    const y2 = el.y + sin * len;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${a})`;
+    ctx.lineWidth = thickness;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+}
+
+function updateRipples() {
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    ripples[i].age++;
+    if (ripples[i].age > ripples[i].maxAge) {
+      ripples.splice(i, 1);
+    }
+  }
+}
+
+function loop() {
+  computeField();
+  updateElements();
+  updateRipples();
+  drawElements();
+  requestAnimationFrame(loop);
+}
+
+// Input handling
+function getPos(e) {
+  if (e.touches) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  return { x: e.clientX, y: e.clientY };
+}
+
+function onDown(e) {
+  e.preventDefault();
+  const pos = getPos(e);
+  longPressTriggered = false;
+  longPressTimer = setTimeout(() => {
+    longPressTriggered = true;
+    addForce(pos.x, pos.y, 'repel');
+  }, 500);
+}
+
+function onUp(e) {
+  e.preventDefault();
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+  if (!longPressTriggered) {
+    const pos = e.changedTouches ? 
+      { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY } :
+      { x: e.clientX, y: e.clientY };
+    addForce(pos.x, pos.y, 'attract');
+  }
+}
+
+function onCancel() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+}
+
+canvas.addEventListener('mousedown', onDown);
+canvas.addEventListener('mouseup', onUp);
+canvas.addEventListener('touchstart', onDown, { passive: false });
+canvas.addEventListener('touchend', onUp, { passive: false });
+canvas.addEventListener('touchcancel', onCancel);
+
+document.getElementById('clear').addEventListener('click', () => {
+  forces = [];
+  ripples = [];
+  hint.style.opacity = '1';
+});
+
+window.addEventListener('resize', resize);
+resize();
+loop();
+</script>
+</body>
+</html>
