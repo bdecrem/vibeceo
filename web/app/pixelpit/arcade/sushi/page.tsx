@@ -321,31 +321,27 @@ export default function SushiTrainGame() {
         gs.lastCustomerSpawn = timestamp;
       }
 
-      // Update plates
+      // Update plates — scrolling off is just lost opportunity, not a fail
       gs.plates = gs.plates.filter(plate => {
         if (plate !== gs.dragging) {
           plate.x -= gs.beltSpeed;
         }
         if (plate.x < -50 && plate !== gs.dragging) {
-          gs.missed++;
-          gs.statusText = 'Plate scrolled away!';
-          gs.statusColor = '#FF6B6B';
-          playTone(200, 0.2, 'sawtooth');
-          if (gs.missed >= MAX_MISSES) endGame();
           return false;
         }
         return true;
       });
 
-      // Update customers
+      // Update customers — patience drains smoothly, game over when ANY bar hits 0
+      // ~0.0003 per frame @ 60fps = ~55 seconds to drain (generous but tense)
       gs.customers = gs.customers.filter(customer => {
-        customer.patience -= 0.0005;
+        customer.patience -= 0.0003;
         if (customer.patience <= 0) {
+          customer.patience = 0;
           gs.statusText = 'Customer left hungry!';
           gs.statusColor = '#FF6B6B';
           playTone(150, 0.3, 'sawtooth');
-          gs.missed++;
-          if (gs.missed >= MAX_MISSES) endGame();
+          endGame();
           return false;
         }
         return true;
@@ -375,12 +371,6 @@ export default function SushiTrainGame() {
       ctx!.font = '16px ui-monospace, monospace';
       ctx!.fillStyle = gs.statusColor;
       ctx!.fillText(gs.statusText, 20, 58);
-
-      // Misses indicator
-      ctx!.textAlign = 'right';
-      ctx!.fillStyle = '#FF6B6B';
-      ctx!.font = '16px ui-monospace, monospace';
-      ctx!.fillText(`misses: ${gs.missed}/${MAX_MISSES}`, canvas!.width - 20, 20);
 
       ctx!.textAlign = 'left';
 
