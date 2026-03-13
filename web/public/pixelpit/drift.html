@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drift</title>
+  <meta property="og:title" content="Drift">
+  <meta property="og:description" content="watch the current">
+  <meta property="og:image" content="https://kochi.to/pixelpit/drift-og.png">
+  <meta property="og:url" content="https://kochi.to/pixelpit/drift.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Drift">
+  <meta name="twitter:description" content="watch the current">
+  <meta name="twitter:image" content="https://kochi.to/pixelpit/drift-og.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0A0908; overflow: hidden; font-family: 'Courier New', monospace; }
+    canvas { display: block; }
+    #label {
+      position: fixed; bottom: 18px; left: 20px;
+      color: #D4A574; opacity: 0.3; font-size: 11px;
+      letter-spacing: 0.25em; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="label">drift</div>
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles, mouse, time = 0;
+
+    const NUM = 1200;
+    const COLORS = [
+      [212, 165, 116], // amber #D4A574
+      [45, 149, 150],  // teal #2D9596
+      [180, 140, 90],  // muted gold
+      [70, 130, 135],  // deep teal
+    ];
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+
+    function init() {
+      resize();
+      mouse = { x: -9999, y: -9999, active: false };
+      particles = [];
+      for (let i = 0; i < NUM; i++) {
+        const c = COLORS[Math.floor(Math.random() * COLORS.length)];
+        particles.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          vx: 0, vy: 0,
+          baseSpeed: 0.3 + Math.random() * 0.7,
+          phase: Math.random() * Math.PI * 2,
+          freq: 0.002 + Math.random() * 0.003,
+          amp: 20 + Math.random() * 40,
+          size: 1 + Math.random() * 1.5,
+          r: c[0], g: c[1], b: c[2],
+          alpha: 0.15 + Math.random() * 0.45,
+        });
+      }
+    }
+
+    function flowField(x, y, t) {
+      // layered sine currents — like ocean undercurrents
+      const s1 = Math.sin(y * 0.003 + t * 0.4) * 0.8;
+      const s2 = Math.sin(x * 0.002 + t * 0.3) * 0.3;
+      const s3 = Math.cos((x + y) * 0.0015 + t * 0.2) * 0.4;
+      return {
+        fx: s1 + s3,
+        fy: s2 + Math.sin(x * 0.004 - t * 0.25) * 0.35,
+      };
+    }
+
+    function animate() {
+      // semi-transparent overlay for trails
+      ctx.fillStyle = 'rgba(10, 9, 8, 0.06)';
+      ctx.fillRect(0, 0, W, H);
+
+      time += 0.016;
+
+      for (let i = 0; i < NUM; i++) {
+        const p = particles[i];
+
+        // flow field influence
+        const { fx, fy } = flowField(p.x, p.y, time);
+        const drift = p.baseSpeed;
+        p.vx += fx * drift * 0.12;
+        p.vy += fy * drift * 0.12;
+
+        // sine-wave lateral drift
+        p.vx += Math.sin(time * 0.5 + p.phase) * 0.02;
+        p.vy += Math.cos(p.x * p.freq + time * 0.3) * p.amp * 0.0003;
+
+        // gentle rightward current
+        p.vx += drift * 0.15;
+
+        // mouse gravitational disturbance
+        if (mouse.active) {
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const radius = 180;
+          if (dist < radius && dist > 1) {
+            const force = (1 - dist / radius) * 2.5;
+            // swirl: pull toward + tangential orbit
+            const angle = Math.atan2(dy, dx);
+            p.vx += (Math.cos(angle) * 0.4 - Math.sin(angle) * 0.8) * force;
+            p.vy += (Math.sin(angle) * 0.4 + Math.cos(angle) * 0.8) * force;
+          }
+        }
+
+        // damping
+        p.vx *= 0.94;
+        p.vy *= 0.94;
+
+        // move
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // wrap edges
+        if (p.x > W + 10) p.x = -10;
+        if (p.x < -10) p.x = W + 10;
+        if (p.y > H + 10) p.y = -10;
+        if (p.y < -10) p.y = H + 10;
+
+        // draw
+        const flicker = 0.8 + Math.sin(time * 2 + p.phase) * 0.2;
+        ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},${p.alpha * flicker})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // input handling
+    function setMouse(x, y) { mouse.x = x; mouse.y = y; mouse.active = true; }
+    function clearMouse() { mouse.active = false; mouse.x = -9999; mouse.y = -9999; }
+
+    canvas.addEventListener('mousemove', e => setMouse(e.clientX, e.clientY));
+    canvas.addEventListener('mouseleave', clearMouse);
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const t = e.touches[0];
+      setMouse(t.clientX, t.clientY);
+    }, { passive: false });
+    canvas.addEventListener('touchstart', e => {
+      const t = e.touches[0];
+      setMouse(t.clientX, t.clientY);
+    });
+    canvas.addEventListener('touchend', clearMouse);
+    window.addEventListener('resize', () => { resize(); });
+
+    init();
+    animate();
+  </script>
+</body>
+</html>
