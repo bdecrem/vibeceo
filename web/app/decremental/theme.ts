@@ -4,7 +4,7 @@
 export type ThemeName = "terminal" | "phosphor" | "paper" | "inkigayo" | "citrus" | "punk" | "blueprint";
 
 // ★ FLIP HERE ★
-export const ACTIVE_THEME: ThemeName = "blueprint";
+export const ACTIVE_THEME: ThemeName = "citrus";
 
 // ──────────────────────────────────────────────────────────────
 
