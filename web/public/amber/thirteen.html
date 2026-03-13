@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THIRTEEN</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="THIRTEEN">
+<meta property="og:description" content="a drum machine cursed with 13 steps">
+<meta property="og:image" content="https://intheamber.com/amber/og/thirteen.png">
+<meta property="og:url" content="https://intheamber.com/amber/thirteen.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="THIRTEEN">
+<meta name="twitter:description" content="a drum machine cursed with 13 steps">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/thirteen.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0a;
+  color: #e8e0d8;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+h1 {
+  font-size: 14px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 8px;
+}
+#subtitle {
+  font-size: 11px;
+  color: #444;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+}
+canvas {
+  display: block;
+  touch-action: none;
+}
+#start-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: none;
+  border: 1px solid #8b0000;
+  color: #c41e1e;
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  letter-spacing: 4px;
+  padding: 16px 32px;
+  cursor: pointer;
+  text-transform: uppercase;
+  z-index: 10;
+  transition: all 0.2s;
+}
+#start-btn:hover, #start-btn:active {
+  background: #8b0000;
+  color: #fff;
+}
+#start-btn.hidden { display: none; }
+#voices {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 360px;
+}
+.voice-btn {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: #666;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  padding: 6px 10px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.voice-btn.active {
+  border-color: #c41e1e;
+  color: #c41e1e;
+  background: #1a0808;
+}
+#bpm-display {
+  font-size: 11px;
+  color: #444;
+  margin-top: 10px;
+  letter-spacing: 2px;
+}
+#bpm-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  align-items: center;
+}
+.bpm-btn {
+  background: none;
+  border: 1px solid #333;
+  color: #666;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bpm-btn:active { border-color: #c41e1e; color: #c41e1e; }
+#clear-btn {
+  background: none;
+  border: 1px solid #333;
+  color: #555;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 8px 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  min-height: 44px;
+}
+#clear-btn:active { border-color: #c41e1e; color: #c41e1e; }
+</style>
+</head>
+<body>
+<h1>THIRTEEN</h1>
+<div id="subtitle">a drum machine cursed with 13 steps</div>
+<canvas id="ring"></canvas>
+<button id="start-btn">SUMMON</button>
+<div id="voices"></div>
+<div id="bpm-display">130 BPM</div>
+<div id="bpm-controls">
+  <button class="bpm-btn" id="bpm-down">−</button>
+  <button class="bpm-btn" id="bpm-up">+</button>
+</div>
+<button id="clear-btn">EXORCISE</button>
+
+<script type="module">
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+
+const voices = [
+  { id: 'kick', label: 'KICK', color: '#c41e1e' },
+  { id: 'snare', label: 'SNARE', color: '#d45c2e' },
+  { id: 'clap', label: 'CLAP', color: '#d4962e' },
+  { id: 'ch', label: 'CH', color: '#8b8b3a' },
+  { id: 'oh', label: 'OH', color: '#3a8b5a' },
+  { id: 'cymbal', label: 'CYM', color: '#3a5a8b' },
+];
+
+const STEPS = 13;
+let bpm = 130;
+let activeVoice = 'kick';
+let playing = false;
+let currentStep = 0;
+
+// Pattern: voice -> array of 13 booleans
+const pattern = {};
+voices.forEach(v => pattern[v.id] = new Array(STEPS).fill(false));
+
+// Preload a cursed pattern
+pattern.kick[0] = true;
+pattern.kick[5] = true;
+pattern.kick[10] = true;
+pattern.ch[0] = true;
+pattern.ch[2] = true;
+pattern.ch[4] = true;
+pattern.ch[6] = true;
+pattern.ch[8] = true;
+pattern.ch[10] = true;
+pattern.ch[12] = true;
+pattern.snare[3] = true;
+pattern.snare[9] = true;
+
+// Canvas setup
+const canvas = document.getElementById('ring');
+const dpr = window.devicePixelRatio || 1;
+let W, H, cx, cy, outerR, innerR;
+
+function resize() {
+  const size = Math.min(window.innerWidth - 40, window.innerHeight - 280, 400);
+  W = size;
+  H = size;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  cx = W * dpr / 2;
+  cy = H * dpr / 2;
+  outerR = (W * dpr / 2) - 20 * dpr;
+  innerR = outerR * 0.35;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const ctx2d = canvas.getContext('2d');
+
+// Triggered flash intensities per voice
+const flashes = {};
+voices.forEach(v => flashes[v.id] = 0);
+
+function draw() {
+  const c = ctx2d;
+  c.clearRect(0, 0, W * dpr, H * dpr);
+
+  const stepAngle = (Math.PI * 2) / STEPS;
+  const startAngle = -Math.PI / 2;
+
+  // Draw rings per voice (concentric)
+  const ringWidth = (outerR - innerR) / voices.length;
+
+  for (let vi = 0; vi < voices.length; vi++) {
+    const v = voices[vi];
+    const r = outerR - vi * ringWidth;
+    const dotR = ringWidth * 0.3;
+
+    for (let s = 0; s < STEPS; s++) {
+      const angle = startAngle + s * stepAngle;
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+
+      const isActive = pattern[v.id][s];
+      const isCurrent = playing && s === currentStep;
+
+      c.beginPath();
+      c.arc(x, y, dotR, 0, Math.PI * 2);
+
+      if (isActive && isCurrent) {
+        // Bright flash
+        c.fillStyle = v.color;
+        c.shadowColor = v.color;
+        c.shadowBlur = 20 * dpr;
+        c.fill();
+        c.shadowBlur = 0;
+      } else if (isActive) {
+        c.fillStyle = v.color + '99';
+        c.fill();
+      } else if (isCurrent) {
+        c.strokeStyle = '#444';
+        c.lineWidth = 2 * dpr;
+        c.stroke();
+      } else {
+        c.fillStyle = '#1a1a1a';
+        c.fill();
+      }
+    }
+  }
+
+  // Center: step number
+  if (playing) {
+    const stepNum = currentStep + 1;
+    c.font = `bold ${40 * dpr}px 'Courier New'`;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+
+    // Pulse effect on kick
+    const kickFlash = flashes.kick;
+    const r = Math.floor(196 + kickFlash * 59);
+    const g = Math.floor(30 + kickFlash * 10);
+    const b = Math.floor(30 + kickFlash * 10);
+    c.fillStyle = `rgb(${r},${g},${b})`;
+    c.shadowColor = `rgb(${r},${g},${b})`;
+    c.shadowBlur = kickFlash * 30 * dpr;
+    c.fillText(stepNum, cx, cy);
+    c.shadowBlur = 0;
+  }
+
+  // Decay flashes
+  voices.forEach(v => {
+    flashes[v.id] *= 0.85;
+  });
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+// Handle canvas taps — toggle steps
+canvas.addEventListener('click', (e) => {
+  if (!playing) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * dpr;
+  const my = (e.clientY - rect.top) * dpr;
+
+  const stepAngle = (Math.PI * 2) / STEPS;
+  const startAngle = -Math.PI / 2;
+  const ringWidth = (outerR - innerR) / voices.length;
+
+  // Only check active voice ring
+  const vi = voices.findIndex(v => v.id === activeVoice);
+  const r = outerR - vi * ringWidth;
+  const dotR = ringWidth * 0.4 + 10 * dpr; // bigger hit target
+
+  for (let s = 0; s < STEPS; s++) {
+    const angle = startAngle + s * stepAngle;
+    const x = cx + Math.cos(angle) * r;
+    const y = cy + Math.sin(angle) * r;
+    const dist = Math.sqrt((mx - x) ** 2 + (my - y) ** 2);
+    if (dist < dotR) {
+      pattern[activeVoice][s] = !pattern[activeVoice][s];
+      return;
+    }
+  }
+});
+
+// Voice buttons
+const voicesDiv = document.getElementById('voices');
+voices.forEach(v => {
+  const btn = document.createElement('button');
+  btn.className = 'voice-btn' + (v.id === activeVoice ? ' active' : '');
+  btn.textContent = v.label;
+  btn.style.setProperty('--color', v.color);
+  btn.addEventListener('click', () => {
+    activeVoice = v.id;
+    document.querySelectorAll('.voice-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+  voicesDiv.appendChild(btn);
+});
+
+// BPM controls
+const bpmDisplay = document.getElementById('bpm-display');
+document.getElementById('bpm-down').addEventListener('click', () => {
+  bpm = Math.max(60, bpm - 5);
+  bpmDisplay.textContent = bpm + ' BPM';
+});
+document.getElementById('bpm-up').addEventListener('click', () => {
+  bpm = Math.min(200, bpm + 5);
+  bpmDisplay.textContent = bpm + ' BPM';
+});
+
+// Clear
+document.getElementById('clear-btn').addEventListener('click', () => {
+  voices.forEach(v => pattern[v.id].fill(false));
+});
+
+// Start
+let audioCtx, engine;
+
+document.getElementById('start-btn').addEventListener('click', async () => {
+  audioCtx = new AudioContext({ sampleRate: 44100 });
+  engine = new JB01Engine({ context: audioCtx, bpm });
+
+  // Tune voices
+  engine.setVoiceParam('kick', 'decay', 0.35);
+  engine.setVoiceParam('kick', 'level', 0.85);
+  engine.setVoiceParam('kick', 'attack', 0.7);
+  engine.setVoiceParam('snare', 'decay', 0.35);
+  engine.setVoiceParam('snare', 'level', 0.65);
+  engine.setVoiceParam('clap', 'decay', 0.3);
+  engine.setVoiceParam('clap', 'level', 0.6);
+  engine.setVoiceParam('ch', 'decay', 0.1);
+  engine.setVoiceParam('ch', 'level', 0.5);
+  engine.setVoiceParam('ch', 'tone', 0.6);
+  engine.setVoiceParam('oh', 'decay', 0.35);
+  engine.setVoiceParam('oh', 'level', 0.45);
+  engine.setVoiceParam('cymbal', 'decay', 0.4);
+  engine.setVoiceParam('cymbal', 'level', 0.4);
+
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+  document.getElementById('start-btn').classList.add('hidden');
+  playing = true;
+
+  // Scheduler
+  let nextTime = audioCtx.currentTime;
+  let step = 0;
+
+  function tick() {
+    const stepTime = (60 / bpm) / 4; // 16th notes
+    while (nextTime < audioCtx.currentTime + 0.1) {
+      const s = step % STEPS;
+      currentStep = s;
+
+      voices.forEach(v => {
+        if (pattern[v.id][s]) {
+          engine.trigger(v.id, 0.85, nextTime);
+          flashes[v.id] = 1;
+        }
+      });
+
+      nextTime += stepTime;
+      step++;
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+});
+</script>
+</body>
+</html>
