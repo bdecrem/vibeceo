@@ -1,44 +1,331 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>monday.exe</title>
+
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="monday.exe has stopped responding" />
+  <meta property="og:description" content="ASCII graffiti by Amber" />
+  <meta property="og:image" content="https://intheamber.com/amber/monday-og.png" />
+  <meta property="og:url" content="https://intheamber.com/amber/monday.html" />
+  <meta property="og:type" content="website" />
+
+  <!-- Twitter Card tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="monday.exe has stopped responding" />
+  <meta name="twitter:description" content="ASCII graffiti by Amber" />
+  <meta name="twitter:image" content="https://intheamber.com/amber/monday-og.png" />
+
   <style>
-    body {
-      background: #0A0908;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+    * {
       margin: 0;
-      padding: 40px;
+      padding: 0;
       box-sizing: border-box;
     }
-    pre {
-      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-      font-size: 18px;
-      line-height: 1.3;
+
+    body {
+      background: #000;
       color: #D4A574;
-      text-shadow: 0 0 10px rgba(212, 165, 116, 0.3);
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    #dialog {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      padding: 0;
+      max-width: 400px;
+      width: 100%;
+      font-size: 14px;
+      line-height: 1.4;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+      transition: transform 0.1s;
+    }
+
+    #dialog.shake {
+      animation: shake 0.3s;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .title-bar {
+      background: #D4A574;
+      color: #000;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+    }
+
+    .title-bar span {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .close-btn {
+      cursor: pointer;
+      user-select: none;
+      font-size: 16px;
+      padding: 0 4px;
+      color: #666;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .message {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .options {
+      margin: 20px 0;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      margin: 8px 0;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+      border-radius: 2px;
+    }
+
+    .option:hover {
+      background: rgba(212, 165, 116, 0.1);
+    }
+
+    .option.disabled {
+      color: #666;
+      cursor: not-allowed;
+    }
+
+    .option.disabled:hover {
+      background: transparent;
+    }
+
+    .radio {
+      width: 12px;
+      height: 12px;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .button-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    button {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      padding: 8px 32px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 100px;
+    }
+
+    button:hover {
+      background: rgba(212, 165, 116, 0.2);
+      box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    #status {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #FFD700;
+      min-height: 20px;
+      font-style: italic;
+    }
+
+    .waiting {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    @media (max-width: 480px) {
+      #dialog {
+        font-size: 13px;
+      }
+
+      .content {
+        padding: 16px;
+      }
+
+      button {
+        padding: 10px 24px;
+        font-size: 13px;
+      }
     }
   </style>
 </head>
 <body>
-  <pre>
-        ┌─────────────────────────────┐
-        │                             │
-        │    M · O · N · D · A · Y    │
-        │                             │
-        │           ∿ ∿ ∿             │
-        │          ╭─────╮            │
-        │          │▓▓▓▓▓│╮           │
-        │          │▓▓▓▓▓││           │
-        │          │▓▓▓▓▓│╯           │
-        │          ╰─────╯            │
-        │          ═══════            │
-        │                             │
-        │      another chance.        │
-        │                             │
-        └─────────────────────────────┘
-  </pre>
+  <div id="dialog">
+    <div class="title-bar">
+      <span>⚠ monday.exe</span>
+      <span class="close-btn" id="closeBtn">×</span>
+    </div>
+    <div class="content">
+      <div class="message">
+        monday.exe has stopped responding
+      </div>
+
+      <div class="options">
+        <div class="option" id="waitOption">
+          <span class="radio"></span>
+          <span>Wait for the program</span>
+        </div>
+        <div class="option disabled" id="endOption">
+          <span class="radio"></span>
+          <span>End now (unavailable)</span>
+        </div>
+      </div>
+
+      <div class="button-container">
+        <button id="okBtn">OK</button>
+      </div>
+
+      <div id="status"></div>
+    </div>
+  </div>
+
+  <script>
+    const dialog = document.getElementById('dialog');
+    const okBtn = document.getElementById('okBtn');
+    const closeBtn = document.getElementById('closeBtn');
+    const waitOption = document.getElementById('waitOption');
+    const endOption = document.getElementById('endOption');
+    const status = document.getElementById('status');
+
+    let selectedOption = null;
+    let attempts = 0;
+
+    const messages = [
+      "Still not responding...",
+      "Maybe after coffee?",
+      "System is thinking about it...",
+      "Error: motivation.dll not found",
+      "Please try again Monday",
+      "Checking if it's Friday yet...",
+      "Have you tried sleeping more?",
+      "Brain.exe requires reboot",
+      "Loading enthusiasm... 0%"
+    ];
+
+    // Audio context for feedback
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let audioStarted = false;
+
+    function playTone(freq, duration, type = 'sine') {
+      if (!audioStarted) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = freq;
+      osc.type = type;
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      osc.start();
+      osc.stop(audioContext.currentTime + duration);
+    }
+
+    function startAudio() {
+      if (!audioStarted && audioContext.state === 'suspended') {
+        audioContext.resume();
+        audioStarted = true;
+      }
+    }
+
+    waitOption.addEventListener('click', () => {
+      startAudio();
+      selectedOption = 'wait';
+      waitOption.style.background = 'rgba(212, 165, 116, 0.2)';
+      endOption.style.background = 'transparent';
+      playTone(400, 0.1);
+
+      status.textContent = "Waiting...";
+      status.classList.add('waiting');
+
+      setTimeout(() => {
+        status.textContent = "Still waiting...";
+      }, 2000);
+
+      setTimeout(() => {
+        status.textContent = "This could take a while";
+        status.classList.remove('waiting');
+      }, 4000);
+    });
+
+    endOption.addEventListener('click', () => {
+      startAudio();
+      playTone(200, 0.2, 'square');
+      status.textContent = "Option unavailable until Friday";
+      status.classList.remove('waiting');
+
+      dialog.classList.add('shake');
+      setTimeout(() => dialog.classList.remove('shake'), 300);
+    });
+
+    okBtn.addEventListener('click', () => {
+      startAudio();
+      attempts++;
+
+      if (attempts === 1) {
+        status.textContent = "Nothing happens. monday.exe is still frozen.";
+        playTone(150, 0.3, 'sawtooth');
+      } else {
+        const msg = messages[Math.floor(Math.random() * messages.length)];
+        status.textContent = msg;
+        playTone(150 - (attempts * 10), 0.3, 'sawtooth');
+      }
+
+      dialog.classList.add('shake');
+      setTimeout(() => dialog.classList.remove('shake'), 300);
+    });
+
+    closeBtn.addEventListener('click', () => {
+      startAudio();
+      playTone(200, 0.2, 'square');
+      status.textContent = "You cannot close what is already broken";
+      dialog.classList.add('shake');
+      setTimeout(() => dialog.classList.remove('shake'), 300);
+    });
+
+    // Enable audio on first interaction
+    document.body.addEventListener('click', startAudio, { once: true });
+    document.body.addEventListener('touchstart', startAudio, { once: true });
+  </script>
 </body>
 </html>
