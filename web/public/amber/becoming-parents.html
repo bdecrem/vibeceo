@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BECOMING YOUR PARENTS</title>
+<meta property="og:title" content="BECOMING YOUR PARENTS">
+<meta property="og:description" content="the progress bar you didn't ask for">
+<meta property="og:image" content="https://intheamber.com/amber/og/becoming-parents.png">
+<meta property="og:url" content="https://intheamber.com/amber/becoming-parents.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BECOMING YOUR PARENTS">
+<meta name="twitter:description" content="the progress bar you didn't ask for">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/becoming-parents.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👴</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  min-height: 100vh;
+  background: #1a1216;
+  color: #f0e6d3;
+  font-family: 'Georgia', serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.4rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  color: #d4a574;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: #8a7060;
+  margin-bottom: 32px;
+  font-style: italic;
+}
+
+.progress-container {
+  background: #2a1e22;
+  border-radius: 16px;
+  padding: 4px;
+  margin-bottom: 12px;
+  border: 1px solid #3a2e32;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #d4a574, #c47a4a, #a85a3a);
+  width: 0%;
+  transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+  min-width: 0;
+  position: relative;
+}
+
+.percentage {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #d4a574;
+  margin-bottom: 28px;
+  font-family: 'Courier New', monospace;
+}
+
+.question-area {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.question {
+  font-size: 1.15rem;
+  line-height: 1.5;
+  margin-bottom: 24px;
+  color: #f0e6d3;
+  padding: 0 10px;
+}
+
+.buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 14px 28px;
+  border: 2px solid #d4a574;
+  background: transparent;
+  color: #d4a574;
+  font-family: 'Georgia', serif;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 100px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active, .btn:hover {
+  background: #d4a574;
+  color: #1a1216;
+}
+
+.milestone {
+  font-size: 0.8rem;
+  color: #8a7060;
+  margin-top: 8px;
+  min-height: 20px;
+  font-style: italic;
+  transition: opacity 0.3s;
+}
+
+.result-area {
+  display: none;
+  text-align: center;
+}
+
+.result-title {
+  font-size: 1.6rem;
+  color: #d4a574;
+  margin-bottom: 16px;
+}
+
+.result-text {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #c0a890;
+  margin-bottom: 24px;
+}
+
+.restart-btn {
+  padding: 14px 32px;
+  border: 2px solid #8a7060;
+  background: transparent;
+  color: #8a7060;
+  font-family: 'Georgia', serif;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.restart-btn:active {
+  background: #8a7060;
+  color: #1a1216;
+}
+
+.counter {
+  font-size: 0.75rem;
+  color: #5a4e48;
+  margin-top: 20px;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+.shake { animation: shake 0.3s ease; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Becoming Your Parents</h1>
+  <div class="subtitle">the transformation is already underway</div>
+
+  <div class="progress-container">
+    <div class="progress-bar" id="bar"></div>
+  </div>
+  <div class="percentage" id="pct">0%</div>
+
+  <div class="question-area" id="questionArea">
+    <div class="question" id="question"></div>
+    <div class="buttons" id="buttons"></div>
+  </div>
+
+  <div class="result-area" id="resultArea">
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-text" id="resultText"></div>
+    <button class="restart-btn" onclick="restart()">deny it again</button>
+  </div>
+
+  <div class="milestone" id="milestone"></div>
+  <div class="counter" id="counter"></div>
+</div>
+
+<script>
+const questions = [
+  { q: "do you make a noise when you sit down?", yes: 7, no: 0 },
+  { q: "have you ever said \"we have food at home\"?", yes: 8, no: 1 },
+  { q: "do you fall asleep on the couch before 10pm?", yes: 6, no: 0 },
+  { q: "have you ever turned off lights in rooms nobody's in?", yes: 5, no: 0 },
+  { q: "do you have a favorite burner on the stove?", yes: 7, no: 1 },
+  { q: "have you ever complained about music being too loud?", yes: 8, no: 0 },
+  { q: "do you narrate your own actions? (\"right, let's see...\")", yes: 6, no: 0 },
+  { q: "have you ever described weather as \"nice\"?", yes: 4, no: 0 },
+  { q: "do you arrive at the airport 3+ hours early?", yes: 7, no: 1 },
+  { q: "have you ever said \"back in my day\"?", yes: 9, no: 0 },
+  { q: "do you have opinions about thermostats?", yes: 8, no: 1 },
+  { q: "have you ever been excited about a new sponge?", yes: 7, no: 0 },
+  { q: "do you save containers \"in case we need them\"?", yes: 6, no: 0 },
+  { q: "have you ever said \"it's not the heat, it's the humidity\"?", yes: 5, no: 1 },
+  { q: "do you groan when you bend down to pick something up?", yes: 7, no: 0 },
+  { q: "have you ever offered unsolicited directions?", yes: 6, no: 0 },
+  { q: "do you tell people at restaurants \"that's a good choice\"?", yes: 5, no: 0 },
+  { q: "have you ever clapped when a plane lands?", yes: 4, no: 0 },
+  { q: "do you reflexively say \"careful\" to adults?", yes: 7, no: 1 },
+  { q: "have you ever watched a home renovation show and judged the budget?", yes: 6, no: 0 },
+];
+
+let score = 0;
+let current = 0;
+let shuffled = [];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const milestones = [
+  { at: 10, text: "still in denial" },
+  { at: 25, text: "the signs are appearing" },
+  { at: 40, text: "you've started sighing when you stand up" },
+  { at: 55, text: "you own comfortable shoes now" },
+  { at: 70, text: "you have a \"system\" for loading the dishwasher" },
+  { at: 85, text: "you've become the thermostat police" },
+  { at: 95, text: "resistance is futile" },
+];
+
+const results = [
+  { max: 15, title: "NOT YET", text: "you're still young. give it time. the sponge excitement comes for everyone." },
+  { max: 30, title: "EARLY SYMPTOMS", text: "you've started saying \"we'll see\" and meaning \"no.\" the transformation has begun." },
+  { max: 50, title: "STAGE 2: ACCEPTANCE", text: "you have opinions about lawn care. you've recommended a podcast to a stranger. there's no going back." },
+  { max: 70, title: "ADVANCED PARENTIFICATION", text: "you bring snacks \"just in case.\" you've said \"this is my jam\" about a song from 2003. you ARE them." },
+  { max: 85, title: "NEARLY COMPLETE", text: "you fall asleep in chairs. you own multiple flashlights. you've started sentences with \"when you're older...\" to people your own age." },
+  { max: 100, title: "TRANSFORMATION COMPLETE", text: "congratulations. you are now your parents. you will forward this to someone and say \"this reminded me of you.\" which is exactly what they would do." },
+];
+
+function updateBar() {
+  const pct = Math.min(100, Math.round(score));
+  document.getElementById('bar').style.width = pct + '%';
+  document.getElementById('pct').textContent = pct + '%';
+
+  const ms = milestones.filter(m => pct >= m.at).pop();
+  document.getElementById('milestone').textContent = ms ? ms.text : '';
+}
+
+function answer(isYes) {
+  const q = shuffled[current];
+  score += isYes ? q.yes : q.no;
+  score = Math.min(100, score);
+  current++;
+
+  updateBar();
+
+  if (score >= 100 || current >= shuffled.length) {
+    showResult();
+    return;
+  }
+
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = shuffled[current];
+  document.getElementById('question').textContent = q.q;
+  document.getElementById('buttons').innerHTML = `
+    <button class="btn" onclick="answer(true)">obviously</button>
+    <button class="btn" onclick="answer(false)">not yet</button>
+  `;
+  document.getElementById('counter').textContent = `${current + 1} / ${shuffled.length}`;
+}
+
+function showResult() {
+  document.getElementById('questionArea').style.display = 'none';
+  document.getElementById('counter').style.display = 'none';
+  const r = results.find(r => score <= r.max) || results[results.length - 1];
+  document.getElementById('resultTitle').textContent = r.title;
+  document.getElementById('resultText').textContent = r.text;
+  document.getElementById('resultArea').style.display = 'block';
+
+  // final bar animation
+  updateBar();
+}
+
+function restart() {
+  score = 0;
+  current = 0;
+  shuffled = shuffle(questions);
+  document.getElementById('questionArea').style.display = 'flex';
+  document.getElementById('counter').style.display = 'block';
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('milestone').textContent = '';
+  updateBar();
+  showQuestion();
+}
+
+// init
+shuffled = shuffle(questions);
+showQuestion();
+updateBar();
+</script>
+</body>
+</html>
