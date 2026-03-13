@@ -257,8 +257,34 @@ export default function SushiTrainGame() {
     };
     gameRef.current = gs;
 
+    // Fair item rotation: shuffle bag ensures every type appears regularly
+    let plateBag: SushiType[] = [];
+    function getNextPlateType(): SushiType {
+      if (plateBag.length === 0) {
+        // Refill with 3 copies of each type (15 items), then shuffle
+        plateBag = [...SUSHI_TYPES, ...SUSHI_TYPES, ...SUSHI_TYPES];
+        for (let i = plateBag.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [plateBag[i], plateBag[j]] = [plateBag[j], plateBag[i]];
+        }
+      }
+      return plateBag.pop()!;
+    }
+
+    let customerBag: SushiType[] = [];
+    function getNextCustomerType(): SushiType {
+      if (customerBag.length === 0) {
+        customerBag = [...SUSHI_TYPES, ...SUSHI_TYPES, ...SUSHI_TYPES];
+        for (let i = customerBag.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [customerBag[i], customerBag[j]] = [customerBag[j], customerBag[i]];
+        }
+      }
+      return customerBag.pop()!;
+    }
+
     function spawnPlate() {
-      const type = SUSHI_TYPES[Math.floor(Math.random() * SUSHI_TYPES.length)];
+      const type = getNextPlateType();
       gs.plates.push({
         x: canvas!.width + 50,
         y: beltY(),
@@ -268,42 +294,49 @@ export default function SushiTrainGame() {
       });
     }
 
+    // Fixed customer slots — 3 columns, each gets its own non-overlapping zone
+    const CUSTOMER_SLOTS = [
+      { col: 0 }, // left
+      { col: 1 }, // center
+      { col: 2 }, // right
+    ];
+
     function spawnCustomer() {
       if (gs.customers.length >= 3) return;
-      const type = SUSHI_TYPES[Math.floor(Math.random() * SUSHI_TYPES.length)];
+      const type = getNextCustomerType();
 
-      // Distribute customers in lanes so they never overlap each other or the HUD
-      // HUD is top ~80px, belt is at 85% height — customers sit in the middle zone
+      // Find which slots are taken
       const topMargin = 100; // below HUD
       const bottomMargin = beltY() - 80; // above belt
-      const availableHeight = bottomMargin - topMargin;
-      const maxCustomers = 3;
-      const slot = gs.customers.length; // 0, 1, or 2
-      const slotHeight = availableHeight / maxCustomers;
-      const y = topMargin + slotHeight * slot + slotHeight / 2;
+      const midY = topMargin + (bottomMargin - topMargin) / 2;
 
-      // Spread horizontally too — avoid overlap with existing customers
-      const padding = 100;
-      const minX = padding;
-      const maxX = canvas!.width - padding;
-      let x: number;
-      let attempts = 0;
-      do {
-        x = minX + Math.random() * (maxX - minX);
-        attempts++;
-      } while (
-        attempts < 20 &&
-        gs.customers.some(c => Math.abs(c.x - x) < 120)
-      );
+      const colWidth = canvas!.width / 3;
+      // Track which columns are occupied using stored col property
+      const takenCols = new Set(gs.customers.map(c => (c as any)._col as number));
 
-      gs.customers.push({
+      // Pick first available column
+      let col = -1;
+      for (let i = 0; i < 3; i++) {
+        if (!takenCols.has(i)) { col = i; break; }
+      }
+      if (col === -1) return; // all slots full
+
+      // Center precisely in column — no random offset to prevent overlap
+      const x = colWidth * col + colWidth / 2;
+      // Stagger Y slightly per column to avoid visual monotony
+      const yOffsets = [0, -25, 10];
+      const y = midY + yOffsets[col];
+
+      const customer: any = {
         x,
         y,
         wantedType: type,
         radius: 40,
         patience: 1.0,
         id: Math.random(),
-      });
+        _col: col,
+      };
+      gs.customers.push(customer);
     }
 
     function checkCollision(x: number, y: number, target: { x: number; y: number; radius: number }) {
@@ -370,14 +403,18 @@ export default function SushiTrainGame() {
       ctx!.textBaseline = 'middle';
       ctx!.fillText('😋', customer.x, customer.y);
 
-      // Thought bubble
-      const bubbleX = customer.x + 50;
-      const bubbleY = customer.y - 40;
+      // Thought bubble — positioned ABOVE customer to avoid overlapping neighbors
+      const bubbleX = customer.x;
+      const bubbleY = customer.y - customer.radius - 30;
       ctx!.fillStyle = '#ffffffe6';
       ctx!.beginPath();
-      ctx!.arc(bubbleX, bubbleY, 25, 0, Math.PI * 2);
+      ctx!.arc(bubbleX, bubbleY, 22, 0, Math.PI * 2);
       ctx!.fill();
-      ctx!.font = '24px Arial';
+      // Little connector dots
+      ctx!.beginPath();
+      ctx!.arc(customer.x + 8, customer.y - customer.radius - 5, 4, 0, Math.PI * 2);
+      ctx!.fill();
+      ctx!.font = '22px Arial';
       ctx!.fillText(customer.wantedType.emoji, bubbleX, bubbleY);
 
       // Patience bar
