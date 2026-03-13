@@ -456,9 +456,10 @@ export default function SushiTrainGame() {
       });
 
       // Update customers — patience drains smoothly, game over when ANY bar hits 0
-      // Drain rate scales with difficulty: 0.0003 (easy) → 0.0008 (hard)
+      // Drain rate scales aggressively with difficulty, nearly matching belt speed ramp
+      // Belt: 1.5 → 4.0 (2.67x) | Drain: 0.0004 → 0.002 (5x) — patience is the real pressure
       const drainProgress = gs.served >= 5 ? Math.min((gs.served - 5) / 15, 1) : 0;
-      const drainRate = 0.0003 + drainProgress * 0.0005;
+      const drainRate = 0.0004 + drainProgress * 0.0016;
       gs.customers = gs.customers.filter(customer => {
         customer.patience -= drainRate;
         if (customer.patience <= 0) {
