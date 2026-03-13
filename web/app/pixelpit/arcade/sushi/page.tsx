@@ -664,52 +664,83 @@ export default function SushiTrainGame() {
           justifyContent: 'center',
           padding: 24,
           textAlign: 'center',
+          background: 'linear-gradient(180deg, #1a0505 0%, #2d1210 40%, #1a0a08 70%, #0d0503 100%)',
         }}>
+          {/* Lanterns */}
+          <div style={{ fontSize: 36, marginBottom: 12, letterSpacing: 16 }}>
+            🏮🍣🏮
+          </div>
+
           <h1 style={{
-            fontSize: 48,
-            fontWeight: 700,
-            color: COLORS.primary,
-            textShadow: '0 0 30px #FFD700',
-            letterSpacing: 6,
-            marginBottom: 16,
+            fontSize: 52,
+            fontWeight: 900,
+            color: '#fff5ee',
+            textShadow: '0 0 40px #ff6b3580, 0 2px 8px #000',
+            letterSpacing: 4,
+            marginBottom: 6,
           }}>
             {GAME_NAME}
           </h1>
-          <p style={{ fontSize: 16, color: COLORS.text, marginBottom: 8 }}>
-            Customers are hungry!
+
+          <p style={{
+            fontSize: 13,
+            color: '#ffa726',
+            letterSpacing: 4,
+            textTransform: 'uppercase' as const,
+            marginBottom: 8,
+          }}>
+            Drag &middot; Match &middot; Serve
           </p>
-          <p style={{ fontSize: 14, color: COLORS.muted, maxWidth: 400, marginBottom: 8 }}>
-            Drag sushi plates from the conveyor belt to match their orders.
+
+          {/* Sushi belt preview */}
+          <div style={{
+            display: 'flex',
+            gap: 10,
+            marginBottom: 32,
+            padding: '10px 20px',
+            background: '#8B735520',
+            borderRadius: 24,
+            border: '1px solid #8B735540',
+          }}>
+            {SUSHI_TYPES.map((s, i) => (
+              <span key={i} style={{ fontSize: 28 }}>{s.emoji}</span>
+            ))}
+          </div>
+
+          <p style={{ fontSize: 14, color: '#D4A574', maxWidth: 300, marginBottom: 6, lineHeight: 1.5 }}>
+            Drag plates from the conveyor belt to hungry customers!
           </p>
-          <p style={{ fontSize: 14, color: COLORS.muted, marginBottom: 40 }}>
-            Don&apos;t let plates scroll away!
+          <p style={{ fontSize: 13, color: '#71717a', marginBottom: 36 }}>
+            Match their orders before patience runs out.
           </p>
+
           <button
             onClick={startGame}
             style={{
-              background: COLORS.secondary,
-              color: COLORS.primary,
-              border: `3px solid ${COLORS.primary}`,
-              padding: '20px 40px',
-              fontSize: 20,
+              background: 'linear-gradient(135deg, #ff6b35, #ff8a50)',
+              color: '#fff',
+              border: 'none',
+              padding: '18px 48px',
+              fontSize: 18,
               fontFamily: 'ui-monospace, monospace',
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer',
-              borderRadius: 10,
+              borderRadius: 30,
               letterSpacing: 2,
-              boxShadow: '0 0 30px #7B68EE80',
+              boxShadow: '0 4px 24px #ff6b3560',
             }}
           >
-            START SERVING
+            OPEN SHOP
           </button>
+
           <div style={{
             marginTop: 40,
             fontSize: 12,
             letterSpacing: 3,
           }}>
-            <span style={{ color: COLORS.primary }}>pixel</span>
-            <span style={{ color: COLORS.secondary }}>pit</span>
-            <span style={{ color: COLORS.text, opacity: 0.6 }}> arcade</span>
+            <span style={{ color: '#FFD700' }}>pixel</span>
+            <span style={{ color: '#7B68EE' }}>pit</span>
+            <span style={{ color: '#D4A574', opacity: 0.6 }}> arcade</span>
           </div>
         </div>
       )}
@@ -731,6 +762,7 @@ export default function SushiTrainGame() {
           alignItems: 'center',
           justifyContent: 'center',
           padding: 24,
+          background: 'linear-gradient(180deg, #1a0505 0%, #2d1210 40%, #1a0a08 70%, #0d0503 100%)',
         }}>
           <div style={{
             textAlign: 'center',
