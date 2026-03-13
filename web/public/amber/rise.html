@@ -128,8 +128,7 @@
     Notes Played: <span id="notesPlayed">0</span>
   </div>
 
-  <script type="module">
-    import { SH101Controller } from '/101/dist/api/index.js';
+  <script>
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -147,7 +146,36 @@
     let bubbles = [];
     let particles = [];
     let notesPlayed = 0;
-    let synth = null;
+    let audioCtx = null;
+
+    // Simple synth that plays a note at a given frequency
+    function playNote(freq, velocity, opts = {}) {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const release = opts.release || 1.0;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, now);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(freq * 4, now);
+      filter.frequency.exponentialRampToValueAtTime(freq * 0.5, now + release);
+      filter.Q.value = 2;
+
+      gain.gain.setValueAtTime(velocity * 0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + release);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(now);
+      osc.stop(now + release + 0.05);
+    }
 
     // Colors - full Amber palette
     const colors = [
@@ -249,9 +277,7 @@
 
       pop() {
         // Play note
-        if (synth) {
-          synth.playNote(this.frequency, 0.6, { release: 1.0 });
-        }
+        playNote(this.frequency, 0.6, { release: 1.0 });
 
         notesPlayed++;
         notesPlayedEl.textContent = notesPlayed;
@@ -361,9 +387,9 @@
       audioStarted = true;
       startBtn.style.display = 'none';
 
-      // Initialize synth
-      synth = new SH101Controller();
-      await synth.init();
+      // Initialize audio (MUST be inside click handler for iOS)
+      audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
 
       // Spawn initial bubbles for hypnotic effect
       for (let i = 0; i < 5; i++) {
