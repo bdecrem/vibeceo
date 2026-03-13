@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grid Pulse</title>
+<meta property="og:title" content="Grid Pulse">
+<meta property="og:description" content="mondrian meets riley">
+<meta property="og:image" content="https://kochi.to/pixelpit/grid-pulse-og.png">
+<meta property="og:type" content="website">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #F5F0E8; overflow: hidden; cursor: crosshair; }
+canvas { display: block; }
+#label { position: fixed; bottom: 14px; left: 16px; font: 11px 'Courier New', monospace;
+  color: rgba(26,26,26,0.25); letter-spacing: 2px; text-transform: lowercase; pointer-events: none; z-index: 1; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="label">grid pulse</div>
+<script>
+const C = document.getElementById('c'), ctx = C.getContext('2d');
+const BG = '#F5F0E8', LINE = '#1A1A1A';
+const FILLS = ['#DD0100','#FAC901','#225095', BG, BG, BG, BG, BG, BG];
+let W, H, mx = -9999, my = -9999, cells = [], hLines = [], vLines = [];
+const LINE_W = 8, MIN_SPAN = 2, MAX_SPAN = 4;
+
+function resize() {
+  W = C.width = innerWidth; H = C.height = innerHeight;
+  generate();
+}
+
+function generate() {
+  const cols = Math.max(5, Math.round(W / 140));
+  const rows = Math.max(5, Math.round(H / 140));
+  // Build irregular grid divisions
+  const xs = buildDivisions(W, cols);
+  const ys = buildDivisions(H, rows);
+  hLines = []; vLines = []; cells = [];
+  // Horizontal lines (full width)
+  for (let i = 0; i < ys.length; i++) hLines.push({ y: ys[i], x0: 0, x1: W });
+  // Vertical lines (full height)
+  for (let i = 0; i < xs.length; i++) vLines.push({ x: xs[i], y0: 0, y1: H });
+  // Create cells by merging some adjacent grid cells into larger rectangles
+  const grid = Array.from({ length: rows }, () => Array(cols).fill(false));
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (grid[r][c]) continue;
+      const spanC = Math.min(c + MIN_SPAN + Math.floor(Math.random() * (MAX_SPAN - MIN_SPAN + 1)), cols) - c;
+      const spanR = Math.min(r + MIN_SPAN + Math.floor(Math.random() * (MAX_SPAN - MIN_SPAN + 1)), rows) - r;
+      const sc = Math.random() < 0.4 ? spanC : 1;
+      const sr = Math.random() < 0.4 ? spanR : 1;
+      let canMerge = true;
+      for (let dr = 0; dr < sr && canMerge; dr++)
+        for (let dc = 0; dc < sc && canMerge; dc++)
+          if (grid[r + dr][c + dc]) canMerge = false;
+      const fc = canMerge ? sc : 1, fr = canMerge ? sr : 1;
+      for (let dr = 0; dr < fr; dr++)
+        for (let dc = 0; dc < fc; dc++) grid[r + dr][c + dc] = true;
+      const fill = FILLS[Math.floor(Math.random() * FILLS.length)];
+      cells.push({
+        x0: xs[c], y0: ys[r],
+        x1: c + fc < xs.length ? xs[c + fc] : W,
+        y1: r + fr < ys.length ? ys[r + fr] : H,
+        fill, phase: Math.random() * Math.PI * 2
+      });
+    }
+  }
+}
+
+function buildDivisions(total, n) {
+  const pts = [0];
+  const base = total / n;
+  for (let i = 1; i < n; i++) {
+    pts.push(Math.round(base * i + (Math.random() - 0.5) * base * 0.6));
+  }
+  return pts;
+}
+
+function warp(px, py, t) {
+  const dx = px - mx, dy = py - my;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const proximity = Math.max(0, 1 - dist / 300);
+  const baseAmp = 2.5;
+  const mouseAmp = proximity * 12;
+  const amp = baseAmp + mouseAmp;
+  const freq = 0.008;
+  const ox = Math.sin(py * freq + t * 1.3 + px * 0.002) * amp;
+  const oy = Math.sin(px * freq + t * 0.9 + py * 0.002) * amp;
+  return [px + ox, py + oy];
+}
+
+function hslShift(hex, t, phase) {
+  if (hex === BG) return hex;
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  const shift = Math.sin(t * 0.7 + phase) * 12;
+  return `rgb(${clamp(r + shift)},${clamp(g + shift)},${clamp(b + shift)})`;
+}
+function clamp(v) { return Math.max(0, Math.min(255, Math.round(v))); }
+
+function drawWarpedRect(x0, y0, x1, y1, t, fill) {
+  const steps = 20;
+  ctx.beginPath();
+  // Top edge
+  for (let i = 0; i <= steps; i++) {
+    const [wx, wy] = warp(x0 + (x1 - x0) * i / steps, y0, t);
+    i === 0 ? ctx.moveTo(wx, wy) : ctx.lineTo(wx, wy);
+  }
+  // Right edge
+  for (let i = 1; i <= steps; i++) {
+    const [wx, wy] = warp(x1, y0 + (y1 - y0) * i / steps, t);
+    ctx.lineTo(wx, wy);
+  }
+  // Bottom edge
+  for (let i = steps - 1; i >= 0; i--) {
+    const [wx, wy] = warp(x0 + (x1 - x0) * i / steps, y1, t);
+    ctx.lineTo(wx, wy);
+  }
+  // Left edge
+  for (let i = steps - 1; i >= 1; i--) {
+    const [wx, wy] = warp(x0, y0 + (y1 - y0) * i / steps, t);
+    ctx.lineTo(wx, wy);
+  }
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+}
+
+function drawWarpedLine(horizontal, pos, from, to, t) {
+  ctx.beginPath();
+  const steps = 40;
+  for (let i = 0; i <= steps; i++) {
+    const frac = from + (to - from) * i / steps;
+    const [wx, wy] = horizontal ? warp(frac, pos, t) : warp(pos, frac, t);
+    i === 0 ? ctx.moveTo(wx, wy) : ctx.lineTo(wx, wy);
+  }
+  ctx.strokeStyle = LINE;
+  ctx.lineWidth = LINE_W;
+  ctx.stroke();
+}
+
+function frame(ts) {
+  const t = ts * 0.001;
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+  // Draw cells
+  for (const cell of cells) {
+    const f = hslShift(cell.fill, t, cell.phase);
+    drawWarpedRect(cell.x0, cell.y0, cell.x1, cell.y1, t, f);
+  }
+  // Draw grid lines on top
+  for (const l of hLines) drawWarpedLine(true, l.y, l.x0, l.x1, t);
+  for (const l of vLines) drawWarpedLine(false, l.x, l.y0, l.y1, t);
+  // Outer border
+  ctx.strokeStyle = LINE; ctx.lineWidth = LINE_W;
+  ctx.strokeRect(0, 0, W, H);
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener('resize', resize);
+window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+window.addEventListener('touchmove', e => { mx = e.touches[0].clientX; my = e.touches[0].clientY; }, { passive: true });
+window.addEventListener('touchend', () => { mx = -9999; my = -9999; });
+window.addEventListener('mouseleave', () => { mx = -9999; my = -9999; });
+
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
