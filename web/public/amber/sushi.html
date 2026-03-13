@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUSHI TRAIN</title>
+  
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="SUSHI TRAIN">
+  <meta property="og:description" content="Drag sushi plates to hungry customers before they scroll away">
+  <meta property="og:image" content="https://intheamber.com/amber/sushi-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/sushi.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUSHI TRAIN">
+  <meta name="twitter:description" content="Drag sushi plates to hungry customers before they scroll away">
+  <meta name="twitter:image" content="https://intheamber.com/amber/sushi-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    #canvas {
+      display: block;
+      cursor: grab;
+    }
+    
+    #canvas.dragging {
+      cursor: grabbing;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      pointer-events: none;
+      z-index: 100;
+    }
+    
+    #score {
+      font-size: 2rem;
+      color: #FFD700;
+      text-shadow: 0 0 20px #FFD700;
+      font-weight: bold;
+    }
+    
+    #status {
+      font-size: 1rem;
+      color: #2D9596;
+      margin-top: 5px;
+    }
+    
+    #gameOver {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(13, 13, 13, 0.95);
+      border: 3px solid #D4A574;
+      border-radius: 10px;
+      padding: 30px;
+      text-align: center;
+      display: none;
+      z-index: 200;
+    }
+    
+    #gameOver h2 {
+      color: #FFD700;
+      font-size: 2rem;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px #FFD700;
+    }
+    
+    #gameOver p {
+      color: #D4A574;
+      font-size: 1.2rem;
+      margin: 10px 0;
+    }
+    
+    #restartBtn {
+      margin-top: 20px;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      font-family: 'Space Mono', monospace;
+      background: #7B68EE;
+      color: #FFD700;
+      border: 2px solid #FFD700;
+      border-radius: 5px;
+      cursor: pointer;
+      pointer-events: auto;
+      min-height: 44px;
+      min-width: 150px;
+    }
+    
+    #restartBtn:hover {
+      background: #9370DB;
+      box-shadow: 0 0 20px #7B68EE;
+    }
+    
+    #startScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    #startScreen h1 {
+      font-size: 3rem;
+      color: #FFD700;
+      text-shadow: 0 0 30px #FFD700;
+      margin-bottom: 20px;
+    }
+    
+    #startScreen p {
+      font-size: 1.2rem;
+      color: #D4A574;
+      margin: 10px 0;
+      max-width: 500px;
+    }
+    
+    #startBtn {
+      margin-top: 30px;
+      padding: 20px 40px;
+      font-size: 1.5rem;
+      font-family: 'Space Mono', monospace;
+      background: #7B68EE;
+      color: #FFD700;
+      border: 3px solid #FFD700;
+      border-radius: 10px;
+      cursor: pointer;
+      min-height: 60px;
+      box-shadow: 0 0 30px rgba(123, 104, 238, 0.5);
+    }
+    
+    #startBtn:hover {
+      background: #9370DB;
+      box-shadow: 0 0 40px #7B68EE;
+    }
+    
+    @media (max-width: 600px) {
+      #startScreen h1 {
+        font-size: 2rem;
+      }
+      #startScreen p {
+        font-size: 1rem;
+      }
+      #score {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="score">0 pts</div>
+    <div id="status">Drag sushi to customers!</div>
+  </div>
+  
+  <div id="startScreen">
+    <h1>🍣 SUSHI TRAIN</h1>
+    <p>Customers are hungry!</p>
+    <p>Drag sushi plates from the conveyor belt to match their orders.</p>
+    <p>Don't let plates scroll away!</p>
+    <button id="startBtn">START SERVING</button>
+  </div>
+  
+  <div id="gameOver">
+    <h2>RESTAURANT CLOSED</h2>
+    <p id="finalScore"></p>
+    <p id="customersServed"></p>
+    <button id="restartBtn">REOPEN</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const statusEl = document.getElementById('status');
+    const gameOverEl = document.getElementById('gameOver');
+    const startScreenEl = document.getElementById('startScreen');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    
+    // Audio context
+    let audioCtx;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    function playTone(freq, duration = 0.1, type = 'sine') {
+      initAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      osc.type = type;
+      gain.gain.value = 0.2;
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    // Resize canvas
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Sushi types
+    const sushiTypes = [
+      { emoji: '🍣', name: 'nigiri', color: '#FFD700' },
+      { emoji: '🍱', name: 'bento', color: '#2D9596' },
+      { emoji: '🍤', name: 'tempura', color: '#FF69B4' },
+      { emoji: '🍙', name: 'onigiri', color: '#D4A574' },
+      { emoji: '🍜', name: 'ramen', color: '#FF6347' }
+    ];
+    
+    // Game state
+    let gameState = {
+      plates: [],
+      customers: [],
+      score: 0,
+      served: 0,
+      missed: 0,
+      beltSpeed: 1.5,
+      spawnRate: 2000,
+      customerRate: 4000,
+      dragging: null,
+      dragOffset: { x: 0, y: 0 },
+      gameOver: false,
+      lastPlateSpawn: 0,
+      lastCustomerSpawn: 0
+    };
+    
+    // Belt settings
+    const beltY = canvas.height * 0.7;
+    const beltHeight = 80;
+    
+    // Spawn plate
+    function spawnPlate() {
+      const type = sushiTypes[Math.floor(Math.random() * sushiTypes.length)];
+      gameState.plates.push({
+        x: canvas.width + 50,
+        y: beltY,
+        type: type,
+        radius: 30,
+        id: Math.random()
+      });
+    }
+    
+    // Spawn customer
+    function spawnCustomer() {
+      if (gameState.customers.length >= 3) return; // Max 3 customers
+      
+      const type = sushiTypes[Math.floor(Math.random() * sushiTypes.length)];
+      const x = 100 + Math.random() * (canvas.width - 200);
+      gameState.customers.push({
+        x: x,
+        y: 100,
+        wantedType: type,
+        radius: 40,
+        patience: 1.0,
+        id: Math.random()
+      });
+    }
+    
+    // Draw belt
+    function drawBelt() {
+      // Belt background
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, beltY - beltHeight/2, canvas.width, beltHeight);
+      
+      // Belt lines
+      ctx.strokeStyle = '#D4A574';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, beltY - beltHeight/2);
+      ctx.lineTo(canvas.width, beltY - beltHeight/2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, beltY + beltHeight/2);
+      ctx.lineTo(canvas.width, beltY + beltHeight/2);
+      ctx.stroke();
+    }
+    
+    // Draw plate
+    function drawPlate(plate, alpha = 1) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      
+      // Plate circle
+      ctx.fillStyle = '#2D9596';
+      ctx.beginPath();
+      ctx.arc(plate.x, plate.y, plate.radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Plate rim
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // Sushi emoji
+      ctx.font = '32px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(plate.type.emoji, plate.x, plate.y);
+      
+      ctx.restore();
+    }
+    
+    // Draw customer
+    function drawCustomer(customer) {
+      // Customer circle
+      ctx.fillStyle = '#7B68EE';
+      ctx.beginPath();
+      ctx.arc(customer.x, customer.y, customer.radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Face
+      ctx.font = '40px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('😋', customer.x, customer.y);
+      
+      // Thought bubble with wanted sushi
+      const bubbleX = customer.x + 50;
+      const bubbleY = customer.y - 40;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.beginPath();
+      ctx.arc(bubbleX, bubbleY, 25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = '24px Arial';
+      ctx.fillText(customer.wantedType.emoji, bubbleX, bubbleY);
+      
+      // Patience bar
+      const barWidth = 60;
+      const barHeight = 8;
+      const barX = customer.x - barWidth/2;
+      const barY = customer.y + customer.radius + 10;
+      
+      ctx.fillStyle = '#333';
+      ctx.fillRect(barX, barY, barWidth, barHeight);
+      
+      const patienceColor = customer.patience > 0.5 ? '#2D9596' : customer.patience > 0.25 ? '#FFD700' : '#FF6B6B';
+      ctx.fillStyle = patienceColor;
+      ctx.fillRect(barX, barY, barWidth * customer.patience, barHeight);
+    }
+    
+    // Check collision
+    function checkCollision(x, y, target) {
+      const dx = x - target.x;
+      const dy = y - target.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance < (target.radius + 30);
+    }
+    
+    // Update game
+    function update(timestamp) {
+      if (gameState.gameOver) return;
+      
+      // Spawn plates
+      if (timestamp - gameState.lastPlateSpawn > gameState.spawnRate) {
+        spawnPlate();
+        gameState.lastPlateSpawn = timestamp;
+      }
+      
+      // Spawn customers
+      if (timestamp - gameState.lastCustomerSpawn > gameState.customerRate) {
+        spawnCustomer();
+        gameState.lastCustomerSpawn = timestamp;
+      }
+      
+      // Update plates
+      gameState.plates = gameState.plates.filter(plate => {
+        if (plate !== gameState.dragging) {
+          plate.x -= gameState.beltSpeed;
+        }
+        
+        // Remove if off screen
+        if (plate.x < -50 && plate !== gameState.dragging) {
+          if (!gameState.dragging || plate.id !== gameState.dragging.id) {
+            gameState.missed++;
+            statusEl.textContent = 'Plate scrolled away!';
+            statusEl.style.color = '#FF6B6B';
+            playTone(200, 0.2, 'sawtooth');
+            
+            if (gameState.missed >= 5) {
+              endGame();
+            }
+          }
+          return false;
+        }
+        return true;
+      });
+      
+      // Update customers
+      gameState.customers = gameState.customers.filter(customer => {
+        customer.patience -= 0.0005;
+        
+        if (customer.patience <= 0) {
+          statusEl.textContent = 'Customer left hungry!';
+          statusEl.style.color = '#FF6B6B';
+          playTone(150, 0.3, 'sawtooth');
+          gameState.missed++;
+          
+          if (gameState.missed >= 5) {
+            endGame();
+          }
+          return false;
+        }
+        return true;
+      });
+      
+      // Increase difficulty
+      if (gameState.served % 5 === 0 && gameState.served > 0) {
+        gameState.beltSpeed = Math.min(3, 1.5 + gameState.served * 0.05);
+        gameState.customerRate = Math.max(2000, 4000 - gameState.served * 50);
+      }
+    }
+    
+    // Draw
+    function draw() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      drawBelt();
+      
+      // Draw plates
+      gameState.plates.forEach(plate => {
+        if (plate !== gameState.dragging) {
+          drawPlate(plate);
+        }
+      });
+      
+      // Draw customers
+      gameState.customers.forEach(customer => {
+        drawCustomer(customer);
+      });
+      
+      // Draw dragged plate on top
+      if (gameState.dragging) {
+        drawPlate(gameState.dragging);
+      }
+    }
+    
+    // Game loop
+    function gameLoop(timestamp) {
+      update(timestamp);
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+    
+    // Mouse/touch handlers
+    function getPointerPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+    
+    function handleStart(e) {
+      if (gameState.gameOver) return;
+      e.preventDefault();
+      
+      const pos = getPointerPos(e);
+      
+      // Check if clicking on a plate
+      for (let plate of gameState.plates) {
+        if (checkCollision(pos.x, pos.y, plate)) {
+          gameState.dragging = plate;
+          gameState.dragOffset = {
+            x: plate.x - pos.x,
+            y: plate.y - pos.y
+          };
+          canvas.classList.add('dragging');
+          playTone(440, 0.05);
+          break;
+        }
+      }
+    }
+    
+    function handleMove(e) {
+      if (!gameState.dragging) return;
+      e.preventDefault();
+      
+      const pos = getPointerPos(e);
+      gameState.dragging.x = pos.x + gameState.dragOffset.x;
+      gameState.dragging.y = pos.y + gameState.dragOffset.y;
+    }
+    
+    function handleEnd(e) {
+      if (!gameState.dragging) return;
+      e.preventDefault();
+      
+      const plate = gameState.dragging;
+      let served = false;
+      
+      // Check if dropped on customer
+      for (let i = 0; i < gameState.customers.length; i++) {
+        const customer = gameState.customers[i];
+        if (checkCollision(plate.x, plate.y, customer)) {
+          if (plate.type.name === customer.wantedType.name) {
+            // Correct order!
+            gameState.score += 10;
+            gameState.served++;
+            scoreEl.textContent = `${gameState.score} pts`;
+            statusEl.textContent = 'Perfect! Customer happy!';
+            statusEl.style.color = '#2D9596';
+            playTone(660, 0.15, 'triangle');
+            setTimeout(() => playTone(880, 0.15, 'triangle'), 100);
+            
+            gameState.customers.splice(i, 1);
+            gameState.plates = gameState.plates.filter(p => p.id !== plate.id);
+            served = true;
+          } else {
+            // Wrong order
+            statusEl.textContent = 'Wrong dish!';
+            statusEl.style.color = '#FF6B6B';
+            playTone(220, 0.2, 'sawtooth');
+          }
+          break;
+        }
+      }
+      
+      // Reset plate position if not served
+      if (!served) {
+        plate.x = canvas.width + 50;
+        plate.y = beltY;
+      }
+      
+      gameState.dragging = null;
+      canvas.classList.remove('dragging');
+    }
+    
+    // Touch events
+    canvas.addEventListener('touchstart', handleStart);
+    canvas.addEventListener('touchmove', handleMove);
+    canvas.addEventListener('touchend', handleEnd);
+    
+    // Mouse events
+    canvas.addEventListener('mousedown', handleStart);
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('mouseup', handleEnd);
+    
+    // End game
+    function endGame() {
+      gameState.gameOver = true;
+      gameOverEl.style.display = 'block';
+      document.getElementById('finalScore').textContent = `Final Score: ${gameState.score} pts`;
+      document.getElementById('customersServed').textContent = `Customers Served: ${gameState.served}`;
+      playTone(300, 0.5, 'sawtooth');
+      setTimeout(() => playTone(200, 0.5, 'sawtooth'), 200);
+    }
+    
+    // Start game
+    function startGame() {
+      initAudio();
+      startScreenEl.style.display = 'none';
+      gameOverEl.style.display = 'none';
+      
+      gameState = {
+        plates: [],
+        customers: [],
+        score: 0,
+        served: 0,
+        missed: 0,
+        beltSpeed: 1.5,
+        spawnRate: 2000,
+        customerRate: 4000,
+        dragging: null,
+        dragOffset: { x: 0, y: 0 },
+        gameOver: false,
+        lastPlateSpawn: 0,
+        lastCustomerSpawn: 0
+      };
+      
+      scoreEl.textContent = '0 pts';
+      statusEl.textContent = 'Drag sushi to customers!';
+      statusEl.style.color = '#2D9596';
+      
+      spawnPlate();
+      spawnCustomer();
+      
+      requestAnimationFrame(gameLoop);
+    }
+    
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+  </script>
+</body>
+</html>
