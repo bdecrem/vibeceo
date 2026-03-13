@@ -1,7 +1,7 @@
 // ── Theme system ──────────────────────────────────────────────
 // Change ACTIVE_THEME to flip the entire look and feel.
 
-export type ThemeName = "terminal" | "phosphor" | "paper";
+export type ThemeName = "terminal" | "phosphor" | "paper" | "inkigayo";
 
 // ★ FLIP HERE ★
 export const ACTIVE_THEME: ThemeName = "terminal";
@@ -119,5 +119,40 @@ const paper: Theme = {
   tagline: "Everything ships. Most of it breaks.",
 };
 
-export const themes: Record<ThemeName, Theme> = { terminal, phosphor, paper };
+// ── INKIGAYO ──────────────────────────────────────────────────
+// Deep purple-black void. Hot pink headlines. Lavender body text.
+// Electric violet for "booting up." Title-bar dots: pink → violet → cyan.
+// The terminal window glows faintly magenta at the border.
+// Status labels are stan culture. The tagline is a lightstick wave.
+const inkigayo: Theme = {
+  name: "inkigayo",
+  pageBg: "#08060e",
+  headingFont: "poppins",
+  bodyFont: "poppins",
+  textPrimary: "#ff3c8e",     // hot pink — BLACKPINK energy
+  textBody: "#b8a0cc",        // dusty lavender
+  textMuted: "#7a6490",       // muted purple
+  textFaint: "#4a3860",       // deep violet hint
+  textGhost: "#2a1e3a",       // almost invisible plum
+  accent: "#ff3c8e",          // hot pink pulse
+  accentYellow: "#a855f7",    // electric violet (not yellow — we don't do yellow)
+  link: "#c084fc",            // soft purple link
+  terminalBg: "#0c0914",
+  terminalBorder: "#2a1640",
+  titleBarBg: "#120e1c",
+  titleBarDots: ["#ff3c8e", "#a855f7", "#38bdf8"],  // pink → violet → cyan
+  divider: "#1a1230",
+  statusLabels: {
+    active: "main",
+    wip: "comeback",
+    respinning: "debut",
+    neglected: "hiatus",
+    abandonware: "disbanded",
+    retired: "graduated",
+  },
+  intro: `nine months of building with ai. one repo. some of it slaps. a lot of it is still in the practice room. everything ships, nothing is final.`,
+  tagline: "♡ · · ·",
+};
+
+export const themes: Record<ThemeName, Theme> = { terminal, phosphor, paper, inkigayo };
 export const theme: Theme = themes[ACTIVE_THEME];
