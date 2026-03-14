@@ -311,7 +311,7 @@ export default function SushiManagerGame() {
       waveCustomersTotal: 5,
       waveBreak: false,
       waveBreakTimer: 0,
-      beltSpeed: 0.8,
+      beltSpeed: 0.64,
       spawnRate: 2500,
       customerRate: 3500,
       dragging: null,
@@ -325,7 +325,7 @@ export default function SushiManagerGame() {
       statusText: 'Drag sushi to customers. Clean dirty plates!',
       statusColor: COLORS.teal,
       eatDuration: EAT_DURATION_BASE,
-      patienceDrain: 0.06, // per second
+      patienceDrain: 0.03, // per second (halved = 2x patience time)
     };
     gameRef.current = gs;
 
@@ -410,10 +410,10 @@ export default function SushiManagerGame() {
       gs.waveBreakTimer = 0;
 
       // Difficulty ramp per wave
-      gs.beltSpeed = Math.min(0.8 + gs.wave * 0.15, 2.5);
+      gs.beltSpeed = Math.min(0.64 + gs.wave * 0.12, 2.0);
       gs.customerRate = Math.max(3500 - gs.wave * 200, 1500);
       gs.spawnRate = Math.max(2500 - gs.wave * 150, 1200);
-      gs.patienceDrain = Math.min(0.06 + gs.wave * 0.015, 0.18);
+      gs.patienceDrain = Math.min(0.03 + gs.wave * 0.0075, 0.09);
       gs.eatDuration = Math.max(EAT_DURATION_BASE - gs.wave * 0.1, 1.5);
 
       gs.statusText = `Wave ${gs.wave} — ${customersThisWave} customers!`;
