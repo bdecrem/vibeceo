@@ -18,6 +18,7 @@ const labMessages = [
 ];
 
 const games = [
+  { icon: '🍣', name: 'Sushi Mgr', href: '/pixelpit/arcade/sushi-manager', playable: true, date: 'Fri 3/13' },
   { icon: '🍣', name: 'Sushi', href: '/pixelpit/arcade/sushi', playable: true, date: 'Fri 3/13' },
   { icon: '🎨', name: 'Flood', href: '/pixelpit/arcade/flood', playable: true, date: 'Mon 3/9' },
   { icon: '🎯', name: 'Slingshot', href: '/pixelpit/arcade/slingshot', playable: true, date: 'Mon 3/2' },
