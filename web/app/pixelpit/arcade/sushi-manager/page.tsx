@@ -129,6 +129,7 @@ interface GameState {
   statusColor: string;
   eatDuration: number;
   patienceDrain: number;
+  scoreDrainAccum: number;
 }
 
 let audioCtx: AudioContext | null = null;
@@ -326,6 +327,7 @@ export default function SushiManagerGame() {
       statusColor: COLORS.teal,
       eatDuration: EAT_DURATION_BASE,
       patienceDrain: 0.03, // per second (halved = 2x patience time)
+      scoreDrainAccum: 0,
     };
     gameRef.current = gs;
 
@@ -624,6 +626,19 @@ export default function SushiManagerGame() {
       ctx!.fillText(`${gs.score} pts`, 16, 16);
       ctx!.shadowBlur = 0;
 
+      // Score bleed warning
+      const bleedDirty = gs.seats.filter(s => s.state === 'dirty').length;
+      if (bleedDirty > 0 && gs.score > 0) {
+        const drainPerSec = bleedDirty * 2;
+        ctx!.font = 'bold 16px ui-monospace, monospace';
+        ctx!.fillStyle = COLORS.error;
+        // Pulse opacity for urgency
+        const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 200);
+        ctx!.globalAlpha = pulse;
+        ctx!.fillText(`-${drainPerSec}/s`, 16 + ctx!.measureText(`${gs.score} pts`).width + 12, 20);
+        ctx!.globalAlpha = 1;
+      }
+
       // Wave info
       ctx!.font = '13px ui-monospace, monospace';
       ctx!.fillStyle = COLORS.muted;
@@ -791,6 +806,19 @@ export default function SushiManagerGame() {
               id: Math.random(),
             });
           }
+        }
+      }
+
+      // Score bleed: -2 pts/sec per dirty seat
+      const dirtyCount = gs.seats.filter(s => s.state === 'dirty').length;
+      if (dirtyCount > 0 && gs.score > 0) {
+        gs.scoreDrainAccum += dirtyCount * 2 * dt;
+        if (gs.scoreDrainAccum >= 1) {
+          const drain = Math.floor(gs.scoreDrainAccum);
+          gs.score = Math.max(0, gs.score - drain);
+          gs.scoreDrainAccum -= drain;
+          scoreRef.current = gs.score;
+          setScore(gs.score);
         }
       }
 
