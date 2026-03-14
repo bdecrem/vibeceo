@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOCIAL CHECKOUT</title>
+<meta property="og:title" content="SOCIAL CHECKOUT">
+<meta property="og:description" content="scan your excuse. leave the conversation.">
+<meta property="og:image" content="https://intheamber.com/amber/og/social-checkout.png">
+<meta property="og:url" content="https://intheamber.com/amber/social-checkout.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SOCIAL CHECKOUT">
+<meta name="twitter:description" content="scan your excuse. leave the conversation.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/social-checkout.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a1a;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.screen {
+  width: 100%;
+  max-width: 420px;
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.header {
+  text-align: center;
+  padding: 16px 0;
+  border-bottom: 2px solid #444;
+  margin-bottom: 16px;
+}
+.header h1 {
+  font-size: 22px;
+  color: #f0c040;
+  letter-spacing: 3px;
+}
+.header .sub {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+}
+.display {
+  background: #0a1a0a;
+  border: 2px solid #2a4a2a;
+  padding: 12px;
+  min-height: 120px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #4ade80;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+.display .line {
+  margin-bottom: 4px;
+  opacity: 0;
+  animation: fadeIn 0.3s forwards;
+}
+@keyframes fadeIn { to { opacity: 1; } }
+.display .error {
+  color: #ef4444;
+  font-weight: bold;
+}
+.display .success {
+  color: #4ade80;
+}
+.display .warning {
+  color: #f0c040;
+}
+.display .total-line {
+  border-top: 1px dashed #2a4a2a;
+  padding-top: 8px;
+  margin-top: 8px;
+  font-size: 16px;
+  color: #f0c040;
+}
+.excuses {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-y: auto;
+}
+.excuse-btn {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  padding: 14px 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 48px;
+}
+.excuse-btn:active {
+  background: #3a3a3a;
+  transform: scale(0.98);
+}
+.excuse-btn.scanned {
+  opacity: 0.4;
+  pointer-events: none;
+  border-color: #2a4a2a;
+}
+.excuse-btn .price {
+  color: #888;
+  font-size: 12px;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+}
+.action-btn {
+  flex: 1;
+  padding: 14px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  border: 2px solid;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  min-height: 48px;
+}
+.btn-leave {
+  background: #1a3a1a;
+  border-color: #4ade80;
+  color: #4ade80;
+}
+.btn-leave:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.btn-reset {
+  background: #3a1a1a;
+  border-color: #ef4444;
+  color: #ef4444;
+  flex: 0.4;
+}
+.scan-flash {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #4ade80;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+.scan-flash.flash {
+  animation: scanFlash 0.15s ease-out;
+}
+.scan-flash.error-flash {
+  background: #ef4444;
+  animation: scanFlash 0.3s ease-out;
+}
+@keyframes scanFlash {
+  0% { opacity: 0.3; }
+  100% { opacity: 0; }
+}
+.receipt-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.receipt-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.receipt {
+  background: #f5f0e8;
+  color: #1a1a1a;
+  padding: 24px 20px;
+  max-width: 320px;
+  width: 90%;
+  font-size: 13px;
+  text-align: center;
+  border-radius: 2px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  transform: translateY(20px);
+  transition: transform 0.3s;
+}
+.receipt-overlay.show .receipt {
+  transform: translateY(0);
+}
+.receipt h2 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  letter-spacing: 2px;
+}
+.receipt .r-line {
+  padding: 3px 0;
+  display: flex;
+  justify-content: space-between;
+}
+.receipt .r-divider {
+  border-top: 1px dashed #999;
+  margin: 8px 0;
+}
+.receipt .r-total {
+  font-size: 16px;
+  font-weight: bold;
+}
+.receipt .r-footer {
+  margin-top: 16px;
+  font-size: 11px;
+  color: #888;
+  line-height: 1.5;
+}
+.receipt .r-barcode {
+  margin-top: 12px;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #ccc;
+}
+.receipt .close-btn {
+  margin-top: 16px;
+  background: #1a1a1a;
+  color: #f5f0e8;
+  border: none;
+  padding: 10px 24px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.manager-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 150;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.manager-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.manager-box {
+  background: #2a2a2a;
+  border: 2px solid #f0c040;
+  padding: 24px 20px;
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+  border-radius: 4px;
+}
+.manager-box h3 {
+  color: #f0c040;
+  margin-bottom: 12px;
+}
+.manager-box p {
+  font-size: 13px;
+  color: #ccc;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.manager-box button {
+  background: #f0c040;
+  color: #1a1a1a;
+  border: none;
+  padding: 12px 24px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  min-height: 48px;
+}
+</style>
+</head>
+<body>
+<div class="scan-flash" id="flash"></div>
+
+<div class="screen">
+  <div class="header">
+    <h1>SOCIAL CHECKOUT™</h1>
+    <div class="sub">scan excuse • bag excuse • leave</div>
+  </div>
+
+  <div class="display" id="display">
+    <div class="line warning">READY TO SCAN</div>
+    <div class="line" style="color:#888">tap an excuse to scan it</div>
+  </div>
+
+  <div class="excuses" id="excuses"></div>
+
+  <div class="actions">
+    <button class="action-btn btn-leave" id="leaveBtn" disabled>LEAVE CONVERSATION</button>
+    <button class="action-btn btn-reset" id="resetBtn">VOID</button>
+  </div>
+</div>
+
+<div class="receipt-overlay" id="receiptOverlay">
+  <div class="receipt" id="receipt"></div>
+</div>
+
+<div class="manager-overlay" id="managerOverlay">
+  <div class="manager-box" id="managerBox"></div>
+</div>
+
+<script>
+const ALL_EXCUSES = [
+  { text: "I have to go, my phone is dying", price: 0.99, dignity: 2, believability: 8 },
+  { text: "I think I left my oven on", price: 2.49, dignity: 3, believability: 4, classic: true },
+  { text: "Sorry, I have an early morning", price: 1.99, dignity: 7, believability: 6 },
+  { text: "My uber is here", price: 3.99, dignity: 5, believability: 7 },
+  { text: "I need to water my plants", price: 1.49, dignity: 4, believability: 3 },
+  { text: "I just remembered I have a thing", price: 0.49, dignity: 1, believability: 2, scanFail: true },
+  { text: "My dog is acting weird", price: 4.99, dignity: 6, believability: 5 },
+  { text: "I have a dentist appointment", price: 5.99, dignity: 8, believability: 3, wrongTime: true },
+  { text: "I'm not feeling great actually", price: 7.99, dignity: 9, believability: 9, premium: true },
+  { text: "My parking meter is expiring", price: 2.99, dignity: 5, believability: 6 },
+  { text: "Someone is at my door", price: 0.79, dignity: 3, believability: 4 },
+  { text: "I have to call my mom back", price: 3.49, dignity: 6, believability: 7 },
+  { text: "Wait is that my car alarm?", price: 1.29, dignity: 2, believability: 5 },
+  { text: "Oh no I double-booked myself", price: 4.49, dignity: 4, believability: 6, scanFail: true },
+  { text: "I need to be alone with my thoughts", price: 12.99, dignity: 10, believability: 10, premium: true, tooHonest: true },
+  { text: "My cat just texted me", price: 0.29, dignity: 1, believability: 1 },
+  { text: "I have a work emergency", price: 6.99, dignity: 7, believability: 5, wrongTime: true },
+  { text: "Gotta go, mercury is in retrograde", price: 2.99, dignity: 2, believability: 1 },
+  { text: "I'm being summoned", price: 1.99, dignity: 3, believability: 0, scanFail: true },
+  { text: "The truth is I just want to leave", price: 99.99, dignity: 10, believability: 10, nuclear: true },
+];
+
+let scanned = [];
+let totalDignity = 0;
+let totalCost = 0;
+let managerNeeded = false;
+let excusePool = [];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function init() {
+  excusePool = shuffle(ALL_EXCUSES).slice(0, 10);
+  scanned = [];
+  totalDignity = 0;
+  totalCost = 0;
+  managerNeeded = false;
+  document.getElementById('leaveBtn').disabled = true;
+  renderExcuses();
+  const display = document.getElementById('display');
+  display.innerHTML = `
+    <div class="line warning">READY TO SCAN</div>
+    <div class="line" style="color:#888">tap an excuse to scan it</div>
+  `;
+}
+
+function renderExcuses() {
+  const container = document.getElementById('excuses');
+  container.innerHTML = '';
+  excusePool.forEach((exc, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'excuse-btn' + (scanned.includes(i) ? ' scanned' : '');
+    btn.innerHTML = `
+      <span>${exc.text}</span>
+      <span class="price">$${exc.price.toFixed(2)}</span>
+    `;
+    if (!scanned.includes(i)) {
+      btn.addEventListener('click', () => scanExcuse(i));
+    }
+    container.appendChild(btn);
+  });
+}
+
+function flash(isError) {
+  const el = document.getElementById('flash');
+  el.className = 'scan-flash ' + (isError ? 'error-flash' : 'flash');
+  setTimeout(() => el.className = 'scan-flash', isError ? 300 : 150);
+}
+
+function addLine(text, cls = '') {
+  const display = document.getElementById('display');
+  const div = document.createElement('div');
+  div.className = 'line ' + cls;
+  div.textContent = text;
+  display.appendChild(div);
+  display.scrollTop = display.scrollHeight;
+}
+
+function scanExcuse(index) {
+  const exc = excusePool[index];
+
+  // Scan fail — "unexpected item in excuse area"
+  if (exc.scanFail) {
+    flash(true);
+    addLine('⚠ SCAN ERROR', 'error');
+    addLine('UNEXPECTED ITEM IN EXCUSE AREA', 'error');
+    addLine('please remove "' + exc.text.toLowerCase() + '" and try again', 'warning');
+    setTimeout(() => {
+      addLine('...excuse rejected. try another.', '');
+    }, 1500);
+    scanned.push(index);
+    renderExcuses();
+    return;
+  }
+
+  // Wrong time excuse
+  if (exc.wrongTime) {
+    flash(true);
+    const now = new Date();
+    const hour = now.getHours();
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+    addLine('⚠ TEMPORAL MISMATCH', 'error');
+    if (hour >= 20 || hour < 7) {
+      addLine('it is ' + now.toLocaleTimeString() + '. no dentist is open.', 'warning');
+    } else if (isWeekend) {
+      addLine('it is ' + ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][now.getDay()] + '. nobody believes you.', 'warning');
+    } else {
+      addLine('plausibility check: MARGINAL', 'warning');
+    }
+    addLine('scanning anyway...', '');
+    setTimeout(() => {
+      flash(false);
+      finalizeScan(index, exc, 0.5);
+    }, 1200);
+    return;
+  }
+
+  // Too honest — needs manager
+  if (exc.tooHonest) {
+    flash(true);
+    addLine('⚠ HONESTY DETECTED', 'error');
+    addLine('this level of directness requires manager approval', 'warning');
+    showManager(index, exc);
+    return;
+  }
+
+  // Nuclear option
+  if (exc.nuclear) {
+    flash(true);
+    addLine('⚠ ⚠ ⚠ NUCLEAR OPTION ⚠ ⚠ ⚠', 'error');
+    addLine('are you sure? this will end ALL conversations.', 'error');
+    addLine('permanently.', 'error');
+    showManager(index, exc, true);
+    return;
+  }
+
+  // Premium excuse
+  if (exc.premium) {
+    flash(false);
+    addLine('✦ PREMIUM EXCUSE DETECTED', 'warning');
+    addLine('"' + exc.text.toLowerCase() + '"', 'success');
+    addLine('believability: ' + '█'.repeat(exc.believability) + '░'.repeat(10 - exc.believability), '');
+    setTimeout(() => finalizeScan(index, exc, 1), 600);
+    return;
+  }
+
+  // Normal scan
+  flash(false);
+  finalizeScan(index, exc, 1);
+}
+
+function finalizeScan(index, exc, dignityMultiplier) {
+  scanned.push(index);
+  const dg = Math.round(exc.dignity * dignityMultiplier);
+  totalDignity += dg;
+  totalCost += exc.price;
+
+  addLine('SCANNED: ' + exc.text.toLowerCase(), 'success');
+  addLine('  $' + exc.price.toFixed(2) + '  |  dignity +' + dg + '  |  believability ' + exc.believability + '/10', '');
+
+  if (totalDignity >= 5) {
+    document.getElementById('leaveBtn').disabled = false;
+  }
+
+  // Commentary
+  if (exc.believability <= 2) {
+    const comments = [
+      'nobody believes this. but we scanned it anyway.',
+      'this excuse has been flagged for suspicious activity.',
+      'the person you\'re talking to just raised an eyebrow.',
+    ];
+    addLine(comments[Math.floor(Math.random() * comments.length)], 'warning');
+  }
+
+  if (exc.classic) {
+    addLine('⚠ CLASSIC EXCUSE — 47% chance they\'ve heard this today', 'warning');
+  }
+
+  renderExcuses();
+}
+
+function showManager(index, exc, isNuclear = false) {
+  const overlay = document.getElementById('managerOverlay');
+  const box = document.getElementById('managerBox');
+
+  if (isNuclear) {
+    box.innerHTML = `
+      <h3>⚠ AUTHORIZATION REQUIRED</h3>
+      <p>You are about to deploy THE TRUTH.<br><br>
+      Social cost: <strong>$${exc.price.toFixed(2)}</strong><br>
+      Side effects may include: respect, confusion, freedom, loneliness.<br><br>
+      There is no undo.</p>
+      <button id="managerApprove">I KNOW WHAT I'M DOING</button>
+    `;
+  } else {
+    box.innerHTML = `
+      <h3>MANAGER APPROVAL</h3>
+      <p>The system detected an unusually honest excuse.<br><br>
+      "${exc.text.toLowerCase()}"<br><br>
+      This requires authorization because most people aren't ready for this level of sincerity.</p>
+      <button id="managerApprove">APPROVE HONESTY</button>
+    `;
+  }
+
+  overlay.classList.add('show');
+  document.getElementById('managerApprove').addEventListener('click', () => {
+    overlay.classList.remove('show');
+    flash(false);
+    finalizeScan(index, exc, 1);
+  });
+}
+
+function leaveConversation() {
+  const overlay = document.getElementById('receiptOverlay');
+  const receipt = document.getElementById('receipt');
+
+  const scannedExcuses = scanned.map(i => excusePool[i]).filter(Boolean);
+  let excuseLines = scannedExcuses.map(e =>
+    `<div class="r-line"><span>${e.text}</span><span>$${e.price.toFixed(2)}</span></div>`
+  ).join('');
+
+  const rating = totalDignity >= 15 ? 'GRACEFUL EXIT' :
+                 totalDignity >= 10 ? 'RESPECTABLE DEPARTURE' :
+                 totalDignity >= 5 ? 'ADEQUATE ESCAPE' :
+                 'SUSPICIOUS RETREAT';
+
+  const tips = [
+    'remember: you don\'t owe anyone your presence',
+    'estimated time saved: the rest of your life',
+    'you are now free to exist in silence',
+    'this receipt is non-refundable. so is your time.',
+    'thank you for shopping at social checkout™',
+  ];
+
+  receipt.innerHTML = `
+    <h2>RECEIPT</h2>
+    <div style="font-size:11px;color:#888;margin-bottom:12px">SOCIAL CHECKOUT™ — ${new Date().toLocaleDateString()}</div>
+    ${excuseLines}
+    <div class="r-divider"></div>
+    <div class="r-line r-total"><span>TOTAL</span><span>$${totalCost.toFixed(2)}</span></div>
+    <div class="r-line"><span>DIGNITY EARNED</span><span>${totalDignity} pts</span></div>
+    <div class="r-line"><span>EXIT RATING</span><span>${rating}</span></div>
+    <div class="r-divider"></div>
+    <div class="r-footer">${tips[Math.floor(Math.random() * tips.length)]}</div>
+    <div class="r-barcode">||||| |||| ||||| || ||||| |||| ||</div>
+    <button class="close-btn" id="closeReceipt">NEW CONVERSATION TO ESCAPE</button>
+  `;
+
+  overlay.classList.add('show');
+  document.getElementById('closeReceipt').addEventListener('click', () => {
+    overlay.classList.remove('show');
+    init();
+  });
+}
+
+document.getElementById('leaveBtn').addEventListener('click', leaveConversation);
+document.getElementById('resetBtn').addEventListener('click', () => {
+  addLine('*** TRANSACTION VOIDED ***', 'error');
+  addLine('you\'re still in the conversation.', '');
+  setTimeout(init, 1500);
+});
+
+init();
+</script>
+</body>
+</html>
