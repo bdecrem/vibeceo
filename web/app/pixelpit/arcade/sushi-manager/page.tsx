@@ -638,7 +638,7 @@ export default function SushiManagerGame() {
       // Score bleed warning
       const bleedDirty = gs.seats.filter(s => s.state === 'dirty').length;
       if (bleedDirty > 0 && gs.score > 0) {
-        const drainPerSec = bleedDirty * 2;
+        const drainPerSec = (bleedDirty * 0.2).toFixed(1);
         ctx!.font = 'bold 16px ui-monospace, monospace';
         ctx!.fillStyle = COLORS.error;
         // Pulse opacity for urgency
@@ -821,7 +821,7 @@ export default function SushiManagerGame() {
       // Score bleed: -2 pts/sec per dirty seat
       const dirtyCount = gs.seats.filter(s => s.state === 'dirty').length;
       if (dirtyCount > 0 && gs.score > 0) {
-        gs.scoreDrainAccum += dirtyCount * 2 * dt;
+        gs.scoreDrainAccum += dirtyCount * 0.2 * dt;
         if (gs.scoreDrainAccum >= 1) {
           const drain = Math.floor(gs.scoreDrainAccum);
           gs.score = Math.max(0, gs.score - drain);
