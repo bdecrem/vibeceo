@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AGATE</title>
+<meta property="og:title" content="AGATE">
+<meta property="og:description" content="beauty formed under pressure">
+<meta property="og:image" content="https://intheamber.com/amber/og/agate.png">
+<meta property="og:url" content="https://intheamber.com/amber/agate.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AGATE">
+<meta name="twitter:description" content="beauty formed under pressure">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/agate.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0806; overflow: hidden; touch-action: none; }
+canvas { display: block; width: 100vw; height: 100vh; }
+#hint {
+  position: fixed; bottom: 20px; left: 0; right: 0;
+  text-align: center; color: rgba(180,150,120,0.4);
+  font: 12px Georgia, serif; letter-spacing: 2px;
+  pointer-events: none; transition: opacity 2s;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">tap to slice deeper</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy, R;
+let seed = Math.random() * 1000;
+let targetSeed = seed;
+let morphT = 1;
+let time = 0;
+
+// Perlin-like noise
+class Noise {
+  constructor() {
+    this.p = [];
+    for (let i = 0; i < 512; i++) this.p[i] = Math.floor(Math.random() * 256);
+  }
+  fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+  lerp(a, b, t) { return a + t * (b - a); }
+  grad(hash, x, y) {
+    const h = hash & 3;
+    const u = h < 2 ? x : y;
+    const v = h < 2 ? y : x;
+    return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
+  }
+  noise2d(x, y) {
+    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+    x -= Math.floor(x); y -= Math.floor(y);
+    const u = this.fade(x), v = this.fade(y);
+    const A = this.p[X] + Y, B = this.p[X + 1] + Y;
+    return this.lerp(
+      this.lerp(this.grad(this.p[A], x, y), this.grad(this.p[B], x - 1, y), u),
+      this.lerp(this.grad(this.p[A + 1], x, y - 1), this.grad(this.p[B + 1], x - 1, y - 1), u),
+      v
+    );
+  }
+  fbm(x, y, octaves = 4) {
+    let val = 0, amp = 0.5, freq = 1;
+    for (let i = 0; i < octaves; i++) {
+      val += amp * this.noise2d(x * freq, y * freq);
+      amp *= 0.5; freq *= 2;
+    }
+    return val;
+  }
+}
+
+const noise = new Noise();
+
+// Agate color palettes — warm earth tones
+const palettes = [
+  // Classic amber agate
+  ['#1a0e08','#3d1c0a','#8b4513','#cd853f','#deb887','#f5e6d0','#fff8ef','#deb887','#a0522d','#4a2210','#2c1608','#d4a06a','#e8c99b','#6b3a1f','#f0d5b0'],
+  // Blue lace agate
+  ['#0d1117','#1a2a3d','#2d4a6b','#5b8aad','#8bbad4','#c4dae8','#eef4f8','#a8c8dd','#6b9dba','#3d6d8a','#1f3d55','#7ab0cc','#d0e5ef','#4a7d9a','#b5d5e5'],
+  // Moss agate — greens and cream
+  ['#0a1208','#1a2d12','#2d4a1f','#4a7a35','#6ba352','#8cc070','#c5ddb0','#e8f0d8','#a0c480','#5a8a40','#3d6828','#78b058','#d0e4b8','#4a7530','#b0d498'],
+  // Fire agate — reds and gold
+  ['#1a0808','#3d0a0a','#6b1a12','#a03020','#cc4830','#e87848','#f0a868','#f8d098','#e8b070','#c07838','#8a3818','#d06030','#f0c080','#903020','#e09050'],
+  // Amethyst agate — purples
+  ['#100818','#201030','#3a1858','#5a2888','#7a38a8','#9a58c0','#b880d8','#d4a8e8','#c090d8','#8a48b0','#5a2080','#a070c8','#c8a0e0','#6a3098','#b488d0'],
+];
+
+let palette = palettes[Math.floor(Math.random() * palettes.length)];
+let nextPalette = palette;
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cx = W / 2; cy = H / 2;
+  R = Math.min(W, H) * 0.44;
+}
+
+function lerpColor(a, b, t) {
+  const ah = parseInt(a.slice(1), 16), bh = parseInt(b.slice(1), 16);
+  const ar = (ah >> 16) & 255, ag = (ah >> 8) & 255, ab = ah & 255;
+  const br = (bh >> 16) & 255, bg = (bh >> 8) & 255, bb = bh & 255;
+  const r = Math.round(ar + (br - ar) * t);
+  const g = Math.round(ag + (bg - ag) * t);
+  const b_ = Math.round(ab + (bb - ab) * t);
+  return `rgb(${r},${g},${b_})`;
+}
+
+function getBandColor(normalizedDist, t) {
+  // Create banded pattern using noise
+  const angle = Math.atan2(normalizedDist - 0.5, t) + seed;
+  const noiseVal = noise.fbm(
+    normalizedDist * 3 + seed,
+    angle * 0.5 + seed * 0.7,
+    5
+  );
+  
+  // Bands — quantize the noise slightly for banding effect
+  const bandVal = normalizedDist + noiseVal * 0.15;
+  const bandIndex = Math.abs(bandVal * palette.length * 2) % palette.length;
+  const idx = Math.floor(bandIndex);
+  const frac = bandIndex - idx;
+  
+  const c1 = palette[idx % palette.length];
+  const c2 = palette[(idx + 1) % palette.length];
+  return lerpColor(c1, c2, frac);
+}
+
+function drawAgate() {
+  // Clear
+  ctx.fillStyle = '#0a0806';
+  ctx.fillRect(0, 0, W, H);
+  
+  // Draw from outside in for proper layering
+  const numRings = 120;
+  const slowTime = time * 0.0003;
+  
+  for (let i = numRings; i >= 0; i--) {
+    const baseR = (i / numRings) * R;
+    if (baseR < 2) continue;
+    
+    ctx.beginPath();
+    const steps = Math.max(60, Math.floor(baseR * 0.8));
+    
+    for (let j = 0; j <= steps; j++) {
+      const angle = (j / steps) * Math.PI * 2;
+      const normalizedR = i / numRings;
+      
+      // Distort the ring with noise — more distortion toward center
+      const distortAmount = (1 - normalizedR * 0.5) * R * 0.12;
+      const n = noise.fbm(
+        Math.cos(angle) * 2 + seed + slowTime,
+        Math.sin(angle) * 2 + seed * 1.3 + slowTime * 0.7,
+        4
+      );
+      const n2 = noise.fbm(
+        Math.cos(angle * 2) * 1.5 + seed * 2.1,
+        Math.sin(angle * 3) * 1.5 + normalizedR * 3 + seed * 0.8,
+        3
+      );
+      
+      const r = baseR + n * distortAmount + n2 * distortAmount * 0.4;
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+      
+      if (j === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    
+    ctx.closePath();
+    
+    const normalizedDist = i / numRings;
+    ctx.fillStyle = getBandColor(normalizedDist, slowTime);
+    ctx.fill();
+    
+    // Subtle translucent stroke for band definition
+    if (i % 3 === 0) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+  }
+  
+  // Crystal center — bright spot
+  const centerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.08);
+  centerGrad.addColorStop(0, 'rgba(255,248,240,0.6)');
+  centerGrad.addColorStop(0.5, 'rgba(255,240,220,0.2)');
+  centerGrad.addColorStop(1, 'rgba(255,240,220,0)');
+  ctx.fillStyle = centerGrad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R * 0.08, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Outer glow
+  const outerGrad = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.15);
+  outerGrad.addColorStop(0, 'rgba(0,0,0,0)');
+  outerGrad.addColorStop(1, 'rgba(10,8,6,1)');
+  ctx.fillStyle = outerGrad;
+  ctx.fillRect(0, 0, W, H);
+  
+  // Subtle vignette
+  const vig = ctx.createRadialGradient(cx, cy, R * 0.5, cx, cy, Math.max(W, H) * 0.7);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.4)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function animate() {
+  time++;
+  
+  // Smooth seed morphing on tap
+  if (morphT < 1) {
+    morphT = Math.min(1, morphT + 0.008);
+    seed += (targetSeed - seed) * 0.02;
+  }
+  
+  drawAgate();
+  requestAnimationFrame(animate);
+}
+
+// Tap to generate a new slice
+let taps = 0;
+function newSlice(x, y) {
+  taps++;
+  targetSeed = Math.random() * 1000;
+  morphT = 0;
+  
+  // Shift palette occasionally
+  if (taps % 3 === 0) {
+    palette = palettes[Math.floor(Math.random() * palettes.length)];
+  }
+  
+  // Shift center slightly toward tap
+  cx = cx + (x - cx) * 0.15;
+  cy = cy + (y - cy) * 0.15;
+  
+  // Hide hint
+  document.getElementById('hint').style.opacity = '0';
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  newSlice(e.clientX, e.clientY);
+});
+
+window.addEventListener('resize', resize);
+resize();
+animate();
+</script>
+</body>
+</html>
