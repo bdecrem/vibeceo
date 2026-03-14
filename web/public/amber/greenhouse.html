@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GREENHOUSE — Plant and grow</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="GREENHOUSE — Plant and grow">
+  <meta property="og:description" content="Tap to plant seeds. Watch them grow. A warm space for nurturing life.">
+  <meta property="og:image" content="https://intheamber.com/amber/greenhouse-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/greenhouse.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="GREENHOUSE — Plant and grow">
+  <meta name="twitter:description" content="Tap to plant seeds. Watch them grow. A warm space for nurturing life.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/greenhouse-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      color: #D4A574;
+      touch-action: none;
+    }
+    
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-size: 14px;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #ui div {
+      margin-bottom: 8px;
+    }
+    
+    .label {
+      color: #2D9596;
+      font-size: 12px;
+    }
+    
+    .value {
+      color: #FFD700;
+      font-weight: bold;
+    }
+    
+    #instructions {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 13px;
+      color: #D4A574;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.8);
+      pointer-events: none;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    
+    #title {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="title">GREENHOUSE</div>
+  
+  <div id="ui">
+    <div><span class="label">PLANTS:</span> <span class="value" id="plantCount">0</span></div>
+    <div><span class="label">BLOOMING:</span> <span class="value" id="bloomCount">0</span></div>
+    <div><span class="label">HUMIDITY:</span> <span class="value">78%</span></div>
+  </div>
+  
+  <div id="instructions">TAP SOIL TO PLANT · WATCH THEM GROW</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Resize canvas
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Audio context
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    // Play tone
+    function playTone(freq, duration = 0.1, type = 'sine') {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    // Colors
+    const colors = {
+      amber: '#D4A574',
+      gold: '#FFD700',
+      teal: '#2D9596',
+      blue: '#3b82f6',
+      pink: '#ec4899',
+      purple: '#8b5cf6',
+      coral: '#f97316',
+      lime: '#84cc16'
+    };
+    
+    // Plant types
+    const plantTypes = [
+      { stem: colors.lime, leaf: colors.teal, flower: colors.pink, height: 80 },
+      { stem: colors.teal, leaf: colors.lime, flower: colors.coral, height: 100 },
+      { stem: colors.amber, leaf: colors.teal, flower: colors.purple, height: 70 },
+      { stem: colors.lime, leaf: colors.blue, flower: colors.gold, height: 90 },
+      { stem: colors.teal, leaf: colors.lime, flower: colors.blue, height: 110 }
+    ];
+    
+    // Particles
+    const steamParticles = [];
+    const sunbeams = [];
+    const plants = [];
+    
+    // Soil plots (6 plots in 2 rows)
+    const plots = [];
+    const plotWidth = 120;
+    const plotHeight = 40;
+    const plotSpacing = 20;
+    const plotsPerRow = 3;
+    const startX = canvas.width / 2 - (plotsPerRow * (plotWidth + plotSpacing)) / 2;
+    const startY = canvas.height - 180;
+    
+    for (let row = 0; row < 2; row++) {
+      for (let col = 0; col < plotsPerRow; col++) {
+        plots.push({
+          x: startX + col * (plotWidth + plotSpacing),
+          y: startY + row * (plotHeight + plotSpacing),
+          width: plotWidth,
+          height: plotHeight,
+          planted: false
+        });
+      }
+    }
+    
+    // Steam particle
+    class SteamParticle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = -0.5 - Math.random() * 0.5;
+        this.size = 2 + Math.random() * 4;
+        this.alpha = 0.1 + Math.random() * 0.2;
+        this.life = 1;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= 0.005;
+        this.alpha = this.life * 0.3;
+      }
+      
+      draw() {
+        ctx.fillStyle = `rgba(212, 165, 116, ${this.alpha})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Sunbeam particle
+    class Sunbeam {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = -10;
+        this.vy = 0.3 + Math.random() * 0.5;
+        this.size = 1 + Math.random() * 2;
+        this.alpha = 0.1 + Math.random() * 0.2;
+      }
+      
+      update() {
+        this.y += this.vy;
+        if (this.y > canvas.height) {
+          this.y = -10;
+          this.x = Math.random() * canvas.width;
+        }
+      }
+      
+      draw() {
+        ctx.fillStyle = `rgba(255, 215, 0, ${this.alpha})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Plant
+    class Plant {
+      constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.stage = 0; // 0: seed, 1: sprout, 2: stem, 3: leaves, 4: flower
+        this.growth = 0;
+        this.height = 0;
+        this.targetHeight = type.height;
+        this.leaves = [];
+        this.flowers = [];
+        this.age = 0;
+        this.swayOffset = Math.random() * Math.PI * 2;
+      }
+      
+      update() {
+        this.age++;
+        
+        // Growth stages
+        if (this.stage === 0 && this.age > 60) { // seed -> sprout
+          this.stage = 1;
+          playTone(440, 0.05);
+        } else if (this.stage === 1 && this.age > 180) { // sprout -> stem
+          this.stage = 2;
+        } else if (this.stage === 2 && this.height >= this.targetHeight * 0.5) { // stem -> leaves
+          this.stage = 3;
+          this.createLeaves();
+          playTone(550, 0.05);
+} else if (this.stage === 3 && this.height >= this.targetHeight * 0.9) { // leaves -> flower
+          this.stage = 4;
+          this.createFlowers();
+          playTone(660, 0.1);
+        }
+        
+        // Grow height
+        if (this.stage >= 2 && this.height < this.targetHeight) {
+          this.height += 0.3;
+        }
+      }
+      
+      createLeaves() {
+        const leafCount = 3 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < leafCount; i++) {
+          this.leaves.push({
+            y: (i / leafCount) * this.targetHeight,
+            side: i % 2 === 0 ? 1 : -1,
+            size: 15 + Math.random() * 10,
+            angle: 0
+          });
+        }
+      }
+      
+      createFlowers() {
+        const flowerCount = 1 + Math.floor(Math.random() * 2);
+        for (let i = 0; i < flowerCount; i++) {
+          this.flowers.push({
+            y: this.targetHeight - 20 - Math.random() * 20,
+            size: 8 + Math.random() * 6,
+            petals: 5 + Math.floor(Math.random() * 3)
+          });
+        }
+      }
+      
+      draw() {
+        const sway = Math.sin(Date.now() / 1000 + this.swayOffset) * 2;
+        
+        // Seed
+        if (this.stage === 0) {
+          ctx.fillStyle = colors.amber;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y - 2, 3, 0, Math.PI * 2);
+          ctx.fill();
+          return;
+        }
+        
+        // Sprout
+        if (this.stage === 1) {
+          const sproutHeight = Math.min(15, (this.age - 60) / 4);
+          ctx.strokeStyle = this.type.stem;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(this.x, this.y);
+          ctx.lineTo(this.x, this.y - sproutHeight);
+          ctx.stroke();
+          return;
+        }
+        
+        // Stem
+        if (this.stage >= 2) {
+          ctx.strokeStyle = this.type.stem;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(this.x, this.y);
+          ctx.lineTo(this.x + sway, this.y - this.height);
+          ctx.stroke();
+        }
+        
+        // Leaves
+        if (this.stage >= 3) {
+          this.leaves.forEach(leaf => {
+            if (leaf.y < this.height) {
+              const leafX = this.x + sway + leaf.side * 15;
+              const leafY = this.y - leaf.y;
+              
+              ctx.fillStyle = this.type.leaf;
+              ctx.beginPath();
+              ctx.ellipse(leafX, leafY, leaf.size, leaf.size * 0.6, leaf.side > 0 ? -0.3 : 0.3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          });
+        }
+        
+        // Flowers
+        if (this.stage >= 4) {
+          this.flowers.forEach(flower => {
+            const flowerX = this.x + sway;
+            const flowerY = this.y - flower.y;
+            
+            // Petals
+            ctx.fillStyle = this.type.flower;
+            for (let i = 0; i < flower.petals; i++) {
+              const angle = (i / flower.petals) * Math.PI * 2;
+              const px = flowerX + Math.cos(angle) * flower.size;
+              const py = flowerY + Math.sin(angle) * flower.size;
+              ctx.beginPath();
+              ctx.arc(px, py, flower.size * 0.5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            
+            // Center
+            ctx.fillStyle = colors.gold;
+            ctx.beginPath();
+            ctx.arc(flowerX, flowerY, flower.size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+      }
+    }
+    
+    // Initialize sunbeams
+    for (let i = 0; i < 30; i++) {
+      sunbeams.push(new Sunbeam());
+    }
+    
+    // Click handler
+    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('touchstart', handleTouch);
+    
+    function handleClick(e) {
+      initAudio();
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      tryPlant(x, y);
+    }
+    
+    function handleTouch(e) {
+      initAudio();
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const x = e.touches[0].clientX - rect.left;
+      const y = e.touches[0].clientY - rect.top;
+      tryPlant(x, y);
+    }
+    
+    function tryPlant(x, y) {
+      for (let plot of plots) {
+        if (x >= plot.x && x <= plot.x + plot.width &&
+            y >= plot.y && y <= plot.y + plot.height &&
+            !plot.planted) {
+          plot.planted = true;
+          const type = plantTypes[Math.floor(Math.random() * plantTypes.length)];
+          const plant = new Plant(
+            plot.x + plot.width / 2,
+            plot.y,
+            type
+          );
+          plants.push(plant);
+          playTone(330, 0.15);
+          
+          // Particle burst
+          for (let i = 0; i < 10; i++) {
+            steamParticles.push(new SteamParticle(
+              plot.x + plot.width / 2 + (Math.random() - 0.5) * 20,
+              plot.y
+            ));
+          }
+          
+          updateUI();
+          break;
+        }
+      }
+    }
+    
+    function updateUI() {
+      document.getElementById('plantCount').textContent = plants.length;
+      const blooming = plants.filter(p => p.stage === 4).length;
+      document.getElementById('bloomCount').textContent = blooming;
+    }
+    
+    // Animation loop
+    function animate() {
+      // Fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Greenhouse structure
+      drawGreenhouse();
+      
+      // Sunbeams
+      sunbeams.forEach(beam => {
+        beam.update();
+        beam.draw();
+      });
+      
+      // Spawn steam
+      if (Math.random() < 0.3) {
+        const plot = plots[Math.floor(Math.random() * plots.length)];
+        steamParticles.push(new SteamParticle(
+          plot.x + Math.random() * plot.width,
+          plot.y
+        ));
+      }
+      
+      // Steam particles
+      for (let i = steamParticles.length - 1; i >= 0; i--) {
+        const p = steamParticles[i];
+        p.update();
+        p.draw();
+        if (p.life <= 0) {
+          steamParticles.splice(i, 1);
+        }
+      }
+      
+      // Soil plots
+      plots.forEach(plot => {
+        ctx.fillStyle = plot.planted ? '#3a2a1a' : '#4a3a2a';
+        ctx.fillRect(plot.x, plot.y, plot.width, plot.height);
+        ctx.strokeStyle = colors.amber;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(plot.x, plot.y, plot.width, plot.height);
+        
+        // Hover hint
+        if (!plot.planted) {
+          ctx.fillStyle = 'rgba(212, 165, 116, 0.2)';
+          ctx.fillRect(plot.x, plot.y, plot.width, plot.height);
+        }
+      });
+      
+      // Plants
+      plants.forEach(plant => {
+        plant.update();
+        plant.draw();
+      });
+      
+      updateUI();
+      requestAnimationFrame(animate);
+    }
+    
+    function drawGreenhouse() {
+      const paneWidth = canvas.width / 5;
+      const paneHeight = canvas.height * 0.6;
+      
+      // Glass panes
+      for (let i = 0; i < 5; i++) {
+        const x = i * paneWidth;
+        
+        // Vertical lines
+        ctx.strokeStyle = 'rgba(212, 165, 116, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, paneHeight);
+        ctx.stroke();
+        
+        // Glass reflection
+        const gradient = ctx.createLinearGradient(x, 0, x + paneWidth, paneHeight);
+        gradient.addColorStop(0, 'rgba(255, 215, 0, 0.03)');
+        gradient.addColorStop(0.5, 'rgba(45, 149, 150, 0.02)');
+        gradient.addColorStop(1, 'rgba(255, 215, 0, 0.03)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, 0, paneWidth, paneHeight);
+      }
+      
+      // Horizontal beams
+      for (let i = 0; i <= 3; i++) {
+        const y = (i / 3) * paneHeight;
+        ctx.strokeStyle = 'rgba(212, 165, 116, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+}
+      
+      // Floor
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, canvas.height - 200, canvas.width, 200);
+    }
+    
+    animate();
+  </script>
+</body>
+</html>
