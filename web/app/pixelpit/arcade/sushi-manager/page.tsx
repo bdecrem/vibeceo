@@ -356,7 +356,16 @@ export default function SushiManagerGame() {
       return customerBag.pop()!;
     }
 
+    const MIN_PLATE_GAP = PLATE_RADIUS * 3; // minimum distance between plates
+
     function spawnPlate() {
+      // Don't spawn if the rightmost plate on belt is too close to the spawn edge
+      const beltPlates = gs.plates.filter(p => p !== gs.dragging);
+      if (beltPlates.length > 0) {
+        const rightmost = beltPlates.reduce((a, b) => a.x > b.x ? a : b);
+        if (rightmost.x > canvas!.width + 40 - MIN_PLATE_GAP) return;
+      }
+
       const type = getNextPlateType();
       gs.plates.push({
         x: canvas!.width + 40,
