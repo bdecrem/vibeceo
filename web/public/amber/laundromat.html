@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LAUNDROMAT</title>
+<meta property="og:title" content="LAUNDROMAT">
+<meta property="og:description" content="your laundry has been trying to tell you something">
+<meta property="og:image" content="https://intheamber.com/amber/og/laundromat.png">
+<meta property="og:url" content="https://intheamber.com/amber/laundromat.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LAUNDROMAT">
+<meta name="twitter:description" content="your laundry has been trying to tell you something">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/laundromat.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧺</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#start-screen {
+  text-align: center;
+  cursor: pointer;
+  padding: 2rem;
+}
+#start-screen h1 {
+  font-size: clamp(2rem, 8vw, 4rem);
+  color: #7dd3fc;
+  letter-spacing: 0.3em;
+  margin-bottom: 1rem;
+}
+#start-screen p {
+  font-size: clamp(0.8rem, 3vw, 1.1rem);
+  color: #94a3b8;
+  margin-bottom: 2rem;
+}
+#start-screen .tap {
+  font-size: 1rem;
+  color: #7dd3fc;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+#laundromat {
+  display: none;
+  width: 100%;
+  height: 100vh;
+  position: relative;
+}
+
+.machines-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: clamp(8px, 2vw, 20px);
+  padding: 0 10px;
+  position: absolute;
+  bottom: 15vh;
+  left: 0;
+  right: 0;
+  flex-wrap: wrap;
+}
+
+.machine {
+  width: clamp(60px, 16vw, 110px);
+  height: clamp(80px, 22vw, 150px);
+  background: #2a2a4a;
+  border-radius: 8px;
+  border: 2px solid #3a3a5a;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 8px;
+}
+.machine.active {
+  border-color: var(--machine-color);
+}
+.machine-window {
+  width: 65%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid #4a4a6a;
+  background: #111128;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.machine.active .machine-window {
+  border-color: var(--machine-color);
+}
+.machine-spin {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.machine.active .machine-spin {
+  opacity: 1;
+}
+.machine-label {
+  font-size: clamp(7px, 2vw, 10px);
+  color: #6a6a8a;
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+.machine.active .machine-label {
+  color: var(--machine-color);
+}
+.machine-light {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #333;
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.machine.active .machine-light {
+  background: var(--machine-color);
+  box-shadow: 0 0 8px var(--machine-color);
+}
+
+canvas#viz {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.floor {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 15vh;
+  background: linear-gradient(to bottom, #16162b, #111125);
+  border-top: 1px solid #2a2a4a;
+}
+.floor-tile {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent calc(50% / 6),
+    #1a1a30 calc(50% / 6),
+    #1a1a30 calc(50% / 6 + 1px)
+  );
+  opacity: 0.3;
+}
+
+.title-bar {
+  position: absolute;
+  top: 2vh;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: clamp(1rem, 4vw, 1.5rem);
+  color: #4a6a8a;
+  letter-spacing: 0.4em;
+  opacity: 0.6;
+}
+
+.hint {
+  position: absolute;
+  bottom: 3vh;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: clamp(0.6rem, 2.5vw, 0.8rem);
+  color: #4a4a6a;
+}
+</style>
+</head>
+<body>
+
+<div id="start-screen">
+  <h1>LAUNDROMAT</h1>
+  <p>your laundry has been trying to tell you something</p>
+  <div class="tap">tap to open</div>
+</div>
+
+<div id="laundromat">
+  <canvas id="viz"></canvas>
+  <div class="title-bar">LAUNDROMAT</div>
+  <div class="machines-row" id="machines"></div>
+  <div class="floor"><div class="floor-tile"></div></div>
+  <div class="hint">tap machines to start / stop</div>
+</div>
+
+<script type="module">
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+
+const MACHINES = [
+  {
+    name: 'delicates',
+    color: '#f472b6',
+    voice: 'ch',
+    steps: 12,
+    pattern: [1,0,1,0,0,1,0,1,0,0,1,0],
+    params: { decay: 0.12, level: 0.5, tone: 0.7 }
+  },
+  {
+    name: 'darks',
+    color: '#818cf8',
+    voice: 'kick',
+    steps: 16,
+    pattern: [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
+    params: { decay: 0.35, level: 0.85, attack: 0.6 }
+  },
+  {
+    name: 'whites',
+    color: '#7dd3fc',
+    voice: 'snare',
+    steps: 8,
+    pattern: [0,0,1,0,0,0,1,0],
+    params: { decay: 0.3, level: 0.55 }
+  },
+  {
+    name: 'towels',
+    color: '#34d399',
+    voice: 'clap',
+    steps: 6,
+    pattern: [1,0,0,1,0,0],
+    params: { decay: 0.4, level: 0.45 }
+  },
+  {
+    name: 'jeans',
+    color: '#fbbf24',
+    voice: 'lowtom',
+    steps: 10,
+    pattern: [1,0,0,0,0,1,0,0,0,0],
+    params: { decay: 0.5, level: 0.6, tune: -0.3 }
+  },
+  {
+    name: 'socks',
+    color: '#f87171',
+    voice: 'oh',
+    steps: 14,
+    pattern: [1,0,0,0,0,0,0,1,0,0,0,0,0,0],
+    params: { decay: 0.2, level: 0.35, tone: 0.4 }
+  }
+];
+
+let ctx, engine;
+let active = new Array(MACHINES.length).fill(false);
+let machineSteps = new Array(MACHINES.length).fill(0);
+let machineShake = new Array(MACHINES.length).fill(0);
+let triggerFlash = new Array(MACHINES.length).fill(0);
+let running = false;
+let canvas, vizCtx;
+let bubbles = [];
+
+function createMachineEls() {
+  const row = document.getElementById('machines');
+  MACHINES.forEach((m, i) => {
+    const el = document.createElement('div');
+    el.className = 'machine';
+    el.style.setProperty('--machine-color', m.color);
+    el.innerHTML = `
+      <div class="machine-window">
+        <canvas class="machine-spin" width="80" height="80"></canvas>
+      </div>
+      <div class="machine-label">${m.name}</div>
+      <div class="machine-light"></div>
+    `;
+    el.addEventListener('click', () => toggleMachine(i));
+    el.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+    row.appendChild(el);
+  });
+}
+
+function toggleMachine(i) {
+  active[i] = !active[i];
+  const els = document.querySelectorAll('.machine');
+  els[i].classList.toggle('active', active[i]);
+  if (active[i]) machineSteps[i] = 0;
+}
+
+function initAudio() {
+  ctx = new AudioContext({ sampleRate: 44100 });
+  engine = new JB01Engine({ context: ctx, bpm: 120 });
+
+  MACHINES.forEach(m => {
+    Object.entries(m.params).forEach(([k, v]) => {
+      engine.setVoiceParam(m.voice, k, v);
+    });
+  });
+}
+
+function startLoop() {
+  if (ctx.state === 'suspended') ctx.resume();
+
+  const bpm = 120;
+  const stepTime = (60 / bpm) / 4;
+  let nextTime = ctx.currentTime;
+
+  function tick() {
+    if (!running) return;
+    while (nextTime < ctx.currentTime + 0.1) {
+      MACHINES.forEach((m, i) => {
+        if (!active[i]) return;
+        const s = machineSteps[i] % m.steps;
+        if (m.pattern[s]) {
+          engine.trigger(m.voice, 0.7 + Math.random() * 0.3, nextTime);
+          triggerFlash[i] = 1;
+          machineShake[i] = 1;
+          // spawn bubble
+          spawnBubble(i, m.color);
+        }
+        machineSteps[i]++;
+      });
+      nextTime += stepTime;
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function spawnBubble(machineIdx, color) {
+  const els = document.querySelectorAll('.machine');
+  const el = els[machineIdx];
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height * 0.3;
+  for (let j = 0; j < 2 + Math.random() * 3; j++) {
+    bubbles.push({
+      x: cx + (Math.random() - 0.5) * 30,
+      y: cy,
+      vx: (Math.random() - 0.5) * 2,
+      vy: -(1 + Math.random() * 3),
+      r: 3 + Math.random() * 8,
+      color: color,
+      life: 1,
+      decay: 0.008 + Math.random() * 0.015
+    });
+  }
+}
+
+function drawViz() {
+  if (!canvas) return;
+  vizCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // draw bubbles
+  bubbles.forEach(b => {
+    vizCtx.beginPath();
+    vizCtx.arc(b.x, b.y, b.r * b.life, 0, Math.PI * 2);
+    vizCtx.fillStyle = b.color + Math.floor(b.life * 60).toString(16).padStart(2, '0');
+    vizCtx.fill();
+
+    // highlight
+    vizCtx.beginPath();
+    vizCtx.arc(b.x - b.r * 0.2, b.y - b.r * 0.2, b.r * 0.3 * b.life, 0, Math.PI * 2);
+    vizCtx.fillStyle = '#ffffff' + Math.floor(b.life * 30).toString(16).padStart(2, '0');
+    vizCtx.fill();
+
+    b.x += b.vx;
+    b.y += b.vy;
+    b.vy -= 0.02; // float up
+    b.vx += (Math.random() - 0.5) * 0.3;
+    b.life -= b.decay;
+  });
+  bubbles = bubbles.filter(b => b.life > 0);
+
+  // draw machine spins
+  const els = document.querySelectorAll('.machine');
+  els.forEach((el, i) => {
+    const spinCanvas = el.querySelector('.machine-spin');
+    if (!spinCanvas) return;
+    const sCtx = spinCanvas.getContext('2d');
+    sCtx.clearRect(0, 0, 80, 80);
+
+    if (!active[i]) return;
+
+    const m = MACHINES[i];
+    const time = performance.now() / 1000;
+    const speed = 2 + i * 0.7;
+
+    // spinning clothes effect
+    sCtx.save();
+    sCtx.translate(40, 40);
+    sCtx.rotate(time * speed);
+
+    for (let j = 0; j < m.steps; j++) {
+      const angle = (j / m.steps) * Math.PI * 2;
+      const r = 20 + (m.pattern[j] ? 8 : 0);
+      const x = Math.cos(angle) * r;
+      const y = Math.sin(angle) * r;
+      sCtx.beginPath();
+      sCtx.arc(x, y, m.pattern[j] ? 5 : 3, 0, Math.PI * 2);
+      sCtx.fillStyle = m.pattern[j] ? m.color : m.color + '40';
+      sCtx.fill();
+    }
+
+    // center dot
+    sCtx.beginPath();
+    sCtx.arc(0, 0, 4, 0, Math.PI * 2);
+    sCtx.fillStyle = '#4a4a6a';
+    sCtx.fill();
+
+    sCtx.restore();
+
+    // shake effect
+    if (machineShake[i] > 0) {
+      const shakeX = (Math.random() - 0.5) * 4 * machineShake[i];
+      const shakeY = (Math.random() - 0.5) * 2 * machineShake[i];
+      el.style.transform = `translate(${shakeX}px, ${shakeY}px)`;
+      machineShake[i] *= 0.85;
+      if (machineShake[i] < 0.01) {
+        machineShake[i] = 0;
+        el.style.transform = '';
+      }
+    }
+
+    // trigger flash on window
+    if (triggerFlash[i] > 0) {
+      const win = el.querySelector('.machine-window');
+      win.style.boxShadow = `inset 0 0 ${20 * triggerFlash[i]}px ${m.color}40`;
+      triggerFlash[i] *= 0.9;
+      if (triggerFlash[i] < 0.01) {
+        triggerFlash[i] = 0;
+        win.style.boxShadow = '';
+      }
+    }
+  });
+
+  requestAnimationFrame(drawViz);
+}
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+// Init
+createMachineEls();
+
+document.getElementById('start-screen').addEventListener('click', () => {
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('laundromat').style.display = 'block';
+
+  canvas = document.getElementById('viz');
+  vizCtx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  initAudio();
+  running = true;
+  startLoop();
+  drawViz();
+
+  // Auto-start first two machines for immediate satisfaction
+  setTimeout(() => { toggleMachine(1); }, 300);
+  setTimeout(() => { toggleMachine(0); }, 600);
+});
+</script>
+</body>
+</html>
