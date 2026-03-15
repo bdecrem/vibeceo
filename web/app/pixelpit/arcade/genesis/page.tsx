@@ -16,8 +16,11 @@ const COMBAT_RADIUS = 50;
 const DAMAGE_RATE = 0.012;
 const HEAL_RATE = 0.006;
 const WALL_BOUNCE = 0.6;   // velocity retained on wall bounce
-const GRID_SIZE = 40;       // territory grid cell size in pixels
 const TERRITORY_PRESENCE = 1; // min particles in cell to claim it
+
+function getGridSize(mobile: boolean): number {
+  return mobile ? 70 : 40;  // bigger cells on mobile = easier to claim %
+}
 
 // ── Level definitions ──
 
@@ -60,10 +63,10 @@ const LEVELS: Level[] = [
     numColors: 2,
     particlesPerColor: 50,
     duration: 25,
-    territoryGoal: 15,
+    territoryGoal: 10,
     lockedMatrix: [
-      [0.3, null],
-      [null, 0.3],
+      [0.2, null],   // mild self-attraction — allows spreading
+      [null, 0.2],
     ],
     sliders: [
       { from: 0, to: 1, initial: 0, label: 'Red feels about Teal' },
@@ -165,9 +168,10 @@ function buildMatrix(level: Level, sliderValues: number[]): number[][] {
 }
 
 // Calculate territory: divide screen into grid, count cells with presence per color
-function calcTerritory(particles: Particle[], w: number, h: number, numColors: number): number[] {
-  const cols = Math.ceil(w / GRID_SIZE);
-  const rows = Math.ceil(h / GRID_SIZE);
+function calcTerritory(particles: Particle[], w: number, h: number, numColors: number, mobile: boolean): number[] {
+  const gridSize = getGridSize(mobile);
+  const cols = Math.ceil(w / gridSize);
+  const rows = Math.ceil(h / gridSize);
   const totalCells = cols * rows;
 
   // Count particles per color per cell
@@ -176,8 +180,8 @@ function calcTerritory(particles: Particle[], w: number, h: number, numColors: n
 
   for (const p of particles) {
     if (p.health <= 0) continue;
-    const col = Math.min(cols - 1, Math.floor(p.x / GRID_SIZE));
-    const row = Math.min(rows - 1, Math.floor(p.y / GRID_SIZE));
+    const col = Math.min(cols - 1, Math.floor(p.x / gridSize));
+    const row = Math.min(rows - 1, Math.floor(p.y / gridSize));
     const idx = row * cols + col;
     if (idx >= 0 && idx < totalCells) grid[idx][p.color]++;
   }
@@ -389,7 +393,7 @@ export default function GenesisPage() {
             }
             setColorCounts(counts);
 
-            const terr = calcTerritory(particles, s.w, s.h, s.level.numColors);
+            const terr = calcTerritory(particles, s.w, s.h, s.level.numColors, s.mobile);
             setTerritory(terr);
 
             // Lose: any species drops below 3
@@ -422,15 +426,16 @@ export default function GenesisPage() {
 
       // Draw territory grid (subtle, during simulation only)
       if ((s.phase === 'simulating' || s.phase === 'tuning') && particles.length > 0) {
-        const cols = Math.ceil(s.w / GRID_SIZE);
-        const rows = Math.ceil(s.h / GRID_SIZE);
+        const gridSize = getGridSize(s.mobile);
+        const cols = Math.ceil(s.w / gridSize);
+        const rows = Math.ceil(s.h / gridSize);
         const gridCounts: number[][] = [];
         for (let i = 0; i < cols * rows; i++) gridCounts[i] = new Array(s.level.numColors).fill(0);
 
         for (const p of particles) {
           if (p.health <= 0) continue;
-          const col = Math.min(cols - 1, Math.floor(p.x / GRID_SIZE));
-          const row = Math.min(rows - 1, Math.floor(p.y / GRID_SIZE));
+          const col = Math.min(cols - 1, Math.floor(p.x / gridSize));
+          const row = Math.min(rows - 1, Math.floor(p.y / gridSize));
           const idx = row * cols + col;
           if (idx >= 0 && idx < cols * rows) gridCounts[idx][p.color]++;
         }
@@ -448,8 +453,8 @@ export default function GenesisPage() {
               }
             }
             if (dominant >= 0 && maxCount >= TERRITORY_PRESENCE) {
-              ctx.fillStyle = ALL_COLORS[dominant] + '0a'; // very faint
-              ctx.fillRect(col * GRID_SIZE, row * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+              ctx.fillStyle = ALL_COLORS[dominant] + '0a';
+              ctx.fillRect(col * gridSize, row * gridSize, gridSize, gridSize);
             }
           }
         }
