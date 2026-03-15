@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Collective Canvas</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; }
+  
+  /* Title Screen */
+  #title-screen {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, #0a0a2e 0%, #000 70%);
+    transition: opacity 1s ease;
+  }
+  #title-screen.hidden { opacity: 0; pointer-events: none; }
+  #title-screen h1 {
+    font-size: clamp(2rem, 6vw, 4.5rem); font-weight: 200; letter-spacing: 0.3em;
+    background: linear-gradient(135deg, #4df0ff, #c480ff, #ff80d5, #4df0ff);
+    background-size: 300% 300%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    animation: shimmer 4s ease infinite;
+    margin-bottom: 0.5em;
+  }
+  #title-screen p { font-size: 1rem; opacity: 0.5; letter-spacing: 0.15em; margin-bottom: 2em; }
+  #title-screen .credits { font-size: 0.75rem; opacity: 0.3; margin-top: 2em; letter-spacing: 0.1em; }
+  #enter-btn {
+    background: none; border: 1px solid rgba(77,240,255,0.4); color: #4df0ff;
+    padding: 0.8em 3em; font-size: 1.1rem; letter-spacing: 0.3em; cursor: pointer;
+    transition: all 0.3s ease; border-radius: 2px;
+  }
+  #enter-btn:hover { background: rgba(77,240,255,0.1); border-color: #4df0ff; box-shadow: 0 0 30px rgba(77,240,255,0.2); }
+  @keyframes shimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+  /* Nav */
+  #nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    display: flex; justify-content: center; gap: 0;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
+    opacity: 0; transition: opacity 0.5s ease; pointer-events: none;
+  }
+  #nav.visible { opacity: 1; pointer-events: all; }
+  .nav-btn {
+    background: none; border: none; color: rgba(255,255,255,0.5);
+    padding: 1em 2em; font-size: 0.85rem; letter-spacing: 0.15em; cursor: pointer;
+    transition: all 0.3s ease; border-bottom: 2px solid transparent;
+  }
+  .nav-btn:hover { color: #fff; }
+  .nav-btn.active { color: #fff; border-bottom-color: currentColor; }
+  .nav-btn[data-world="0"] { --accent: #c480ff; }
+  .nav-btn[data-world="1"] { --accent: #4df0ff; }
+  .nav-btn[data-world="2"] { --accent: #ff6b35; }
+  .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Worlds */
+  .world-canvas {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    opacity: 0; transition: opacity 1s ease; pointer-events: none;
+  }
+  .world-canvas.active { opacity: 1; pointer-events: all; }
+
+  /* World label */
+  #world-label {
+    position: fixed; bottom: 2em; left: 50%; transform: translateX(-50%);
+    font-size: 0.8rem; letter-spacing: 0.2em; opacity: 0;
+    transition: opacity 0.5s ease; z-index: 50; pointer-events: none;
+    text-shadow: 0 0 20px rgba(0,0,0,0.8);
+  }
+  #world-label.visible { opacity: 0.4; }
+
+  /* Hint */
+  #hint {
+    position: fixed; bottom: 1em; right: 1.5em; font-size: 0.7rem;
+    opacity: 0; transition: opacity 0.5s ease; z-index: 50;
+    color: rgba(255,255,255,0.25); pointer-events: none;
+  }
+  #hint.visible { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- Title Screen -->
+<div id="title-screen">
+  <h1>THE COLLECTIVE CANVAS</h1>
+  <p>THREE MINDS · THREE WORLDS · ONE EXPERIENCE</p>
+  <button id="enter-btn">ENTER</button>
+  <div class="credits">AMBER 💎 · MAVE 🌊 · HALLMAN 🔥</div>
+</div>
+
+<!-- Navigation -->
+<nav id="nav">
+  <button class="nav-btn active" data-world="0">💎 CRYSTAL CAVERN</button>
+  <button class="nav-btn" data-world="1">🌊 OCEAN DEPTHS</button>
+  <button class="nav-btn" data-world="2">🔥 SOLAR FORGE</button>
+</nav>
+
+<!-- Three canvases -->
+<canvas id="world0" class="world-canvas active"></canvas>
+<canvas id="world1" class="world-canvas"></canvas>
+<canvas id="world2" class="world-canvas"></canvas>
+
+<div id="world-label">💎 CRYSTAL CAVERN — by Amber</div>
+<div id="hint">← → or 1 2 3 to switch worlds</div>
+
+<script>
+// ============================================================
+// NAVIGATION & FRAMEWORK
+// ============================================================
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+let currentWorld = 0;
+let mouseX = 0, mouseY = 0;
+let entered = false;
+let W, H;
+
+const worldMeta = [
+  { name: '💎 CRYSTAL CAVERN', by: 'Amber', accent: '#c480ff' },
+  { name: '🌊 OCEAN DEPTHS', by: 'Mave', accent: '#4df0ff' },
+  { name: '🔥 SOLAR FORGE', by: 'Hallman', accent: '#ff6b35' },
+];
+
+function resize() {
+  W = window.innerWidth; H = window.innerHeight;
+  $$('.world-canvas').forEach(c => { c.width = W; c.height = H; });
+  crystalCavern.resize();
+  oceanDepths.resize();
+  solarForge.resize();
+}
+
+function switchWorld(idx) {
+  if (idx < 0 || idx > 2 || idx === currentWorld) return;
+  $$('.world-canvas').forEach((c, i) => c.classList.toggle('active', i === idx));
+  $$('.nav-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  $('#world-label').textContent = `${worldMeta[idx].name} — by ${worldMeta[idx].by}`;
+  currentWorld = idx;
+}
+
+$('#enter-btn').addEventListener('click', () => {
+  entered = true;
+  $('#title-screen').classList.add('hidden');
+  $('#nav').classList.add('visible');
+  $('#world-label').classList.add('visible');
+  $('#hint').classList.add('visible');
+  setTimeout(() => { $('#hint').classList.remove('visible'); }, 5000);
+  // Resume audio context if needed
+  if (typeof AudioContext !== 'undefined') {
+    const ac = new AudioContext(); ac.resume(); ac.close();
+  }
+});
+
+$$('.nav-btn').forEach(b => b.addEventListener('click', () => switchWorld(+b.dataset.world)));
+
+window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+window.addEventListener('resize', resize);
+window.addEventListener('keydown', e => {
+  if (e.key === '1') switchWorld(0);
+  else if (e.key === '2') switchWorld(1);
+  else if (e.key === '3') switchWorld(2);
+  else if (e.key === 'ArrowRight') switchWorld(Math.min(2, currentWorld + 1));
+  else if (e.key === 'ArrowLeft') switchWorld(Math.max(0, currentWorld - 1));
+});
+
+// Click handler for worlds that support it
+window.addEventListener('click', e => {
+  if (!entered) return;
+  if (currentWorld === 0) crystalCavern.click(e.clientX, e.clientY);
+  if (currentWorld === 2) solarForge.click(e.clientX, e.clientY);
+});
+
+// ============================================================
+// WORLD 1: CRYSTAL CAVERN — by Amber 💎
+// ============================================================
+const crystalCavern = (() => {
+  const canvas = $('#world0');
+  const ctx = canvas.getContext('2d');
+  let crystals = [], sparkles = [], ambientParticles = [], burstParticles = [];
+
+  const PALETTE = ['#c480ff','#a855f7','#7c3aed','#e879f9','#d946ef','#818cf8'];
+  const GLOW = ['rgba(196,128,255,0.3)','rgba(168,85,247,0.3)','rgba(232,121,249,0.3)'];
+
+  class Crystal {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * W;
+      this.y = Math.random() * H;
+      this.size = 15 + Math.random() * 45;
+      this.sides = 4 + Math.floor(Math.random() * 4);
+      this.rotation = Math.random() * Math.PI * 2;
+      this.rotSpeed = (Math.random() - 0.5) * 0.005;
+      this.color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+      this.glowColor = GLOW[Math.floor(Math.random() * GLOW.length)];
+      this.pulsePhase = Math.random() * Math.PI * 2;
+      this.baseOpacity = 0.3 + Math.random() * 0.4;
+    }
+    update(t) {
+      this.rotation += this.rotSpeed;
+      const dx = this.x - mouseX, dy = this.y - mouseY;
+      this.dist = Math.sqrt(dx*dx + dy*dy);
+      this.proximity = Math.max(0, 1 - this.dist / 200);
+      this.pulse = Math.sin(t * 2 + this.pulsePhase) * 0.2 + 0.8;
+    }
+    draw(ctx, t) {
+      const op = this.baseOpacity + this.proximity * 0.5;
+      const sz = this.size * (this.pulse + this.proximity * 0.3);
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rotation);
+      ctx.globalAlpha = op;
+      // Glow
+      if (this.proximity > 0.05) {
+        const g = ctx.createRadialGradient(0,0,sz*0.3,0,0,sz*2.5);
+        g.addColorStop(0, this.glowColor);
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(0,0,sz*2.5,0,Math.PI*2); ctx.fill();
+      }
+      // Crystal shape
+      ctx.beginPath();
+      for (let i = 0; i < this.sides; i++) {
+        const a = (i / this.sides) * Math.PI * 2 - Math.PI/2;
+        const r = i % 2 === 0 ? sz : sz * 0.5;
+        ctx[i===0?'moveTo':'lineTo'](Math.cos(a)*r, Math.sin(a)*r);
+      }
+      ctx.closePath();
+      ctx.fillStyle = this.color;
+      ctx.globalAlpha = op * 0.25;
+      ctx.fill();
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = op * 0.8;
+      ctx.stroke();
+      // Inner lines
+      ctx.globalAlpha = op * 0.15;
+      ctx.beginPath();
+      for (let i = 0; i < this.sides; i++) {
+        const a = (i / this.sides) * Math.PI * 2 - Math.PI/2;
+        ctx.moveTo(0,0);
+        ctx.lineTo(Math.cos(a)*sz*0.8, Math.sin(a)*sz*0.8);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  class Sparkle {
+    constructor(x, y) {
+      this.x = x; this.y = y;
+      this.life = 1; this.decay = 0.02 + Math.random() * 0.03;
+      this.size = 1 + Math.random() * 2;
+      this.vx = (Math.random()-0.5)*0.5; this.vy = -Math.random()*0.5-0.2;
+    }
+    update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
+    draw(ctx) {
+      ctx.save();
+      ctx.globalAlpha = this.life * 0.8;
+      ctx.fillStyle = '#e8b4ff';
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  class AmbientP {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random()*W; this.y = H + 10;
+      this.size = 0.5+Math.random()*1.5; this.speed = 0.2+Math.random()*0.4;
+      this.drift = (Math.random()-0.5)*0.2; this.opacity = 0.1+Math.random()*0.2;
+    }
+    update() { this.y -= this.speed; this.x += this.drift; if (this.y < -10) this.reset(); }
+    draw(ctx) {
+      ctx.save(); ctx.globalAlpha = this.opacity;
+      ctx.fillStyle = '#c480ff';
+      ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function init() {
+    crystals = []; sparkles = []; ambientParticles = []; burstParticles = [];
+    const n = Math.max(8, Math.floor(W*H/40000));
+    for (let i=0;i<n;i++) crystals.push(new Crystal());
+    for (let i=0;i<60;i++) ambientParticles.push(new AmbientP());
+  }
+
+  function click(x,y) {
+    for (let i=0;i<30;i++) {
+      const s = new Sparkle(x,y);
+      s.vx = (Math.random()-0.5)*4; s.vy = (Math.random()-0.5)*4;
+      s.decay = 0.01+Math.random()*0.02; s.size = 1+Math.random()*3;
+      burstParticles.push(s);
+    }
+  }
+
+  function update(t) {
+    // Background
+    const bg = ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#0a0015'); bg.addColorStop(0.5,'#120025'); bg.addColorStop(1,'#08001a');
+    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+
+    ambientParticles.forEach(p => { p.update(); p.draw(ctx); });
+    crystals.forEach(c => { c.update(t); c.draw(ctx,t); });
+
+    // Mouse sparkle trail
+    if (Math.random() < 0.3) sparkles.push(new Sparkle(mouseX+(Math.random()-0.5)*10, mouseY+(Math.random()-0.5)*10));
+    sparkles.forEach(s => { s.update(); s.draw(ctx); });
+    sparkles = sparkles.filter(s => s.life > 0);
+
+    burstParticles.forEach(s => { s.update(); s.draw(ctx); });
+    burstParticles = burstParticles.filter(s => s.life > 0);
+  }
+
+  function resizeFn() { init(); }
+  return { update, resize: resizeFn, click };
+})();
+
+// ============================================================
+// WORLD 2: OCEAN DEPTHS — by Mave 🌊
+// ============================================================
+const oceanDepths = (() => {
+  const canvas = $('#world1');
+  const ctx = canvas.getContext('2d');
+  let jellies=[], plankton=[], bubbles=[], time=0;
+
+  const COLORS = {
+    jellyBody: ['rgba(80,180,255,0.15)','rgba(120,220,255,0.1)','rgba(200,100,255,0.12)'],
+    jellyGlow: ['#4df0ff','#80ffea','#c480ff','#ff80d5'],
+    plankton: ['#4df0ff','#80ffea','#40e0d0','#7fffd4','#c480ff'],
+  };
+
+  class Jellyfish {
+    constructor(init) {
+      this.x = Math.random()*W; this.y = init ? Math.random()*H : H+80;
+      this.size = 20+Math.random()*40; this.speed = 0.15+Math.random()*0.3;
+      this.wobbleSpeed = 0.5+Math.random(); this.wobbleAmp = 15+Math.random()*25;
+      this.pulseSpeed = 1+Math.random()*2; this.tentCount = 5+Math.floor(Math.random()*4);
+      this.ci = Math.floor(Math.random()*4); this.phase = Math.random()*Math.PI*2;
+      this.opacity = 0.4+Math.random()*0.4;
+    }
+    update(spd) {
+      this.y -= this.speed*spd;
+      this.x += Math.sin(time*this.wobbleSpeed+this.phase)*0.3;
+      const dx=this.x-mouseX, dy=this.y-mouseY, d=Math.sqrt(dx*dx+dy*dy);
+      if(d<150){this.x+=dx/d*0.5;this.y+=dy/d*0.3;}
+      if(this.y<-this.size*3){this.x=Math.random()*W;this.y=H+80;}
+    }
+    draw() {
+      const pulse=Math.sin(time*this.pulseSpeed+this.phase)*0.3+0.7;
+      const sz=this.size*pulse;
+      ctx.save(); ctx.translate(this.x,this.y); ctx.globalAlpha=this.opacity;
+      // Glow
+      const g=ctx.createRadialGradient(0,0,sz*0.2,0,0,sz*2);
+      g.addColorStop(0,COLORS.jellyGlow[this.ci]); g.addColorStop(1,'transparent');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,sz*2,0,Math.PI*2); ctx.fill();
+      // Bell
+      ctx.fillStyle=COLORS.jellyBody[this.ci%3];
+      ctx.beginPath(); ctx.ellipse(0,0,sz,sz*0.7,0,Math.PI,0); ctx.fill();
+      // Inner
+      ctx.strokeStyle=COLORS.jellyGlow[this.ci]; ctx.lineWidth=1; ctx.globalAlpha=this.opacity*0.5;
+      ctx.beginPath(); ctx.ellipse(0,-sz*0.1,sz*0.6,sz*0.4,0,Math.PI,0); ctx.stroke();
+      // Tentacles
+      ctx.globalAlpha=this.opacity*0.6; ctx.strokeStyle=COLORS.jellyGlow[this.ci]; ctx.lineWidth=1.5;
+      for(let i=0;i<this.tentCount;i++){
+        const tx=((i/(this.tentCount-1))-0.5)*sz*1.6;
+        const tl=sz*(1.2+Math.random()*0.3);
+        ctx.beginPath(); ctx.moveTo(tx,0);
+        ctx.bezierCurveTo(tx+Math.sin(time*2+i)*10,tl*0.4,tx+Math.sin(time*1.5+i+1)*15,tl*0.7,tx+Math.sin(time*1.8+i*0.7)*12,tl);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  class Plnk {
+    constructor(init) {
+      this.x=Math.random()*W; this.y=init?Math.random()*H:H+10;
+      this.size=1+Math.random()*3; this.speed=0.05+Math.random()*0.15;
+      this.drift=(Math.random()-0.5)*0.3;
+      this.color=COLORS.plankton[Math.floor(Math.random()*5)];
+      this.twinkle=2+Math.random()*4; this.phase=Math.random()*Math.PI*2;
+      this.baseOp=0.2+Math.random()*0.5;
+    }
+    update(spd) {
+      this.y-=this.speed*spd; this.x+=this.drift+Math.sin(time*0.5+this.phase)*0.1;
+      const dx=this.x-mouseX,dy=this.y-mouseY; this.prox=Math.max(0,1-Math.sqrt(dx*dx+dy*dy)/200);
+      if(this.y<-10){this.x=Math.random()*W;this.y=H+10;}
+    }
+    draw() {
+      const tw=Math.sin(time*this.twinkle+this.phase)*0.3+0.7;
+      const op=(this.baseOp+this.prox*0.5)*tw;
+      ctx.save(); ctx.globalAlpha=op;
+      if(this.prox>0.1){
+        const g=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.size*6);
+        g.addColorStop(0,this.color); g.addColorStop(1,'transparent');
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(this.x,this.y,this.size*6,0,Math.PI*2); ctx.fill();
+      }
+      ctx.fillStyle=this.color;
+      ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  class Bub {
+    constructor(init) {
+      this.x=Math.random()*W; this.y=init?Math.random()*H:H+20;
+      this.size=3+Math.random()*8; this.speed=0.3+Math.random()*0.5; this.wobble=Math.random()*Math.PI*2;
+    }
+    update(spd) {
+      this.y-=this.speed*spd; this.x+=Math.sin(time*1.5+this.wobble)*0.4;
+      if(this.y<-20){this.x=Math.random()*W;this.y=H+20;}
+    }
+    draw() {
+      ctx.save(); ctx.strokeStyle='rgba(150,220,255,0.15)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.stroke();
+      ctx.fillStyle='rgba(180,230,255,0.08)';
+      ctx.beginPath(); ctx.arc(this.x-this.size*0.25,this.y-this.size*0.25,this.size*0.35,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function init() {
+    jellies=[]; plankton=[]; bubbles=[];
+    const jn=Math.max(5,Math.floor(W*H/80000));
+    const pn=Math.max(80,Math.floor(W*H/4000));
+    const bn=Math.max(15,Math.floor(W*H/25000));
+    for(let i=0;i<jn;i++) jellies.push(new Jellyfish(true));
+    for(let i=0;i<pn;i++) plankton.push(new Plnk(true));
+    for(let i=0;i<bn;i++) bubbles.push(new Bub(true));
+  }
+
+  function update(dt) {
+    time+=dt*0.001;
+    const spd=dt/16;
+    // Background
+    const bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'rgb(5,10,30)'); bg.addColorStop(0.5,'rgb(3,8,40)'); bg.addColorStop(1,'rgb(1,4,20)');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    // Caustics
+    ctx.save(); ctx.globalAlpha=0.03;
+    for(let i=0;i<5;i++){
+      const rx=W*0.15+Math.sin(time*0.3+i*1.2)*W*0.3;
+      const rw=40+Math.sin(time*0.5+i)*20;
+      const g2=ctx.createLinearGradient(rx,0,rx,H*0.6);
+      g2.addColorStop(0,'#4df0ff'); g2.addColorStop(1,'transparent');
+      ctx.fillStyle=g2; ctx.beginPath();
+      ctx.moveTo(rx-rw,0); ctx.lineTo(rx+rw,0);
+      ctx.lineTo(rx+rw*0.3+Math.sin(time+i)*10,H*0.6);
+      ctx.lineTo(rx-rw*0.3+Math.sin(time+i)*10,H*0.6); ctx.fill();
+    }
+    ctx.restore();
+    bubbles.forEach(b=>{b.update(spd);b.draw();});
+    plankton.forEach(p=>{p.update(spd);p.draw();});
+    jellies.forEach(j=>{j.update(spd);j.draw();});
+    // Mouse glow
+    ctx.save();
+    const mg=ctx.createRadialGradient(mouseX,mouseY,0,mouseX,mouseY,120);
+    mg.addColorStop(0,'rgba(77,240,255,0.06)'); mg.addColorStop(1,'transparent');
+    ctx.fillStyle=mg; ctx.beginPath(); ctx.arc(mouseX,mouseY,120,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  return { update, resize: init };
+})();
+
+// ============================================================
+// WORLD 3: SOLAR FORGE — by Hallman 🔥
+// (Built by Mave on Hallman's behalf)
+// ============================================================
+const solarForge = (() => {
+  const canvas = $('#world2');
+  const ctx = canvas.getContext('2d');
+  let particles=[], flares=[], embers=[], time=0;
+
+  const FIRE = ['#ff6b35','#ff8c42','#ffa559','#ffd700','#fff176','#ff4500','#ff1744'];
+
+  class SunParticle {
+    constructor() { this.reset(); }
+    reset() {
+      const a=Math.random()*Math.PI*2;
+      const r=50+Math.random()*120;
+      this.cx=W/2; this.cy=H/2;
+      this.angle=a; this.radius=r; this.orbitSpeed=0.2+Math.random()*0.5;
+      this.size=2+Math.random()*5; this.pulseSpeed=1+Math.random()*3;
+      this.phase=Math.random()*Math.PI*2;
+      this.color=FIRE[Math.floor(Math.random()*FIRE.length)];
+      this.opacity=0.4+Math.random()*0.5;
+    }
+    update(t) {
+      this.angle+=this.orbitSpeed*0.01;
+      const wobble=Math.sin(t*this.pulseSpeed+this.phase)*20;
+      this.x=this.cx+Math.cos(this.angle)*(this.radius+wobble);
+      this.y=this.cy+Math.sin(this.angle)*(this.radius+wobble);
+      // Mouse gravity
+      const dx=mouseX-this.x, dy=mouseY-this.y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<250&&d>1){this.x+=dx/d*1.5;this.y+=dy/d*1.5;}
+    }
+    draw() {
+      const p=Math.sin(time*this.pulseSpeed+this.phase)*0.3+0.7;
+      ctx.save(); ctx.globalAlpha=this.opacity*p;
+      const g=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.size*3);
+      g.addColorStop(0,this.color); g.addColorStop(1,'transparent');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(this.x,this.y,this.size*3,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=this.color;
+      ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  class Flare {
+    constructor(x,y) {
+      this.x=x; this.y=y;
+      this.vx=(Math.random()-0.5)*6; this.vy=(Math.random()-0.5)*6-2;
+      this.life=1; this.decay=0.008+Math.random()*0.015;
+      this.size=2+Math.random()*4;
+      this.color=FIRE[Math.floor(Math.random()*FIRE.length)];
+    }
+    update() { this.x+=this.vx; this.y+=this.vy; this.vy+=0.02; this.life-=this.decay; this.vx*=0.99; }
+    draw() {
+      ctx.save(); ctx.globalAlpha=this.life;
+      ctx.fillStyle=this.color; ctx.shadowColor=this.color; ctx.shadowBlur=10;
+      ctx.beginPath(); ctx.arc(this.x,this.y,this.size*this.life,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  class Ember {
+    constructor() { this.reset(true); }
+    reset(init) {
+      this.x=Math.random()*W; this.y=init?Math.random()*H:H+10;
+      this.size=0.5+Math.random()*2; this.speed=0.3+Math.random()*0.8;
+      this.drift=(Math.random()-0.5)*0.5; this.opacity=0.2+Math.random()*0.4;
+      this.flicker=2+Math.random()*4; this.phase=Math.random()*Math.PI*2;
+    }
+    update(spd) {
+      this.y-=this.speed*spd; this.x+=this.drift+Math.sin(time*0.8+this.phase)*0.3;
+      if(this.y<-10) this.reset(false);
+    }
+    draw() {
+      const f=Math.sin(time*this.flicker+this.phase)*0.4+0.6;
+      ctx.save(); ctx.globalAlpha=this.opacity*f;
+      ctx.fillStyle=FIRE[Math.floor(Math.random()*3)];
+      ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function init() {
+    particles=[]; embers=[]; flares=[];
+    const pn=Math.max(100,Math.floor(W*H/5000));
+    const en=Math.max(40,Math.floor(W*H/15000));
+    for(let i=0;i<pn;i++) particles.push(new SunParticle());
+    for(let i=0;i<en;i++) embers.push(new Ember());
+  }
+
+  function click(x,y) {
+    for(let i=0;i<40;i++) flares.push(new Flare(x,y));
+  }
+
+  function update(dt) {
+    time+=dt*0.001;
+    const spd=dt/16;
+
+    // Background — dark with warm tint
+    const bg=ctx.createRadialGradient(W/2,H/2,50,W/2,H/2,Math.max(W,H)*0.7);
+    bg.addColorStop(0,'rgb(40,15,5)'); bg.addColorStop(0.4,'rgb(15,5,2)'); bg.addColorStop(1,'rgb(5,2,0)');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+    // Central sun glow
+    ctx.save();
+    const sunPulse=Math.sin(time*0.8)*0.15+0.85;
+    const sg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,180*sunPulse);
+    sg.addColorStop(0,'rgba(255,215,0,0.25)'); sg.addColorStop(0.3,'rgba(255,107,53,0.12)');
+    sg.addColorStop(0.6,'rgba(255,69,0,0.05)'); sg.addColorStop(1,'transparent');
+    ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(W/2,H/2,180*sunPulse,0,Math.PI*2); ctx.fill();
+    // Core
+    const core=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,35);
+    core.addColorStop(0,'rgba(255,255,220,0.9)'); core.addColorStop(0.5,'rgba(255,200,50,0.4)');
+    core.addColorStop(1,'rgba(255,107,53,0.1)');
+    ctx.fillStyle=core; ctx.beginPath(); ctx.arc(W/2,H/2,35,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // Solar flare arcs
+    ctx.save(); ctx.globalAlpha=0.06; ctx.strokeStyle='#ff6b35'; ctx.lineWidth=2;
+    for(let i=0;i<3;i++){
+      const a=time*0.2+i*Math.PI*2/3;
+      const r=100+Math.sin(time+i)*30;
+      ctx.beginPath();
+      ctx.arc(W/2,H/2,r,a,a+0.8);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    embers.forEach(e=>{e.update(spd);e.draw();});
+    particles.forEach(p=>{p.update(time);p.draw();});
+
+    flares.forEach(f=>{f.update();f.draw();});
+    flares=flares.filter(f=>f.life>0);
+
+    // Mouse heat distortion
+    ctx.save();
+    const mhg=ctx.createRadialGradient(mouseX,mouseY,0,mouseX,mouseY,100);
+    mhg.addColorStop(0,'rgba(255,107,53,0.08)'); mhg.addColorStop(1,'transparent');
+    ctx.fillStyle=mhg; ctx.beginPath(); ctx.arc(mouseX,mouseY,100,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  return { update, resize: init, click };
+})();
+
+// ============================================================
+// MAIN LOOP
+// ============================================================
+let lastTime = 0;
+resize();
+
+function loop(ts) {
+  const dt = Math.min(ts - (lastTime || ts), 50);
+  lastTime = ts;
+
+  if (entered) {
+    // Update all worlds (only active one is visible via CSS)
+    if (currentWorld === 0) crystalCavern.update(ts / 1000);
+    if (currentWorld === 1) oceanDepths.update(dt);
+    if (currentWorld === 2) solarForge.update(dt);
+  }
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
