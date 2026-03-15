@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>CHIMES - Wind chime music machine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHIMES — Wind chimes that sway and sing</title>
   
-  <!-- OG Tags -->
-  <meta property="og:title" content="CHIMES">
-  <meta property="og:description" content="Wind chime music machine">
+  <!-- OG tags -->
+  <meta property="og:title" content="CHIMES — Wind chimes that sway and sing">
+  <meta property="og:description" content="Hanging tubes sway in the breeze and ring with gentle bell tones. Tap to create wind gusts. An Amber creation.">
   <meta property="og:image" content="https://intheamber.com/amber/chimes-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/chimes.html">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="CHIMES">
-  <meta name="twitter:description" content="Wind chime music machine">
+  <meta name="twitter:title" content="CHIMES — Wind chimes that sway and sing">
+  <meta name="twitter:description" content="Hanging tubes sway in the breeze and ring with gentle bell tones. Tap to create wind gusts.">
   <meta name="twitter:image" content="https://intheamber.com/amber/chimes-og.png">
 
   <style>
@@ -21,177 +21,219 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
     }
-    
     body {
       background: #000;
-      overflow: hidden;
-      font-family: 'Space Mono', monospace;
       color: #D4A574;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
       touch-action: none;
     }
-    
-    canvas {
+    #canvas {
       display: block;
-      width: 100vw;
-      height: 100vh;
+      cursor: pointer;
     }
-    
-    #info {
-      position: absolute;
+    #ui {
+      position: fixed;
       top: 20px;
       left: 20px;
       font-size: 14px;
-      color: #D4A574;
-      opacity: 0.8;
-      pointer-events: none;
-      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+      z-index: 10;
+      text-shadow: 0 0 10px rgba(0,0,0,0.8);
     }
-    
-    #startBtn {
-      position: absolute;
+    #play-btn {
+      position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      background: #D4A574;
+      color: #000;
+      border: none;
       padding: 20px 40px;
       font-size: 24px;
-      font-family: 'Space Mono', monospace;
-      background: rgba(212, 165, 116, 0.1);
-      color: #D4A574;
-      border: 2px solid #D4A574;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
       cursor: pointer;
-      text-transform: uppercase;
-      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
-      transition: all 0.3s;
+      z-index: 100;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+      transition: all 0.2s;
     }
-    
-    #startBtn:hover {
-      background: rgba(212, 165, 116, 0.2);
-      box-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
+    #play-btn:hover {
+      background: #FFD700;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
     }
-    
+    .hidden {
+      display: none;
+    }
+    #title {
+      font-size: 32px;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      margin-bottom: 10px;
+    }
+    #subtitle {
+      color: #2D9596;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
     #stats {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      font-size: 12px;
       color: #D4A574;
-      opacity: 0.6;
-      pointer-events: none;
+      font-size: 13px;
+      line-height: 1.6;
     }
   </style>
 </head>
 <body>
   <canvas id="canvas"></canvas>
   
-  <div id="info">
-    CHIMES<br>
-    <span style="font-size: 11px; opacity: 0.7;">Tap for wind gusts</span>
-  </div>
+  <button id="play-btn">LISTEN</button>
   
-  <div id="stats">
-    Chimes: <span id="chimeCount">8</span> • 
-    Collisions: <span id="collisionCount">0</span>
+  <div id="ui" class="hidden">
+    <div id="title">CHIMES</div>
+    <div id="subtitle">tap for wind gusts</div>
+    <div id="stats">
+      <div>chimes: <span id="chime-count">7</span></div>
+      <div>rings: <span id="ring-count">0</span></div>
+      <div>wind: <span id="wind-status">gentle breeze</span></div>
+    </div>
   </div>
-  
-  <button id="startBtn">START</button>
 
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    let audioCtx;
-    let started = false;
-    let collisionCount = 0;
-
-    // Resize canvas
+    const playBtn = document.getElementById('play-btn');
+    const ui = document.getElementById('ui');
+    
+    let W, H;
     function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
     }
     resize();
     window.addEventListener('resize', resize);
 
+    // Audio context
+    let audioCtx;
+    let ringCount = 0;
+
+    // Chime colors
+    const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#FF69B4', '#FF7F50', '#00CED1'];
+
     // Chime class
     class Chime {
-      constructor(x, pitch, color) {
+      constructor(x, length, color, note) {
         this.x = x;
-        this.pitch = pitch; // frequency
+        this.y = 100; // hanging point
+        this.length = length;
         this.color = color;
-        this.angle = (Math.random() - 0.5) * 0.1; // starting angle
-        this.velocity = 0;
-        this.length = canvas.height * 0.5;
-        this.width = 20;
+        this.note = note; // frequency in Hz
+        this.angle = (Math.random() - 0.5) * 0.1; // initial sway angle
+        this.angularVel = 0;
+        this.width = 8;
+        this.glowing = false;
+        this.glowTime = 0;
+        
+        // Pendulum properties
+        this.gravity = 0.0003;
         this.damping = 0.98;
-        this.lastCollision = 0;
+        this.windForce = 0;
       }
 
-      update(windForce = 0) {
+      update() {
         // Apply wind force
-        const torque = windForce * 0.001;
-        this.velocity += torque;
-        
-        // Apply gentle random wind
-        this.velocity += (Math.random() - 0.5) * 0.0002;
-        
-        // Restoring force (pendulum physics)
-        const restoring = -0.001 * this.angle;
-        this.velocity += restoring;
-        
-        // Apply damping
-        this.velocity *= this.damping;
-        
-        // Update angle
-        this.angle += this.velocity;
-        
-        // Limit angle
-        this.angle = Math.max(-0.3, Math.min(0.3, this.angle));
+        const angularAcc = (-this.gravity * Math.sin(this.angle) / this.length) + this.windForce;
+        this.angularVel += angularAcc;
+        this.angularVel *= this.damping;
+        this.angle += this.angularVel;
+
+        // Decay wind force
+        this.windForce *= 0.95;
+
+        // Decay glow
+        if (this.glowing) {
+          this.glowTime--;
+          if (this.glowTime <= 0) {
+            this.glowing = false;
+          }
+        }
+      }
+
+      applyWind(force) {
+        this.windForce += force;
+      }
+
+      getBottomPos() {
+        return {
+          x: this.x + Math.sin(this.angle) * this.length,
+          y: this.y + Math.cos(this.angle) * this.length
+        };
       }
 
       draw() {
-        const topX = this.x;
-        const topY = 50;
-        const bottomX = this.x + Math.sin(this.angle) * this.length;
-        const bottomY = topY + Math.cos(this.angle) * this.length;
+        ctx.save();
         
-        // Draw string
+        // Draw hanging line
         ctx.strokeStyle = 'rgba(212, 165, 116, 0.3)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(topX, topY);
-        ctx.lineTo(bottomX, bottomY);
+        ctx.moveTo(this.x, this.y);
+        const bottom = this.getBottomPos();
+        ctx.lineTo(bottom.x, bottom.y);
         ctx.stroke();
-        
+
         // Draw chime tube
-        ctx.save();
-        ctx.translate(bottomX, bottomY);
+        ctx.translate(bottom.x, bottom.y);
         ctx.rotate(this.angle);
         
-        // Gradient
-        const gradient = ctx.createLinearGradient(0, 0, 0, 100);
-        gradient.addColorStop(0, this.color);
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+        if (this.glowing) {
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = this.color;
+        }
         
-        ctx.fillStyle = gradient;
-        ctx.fillRect(-this.width / 2, 0, this.width, 100);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.width/2, 0, this.width, 40);
         
-        // Glow
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = this.color;
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(-this.width / 2, 0, this.width, 100);
+        // Draw highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillRect(-this.width/2, 0, 2, 40);
         
         ctx.restore();
+
+        // Glow particles
+        if (this.glowing && Math.random() < 0.3) {
+          particles.push(new Particle(bottom.x, bottom.y, this.color));
+        }
       }
 
-      getBottomX() {
-        return this.x + Math.sin(this.angle) * this.length;
-      }
+      ring() {
+        if (!audioCtx) return;
+        
+        this.glowing = true;
+        this.glowTime = 30;
+        ringCount++;
+        document.getElementById('ring-count').textContent = ringCount;
 
-      checkCollision(other) {
-        const dist = Math.abs(this.getBottomX() - other.getBottomX());
-        return dist < (this.width + other.width) / 2;
+        // Play bell tone
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'triangle';
+        osc.frequency.value = this.note;
+        
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.0);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 2.1);
+
+        // Spawn particles
+        for (let i = 0; i < 8; i++) {
+          const bottom = this.getBottomPos();
+          particles.push(new Particle(bottom.x, bottom.y, this.color));
+        }
       }
     }
 
@@ -201,248 +243,159 @@
         this.x = x;
         this.y = y;
         this.vx = (Math.random() - 0.5) * 2;
-        this.vy = (Math.random() - 0.5) * 2;
-        this.life = 1;
+        this.vy = (Math.random() - 0.5) * 2 - 1;
+        this.life = 60;
+        this.maxLife = 60;
         this.color = color;
+        this.size = Math.random() * 3 + 2;
       }
 
       update() {
         this.x += this.vx;
         this.y += this.vy;
-        this.life -= 0.02;
+        this.vy += 0.05; // gravity
+        this.life--;
       }
 
       draw() {
-        ctx.fillStyle = this.color.replace('1)', `${this.life})`);
+        const alpha = this.life / this.maxLife;
+        ctx.fillStyle = this.color.replace(')', `, ${alpha})`).replace('rgb', 'rgba').replace('#', 'rgba(');
+        
+        // Convert hex to rgba if needed
+        if (this.color.startsWith('#')) {
+          const r = parseInt(this.color.slice(1, 3), 16);
+          const g = parseInt(this.color.slice(3, 5), 16);
+          const b = parseInt(this.color.slice(5, 7), 16);
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b},${alpha})`;
+        }
+        
         ctx.beginPath();
-        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
       }
-    }
 
-    // Initialize chimes
-    const chimes = [];
-    const colors = [
-      'rgba(255, 215, 0, 1)', // gold
-      'rgba(212, 165, 116, 1)', // amber
-      'rgba(45, 149, 150, 1)', // teal
-      'rgba(123, 104, 238, 1)', // violet
-      'rgba(192, 192, 192, 1)', // silver
-      'rgba(255, 182, 193, 1)', // pink
-      'rgba(255, 127, 80, 1)', // coral
-      'rgba(0, 191, 255, 1)', // cyan
-    ];
-
-    // D minor pentatonic frequencies
-    const scale = [293.66, 329.63, 349.23, 440, 493.88, 587.33, 659.25, 698.46];
-
-    function initChimes() {
-      const spacing = canvas.width / 9;
-      for (let i = 0; i < 8; i++) {
-        const x = spacing * (i + 1);
-        const pitch = scale[i];
-        const color = colors[i];
-        chimes.push(new Chime(x, pitch, color));
+      isDead() {
+        return this.life <= 0;
       }
     }
 
-    initChimes();
+    // Create chimes
+    const chimes = [];
+    const notes = [587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50]; // D, E, F, G, A, B, C (pentatonic-ish)
+    const spacing = W / 8;
+    for (let i = 0; i < 7; i++) {
+      const length = 150 + Math.random() * 50;
+      chimes.push(new Chime(
+        spacing * (i + 1),
+        length,
+        colors[i],
+        notes[i]
+      ));
+    }
 
-    // Particles
     const particles = [];
 
-    // Audio synthesis
-    // Pre-rendered chime buffers (iOS-compatible — no live oscillators)
-    const chimeBuffers = new Map();
-    const CHIME_DURATION = 2.5;
+    // Wind system
+    let windStrength = 0;
+    let windTimer = 0;
 
-    function preRenderChime(frequency) {
-      const sr = audioCtx.sampleRate;
-      const length = Math.floor(sr * CHIME_DURATION);
-      const buffer = audioCtx.createBuffer(1, length, sr);
-      const data = buffer.getChannelData(0);
-
-      // Karplus-Strong synthesis for metallic chime/bell sound
-      const delayLength = Math.round(sr / frequency);
-      const delayLine = new Float32Array(delayLength);
-
-      // Seed with deterministic noise
-      let seed = Math.round(frequency * 100);
-      for (let i = 0; i < delayLength; i++) {
-        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-        delayLine[i] = ((seed / 0x7fffffff) * 2 - 1) * 0.8;
+    function createWindGust() {
+      windStrength = (Math.random() * 0.5 + 0.5) * 0.002;
+      windTimer = 60;
+      
+      // Update status
+      const windStatus = document.getElementById('wind-status');
+      if (windStrength > 0.0015) {
+        windStatus.textContent = 'strong gust';
+      } else {
+        windStatus.textContent = 'gentle breeze';
       }
-
-      // Bell-like inharmonic partial ratios
-      const partials = [2.76, 5.4, 8.93];
-      const partialAmps = [0.5, 0.25, 0.12];
-
-      let readPos = 0;
-      const feedback = 0.996;
-      const brightness = 0.4;
-
-      for (let i = 0; i < length; i++) {
-        const t = i / sr;
-
-        // Karplus-Strong core
-        const pos1 = readPos;
-        const pos2 = (readPos + 1) % delayLength;
-        const sample = delayLine[pos1] * (1 - brightness) + delayLine[pos2] * brightness;
-        delayLine[pos1] = sample * feedback;
-        readPos = (readPos + 1) % delayLength;
-
-        // Metallic shimmer from inharmonic partials
-        let partialSum = 0;
-        for (let p = 0; p < partials.length; p++) {
-          partialSum += Math.sin(2 * Math.PI * frequency * partials[p] * t) * partialAmps[p] * Math.exp(-t * (3 + p * 2));
+      
+      // Ring some chimes
+      const numRings = Math.floor(Math.random() * 3) + 2;
+      const indices = [];
+      while (indices.length < numRings) {
+        const idx = Math.floor(Math.random() * chimes.length);
+        if (!indices.includes(idx)) {
+          indices.push(idx);
+          setTimeout(() => chimes[idx].ring(), Math.random() * 300);
         }
-
-        const env = Math.exp(-t * 1.8);
-        data[i] = Math.tanh((sample + partialSum * 0.15) * env * 0.45) * 0.7;
-      }
-
-      return buffer;
-    }
-
-    function initAudioBuffers() {
-      for (const freq of scale) {
-        chimeBuffers.set(freq, preRenderChime(freq));
       }
     }
 
-    function playChime(frequency) {
-      if (!audioCtx) return;
-      const buffer = chimeBuffers.get(frequency);
-      if (!buffer) return;
-
-      const source = audioCtx.createBufferSource();
-      source.buffer = buffer;
-
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = 3000;
-
-      const gain = audioCtx.createGain();
-      gain.gain.value = 0.8;
-
-      source.connect(filter);
-      filter.connect(gain);
-      gain.connect(audioCtx.destination);
-      source.start(0);
+    // Ambient wind
+    function ambientWind() {
+      if (Math.random() < 0.02) {
+        createWindGust();
+      }
+      
+      if (windTimer > 0) {
+        windTimer--;
+        chimes.forEach(chime => {
+          chime.applyWind(windStrength * (Math.random() - 0.5));
+        });
+      } else {
+        document.getElementById('wind-status').textContent = 'calm';
+      }
     }
-
-    // Wind force
-    let windForce = 0;
 
     // Animation loop
     function animate() {
-      // Fade trail
+      // Fade effect
       ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Decay wind force
-      windForce *= 0.95;
-      
+      ctx.fillRect(0, 0, W, H);
+
       // Update and draw chimes
-      for (const chime of chimes) {
-        chime.update(windForce);
+      chimes.forEach(chime => {
+        chime.update();
         chime.draw();
-      }
-      
-      // Check collisions
-      const now = Date.now();
-      for (let i = 0; i < chimes.length; i++) {
-        for (let j = i + 1; j < chimes.length; j++) {
-          if (chimes[i].checkCollision(chimes[j])) {
-            // Only play if enough time has passed since last collision
-            if (now - chimes[i].lastCollision > 200) {
-              playChime(chimes[i].pitch);
-              collisionCount++;
-              document.getElementById('collisionCount').textContent = collisionCount;
-              
-              // Create particles
-              const x = chimes[i].getBottomX();
-              const y = 50 + chimes[i].length * Math.cos(chimes[i].angle);
-              for (let k = 0; k < 8; k++) {
-                particles.push(new Particle(x, y, chimes[i].color));
-              }
-              
-              chimes[i].lastCollision = now;
-            }
-          }
-        }
-      }
-      
+      });
+
       // Update and draw particles
       for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].update();
         particles[i].draw();
-        if (particles[i].life <= 0) {
+        if (particles[i].isDead()) {
           particles.splice(i, 1);
         }
       }
-      
+
+      // Ambient wind
+      if (audioCtx) {
+        ambientWind();
+      }
+
       requestAnimationFrame(animate);
     }
 
-    // Start — AudioContext created + resumed inside user gesture (required for iOS)
-    document.getElementById('startBtn').addEventListener('click', async () => {
-      if (started) return;
-      started = true;
+    // Start animation immediately (visual hook)
+    animate();
+
+    // Play button
+    playBtn.addEventListener('click', async () => {
+      audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
       
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') await audioCtx.resume();
-      
-      // Pre-render all chime sounds into buffers
-      initAudioBuffers();
-      
-      document.getElementById('startBtn').style.display = 'none';
-      animate();
+      playBtn.classList.add('hidden');
+      ui.classList.remove('hidden');
+
+      // Initial wind gust
+      setTimeout(() => createWindGust(), 500);
     });
 
-    // Tap for wind gust
-    canvas.addEventListener('click', (e) => {
-      if (!started) return;
-      
-      windForce = (Math.random() - 0.5) * 100;
-      
-      // Create particles at tap point
-      for (let i = 0; i < 20; i++) {
-        particles.push(new Particle(e.clientX, e.clientY, 'rgba(212, 165, 116, 1)'));
-      }
+    // Click to create wind
+    canvas.addEventListener('click', () => {
+      if (!audioCtx) return;
+      createWindGust();
     });
 
     canvas.addEventListener('touchstart', (e) => {
-      if (!started) return;
+      if (!audioCtx) return;
       e.preventDefault();
-      
-      // Resume audio on every touch (iOS can suspend between interactions)
-      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-      
-      windForce = (Math.random() - 0.5) * 100;
-      
-      const touch = e.touches[0];
-      for (let i = 0; i < 20; i++) {
-        particles.push(new Particle(touch.clientX, touch.clientY, 'rgba(212, 165, 116, 1)'));
-      }
-    });
-
-    // Start animation even before audio (for visual)
-    function previewAnimate() {
-      if (started) return;
-      
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      for (const chime of chimes) {
-        chime.update(0);
-        chime.draw();
-      }
-      
-      requestAnimationFrame(previewAnimate);
-    }
-    
-    previewAnimate();
+      createWindGust();
+    }, { passive: false });
   </script>
 </body>
 </html>
