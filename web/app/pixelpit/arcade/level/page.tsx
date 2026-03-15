@@ -268,10 +268,15 @@ export default function LevelGame() {
       mouseY: 0,
       // Scoring
       points: 0,
-      centeredTime: 0, // continuous seconds in bullseye
+      centeredTime: 0,
       multiplier: 1,
       lastMultiplier: 1,
-      multiplierFlash: 0, // countdown for flash effect
+      multiplierFlash: 0,
+      // Milestone splashes
+      milestonesHit: new Set<number>(),
+      splashes: [] as { text: string; emoji: string; color: string; life: number; scale: number; y: number }[],
+      // Living background
+      bgTime: 0,
     };
     gameRef.current = gs;
 
@@ -371,6 +376,28 @@ export default function LevelGame() {
         if (newMult > gs.multiplier) {
           gs.multiplierFlash = 1.0;
           playTone(600 + newMult * 100, 0.15, 'triangle');
+          // Milestone splashes
+          const milestones: [number, number, string, string, string][] = [
+            [2, 2, '2×', '🔥', COLORS.teal],
+            [5, 4, '4×', '⚡', COLORS.primary],
+            [10, 8, '8×', '💎', '#FF69B4'],
+          ];
+          for (const [secs, mult, label, emoji, color] of milestones) {
+            if (newMult === mult && !gs.milestonesHit.has(mult)) {
+              gs.milestonesHit.add(mult);
+              gs.splashes.push({ text: label, emoji, color, life: 1.0, scale: 0, y: h * 0.35 });
+              // Burst particles outward from center
+              for (let i = 0; i < 24 + mult * 4; i++) {
+                const angle = (i / (24 + mult * 4)) * Math.PI * 2;
+                const speed = 3 + Math.random() * 5;
+                gs.particles.push({
+                  x: centerX, y: centerY,
+                  vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                  life: 1, color,
+                });
+              }
+            }
+          }
         }
         gs.multiplier = newMult;
         gs.points += gs.multiplier * dt * 10; // ~10 pts/sec at 1x, 80 pts/sec at 8x
@@ -381,7 +408,8 @@ export default function LevelGame() {
         }
         gs.centeredTime = 0;
         gs.multiplier = 1;
-        gs.points += dt * 2; // small trickle even when not centered (survival points)
+        gs.milestonesHit.clear();
+        gs.points += dt * 2;
       }
       if (gs.multiplierFlash > 0) gs.multiplierFlash -= dt * 2;
 
@@ -418,6 +446,16 @@ export default function LevelGame() {
         p.x += p.vx; p.y += p.vy; p.life -= 0.02;
         return p.life > 0;
       });
+
+      // Update splashes
+      gs.splashes = gs.splashes.filter(s => {
+        s.life -= dt * 0.6;
+        s.scale = Math.min(1, s.scale + dt * 5); // fast pop-in
+        s.y -= dt * 15; // gentle float up
+        return s.life > 0;
+      });
+
+      gs.bgTime += dt;
     }
 
     function draw() {
@@ -430,8 +468,47 @@ export default function LevelGame() {
       const dist = Math.hypot(b.x - centerX, b.y - centerY);
       const centered = dist < targetRadius;
 
-      ctx!.fillStyle = 'rgba(10, 10, 15, 0.15)';
+      // Living gradient background — dark but playful, always evolving
+      const t = gs.bgTime;
+      const hue1 = 240 + Math.sin(t * 0.15) * 30; // deep blue ↔ purple
+      const hue2 = 280 + Math.sin(t * 0.1 + 2) * 40; // purple ↔ magenta
+      const hue3 = 200 + Math.sin(t * 0.08 + 4) * 25; // teal ↔ blue
+      // Undulating center point
+      const cx1 = w * (0.3 + Math.sin(t * 0.2) * 0.2);
+      const cy1 = h * (0.3 + Math.cos(t * 0.15) * 0.2);
+      const cx2 = w * (0.7 + Math.sin(t * 0.12 + 3) * 0.15);
+      const cy2 = h * (0.7 + Math.cos(t * 0.18 + 1) * 0.15);
+
+      // Base fill (mostly opaque for trail effect)
+      ctx!.fillStyle = `hsla(${hue1}, 40%, 6%, 0.25)`;
       ctx!.fillRect(0, 0, w, h);
+
+      // Soft radial blob 1
+      ctx!.save();
+      const g1 = ctx!.createRadialGradient(cx1, cy1, 0, cx1, cy1, Math.max(w, h) * 0.5);
+      g1.addColorStop(0, `hsla(${hue2}, 50%, 12%, 0.08)`);
+      g1.addColorStop(1, `hsla(${hue2}, 50%, 5%, 0)`);
+      ctx!.fillStyle = g1;
+      ctx!.fillRect(0, 0, w, h);
+
+      // Soft radial blob 2
+      const g2 = ctx!.createRadialGradient(cx2, cy2, 0, cx2, cy2, Math.max(w, h) * 0.4);
+      g2.addColorStop(0, `hsla(${hue3}, 45%, 10%, 0.06)`);
+      g2.addColorStop(1, `hsla(${hue3}, 45%, 5%, 0)`);
+      ctx!.fillStyle = g2;
+      ctx!.fillRect(0, 0, w, h);
+
+      // Multiplier-reactive warmth: higher multiplier = warmer glow from center
+      if (gs.multiplier > 1) {
+        const warmth = gs.multiplier >= 8 ? 0.06 : gs.multiplier >= 4 ? 0.04 : 0.02;
+        const warmHue = gs.multiplier >= 8 ? 320 : gs.multiplier >= 4 ? 45 : 170;
+        const gw = ctx!.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.min(w, h) * 0.5);
+        gw.addColorStop(0, `hsla(${warmHue}, 60%, 20%, ${warmth})`);
+        gw.addColorStop(1, `hsla(${warmHue}, 60%, 5%, 0)`);
+        ctx!.fillStyle = gw;
+        ctx!.fillRect(0, 0, w, h);
+      }
+      ctx!.restore();
 
       // Edge danger glow (after grace period)
       if (!gs.graceActive) {
@@ -514,6 +591,28 @@ export default function LevelGame() {
       ctx!.strokeStyle = centered ? COLORS.teal : COLORS.text;
       ctx!.lineWidth = 2;
       ctx!.stroke();
+
+      // Milestone splashes
+      gs.splashes.forEach((s: { text: string; emoji: string; color: string; life: number; scale: number; y: number }) => {
+        ctx!.save();
+        ctx!.translate(w / 2, s.y);
+        const ease = 1 - Math.pow(1 - s.scale, 3); // ease-out cubic
+        ctx!.scale(ease, ease);
+        ctx!.globalAlpha = Math.min(1, s.life * 2);
+        // Emoji
+        ctx!.font = `${60 + (s.text === '8×' ? 20 : 0)}px sans-serif`;
+        ctx!.textAlign = 'center';
+        ctx!.textBaseline = 'middle';
+        ctx!.fillText(s.emoji, 0, -30);
+        // Multiplier text
+        ctx!.font = `bold ${48 + (s.text === '8×' ? 16 : 0)}px ui-monospace, monospace`;
+        ctx!.fillStyle = s.color;
+        ctx!.shadowColor = s.color;
+        ctx!.shadowBlur = 30;
+        ctx!.fillText(s.text, 0, 30);
+        ctx!.shadowBlur = 0;
+        ctx!.restore();
+      });
 
       // HUD — Score
       ctx!.font = 'bold 32px ui-monospace, monospace';
