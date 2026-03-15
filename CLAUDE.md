@@ -183,6 +183,7 @@ These are standing instructions for every session:
 ### Problem Solving
 - **Two strikes rule**: If an approach fails twice, STOP. Don't try a third variation.
   Summarize what was tried, why it failed, and propose 2-3 genuinely different alternatives.
+- **Observe before guessing**: For visual/runtime bugs (canvas, animation, audio, browser behavior), **use Playwright first** to capture the actual error — don't theorize from static code. Load the page, interact with it, check the console, screenshot the result. This applies to any bug where the symptom is "it breaks at runtime" — the console error is worth more than 10 minutes of code reading.
 
 ### Security (Non-Negotiable)
 - **NEVER** hardcode API keys, tokens, or secrets in code

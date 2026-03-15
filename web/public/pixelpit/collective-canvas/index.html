@@ -344,7 +344,7 @@ $('#enter-btn').addEventListener('click', () => {
   startWorldAudio(currentWorld);
 });
 
-$$('.nav-btn').forEach(b => b.addEventListener('click', () => switchWorld(+b.dataset.world)));
+$$('.nav-btn').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); switchWorld(+b.dataset.world); }));
 
 window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
 window.addEventListener('resize', resize);
@@ -793,8 +793,8 @@ const solarForge = (() => {
     embers.forEach(e=>{e.update(spd);e.draw();});
     particles.forEach(p=>{p.update(time);p.draw();});
 
-    flares.forEach(f=>{f.update();f.draw();});
-    flares=flares.filter(f=>f.life>0);
+    flares=flares.filter(f=>{f.update();return f.life>0;});
+    flares.forEach(f=>f.draw());
 
     // Mouse heat distortion
     ctx.save();
