@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOIRÉ</title>
+<meta property="og:title" content="MOIRÉ">
+<meta property="og:description" content="complexity appears uninvited">
+<meta property="og:image" content="https://intheamber.com/amber/og/moire.png">
+<meta property="og:url" content="https://intheamber.com/amber/moire.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MOIRÉ">
+<meta name="twitter:description" content="complexity appears uninvited">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/moire.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0f; overflow: hidden; touch-action: none; }
+canvas { display: block; width: 100vw; height: 100vh; }
+#title {
+  position: fixed; bottom: 20px; left: 0; right: 0;
+  text-align: center; font-family: 'Courier New', monospace;
+  color: rgba(200, 180, 140, 0.3); font-size: 12px;
+  letter-spacing: 4px; text-transform: uppercase;
+  pointer-events: none; z-index: 1;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="title">moiré</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+let W, H, cx, cy;
+let touchX = null, touchY = null;
+let isTouching = false;
+
+// Three overlapping grids, each with its own rotation speed
+const layers = [
+  { angle: 0, speed: 0.0003, spacing: 14, color: [200, 160, 100], opacity: 0.35 },
+  { angle: Math.PI / 3, speed: -0.00022, spacing: 16, color: [140, 170, 200], opacity: 0.3 },
+  { angle: Math.PI / 6, speed: 0.00015, spacing: 18, color: [180, 140, 180], opacity: 0.25 },
+];
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cx = W / 2;
+  cy = H / 2;
+}
+
+function drawGrid(layer, t) {
+  const { angle, spacing, color, opacity } = layer;
+  const maxDim = Math.sqrt(W * W + H * H);
+  const numLines = Math.ceil(maxDim / spacing) + 4;
+
+  // If touching, the grid subtly bends toward touch point
+  let bendX = cx, bendY = cy;
+  let bendStrength = 0;
+  if (isTouching && touchX !== null) {
+    bendX = touchX;
+    bendY = touchY;
+    bendStrength = 0.15;
+  }
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+  ctx.lineWidth = 0.8;
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+
+  // Draw parallel lines
+  const start = -numLines * spacing / 2;
+  for (let i = 0; i <= numLines; i++) {
+    const y = start + i * spacing;
+    ctx.beginPath();
+
+    if (bendStrength > 0) {
+      // Draw curved line influenced by touch
+      const steps = 60;
+      for (let s = 0; s <= steps; s++) {
+        const x = start + (s / steps) * numLines * spacing;
+
+        // Transform point back to screen space to calculate bend
+        const cosA = Math.cos(angle), sinA = Math.sin(angle);
+        const screenX = x * cosA - y * sinA + cx;
+        const screenY = x * sinA + y * cosA + cy;
+
+        // Distance from touch point
+        const dx = screenX - bendX;
+        const dy = screenY - bendY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const influence = Math.exp(-dist * dist / (40000)) * bendStrength;
+
+        // Offset perpendicular to the line direction
+        const offsetY = -influence * 30 * Math.sin(dist * 0.01 + t * 0.001);
+
+        if (s === 0) ctx.moveTo(x, y + offsetY);
+        else ctx.lineTo(x, y + offsetY);
+      }
+    } else {
+      ctx.moveTo(start, y);
+      ctx.lineTo(start + numLines * spacing, y);
+    }
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+// Slow breathing effect on spacing
+function breathe(layer, t) {
+  const base = layer._baseSpacing || layer.spacing;
+  if (!layer._baseSpacing) layer._baseSpacing = layer.spacing;
+  layer.spacing = base + Math.sin(t * 0.0002 + layers.indexOf(layer) * 2) * 1.5;
+}
+
+let lastTime = 0;
+function draw(timestamp) {
+  if (!lastTime) lastTime = timestamp;
+  const dt = timestamp - lastTime;
+
+  // Clear with slight fade for subtle trail
+  ctx.fillStyle = 'rgba(10, 10, 15, 0.92)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Update rotations
+  for (const layer of layers) {
+    layer.angle += layer.speed * dt;
+    breathe(layer, timestamp);
+  }
+
+  // Draw all grids — the overlapping creates moiré
+  for (const layer of layers) {
+    drawGrid(layer, timestamp);
+  }
+
+  // Subtle center glow
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(W, H) * 0.4);
+  grad.addColorStop(0, 'rgba(200, 170, 120, 0.04)');
+  grad.addColorStop(1, 'rgba(200, 170, 120, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  lastTime = timestamp;
+  requestAnimationFrame(draw);
+}
+
+// Touch/mouse interaction
+function onPointerDown(e) {
+  isTouching = true;
+  const p = e.touches ? e.touches[0] : e;
+  touchX = p.clientX;
+  touchY = p.clientY;
+}
+function onPointerMove(e) {
+  if (!isTouching) return;
+  const p = e.touches ? e.touches[0] : e;
+  touchX = p.clientX;
+  touchY = p.clientY;
+}
+function onPointerUp() {
+  isTouching = false;
+}
+
+canvas.addEventListener('touchstart', onPointerDown, { passive: true });
+canvas.addEventListener('touchmove', onPointerMove, { passive: true });
+canvas.addEventListener('touchend', onPointerUp);
+canvas.addEventListener('mousedown', onPointerDown);
+canvas.addEventListener('mousemove', onPointerMove);
+canvas.addEventListener('mouseup', onPointerUp);
+canvas.addEventListener('mouseleave', onPointerUp);
+
+window.addEventListener('resize', resize);
+resize();
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
