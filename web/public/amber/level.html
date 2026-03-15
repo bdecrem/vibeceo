@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>LEVEL — Keep it centered</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="LEVEL — Keep it centered">
+  <meta property="og:description" content="Tilt your phone. Keep the bubble centered. Don't let it drift.">
+  <meta property="og:image" content="https://intheamber.com/amber/level-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/level.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LEVEL — Keep it centered">
+  <meta name="twitter:description" content="Tilt your phone. Keep the bubble centered. Don't let it drift.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/level-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background: #000;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: none;
+    }
+
+    #canvas {
+      display: block;
+      background: #000;
+    }
+
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #title {
+      font-size: 24px;
+      color: #D4A574;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    #score {
+      font-size: 18px;
+      color: #FFD700;
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    }
+
+    #highscore {
+      font-size: 14px;
+      color: #2D9596;
+      margin-top: 5px;
+    }
+
+    #status {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      color: #D4A574;
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0.7;
+    }
+
+    #startBtn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px 40px;
+      font-size: 20px;
+      font-family: 'Space Mono', monospace;
+      background: #7B68EE;
+      color: #FFD700;
+      border: 2px solid #FFD700;
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 20;
+      box-shadow: 0 0 30px rgba(123, 104, 238, 0.6);
+      transition: all 0.2s;
+    }
+
+    #startBtn:active {
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+
+    #instruction {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      color: #2D9596;
+      text-align: center;
+      z-index: 20;
+      max-width: 80%;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="title">LEVEL</div>
+    <div id="score">0.0s</div>
+    <div id="highscore">Best: 0.0s</div>
+  </div>
+  
+  <div id="status">Tilt to move • Keep centered</div>
+  
+  <button id="startBtn">START</button>
+  <div id="instruction">Tilt your phone to keep<br>the bubble in the center</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('startBtn');
+    const instruction = document.getElementById('instruction');
+    const scoreEl = document.getElementById('score');
+    const highscoreEl = document.getElementById('highscore');
+    const statusEl = document.getElementById('status');
+
+    let width, height;
+    let bubble = { x: 0, y: 0, vx: 0, vy: 0, radius: 20 };
+    let particles = [];
+    let score = 0;
+    let highscore = parseFloat(localStorage.getItem('levelHighscore')) || 0;
+    let gameActive = false;
+    let audioContext;
+    let toneInterval;
+    let centerTime = 0;
+
+    // Device orientation
+    let tiltX = 0;
+    let tiltY = 0;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      bubble.x = width / 2;
+      bubble.y = height / 2;
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Update high score display
+    highscoreEl.textContent = `Best: ${highscore.toFixed(1)}s`;
+
+    // Request device orientation permission on iOS
+    function requestOrientation() {
+      if (typeof DeviceOrientationEvent !== 'undefined' && 
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              window.addEventListener('deviceorientation', handleOrientation);
+              startGame();
+            }
+          })
+          .catch(console.error);
+      } else {
+        window.addEventListener('deviceorientation', handleOrientation);
+        startGame();
+      }
+    }
+
+    function handleOrientation(event) {
+      // Beta is front-to-back tilt (-180 to 180)
+      // Gamma is left-to-right tilt (-90 to 90)
+      tiltX = event.gamma || 0;  // left-right
+      tiltY = event.beta || 0;   // front-back
+      
+      // Clamp values
+      tiltX = Math.max(-45, Math.min(45, tiltX));
+      tiltY = Math.max(-45, Math.min(45, tiltY));
+    }
+
+    startBtn.addEventListener('click', () => {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      startBtn.style.display = 'none';
+      instruction.style.display = 'none';
+      requestOrientation();
+    });
+
+    function startGame() {
+      gameActive = true;
+      score = 0;
+      centerTime = 0;
+      bubble.x = width / 2;
+      bubble.y = height / 2;
+      bubble.vx = 0;
+      bubble.vy = 0;
+      particles = [];
+      
+      // Start success tone interval
+      if (toneInterval) clearInterval(toneInterval);
+      toneInterval = setInterval(() => {
+        if (isCentered() && gameActive) {
+          playTone(440 + centerTime * 2, 0.05, 'sine');
+        }
+      }, 200);
+    }
+
+    function playTone(freq, duration, type = 'triangle') {
+      if (!audioContext) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.value = 0.1;
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.start();
+      osc.stop(audioContext.currentTime + duration);
+    }
+
+    function isCentered() {
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const targetRadius = 60;
+      const dist = Math.hypot(bubble.x - centerX, bubble.y - centerY);
+      return dist < targetRadius;
+    }
+
+    function update() {
+      if (!gameActive) return;
+
+      // Apply tilt to velocity
+      const sensitivity = 0.5;
+      bubble.vx += tiltX * sensitivity;
+      bubble.vy += tiltY * sensitivity;
+
+      // Damping
+      bubble.vx *= 0.92;
+      bubble.vy *= 0.92;
+
+      // Update position
+      bubble.x += bubble.vx;
+      bubble.y += bubble.vy;
+
+      // Bounce off walls with damping
+      if (bubble.x - bubble.radius < 0) {
+        bubble.x = bubble.radius;
+        bubble.vx *= -0.7;
+      }
+      if(bubble.x + bubble.radius > width) {
+        bubble.x = width - bubble.radius;
+        bubble.vx *= -0.7;
+      }
+      if (bubble.y - bubble.radius < 0) {
+        bubble.y = bubble.radius;
+        bubble.vy *= -0.7;
+      }
+      if (bubble.y + bubble.radius > height) {
+        bubble.y = height - bubble.radius;
+        bubble.vy *= -0.7;
+      }
+
+      // Update score when centered
+      if (isCentered()) {
+        centerTime += 1/60;
+        score = centerTime;
+        scoreEl.textContent = `${score.toFixed(1)}s`;
+        
+        // Spawn particles
+        if (Math.random() < 0.3) {
+          particles.push({
+            x: bubble.x + (Math.random() - 0.5) * bubble.radius,
+            y: bubble.y + (Math.random() - 0.5) * bubble.radius,
+            vx: (Math.random() - 0.5) * 2,
+            vy: (Math.random() - 0.5) * 2,
+            life: 1,
+            color: Math.random() < 0.5 ? '#FFD700' : '#2D9596'
+          });
+        }
+        
+        // Update high score
+        if (score > highscore) {
+          highscore = score;
+          localStorage.setItem('levelHighscore', highscore.toString());
+          highscoreEl.textContent = `Best: ${highscore.toFixed(1)}s`;
+        }
+        
+        statusEl.textContent = '✓ CENTERED — Keep it steady';
+        statusEl.style.color = '#2D9596';
+      } else {
+        centerTime = 0;
+        statusEl.textContent = 'Tilt to center';
+        statusEl.style.color = '#D4A574';
+      }
+
+      // Update particles
+      particles = particles.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.02;
+        return p.life > 0;
+      });
+    }
+
+    function draw() {
+      // Fade background
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const targetRadius = 60;
+
+      // Draw target zone
+      const centered = isCentered();
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, targetRadius, 0, Math.PI * 2);
+      ctx.strokeStyle = centered ? '#2D9596' : 'rgba(45, 149, 150, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw center crosshair
+      ctx.strokeStyle = 'rgba(45, 149, 150, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 10, centerY);
+      ctx.lineTo(centerX + 10, centerY);
+      ctx.moveTo(centerX, centerY - 10);
+      ctx.lineTo(centerX, centerY + 10);
+      ctx.stroke();
+
+      // Draw particles
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+
+      // Draw bubble with glow
+      const glowIntensity = centered ? 0.8 : 0.3;
+      
+      // Outer glow
+      const gradient = ctx.createRadialGradient(
+        bubble.x, bubble.y, 0,
+        bubble.x, bubble.y, bubble.radius * 2
+      );
+      gradient.addColorStop(0, `rgba(212, 165, 116, ${glowIntensity})`);
+      gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+      
+      ctx.beginPath();
+      ctx.arc(bubble.x, bubble.y, bubble.radius * 2, 0, Math.PI * 2);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      // Bubble body
+      const bubbleGradient = ctx.createRadialGradient(
+        bubble.x - bubble.radius * 0.3,
+        bubble.y - bubble.radius * 0.3,
+        0,
+        bubble.x,
+        bubble.y,
+        bubble.radius
+      );
+      bubbleGradient.addColorStop(0, '#FFD700');
+      bubbleGradient.addColorStop(1, '#D4A574');
+      
+      ctx.beginPath();
+      ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
+      ctx.fillStyle = bubbleGradient;
+      ctx.fill();
+
+      // Bubble highlight
+      ctx.beginPath();
+      ctx.arc(bubble.x - bubble.radius * 0.3, bubble.y - bubble.radius * 0.3, bubble.radius * 0.3, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.fill();
+
+      // Bubble outline
+      ctx.beginPath();
+      ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
+      ctx.strokeStyle = centered ? '#2D9596' : '#D4A574';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    function animate() {
+      update();
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
