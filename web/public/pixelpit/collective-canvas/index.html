@@ -129,12 +129,204 @@ function resize() {
   solarForge.resize();
 }
 
+// Shared audio context — created on first user gesture
+let audioCtx = null;
+let audioStarted = [false, false, false];
+let audioStopFns = [null, null, null];
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function stopWorldAudio(idx) {
+  if (audioStopFns[idx]) { audioStopFns[idx](); audioStopFns[idx] = null; }
+  audioStarted[idx] = false;
+}
+
+function startWorldAudio(idx) {
+  if (audioStarted[idx]) return;
+  const ctx = getAudioCtx();
+  audioStarted[idx] = true;
+  
+  if (idx === 0) audioStopFns[0] = startCrystalAudio(ctx);
+  else if (idx === 1) audioStopFns[1] = startOceanAudio(ctx);
+  else if (idx === 2) audioStopFns[2] = startSolarAudio(ctx);
+}
+
+// ── Crystal Cavern Audio: ethereal bell chimes ──
+function startCrystalAudio(ctx) {
+  const master = ctx.createGain(); master.gain.value = 0.15; master.connect(ctx.destination);
+  let running = true;
+  const notes = [311.13, 349.23, 392.00, 466.16, 523.25, 622.25, 698.46, 783.99]; // Eb maj pentatonic
+  
+  function chime() {
+    if (!running) return;
+    const freq = notes[Math.floor(Math.random() * notes.length)];
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    // Add slight detune for shimmer
+    const osc2 = ctx.createOscillator();
+    const g2 = ctx.createGain();
+    osc2.type = 'triangle';
+    osc2.frequency.value = freq * 1.002;
+    osc.connect(g); g.connect(master);
+    osc2.connect(g2); g2.connect(master);
+    const now = ctx.currentTime;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(0.3 + Math.random() * 0.2, now + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+    g2.gain.setValueAtTime(0, now);
+    g2.gain.linearRampToValueAtTime(0.15, now + 0.05);
+    g2.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+    osc.start(now); osc.stop(now + 2.5);
+    osc2.start(now); osc2.stop(now + 2.0);
+    setTimeout(chime, 1500 + Math.random() * 2500);
+  }
+  chime();
+  // Ambient pad
+  const pad = ctx.createOscillator();
+  const padG = ctx.createGain();
+  pad.type = 'sine'; pad.frequency.value = 155.56; // Eb2
+  padG.gain.value = 0.04;
+  pad.connect(padG); padG.connect(master);
+  pad.start();
+  
+  return () => { running = false; master.gain.value = 0; try { pad.stop(); } catch(e){} };
+}
+
+// ── Ocean Depths Audio: deep pads + bubbles ──
+function startOceanAudio(ctx) {
+  const master = ctx.createGain(); master.gain.value = 0.2; master.connect(ctx.destination);
+  let running = true;
+  
+  // Deep drone pad
+  const drone1 = ctx.createOscillator(); const dg1 = ctx.createGain();
+  drone1.type = 'sine'; drone1.frequency.value = 65.41; // C2
+  dg1.gain.value = 0.12; drone1.connect(dg1); dg1.connect(master); drone1.start();
+  
+  const drone2 = ctx.createOscillator(); const dg2 = ctx.createGain();
+  drone2.type = 'sine'; drone2.frequency.value = 97.99; // G2
+  dg2.gain.value = 0.08; drone2.connect(dg2); dg2.connect(master); drone2.start();
+  
+  // Slow LFO on drone volume for breathing effect
+  const lfo = ctx.createOscillator(); const lfoG = ctx.createGain();
+  lfo.type = 'sine'; lfo.frequency.value = 0.08;
+  lfoG.gain.value = 0.04;
+  lfo.connect(lfoG); lfoG.connect(dg1.gain); lfo.start();
+  
+  // Bubble sounds
+  function bubble() {
+    if (!running) return;
+    const freq = 800 + Math.random() * 2000;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.5, ctx.currentTime + 0.15);
+    g.gain.setValueAtTime(0.05 + Math.random() * 0.05, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    osc.connect(g); g.connect(master);
+    osc.start(); osc.stop(ctx.currentTime + 0.25);
+    setTimeout(bubble, 500 + Math.random() * 3000);
+  }
+  bubble();
+  
+  // Occasional whale-like tone
+  function whale() {
+    if (!running) return;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    const base = 130 + Math.random() * 80;
+    osc.frequency.value = base;
+    osc.frequency.linearRampToValueAtTime(base * 1.3, ctx.currentTime + 1.5);
+    osc.frequency.linearRampToValueAtTime(base * 0.8, ctx.currentTime + 3);
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 0.5);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3);
+    osc.connect(g); g.connect(master);
+    osc.start(); osc.stop(ctx.currentTime + 3.5);
+    setTimeout(whale, 4000 + Math.random() * 6000);
+  }
+  setTimeout(whale, 2000);
+  
+  return () => { running = false; master.gain.value = 0; try { drone1.stop(); drone2.stop(); lfo.stop(); } catch(e){} };
+}
+
+// ── Solar Forge Audio: pulsing bass + fire crackle ──
+function startSolarAudio(ctx) {
+  const master = ctx.createGain(); master.gain.value = 0.18; master.connect(ctx.destination);
+  let running = true;
+  
+  // Pulsing bass drone
+  const bass = ctx.createOscillator(); const bg = ctx.createGain();
+  bass.type = 'sawtooth'; bass.frequency.value = 55; // A1
+  // Low-pass filter for warmth
+  const lpf = ctx.createBiquadFilter();
+  lpf.type = 'lowpass'; lpf.frequency.value = 200; lpf.Q.value = 2;
+  bass.connect(lpf); lpf.connect(bg); bg.gain.value = 0.15; bg.connect(master); bass.start();
+  
+  // Pulse the bass with LFO
+  const pulseLfo = ctx.createOscillator(); const pulseG = ctx.createGain();
+  pulseLfo.type = 'square'; pulseLfo.frequency.value = 2.03; // ~122 BPM feel
+  pulseG.gain.value = 0.08;
+  pulseLfo.connect(pulseG); pulseG.connect(bg.gain); pulseLfo.start();
+  
+  // Fire crackle
+  function crackle() {
+    if (!running) return;
+    const bufSize = ctx.sampleRate * 0.04;
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/bufSize, 3);
+    const src = ctx.createBufferSource();
+    const g = ctx.createGain();
+    src.buffer = buf;
+    g.gain.value = 0.1 + Math.random() * 0.15;
+    src.connect(g); g.connect(master); src.start();
+    setTimeout(crackle, 50 + Math.random() * 300);
+  }
+  crackle();
+  
+  // Occasional flare tone
+  function flare() {
+    if (!running) return;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 110 + Math.random() * 110;
+    const flpf = ctx.createBiquadFilter();
+    flpf.type = 'lowpass'; flpf.frequency.value = 400;
+    flpf.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.8);
+    g.gain.setValueAtTime(0.1, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.connect(flpf); flpf.connect(g); g.connect(master);
+    osc.start(); osc.stop(ctx.currentTime + 1);
+    setTimeout(flare, 2000 + Math.random() * 4000);
+  }
+  setTimeout(flare, 1000);
+  
+  return () => { running = false; master.gain.value = 0; try { bass.stop(); pulseLfo.stop(); } catch(e){} };
+}
+
 function switchWorld(idx) {
   if (idx < 0 || idx > 2 || idx === currentWorld) return;
+  // Stop old world audio, start new
+  stopWorldAudio(currentWorld);
+  // Re-init visuals for target world
+  const worlds = [crystalCavern, oceanDepths, solarForge];
+  worlds[idx].resize();
+  
   $$('.world-canvas').forEach((c, i) => c.classList.toggle('active', i === idx));
   $$('.nav-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
   $('#world-label').textContent = `${worldMeta[idx].name} — by ${worldMeta[idx].by}`;
   currentWorld = idx;
+  // Start audio for new world
+  if (entered) startWorldAudio(idx);
 }
 
 $('#enter-btn').addEventListener('click', () => {
@@ -144,10 +336,8 @@ $('#enter-btn').addEventListener('click', () => {
   $('#world-label').classList.add('visible');
   $('#hint').classList.add('visible');
   setTimeout(() => { $('#hint').classList.remove('visible'); }, 5000);
-  // Resume audio context if needed
-  if (typeof AudioContext !== 'undefined') {
-    const ac = new AudioContext(); ac.resume(); ac.close();
-  }
+  // Start audio for the initial world
+  startWorldAudio(currentWorld);
 });
 
 $$('.nav-btn').forEach(b => b.addEventListener('click', () => switchWorld(+b.dataset.world)));
@@ -620,10 +810,10 @@ function loop(ts) {
   lastTime = ts;
 
   if (entered) {
-    // Update ALL worlds every frame so they're alive when switched to
-    crystalCavern.update(ts / 1000);
-    oceanDepths.update(dt);
-    solarForge.update(dt);
+    // Only update the active world
+    if (currentWorld === 0) crystalCavern.update(ts / 1000);
+    else if (currentWorld === 1) oceanDepths.update(dt);
+    else if (currentWorld === 2) solarForge.update(dt);
   }
 
   requestAnimationFrame(loop);
@@ -631,12 +821,10 @@ function loop(ts) {
 requestAnimationFrame(loop);
 </script>
 
-<!-- ============================================================ -->
-<!-- AUDIO: Three soundscapes, one per world                       -->
-<!-- ============================================================ -->
+<!-- Old JT10/JB01 audio removed — using built-in Web Audio API now -->
+<!-- 
 <script type="module">
-import { JT10Engine } from 'https://kochi.to/jt10/dist/machines/jt10/engine.js';
-import { JB01Engine } from 'https://kochi.to/jb01/dist/machines/jb01/engine.js';
+// DISABLED: JT10/JB01 engines were unreliable across worlds
 
 let actx = null;
 let worldGains = [null, null, null];  // per-world gain nodes for crossfade
@@ -952,5 +1140,6 @@ document.getElementById('enter-btn').addEventListener('click', async () => {
   }, STEP_DUR * 1000);
 });
 </script>
+-->
 </body>
 </html>
