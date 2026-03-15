@@ -16,6 +16,7 @@ import {
 const GAME_ID = 'level';
 const GAME_NAME = 'LEVEL';
 const GRACE_PERIOD = 5;
+const GAME_DURATION = 60;
 
 const COLORS = {
   bg: '#12121f',
@@ -192,6 +193,7 @@ export default function LevelGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [screenState, setScreenState] = useState<'start' | 'playing' | 'gameover' | 'leaderboard'>('start');
   const [score, setScore] = useState(0);
+  const [endReason, setEndReason] = useState<'time' | 'drift'>('drift');
   const [socialLoaded, setSocialLoaded] = useState(false);
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
   const [progression, setProgression] = useState<ProgressionResult | null>(null);
@@ -296,9 +298,10 @@ export default function LevelGame() {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('touchmove', handleTouchMove);
 
-    function endGame() {
+    function endGame(reason: 'time' | 'drift' = 'drift') {
       if (gs.gameOver) return;
       gs.gameOver = true;
+      setEndReason(reason);
       stopMusic();
       const finalScore = Math.round(gs.points);
       scoreRef.current = finalScore;
@@ -348,6 +351,12 @@ export default function LevelGame() {
           endGame();
           return;
         }
+      }
+
+      // Time's up
+      if (gs.elapsed >= GAME_DURATION) {
+        endGame('time');
+        return;
       }
 
       const centerX = w / 2;
@@ -670,10 +679,11 @@ export default function LevelGame() {
       ctx!.fillText(`${Math.round(gs.points)}`, w / 2, 16);
       ctx!.shadowBlur = 0;
 
-      // Timer (smaller, below score)
+      // Countdown timer (smaller, below score)
+      const remaining = Math.max(0, GAME_DURATION - gs.elapsed);
       ctx!.font = '14px ui-monospace, monospace';
-      ctx!.fillStyle = COLORS.muted;
-      ctx!.fillText(`${gs.elapsed.toFixed(1)}s`, w / 2, 58);
+      ctx!.fillStyle = remaining < 10 ? COLORS.error : COLORS.muted;
+      ctx!.fillText(`${remaining.toFixed(1)}s`, w / 2, 58);
 
       // Multiplier badge
       if (gs.multiplier > 1) {
@@ -849,7 +859,7 @@ export default function LevelGame() {
               fontSize: 14, color: COLORS.teal, letterSpacing: 6, marginBottom: 16,
               animation: 'fadeUp 0.4s ease-out',
             }}>
-              DRIFTED AWAY
+              {endReason === 'time' ? "TIME'S UP!" : 'DRIFTED AWAY'}
             </div>
 
             {/* Big animated score */}
