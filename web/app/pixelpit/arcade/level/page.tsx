@@ -18,7 +18,7 @@ const GAME_NAME = 'LEVEL';
 const GRACE_PERIOD = 5;
 
 const COLORS = {
-  bg: '#0a0a0f',
+  bg: '#12121f',
   surface: '#1a1a2e',
   primary: '#FFD700',
   secondary: '#7B68EE',
@@ -486,17 +486,17 @@ export default function LevelGame() {
       const hue2 = 280 + Math.sin(t * 0.1 + 2) * 40;
       const hue3 = 170 + Math.sin(t * 0.08 + 4) * 30;
 
-      // Solid base — dark but NOT black
-      ctx!.fillStyle = `hsl(${hue1}, 35%, 10%)`;
+      // Solid base
+      ctx!.fillStyle = `hsl(${hue1}, 40%, 14%)`;
       ctx!.fillRect(0, 0, w, h);
 
       // Drifting blob 1 — large, warm purple/magenta
       const cx1 = w * (0.3 + Math.sin(t * 0.2) * 0.2);
       const cy1 = h * (0.3 + Math.cos(t * 0.15) * 0.2);
       const g1 = ctx!.createRadialGradient(cx1, cy1, 0, cx1, cy1, Math.max(w, h) * 0.55);
-      g1.addColorStop(0, `hsla(${hue2}, 60%, 25%, 0.35)`);
-      g1.addColorStop(0.5, `hsla(${hue2}, 50%, 18%, 0.15)`);
-      g1.addColorStop(1, `hsla(${hue2}, 40%, 10%, 0)`);
+      g1.addColorStop(0, `hsla(${hue2}, 65%, 35%, 0.4)`);
+      g1.addColorStop(0.5, `hsla(${hue2}, 55%, 25%, 0.18)`);
+      g1.addColorStop(1, `hsla(${hue2}, 40%, 14%, 0)`);
       ctx!.fillStyle = g1;
       ctx!.fillRect(0, 0, w, h);
 
@@ -504,9 +504,9 @@ export default function LevelGame() {
       const cx2 = w * (0.7 + Math.sin(t * 0.12 + 3) * 0.2);
       const cy2 = h * (0.7 + Math.cos(t * 0.18 + 1) * 0.2);
       const g2 = ctx!.createRadialGradient(cx2, cy2, 0, cx2, cy2, Math.max(w, h) * 0.5);
-      g2.addColorStop(0, `hsla(${hue3}, 55%, 22%, 0.3)`);
-      g2.addColorStop(0.5, `hsla(${hue3}, 45%, 15%, 0.12)`);
-      g2.addColorStop(1, `hsla(${hue3}, 35%, 10%, 0)`);
+      g2.addColorStop(0, `hsla(${hue3}, 60%, 32%, 0.35)`);
+      g2.addColorStop(0.5, `hsla(${hue3}, 50%, 22%, 0.15)`);
+      g2.addColorStop(1, `hsla(${hue3}, 35%, 14%, 0)`);
       ctx!.fillStyle = g2;
       ctx!.fillRect(0, 0, w, h);
 
@@ -515,19 +515,19 @@ export default function LevelGame() {
       const cy3 = h * (0.4 + Math.cos(t * 0.22 + 2) * 0.3);
       const hue4 = 320 + Math.sin(t * 0.12) * 30;
       const g3 = ctx!.createRadialGradient(cx3, cy3, 0, cx3, cy3, Math.max(w, h) * 0.3);
-      g3.addColorStop(0, `hsla(${hue4}, 50%, 20%, 0.2)`);
-      g3.addColorStop(1, `hsla(${hue4}, 40%, 10%, 0)`);
+      g3.addColorStop(0, `hsla(${hue4}, 55%, 30%, 0.25)`);
+      g3.addColorStop(1, `hsla(${hue4}, 40%, 14%, 0)`);
       ctx!.fillStyle = g3;
       ctx!.fillRect(0, 0, w, h);
 
       // Multiplier-reactive warmth from center
       if (gs.multiplier > 1) {
-        const warmth = gs.multiplier >= 8 ? 0.2 : gs.multiplier >= 4 ? 0.12 : 0.06;
+        const warmth = gs.multiplier >= 8 ? 0.25 : gs.multiplier >= 4 ? 0.15 : 0.08;
         const warmHue = gs.multiplier >= 8 ? 320 : gs.multiplier >= 4 ? 45 : 170;
         const gw = ctx!.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.min(w, h) * 0.5);
-        gw.addColorStop(0, `hsla(${warmHue}, 70%, 30%, ${warmth})`);
-        gw.addColorStop(0.6, `hsla(${warmHue}, 50%, 15%, ${warmth * 0.3})`);
-        gw.addColorStop(1, `hsla(${warmHue}, 40%, 10%, 0)`);
+        gw.addColorStop(0, `hsla(${warmHue}, 75%, 35%, ${warmth})`);
+        gw.addColorStop(0.6, `hsla(${warmHue}, 55%, 20%, ${warmth * 0.3})`);
+        gw.addColorStop(1, `hsla(${warmHue}, 40%, 14%, 0)`);
         ctx!.fillStyle = gw;
         ctx!.fillRect(0, 0, w, h);
       }
@@ -673,7 +673,7 @@ export default function LevelGame() {
       // Timer (smaller, below score)
       ctx!.font = '14px ui-monospace, monospace';
       ctx!.fillStyle = COLORS.muted;
-      ctx!.fillText(`${gs.elapsed.toFixed(1)}s`, w / 2, 52);
+      ctx!.fillText(`${gs.elapsed.toFixed(1)}s`, w / 2, 58);
 
       // Multiplier badge
       if (gs.multiplier > 1) {
@@ -736,7 +736,7 @@ export default function LevelGame() {
       {screenState === 'start' && (
         <div style={{
           position: 'fixed', inset: 0,
-          background: 'radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0f 70%)',
+          background: 'radial-gradient(ellipse at center, #2a1a3e 0%, #1a1a2e 50%, #12121f 100%)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           fontFamily: 'ui-monospace, monospace', color: '#fff',
         }}>
@@ -768,7 +768,7 @@ export default function LevelGame() {
           minHeight: '100vh',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           padding: 24,
-          background: 'radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0f 70%)',
+          background: 'radial-gradient(ellipse at center, #2a1a3e 0%, #1a1a2e 50%, #12121f 100%)',
         }}>
           <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: 400, width: '100%' }}>
             <div style={{ fontSize: 20, color: COLORS.muted, letterSpacing: 4, marginBottom: 12 }}>
