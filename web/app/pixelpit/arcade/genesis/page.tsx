@@ -13,9 +13,10 @@ const FRICTION = 0.92;
 const MAX_FORCE = 0.8;
 const FORCE_RANGE = 120;
 const MIN_DIST = 15;
-const HEALTH_REGEN = 0.008;
-const HEALTH_DECAY = 0.003;
-const ISOLATION_DIST = 60;
+const COMBAT_RADIUS = 50;     // how close enemies need to be to damage you
+const DAMAGE_RATE = 0.012;    // damage per enemy per frame
+const HEAL_RATE = 0.006;      // heal per ally per frame
+const HEAL_CAP = 1.0;
 
 // ── Level definitions ──
 
@@ -51,65 +52,63 @@ const LEVELS: Level[] = [
   {
     id: 1,
     name: 'FIRST CONTACT',
-    briefing: 'Two species. Make them coexist.',
-    hint: 'Both colors must survive for 20 seconds. If a species scatters too far apart, it fades and dies.',
+    briefing: 'Two species. Keep both alive.',
+    hint: 'When a species is outnumbered by enemies nearby, its particles take damage and die. Separate them — or find balance.',
     numColors: 2,
-    particlesPerColor: 40,
+    particlesPerColor: 50,
     duration: 20,
     lockedMatrix: [
-      [0.3, null],
-      [null, 0.3],
+      [0.5, null],  // Red strongly clumps
+      [null, 0.5],  // Teal strongly clumps
     ],
     sliders: [
       { from: 0, to: 1, initial: 0 },   // Red→Teal
       { from: 1, to: 0, initial: 0 },   // Teal→Red
     ],
-    winCondition: (s) => s.elapsed >= 20 && s.colorCounts.every(c => c >= 5),
+    winCondition: (s) => s.elapsed >= 20 && s.colorCounts.every(c => c >= 8),
     winText: 'Both species survived. Coexistence achieved.',
-    loseText: 'A species went extinct.',
+    loseText: 'A species was wiped out.',
   },
   {
     id: 2,
     name: 'THE HUNT',
-    briefing: 'Create a predator-prey chase.',
-    hint: 'Red must chase Teal. Make Red pursue, make Teal flee. Both must survive 25 seconds.',
+    briefing: 'Red is aggressive. Keep Teal alive.',
+    hint: 'Red is locked to chase Teal (+80). Teal will be slaughtered unless it runs. You only control Teal\'s reaction.',
     numColors: 2,
-    particlesPerColor: 45,
+    particlesPerColor: 50,
     duration: 25,
     lockedMatrix: [
-      [0.2, null],
-      [null, 0.5],
+      [0.4, 0.8],     // Red clumps AND hunts Teal hard (locked!)
+      [null, 0.5],     // You set Teal→Red, Teal clumps
     ],
     sliders: [
-      { from: 0, to: 1, initial: 0.5 },   // Red→Teal (hint: should attract)
-      { from: 1, to: 0, initial: -0.5 },   // Teal→Red (hint: should repel)
+      { from: 1, to: 0, initial: 0 },   // Teal→Red — the only lever
     ],
-    winCondition: (s) => s.elapsed >= 25 && s.colorCounts.every(c => c >= 5),
-    winText: 'The chase held. Neither species collapsed.',
-    loseText: 'The ecosystem collapsed. One species was lost.',
+    winCondition: (s) => s.elapsed >= 25 && s.colorCounts.every(c => c >= 8),
+    winText: 'Teal survived the hunt. The prey adapts.',
+    loseText: 'Teal was hunted to extinction.',
   },
   {
     id: 3,
     name: 'TRIANGLE',
     briefing: 'Three species. All must survive.',
-    hint: 'Red hunts Teal. Teal hunts Yellow. You control Yellow\'s feelings. Keep all three alive for 30 seconds.',
+    hint: 'Red hunts Teal. Teal hunts Yellow. Yellow is defenseless — unless you give it the right instincts.',
     numColors: 3,
-    particlesPerColor: 35,
+    particlesPerColor: 40,
     duration: 30,
     lockedMatrix: [
-      [0.3,  0.7,  null],   // Red likes itself, chases Teal, you set Red→Yellow
-      [null, 0.3,  0.7],    // you set Teal→Red, Teal likes itself, Teal chases Yellow
-      [null, null, 0.4],    // you set Yellow→Red, Yellow→Teal, Yellow likes itself
+      [0.4,  0.7,  null],   // Red clumps, hunts Teal, you set Red→Yellow
+      [-0.5, 0.4,  0.7],    // Teal flees Red, clumps, hunts Yellow
+      [null, null, 0.4],    // you set Yellow→Red, Yellow→Teal, Yellow clumps
     ],
     sliders: [
-      { from: 0, to: 2, initial: 0 },    // Red→Yellow
-      { from: 1, to: 0, initial: -0.3 },  // Teal→Red
+      { from: 0, to: 2, initial: 0 },     // Red→Yellow
       { from: 2, to: 0, initial: 0 },     // Yellow→Red
       { from: 2, to: 1, initial: 0 },     // Yellow→Teal
     ],
     winCondition: (s) => s.elapsed >= 30 && s.colorCounts.every(c => c >= 5),
-    winText: 'All three species thrived. A stable ecosystem.',
-    loseText: 'The triangle collapsed. Try different relationships.',
+    winText: 'All three species thrived. A stable triangle.',
+    loseText: 'The ecosystem collapsed. Extinction.',
   },
 ];
 
@@ -280,7 +279,8 @@ export default function GenesisPage() {
           if (p.health <= 0) continue;
           let fx = 0;
           let fy = 0;
-          let nearestSame = Infinity;
+          let nearbyAllies = 0;
+          let nearbyEnemies = 0;
 
           for (let j = 0; j < particles.length; j++) {
             if (i === j) continue;
@@ -296,7 +296,11 @@ export default function GenesisPage() {
 
             const dist2 = dx * dx + dy * dy;
 
-            if (q.color === p.color && dist2 < nearestSame) nearestSame = dist2;
+            // Count nearby allies/enemies for combat
+            if (dist2 < COMBAT_RADIUS * COMBAT_RADIUS) {
+              if (q.color === p.color) nearbyAllies++;
+              else nearbyEnemies++;
+            }
 
             if (dist2 > forceRange * forceRange || dist2 < 1) continue;
             const dist = Math.sqrt(dist2);
@@ -325,13 +329,15 @@ export default function GenesisPage() {
           if (p.y < 0) p.y += s.h;
           if (p.y >= s.h) p.y -= s.h;
 
-          // Health: only during simulation
+          // Combat health: outnumbered = taking damage
           if (isSimulating) {
-            const nearDist = Math.sqrt(nearestSame);
-            if (nearDist < ISOLATION_DIST) {
-              p.health = Math.min(1, p.health + HEALTH_REGEN);
+            // Damage when enemies outnumber allies nearby
+            const pressure = nearbyEnemies - nearbyAllies;
+            if (pressure > 0) {
+              p.health -= DAMAGE_RATE * pressure * (dt / 16);
             } else {
-              p.health -= HEALTH_DECAY * (nearDist / ISOLATION_DIST);
+              // Heal slowly when safe (more allies than enemies)
+              p.health = Math.min(HEAL_CAP, p.health + HEAL_RATE * (dt / 16));
             }
           }
         }
