@@ -53,6 +53,7 @@ function initAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 function playTone(freq: number, dur: number, type: OscillatorType = 'sine') {
   if (!audioCtx) return;
@@ -66,6 +67,139 @@ function playTone(freq: number, dur: number, type: OscillatorType = 'sine') {
   gain.connect(audioCtx.destination);
   osc.start();
   osc.stop(audioCtx.currentTime + dur);
+}
+
+// ===== MUSIC ENGINE — Slow glass-like ambient for balance gameplay =====
+const MUSIC_BPM = 72;
+const MUSIC_STEP_MS = (60 / MUSIC_BPM) * 1000 / 4; // 16th notes
+
+// Eb minor pentatonic — contemplative, not sad
+// Pads: Ebm9, Gbmaj7, Abm7, Bbm7 — 4-bar cycle
+const MUSIC_PADS = [
+  [155.56, 233.08, 311.13, 349.23],  // Ebm9  (Eb3, Bb3, Eb4, F4)
+  [185.00, 233.08, 293.66, 349.23],  // Gbmaj7 (Gb3, Bb3, D4, F4)
+  [207.65, 261.63, 311.13, 392.00],  // Abm7  (Ab3, C4, Eb4, G4)
+  [233.08, 293.66, 349.23, 466.16],  // Bbm7  (Bb3, D4, F4, Bb4)
+];
+// Arpeggio notes — high register, glass-bell feel (Eb pentatonic: Eb, Gb, Ab, Bb, Db)
+const MUSIC_ARP = [622.25, 739.99, 830.61, 932.33, 1108.73, 932.33, 830.61, 739.99];
+// Arp rhythm: sparse, not every beat (1 = play, 0 = rest) — 16 steps
+const MUSIC_ARP_PATTERN = [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0];
+// Sub bass: Eb and Bb, very slow movement
+const MUSIC_BASS = [77.78, 0, 0, 0, 0, 0, 0, 0, 116.54, 0, 0, 0, 0, 0, 0, 0];
+
+let musicPlaying = false;
+let musicInterval: ReturnType<typeof setInterval> | null = null;
+let musicStep = 0;
+
+function playPad(freqs: number[]) {
+  if (!audioCtx) return;
+  // Only play on bar boundaries (every 16 steps)
+  if (musicStep % 16 !== 0) return;
+  const now = audioCtx.currentTime;
+  freqs.forEach((freq, i) => {
+    setTimeout(() => {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const flt = audioCtx.createBiquadFilter();
+      const gn = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      flt.type = 'lowpass';
+      flt.frequency.value = 900;
+      gn.gain.setValueAtTime(0.022, audioCtx.currentTime);
+      gn.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.5);
+      osc.connect(flt);
+      flt.connect(gn);
+      gn.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 3.0);
+      osc.onended = () => { osc.disconnect(); flt.disconnect(); gn.disconnect(); };
+    }, i * 50); // gentle strum
+  });
+}
+
+function playArp(freq: number) {
+  if (!audioCtx || freq === 0) return;
+  const osc = audioCtx.createOscillator();
+  const flt = audioCtx.createBiquadFilter();
+  const gn = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  // Slight detune for shimmer
+  const osc2 = audioCtx.createOscillator();
+  const gn2 = audioCtx.createGain();
+  osc2.type = 'sine';
+  osc2.frequency.value = freq * 1.003;
+  flt.type = 'lowpass';
+  flt.frequency.value = 2000;
+  flt.Q.value = 0.5;
+  const now = audioCtx.currentTime;
+  gn.gain.setValueAtTime(0.03, now);
+  gn.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+  gn2.gain.setValueAtTime(0.015, now);
+  gn2.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+  osc.connect(flt);
+  flt.connect(gn);
+  gn.connect(audioCtx.destination);
+  osc2.connect(gn2);
+  gn2.connect(audioCtx.destination);
+  osc.start(); osc.stop(now + 1.5);
+  osc2.start(); osc2.stop(now + 1.0);
+  osc.onended = () => { osc.disconnect(); flt.disconnect(); gn.disconnect(); };
+  osc2.onended = () => { osc2.disconnect(); gn2.disconnect(); };
+}
+
+function playSubBass(freq: number) {
+  if (!audioCtx || freq === 0) return;
+  const osc = audioCtx.createOscillator();
+  const flt = audioCtx.createBiquadFilter();
+  const gn = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  flt.type = 'lowpass';
+  flt.frequency.value = 120;
+  const now = audioCtx.currentTime;
+  gn.gain.setValueAtTime(0.1, now);
+  gn.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+  osc.connect(flt);
+  flt.connect(gn);
+  gn.connect(audioCtx.destination);
+  osc.start(); osc.stop(now + 0.6);
+  osc.onended = () => { osc.disconnect(); flt.disconnect(); gn.disconnect(); };
+}
+
+function musicTick() {
+  if (!audioCtx || !musicPlaying) return;
+  const step16 = musicStep % 16;
+  // Pads: one chord per bar
+  const chordIdx = Math.floor(musicStep / 16) % 4;
+  playPad(MUSIC_PADS[chordIdx]);
+  // Arp: sparse glass notes
+  if (MUSIC_ARP_PATTERN[step16]) {
+    playArp(MUSIC_ARP[musicStep % MUSIC_ARP.length]);
+  }
+  // Sub bass: every 8 steps
+  if (step16 % 8 === 0) {
+    playSubBass(MUSIC_BASS[step16]);
+  }
+  musicStep++;
+}
+
+function startMusic() {
+  if (musicPlaying) return;
+  initAudio();
+  musicPlaying = true;
+  musicStep = 0;
+  musicInterval = setInterval(musicTick, MUSIC_STEP_MS);
+}
+
+function stopMusic() {
+  musicPlaying = false;
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
+  }
 }
 
 export default function LevelGame() {
@@ -171,6 +305,7 @@ export default function LevelGame() {
     function endGame() {
       if (gs.gameOver) return;
       gs.gameOver = true;
+      stopMusic();
       const finalScore = Math.round(gs.points);
       scoreRef.current = finalScore;
       setScore(finalScore);
@@ -421,6 +556,7 @@ export default function LevelGame() {
     animRef.current = requestAnimationFrame(loop);
 
     return () => {
+      stopMusic();
       cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
       window.removeEventListener('deviceorientation', handleOrientation);
@@ -431,6 +567,7 @@ export default function LevelGame() {
 
   const startGame = useCallback(() => {
     initAudio();
+    startMusic();
     scoreRef.current = 0;
     setScore(0);
     setSubmittedEntryId(null);
