@@ -22,6 +22,9 @@ const MAX_FORCE = 0.8;
 const FORCE_RANGE = 120;
 const MIN_DIST = 15;
 
+// Pentatonic scale for ambient melody (MIDI notes)
+const MELODY_NOTES = [48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72]; // C3 to C5 pentatonic
+
 interface Particle {
   x: number;
   y: number;
@@ -30,12 +33,26 @@ interface Particle {
   color: number;
 }
 
+interface AudioState {
+  ctx: AudioContext;
+  jb01: any;
+  jt10: any;
+  reverb: ConvolverNode;
+  reverbGain: GainNode;
+  masterGain: GainNode;
+  running: boolean;
+  lastKickTime: number;
+  lastMelodyTime: number;
+  lastHatTime: number;
+  melodyIndex: number;
+}
+
 function randomMatrix(): number[][] {
   const m: number[][] = [];
   for (let i = 0; i < NUM_COLORS; i++) {
     m[i] = [];
     for (let j = 0; j < NUM_COLORS; j++) {
-      m[i][j] = Math.random() * 2 - 1; // -1 to +1
+      m[i][j] = Math.random() * 2 - 1;
     }
   }
   return m;
@@ -60,6 +77,19 @@ function isMobile(): boolean {
   return window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 }
 
+// Generate a reverb impulse response
+function createReverbIR(ctx: AudioContext, duration: number, decay: number): AudioBuffer {
+  const length = ctx.sampleRate * duration;
+  const ir = ctx.createBuffer(2, length, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = ir.getChannelData(ch);
+    for (let i = 0; i < length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+    }
+  }
+  return ir;
+}
+
 export default function ParticleLifePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<{
@@ -72,6 +102,8 @@ export default function ParticleLifePage() {
     showMatrix: boolean;
     speed: number;
     mobile: boolean;
+    avgSpeed: number;
+    clusterCount: number;
   }>({
     particles: [],
     matrix: randomMatrix(),
@@ -82,15 +114,171 @@ export default function ParticleLifePage() {
     showMatrix: false,
     speed: 1,
     mobile: false,
+    avgSpeed: 0,
+    clusterCount: 0,
   });
+  const audioRef = useRef<AudioState | null>(null);
+  const audioInitRef = useRef(false);
   const [, forceRender] = useState(0);
   const [showUI, setShowUI] = useState(true);
   const [showMatrix, setShowMatrix] = useState(false);
   const [particleCount, setParticleCount] = useState(0);
   const [universeAge, setUniverseAge] = useState(0);
   const [mobile, setMobile] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
+  const [muted, setMuted] = useState(false);
   const ageRef = useRef(0);
   const animRef = useRef<number>(0);
+
+  // Initialize audio on first user interaction
+  const initAudio = useCallback(async () => {
+    if (audioInitRef.current) return;
+    audioInitRef.current = true;
+
+    try {
+      const ctx = new AudioContext({ sampleRate: 44100 });
+      if (ctx.state === 'suspended') await ctx.resume();
+
+      // Master output chain: masterGain → destination
+      const masterGain = ctx.createGain();
+      masterGain.gain.value = 0.6;
+      masterGain.connect(ctx.destination);
+
+      // Reverb send
+      const reverb = ctx.createConvolver();
+      reverb.buffer = createReverbIR(ctx, 3.5, 2.5);
+      const reverbGain = ctx.createGain();
+      reverbGain.gain.value = 0.4;
+      reverb.connect(reverbGain);
+      reverbGain.connect(masterGain);
+
+      // Load JB01 (drums)
+      let jb01: any = null;
+      try {
+        const jb01Path = ['/jb01/dist/machines/jb01', 'engine.js'].join('/');
+        const jb01Module = await import(/* webpackIgnore: true */ jb01Path);
+        jb01 = new jb01Module.JB01Engine({ context: ctx });
+        jb01.connectOutput(masterGain);
+        // Also send to reverb
+        jb01.masterGain.connect(reverb);
+
+        // Set up ambient drum tones
+        jb01.setVoiceParam('kick', 'decay', 0.8);
+        jb01.setVoiceParam('kick', 'tone', 0.3);
+        jb01.setVoiceParam('ch', 'decay', 0.15);
+        jb01.setVoiceParam('ch', 'tone', 0.6);
+        jb01.setVoiceParam('oh', 'decay', 0.4);
+      } catch (e) {
+        console.warn('JB01 not available:', e);
+      }
+
+      // Load JT10 (melody synth)
+      let jt10: any = null;
+      try {
+        const jt10Path = ['/jt10/dist/machines/jt10', 'engine.js'].join('/');
+        const jt10Module = await import(/* webpackIgnore: true */ jt10Path);
+        jt10 = new jt10Module.JT10Engine({ context: ctx });
+        jt10.connectOutput(masterGain);
+        // Heavy reverb on melody
+        jt10.masterGain.connect(reverb);
+
+        // Configure for ambient: dark, soft, long release
+        jt10.setParameter('waveform', 'saw');
+        jt10.setParameter('cutoff', 0.15);
+        jt10.setParameter('resonance', 0.1);
+        jt10.setParameter('attack', 0.3);
+        jt10.setParameter('decay', 1.5);
+        jt10.setParameter('sustain', 0.2);
+        jt10.setParameter('release', 2.0);
+        jt10.setParameter('filterAttack', 0.2);
+        jt10.setParameter('filterDecay', 1.0);
+        jt10.setParameter('filterSustain', 0.1);
+        jt10.setParameter('filterRelease', 1.5);
+        jt10.setParameter('filterEnvAmount', 0.3);
+      } catch (e) {
+        console.warn('JT10 not available:', e);
+      }
+
+      const audio: AudioState = {
+        ctx,
+        jb01,
+        jt10,
+        reverb,
+        reverbGain,
+        masterGain,
+        running: true,
+        lastKickTime: 0,
+        lastMelodyTime: 0,
+        lastHatTime: 0,
+        melodyIndex: Math.floor(Math.random() * MELODY_NOTES.length),
+      };
+
+      audioRef.current = audio;
+      setAudioReady(true);
+
+      // Start generative music loop
+      startMusicLoop(audio);
+    } catch (e) {
+      console.warn('Audio init failed:', e);
+    }
+  }, []);
+
+  const startMusicLoop = useCallback((audio: AudioState) => {
+    const schedule = () => {
+      if (!audio.running) return;
+      const s = stateRef.current;
+      const now = audio.ctx.currentTime;
+      const avgSpeed = s.avgSpeed;
+
+      // Ambient kick: soft, slow pulse every 3-6 seconds
+      if (audio.jb01 && now - audio.lastKickTime > 3 + Math.random() * 3) {
+        const vel = 0.15 + Math.min(avgSpeed * 0.1, 0.2);
+        audio.jb01.trigger('kick', vel, now + 0.05);
+        audio.lastKickTime = now;
+      }
+
+      // Hi-hats: density scales with particle activity
+      const hatInterval = Math.max(0.3, 1.5 - avgSpeed * 0.3);
+      if (audio.jb01 && now - audio.lastHatTime > hatInterval) {
+        if (Math.random() < 0.6) {
+          const vel = 0.05 + Math.random() * 0.15;
+          const voice = Math.random() < 0.8 ? 'ch' : 'oh';
+          audio.jb01.trigger(voice, vel, now + 0.05);
+        }
+        audio.lastHatTime = now;
+      }
+
+      // Melody: pentatonic notes, walking up/down, every 4-10 seconds
+      if (audio.jt10 && now - audio.lastMelodyTime > 4 + Math.random() * 6) {
+        // Walk through pentatonic scale with occasional jumps
+        const step = Math.random() < 0.7
+          ? (Math.random() < 0.5 ? 1 : -1)  // step up or down
+          : Math.floor(Math.random() * 5) - 2; // jump
+        audio.melodyIndex = Math.max(0, Math.min(MELODY_NOTES.length - 1, audio.melodyIndex + step));
+        const note = MELODY_NOTES[audio.melodyIndex];
+        const vel = 0.2 + Math.random() * 0.2;
+        audio.jt10.trigger(note, vel, now + 0.05);
+        audio.lastMelodyTime = now;
+      }
+
+      setTimeout(schedule, 200);
+    };
+    schedule();
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (muted) {
+      audio.masterGain.gain.linearRampToValueAtTime(0.6, audio.ctx.currentTime + 0.3);
+      audio.running = true;
+      startMusicLoop(audio);
+    } else {
+      audio.masterGain.gain.linearRampToValueAtTime(0, audio.ctx.currentTime + 0.3);
+      audio.running = false;
+    }
+    setMuted(!muted);
+  }, [muted, startMusicLoop]);
 
   const init = useCallback(() => {
     const canvas = canvasRef.current;
@@ -113,7 +301,6 @@ export default function ParticleLifePage() {
     s.mobile = isMobile();
     setMobile(s.mobile);
 
-    // Fewer particles on mobile for performance
     const maxParticles = s.mobile ? 250 : 600;
     const count = Math.min(maxParticles, Math.floor((s.w * s.h) / (s.mobile ? 1200 : 2000)));
     s.particles = createParticles(count, s.w, s.h);
@@ -141,6 +328,11 @@ export default function ParticleLifePage() {
       ctx.fillRect(0, 0, stateRef.current.w, stateRef.current.h);
     }
     forceRender(n => n + 1);
+
+    // Reset melody to a new starting point on new universe
+    if (audioRef.current) {
+      audioRef.current.melodyIndex = Math.floor(Math.random() * MELODY_NOTES.length);
+    }
   }, []);
 
   useEffect(() => {
@@ -163,7 +355,6 @@ export default function ParticleLifePage() {
 
     window.addEventListener('resize', handleResize);
 
-    // Prevent iOS rubber-band scrolling
     const preventScroll = (e: TouchEvent) => e.preventDefault();
     document.body.addEventListener('touchmove', preventScroll, { passive: false });
     document.body.style.overflow = 'hidden';
@@ -171,9 +362,10 @@ export default function ParticleLifePage() {
     document.body.style.width = '100%';
     document.body.style.height = '100%';
 
-    // Game loop
     let lastTime = 0;
     let ageAccum = 0;
+    let speedAccum = 0;
+    let speedSamples = 0;
 
     const loop = (time: number) => {
       const s = stateRef.current;
@@ -189,6 +381,13 @@ export default function ParticleLifePage() {
         ageRef.current += Math.floor(ageAccum / 1000);
         ageAccum %= 1000;
         setUniverseAge(ageRef.current);
+
+        // Update average speed for audio reactivity
+        if (speedSamples > 0) {
+          s.avgSpeed = speedAccum / speedSamples;
+          speedAccum = 0;
+          speedSamples = 0;
+        }
       }
 
       const canvas = canvasRef.current;
@@ -198,18 +397,16 @@ export default function ParticleLifePage() {
         return;
       }
 
-      // Trail effect
       ctx.fillStyle = `rgba(10, 10, 15, ${s.trail})`;
       ctx.fillRect(0, 0, s.w, s.h);
 
       const particles = s.particles;
       const matrix = s.matrix;
       const speed = s.speed;
-
-      // On mobile, use smaller force range for fewer calculations
       const forceRange = s.mobile ? 80 : FORCE_RANGE;
 
-      // Physics update
+      let totalSpeed = 0;
+
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         let fx = 0;
@@ -221,13 +418,11 @@ export default function ParticleLifePage() {
           let dx = q.x - p.x;
           let dy = q.y - p.y;
 
-          // Wrap-around distance
           if (dx > s.w / 2) dx -= s.w;
           if (dx < -s.w / 2) dx += s.w;
           if (dy > s.h / 2) dy -= s.h;
           if (dy < -s.h / 2) dy += s.h;
 
-          // Quick distance reject (skip sqrt for far particles)
           const dist2 = dx * dx + dy * dy;
           if (dist2 > forceRange * forceRange || dist2 < 1) continue;
 
@@ -251,13 +446,21 @@ export default function ParticleLifePage() {
         p.x += p.vx;
         p.y += p.vy;
 
+        totalSpeed += Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+
         if (p.x < 0) p.x += s.w;
         if (p.x >= s.w) p.x -= s.w;
         if (p.y < 0) p.y += s.h;
         if (p.y >= s.h) p.y -= s.h;
       }
 
-      // Draw particles — skip glow on mobile for perf
+      // Track speed for audio
+      if (particles.length > 0) {
+        speedAccum += totalSpeed / particles.length;
+        speedSamples++;
+      }
+
+      // Draw
       if (s.mobile) {
         for (let i = 0; i < particles.length; i++) {
           const p = particles[i];
@@ -299,12 +502,16 @@ export default function ParticleLifePage() {
       document.body.style.position = '';
       document.body.style.width = '';
       document.body.style.height = '';
+      if (audioRef.current) {
+        audioRef.current.running = false;
+      }
     };
   }, [init]);
 
-  // Touch/click to add particles
+  // Touch/click handlers
   const handleCanvasTouch = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
+    if (!audioInitRef.current) initAudio();
     const s = stateRef.current;
     const touch = e.touches[0];
     if (!touch) return;
@@ -321,9 +528,10 @@ export default function ParticleLifePage() {
       });
     }
     setParticleCount(s.particles.length);
-  }, []);
+  }, [initAudio]);
 
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
+    if (!audioInitRef.current) initAudio();
     const s = stateRef.current;
     const color = Math.floor(Math.random() * NUM_COLORS);
     for (let i = 0; i < 8; i++) {
@@ -337,7 +545,7 @@ export default function ParticleLifePage() {
       });
     }
     setParticleCount(s.particles.length);
-  }, []);
+  }, [initAudio]);
 
   const formatAge = (seconds: number): string => {
     if (seconds < 60) return `${seconds}s`;
@@ -369,7 +577,7 @@ export default function ParticleLifePage() {
         style={{ position: 'absolute', top: 0, left: 0 }}
       />
 
-      {/* Top HUD — safe area aware */}
+      {/* Top HUD */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -411,7 +619,7 @@ export default function ParticleLifePage() {
           color: '#ffffff25',
           textAlign: 'right',
         }}>
-          {mobile ? 'tap to seed' : 'tap to seed \u00b7 space for new universe'}
+          {!audioReady ? 'tap to start' : mobile ? 'tap to seed' : 'tap to seed \u00b7 space for new universe'}
         </div>
       </div>
 
@@ -442,7 +650,6 @@ export default function ParticleLifePage() {
             Rules of this Universe
           </div>
           <div style={{ display: 'flex', gap: 1, overflowX: 'auto' }}>
-            {/* Row labels */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1, marginRight: 4, justifyContent: 'flex-end' }}>
               {COLORS.map((c, i) => (
                 <div key={i} style={{
@@ -456,7 +663,6 @@ export default function ParticleLifePage() {
               ))}
             </div>
             <div>
-              {/* Column headers */}
               <div style={{ display: 'flex', gap: 1, marginBottom: 2 }}>
                 {COLORS.map((c, j) => (
                   <div key={j} style={{
@@ -469,7 +675,6 @@ export default function ParticleLifePage() {
                   </div>
                 ))}
               </div>
-              {/* Matrix cells */}
               {s.matrix.map((row, i) => (
                 <div key={i} style={{ display: 'flex', gap: 1 }}>
                   {row.map((val, j) => {
@@ -513,7 +718,7 @@ export default function ParticleLifePage() {
         </div>
       )}
 
-      {/* Bottom controls — safe area aware */}
+      {/* Bottom controls */}
       <div style={{
         position: 'absolute',
         bottom: 0,
@@ -531,6 +736,7 @@ export default function ParticleLifePage() {
         {[
           { label: 'NEW UNIVERSE', action: newUniverse },
           { label: showMatrix ? 'HIDE RULES' : 'RULES', action: () => { stateRef.current.showMatrix = !showMatrix; setShowMatrix(!showMatrix); } },
+          ...(audioReady ? [{ label: muted ? 'UNMUTE' : 'MUTE', action: toggleMute }] : []),
           { label: 'CLEAR', action: () => {
             const s = stateRef.current;
             s.particles = [];
@@ -570,7 +776,6 @@ export default function ParticleLifePage() {
         ))}
       </div>
 
-      {/* Keyboard handler (desktop only) */}
       <KeyboardHandler
         onSpace={newUniverse}
         onH={() => setShowUI(u => !u)}
