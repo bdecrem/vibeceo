@@ -69,120 +69,106 @@ function playTone(freq: number, dur: number, type: OscillatorType = 'sine') {
   osc.stop(audioCtx.currentTime + dur);
 }
 
-// ===== MUSIC ENGINE — Slow glass-like ambient for balance gameplay =====
-const MUSIC_BPM = 72;
+// ===== MUSIC ENGINE — Arcade driving pulse, 130 BPM =====
+const MUSIC_BPM = 130;
 const MUSIC_STEP_MS = (60 / MUSIC_BPM) * 1000 / 4; // 16th notes
 
-// Eb minor pentatonic — contemplative, not sad
-// Pads: Ebm9, Gbmaj7, Abm7, Bbm7 — 4-bar cycle
-const MUSIC_PADS = [
-  [155.56, 233.08, 311.13, 349.23],  // Ebm9  (Eb3, Bb3, Eb4, F4)
-  [185.00, 233.08, 293.66, 349.23],  // Gbmaj7 (Gb3, Bb3, D4, F4)
-  [207.65, 261.63, 311.13, 392.00],  // Abm7  (Ab3, C4, Eb4, G4)
-  [233.08, 293.66, 349.23, 466.16],  // Bbm7  (Bb3, D4, F4, Bb4)
+// A minor — tense, driving, arcade energy
+// Bass: punchy saw octave pattern (A1→A2 movement)
+const M_BASS = [55, 0, 55, 0, 0, 55, 0, 0, 55, 0, 0, 55, 55, 0, 0, 0]; // syncopated
+// Arp: square wave stabs — Am, C, F, Em cycle (16 notes per bar, 4 bars)
+const M_ARP_NOTES = [
+  // Bar 1: Am — A C E
+  440, 0, 523.25, 0, 659.25, 0, 523.25, 0, 440, 0, 659.25, 0, 523.25, 0, 440, 0,
+  // Bar 2: C — C E G
+  523.25, 0, 659.25, 0, 783.99, 0, 659.25, 0, 523.25, 0, 783.99, 0, 659.25, 0, 523.25, 0,
+  // Bar 3: F — F A C
+  349.23, 0, 440, 0, 523.25, 0, 440, 0, 349.23, 0, 523.25, 0, 440, 0, 349.23, 0,
+  // Bar 4: Em — E G B
+  329.63, 0, 392, 0, 493.88, 0, 392, 0, 329.63, 0, 493.88, 0, 392, 0, 329.63, 0,
 ];
-// Arpeggio notes — high register, glass-bell feel (Eb pentatonic: Eb, Gb, Ab, Bb, Db)
-const MUSIC_ARP = [622.25, 739.99, 830.61, 932.33, 1108.73, 932.33, 830.61, 739.99];
-// Arp rhythm: sparse, not every beat (1 = play, 0 = rest) — 16 steps
-const MUSIC_ARP_PATTERN = [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0];
-// Sub bass: Eb and Bb, very slow movement
-const MUSIC_BASS = [77.78, 0, 0, 0, 0, 0, 0, 0, 116.54, 0, 0, 0, 0, 0, 0, 0];
+// Kick: four-on-the-floor
+const M_KICK = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
+// Hi-hat: offbeat 8ths
+const M_HAT = [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0];
 
 let musicPlaying = false;
 let musicInterval: ReturnType<typeof setInterval> | null = null;
 let musicStep = 0;
 
-function playPad(freqs: number[]) {
+function mKick() {
   if (!audioCtx) return;
-  // Only play on bar boundaries (every 16 steps)
-  if (musicStep % 16 !== 0) return;
   const now = audioCtx.currentTime;
-  freqs.forEach((freq, i) => {
-    setTimeout(() => {
-      if (!audioCtx) return;
-      const osc = audioCtx.createOscillator();
-      const flt = audioCtx.createBiquadFilter();
-      const gn = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      flt.type = 'lowpass';
-      flt.frequency.value = 900;
-      gn.gain.setValueAtTime(0.022, audioCtx.currentTime);
-      gn.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.5);
-      osc.connect(flt);
-      flt.connect(gn);
-      gn.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 3.0);
-      osc.onended = () => { osc.disconnect(); flt.disconnect(); gn.disconnect(); };
-    }, i * 50); // gentle strum
-  });
-}
-
-function playArp(freq: number) {
-  if (!audioCtx || freq === 0) return;
   const osc = audioCtx.createOscillator();
-  const flt = audioCtx.createBiquadFilter();
-  const gn = audioCtx.createGain();
-  osc.type = 'triangle';
-  osc.frequency.value = freq;
-  // Slight detune for shimmer
-  const osc2 = audioCtx.createOscillator();
-  const gn2 = audioCtx.createGain();
-  osc2.type = 'sine';
-  osc2.frequency.value = freq * 1.003;
-  flt.type = 'lowpass';
-  flt.frequency.value = 2000;
-  flt.Q.value = 0.5;
-  const now = audioCtx.currentTime;
-  gn.gain.setValueAtTime(0.03, now);
-  gn.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
-  gn2.gain.setValueAtTime(0.015, now);
-  gn2.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-  osc.connect(flt);
-  flt.connect(gn);
-  gn.connect(audioCtx.destination);
-  osc2.connect(gn2);
-  gn2.connect(audioCtx.destination);
-  osc.start(); osc.stop(now + 1.5);
-  osc2.start(); osc2.stop(now + 1.0);
-  osc.onended = () => { osc.disconnect(); flt.disconnect(); gn.disconnect(); };
-  osc2.onended = () => { osc2.disconnect(); gn2.disconnect(); };
-}
-
-function playSubBass(freq: number) {
-  if (!audioCtx || freq === 0) return;
-  const osc = audioCtx.createOscillator();
-  const flt = audioCtx.createBiquadFilter();
   const gn = audioCtx.createGain();
   osc.type = 'sine';
-  osc.frequency.value = freq;
-  flt.type = 'lowpass';
-  flt.frequency.value = 120;
+  osc.frequency.setValueAtTime(150, now);
+  osc.frequency.exponentialRampToValueAtTime(40, now + 0.08);
+  gn.gain.setValueAtTime(0.18, now);
+  gn.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+  osc.connect(gn); gn.connect(audioCtx.destination);
+  osc.start(); osc.stop(now + 0.15);
+  osc.onended = () => { osc.disconnect(); gn.disconnect(); };
+}
+
+function mHat() {
+  if (!audioCtx) return;
   const now = audioCtx.currentTime;
+  const len = Math.floor(audioCtx.sampleRate * 0.02);
+  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const hp = audioCtx.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = 8000;
+  const gn = audioCtx.createGain();
+  gn.gain.setValueAtTime(0.06, now);
+  gn.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+  src.connect(hp); hp.connect(gn); gn.connect(audioCtx.destination);
+  src.start();
+  src.onended = () => { src.disconnect(); hp.disconnect(); gn.disconnect(); };
+}
+
+function mBass(freq: number) {
+  if (!audioCtx || freq === 0) return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const flt = audioCtx.createBiquadFilter();
+  const gn = audioCtx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.value = freq;
+  flt.type = 'lowpass'; flt.frequency.value = 300; flt.Q.value = 3;
   gn.gain.setValueAtTime(0.1, now);
-  gn.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-  osc.connect(flt);
-  flt.connect(gn);
-  gn.connect(audioCtx.destination);
-  osc.start(); osc.stop(now + 0.6);
+  gn.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+  osc.connect(flt); flt.connect(gn); gn.connect(audioCtx.destination);
+  osc.start(); osc.stop(now + 0.15);
+  osc.onended = () => { osc.disconnect(); flt.disconnect(); gn.disconnect(); };
+}
+
+function mArp(freq: number) {
+  if (!audioCtx || freq === 0) return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const flt = audioCtx.createBiquadFilter();
+  const gn = audioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.value = freq;
+  flt.type = 'lowpass'; flt.frequency.value = 1800; flt.Q.value = 1;
+  gn.gain.setValueAtTime(0.035, now);
+  gn.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+  osc.connect(flt); flt.connect(gn); gn.connect(audioCtx.destination);
+  osc.start(); osc.stop(now + 0.1);
   osc.onended = () => { osc.disconnect(); flt.disconnect(); gn.disconnect(); };
 }
 
 function musicTick() {
   if (!audioCtx || !musicPlaying) return;
-  const step16 = musicStep % 16;
-  // Pads: one chord per bar
-  const chordIdx = Math.floor(musicStep / 16) % 4;
-  playPad(MUSIC_PADS[chordIdx]);
-  // Arp: sparse glass notes
-  if (MUSIC_ARP_PATTERN[step16]) {
-    playArp(MUSIC_ARP[musicStep % MUSIC_ARP.length]);
-  }
-  // Sub bass: every 8 steps
-  if (step16 % 8 === 0) {
-    playSubBass(MUSIC_BASS[step16]);
-  }
+  const s16 = musicStep % 16;
+  if (M_KICK[s16]) mKick();
+  if (M_HAT[s16]) mHat();
+  mBass(M_BASS[s16]);
+  mArp(M_ARP_NOTES[musicStep % M_ARP_NOTES.length]);
   musicStep++;
 }
 
@@ -275,6 +261,9 @@ export default function LevelGame() {
       // Milestone splashes
       milestonesHit: new Set<number>(),
       splashes: [] as { text: string; emoji: string; color: string; life: number; scale: number; y: number }[],
+      screenFlash: '' as string,
+      screenFlashLife: 0,
+      rings: [] as { x: number; y: number; radius: number; maxRadius: number; life: number; color: string }[],
       // Living background
       bgTime: 0,
     };
@@ -375,7 +364,12 @@ export default function LevelGame() {
         const newMult = gs.centeredTime >= 10 ? 8 : gs.centeredTime >= 5 ? 4 : gs.centeredTime >= 2 ? 2 : 1;
         if (newMult > gs.multiplier) {
           gs.multiplierFlash = 1.0;
-          playTone(600 + newMult * 100, 0.15, 'triangle');
+          // Ascending fanfare — more notes at higher tiers
+          playTone(500, 0.08, 'square');
+          setTimeout(() => playTone(700, 0.08, 'square'), 50);
+          setTimeout(() => playTone(900, 0.12, 'square'), 100);
+          if (newMult >= 4) setTimeout(() => playTone(1100, 0.12, 'square'), 150);
+          if (newMult >= 8) setTimeout(() => playTone(1300, 0.15, 'triangle'), 200);
           // Milestone splashes
           const milestones: [number, number, string, string, string][] = [
             [2, 2, '2×', '🔥', COLORS.teal],
@@ -385,9 +379,14 @@ export default function LevelGame() {
           for (const [secs, mult, label, emoji, color] of milestones) {
             if (newMult === mult && !gs.milestonesHit.has(mult)) {
               gs.milestonesHit.add(mult);
-              gs.splashes.push({ text: label, emoji, color, life: 1.0, scale: 0, y: h * 0.35 });
+              gs.splashes.push({ text: label, emoji, color, life: 1.0, scale: 0, y: h * 0.38 });
+              // Screen flash
+              gs.screenFlash = color;
+              gs.screenFlashLife = 1.0;
+              // Expanding ring
+              gs.rings.push({ x: centerX, y: centerY, radius: targetRadius, maxRadius: Math.min(w, h) * 0.6, life: 1.0, color });
               // Burst particles outward from center
-              for (let i = 0; i < 24 + mult * 4; i++) {
+              for (let i = 0; i < 30 + mult * 8; i++) {
                 const angle = (i / (24 + mult * 4)) * Math.PI * 2;
                 const speed = 3 + Math.random() * 5;
                 gs.particles.push({
@@ -413,9 +412,12 @@ export default function LevelGame() {
       }
       if (gs.multiplierFlash > 0) gs.multiplierFlash -= dt * 2;
 
+      // Tick-tock SFX — speeds up with multiplier
+      const tickInterval = gs.multiplier >= 8 ? 0.07 : gs.multiplier >= 4 ? 0.1 : gs.multiplier >= 2 ? 0.15 : 0.25;
       gs.toneTimer += dt;
-      if (centered && gs.toneTimer > 0.2) {
-        playTone(440 + gs.elapsed * 2, 0.05, 'sine');
+      if (centered && gs.toneTimer > tickInterval) {
+        const tickFreq = gs.multiplier >= 8 ? 880 : gs.multiplier >= 4 ? 660 : gs.multiplier >= 2 ? 550 : 440;
+        playTone(tickFreq + (gs.toneTimer % 2 < tickInterval ? 100 : 0), 0.03, 'square');
         gs.toneTimer = 0;
       }
 
@@ -449,10 +451,20 @@ export default function LevelGame() {
 
       // Update splashes
       gs.splashes = gs.splashes.filter(s => {
-        s.life -= dt * 0.6;
-        s.scale = Math.min(1, s.scale + dt * 5); // fast pop-in
-        s.y -= dt * 15; // gentle float up
+        s.life -= dt * 0.5;
+        s.scale = Math.min(1, s.scale + dt * 6);
+        s.y -= dt * 20;
         return s.life > 0;
+      });
+
+      // Update screen flash
+      if (gs.screenFlashLife > 0) gs.screenFlashLife -= dt * 4;
+
+      // Update rings
+      gs.rings = gs.rings.filter(r => {
+        r.life -= dt * 1.5;
+        r.radius += (r.maxRadius - r.radius) * dt * 4;
+        return r.life > 0;
       });
 
       gs.bgTime += dt;
@@ -592,24 +604,48 @@ export default function LevelGame() {
       ctx!.lineWidth = 2;
       ctx!.stroke();
 
-      // Milestone splashes
+      // Screen flash overlay
+      if (gs.screenFlashLife > 0) {
+        ctx!.save();
+        ctx!.globalAlpha = gs.screenFlashLife * 0.15;
+        ctx!.fillStyle = gs.screenFlash;
+        ctx!.fillRect(0, 0, w, h);
+        ctx!.restore();
+      }
+
+      // Expanding rings
+      gs.rings.forEach((r: { x: number; y: number; radius: number; maxRadius: number; life: number; color: string }) => {
+        ctx!.save();
+        ctx!.globalAlpha = r.life * 0.6;
+        ctx!.strokeStyle = r.color;
+        ctx!.lineWidth = 3 + r.life * 4;
+        ctx!.beginPath();
+        ctx!.arc(r.x, r.y, Math.max(0, r.radius), 0, Math.PI * 2);
+        ctx!.stroke();
+        ctx!.restore();
+      });
+
+      // Milestone splashes — BIG and juicy
       gs.splashes.forEach((s: { text: string; emoji: string; color: string; life: number; scale: number; y: number }) => {
         ctx!.save();
         ctx!.translate(w / 2, s.y);
-        const ease = 1 - Math.pow(1 - s.scale, 3); // ease-out cubic
-        ctx!.scale(ease, ease);
-        ctx!.globalAlpha = Math.min(1, s.life * 2);
-        // Emoji
-        ctx!.font = `${60 + (s.text === '8×' ? 20 : 0)}px sans-serif`;
+        const ease = 1 - Math.pow(1 - s.scale, 3);
+        const bounce = 1 + Math.sin(s.scale * Math.PI) * 0.15; // overshoot bounce
+        ctx!.scale(ease * bounce, ease * bounce);
+        ctx!.globalAlpha = Math.min(1, s.life * 2.5);
+        // Emoji — huge
+        const emojiSize = s.text === '8×' ? 100 : s.text === '4×' ? 85 : 70;
+        ctx!.font = `${emojiSize}px sans-serif`;
         ctx!.textAlign = 'center';
         ctx!.textBaseline = 'middle';
-        ctx!.fillText(s.emoji, 0, -30);
-        // Multiplier text
-        ctx!.font = `bold ${48 + (s.text === '8×' ? 16 : 0)}px ui-monospace, monospace`;
+        ctx!.fillText(s.emoji, 0, -45);
+        // Multiplier text — massive
+        const textSize = s.text === '8×' ? 96 : s.text === '4×' ? 80 : 64;
+        ctx!.font = `bold ${textSize}px ui-monospace, monospace`;
         ctx!.fillStyle = s.color;
         ctx!.shadowColor = s.color;
-        ctx!.shadowBlur = 30;
-        ctx!.fillText(s.text, 0, 30);
+        ctx!.shadowBlur = 50;
+        ctx!.fillText(s.text, 0, 45);
         ctx!.shadowBlur = 0;
         ctx!.restore();
       });
