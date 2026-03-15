@@ -18,8 +18,7 @@ const labMessages = [
 ];
 
 const games = [
-  { icon: '🌱', name: 'Genesis', href: '/pixelpit/arcade/genesis', playable: true, date: 'Sat 3/14' },
-  { icon: '🧬', name: 'Particle Life', href: '/pixelpit/arcade/particle-life', playable: true, date: 'Sat 3/14' },
+  { icon: '⚖️', name: 'Level', href: '/pixelpit/arcade/level', playable: true, date: 'Sun 3/15' },
   { icon: '🍣', name: 'Sushi Mgr', href: '/pixelpit/arcade/sushi-manager', playable: true, date: 'Fri 3/13' },
   { icon: '🍣', name: 'Sushi', href: '/pixelpit/arcade/sushi', playable: true, date: 'Fri 3/13' },
   { icon: '🎨', name: 'Flood', href: '/pixelpit/arcade/flood', playable: true, date: 'Mon 3/9' },
@@ -131,6 +130,8 @@ const _makers = [
 ];
 
 const labItems = [
+  { icon: '🌱', name: 'Genesis', href: '/pixelpit/arcade/genesis', date: 'Sat 3/14', shipped: true },
+  { icon: '🧬', name: 'Particle Life', href: '/pixelpit/arcade/particle-life', date: 'Sat 3/14', shipped: true },
   { icon: '🔥', name: 'Claim', href: '/pixelpit/lab/claim', date: 'Wed 2/25' },
   { icon: '⚡', name: 'Coil', href: '/pixelpit/lab/coil', date: 'Wed 2/25' },
   { icon: '🔥', name: 'Claim', href: '/pixelpit/lab/claim', date: 'Wed 2/25' },
