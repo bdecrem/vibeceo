@@ -4,7 +4,6 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 
 const GAME_ID = 'genesis';
 
-// Only use the colors each level needs
 const ALL_COLORS = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#a29bfe', '#55efc4', '#fd79a8'];
 const ALL_NAMES = ['Red', 'Teal', 'Yellow', 'Lavender', 'Mint', 'Pink'];
 
@@ -13,10 +12,12 @@ const FRICTION = 0.92;
 const MAX_FORCE = 0.8;
 const FORCE_RANGE = 120;
 const MIN_DIST = 15;
-const COMBAT_RADIUS = 50;     // how close enemies need to be to damage you
-const DAMAGE_RATE = 0.012;    // damage per enemy per frame
-const HEAL_RATE = 0.006;      // heal per ally per frame
-const HEAL_CAP = 1.0;
+const COMBAT_RADIUS = 50;
+const DAMAGE_RATE = 0.012;
+const HEAL_RATE = 0.006;
+const WALL_BOUNCE = 0.6;   // velocity retained on wall bounce
+const GRID_SIZE = 40;       // territory grid cell size in pixels
+const TERRITORY_PRESENCE = 1; // min particles in cell to claim it
 
 // ── Level definitions ──
 
@@ -24,6 +25,7 @@ interface SliderDef {
   from: number;
   to: number;
   initial: number;
+  label?: string;
 }
 
 interface Level {
@@ -33,16 +35,17 @@ interface Level {
   hint: string;
   numColors: number;
   particlesPerColor: number;
-  duration: number; // seconds
-  lockedMatrix: (number | null)[][]; // null = player controls via slider
+  duration: number;
+  territoryGoal: number; // each color must claim this % of grid
+  lockedMatrix: (number | null)[][];
   sliders: SliderDef[];
-  winCondition: (state: SimState) => boolean;
   winText: string;
   loseText: string;
 }
 
 interface SimState {
   colorCounts: number[];
+  territory: number[]; // % of grid each color claims
   elapsed: number;
   particles: Particle[];
   numColors: number;
@@ -52,63 +55,63 @@ const LEVELS: Level[] = [
   {
     id: 1,
     name: 'FIRST CONTACT',
-    briefing: 'Two species. Keep both alive.',
-    hint: 'When a species is outnumbered by enemies nearby, its particles take damage and die. Separate them — or find balance.',
+    briefing: 'Colonize the arena. Both species must claim territory.',
+    hint: 'Spread out to claim cells — but clump too thin and enemies will kill you. Both species need 15% territory to win.',
     numColors: 2,
     particlesPerColor: 50,
-    duration: 20,
+    duration: 25,
+    territoryGoal: 15,
     lockedMatrix: [
-      [0.5, null],  // Red strongly clumps
-      [null, 0.5],  // Teal strongly clumps
+      [0.3, null],
+      [null, 0.3],
     ],
     sliders: [
-      { from: 0, to: 1, initial: 0 },   // Red→Teal
-      { from: 1, to: 0, initial: 0 },   // Teal→Red
+      { from: 0, to: 1, initial: 0, label: 'Red feels about Teal' },
+      { from: 1, to: 0, initial: 0, label: 'Teal feels about Red' },
     ],
-    winCondition: (s) => s.elapsed >= 20 && s.colorCounts.every(c => c >= 8),
-    winText: 'Both species survived. Coexistence achieved.',
-    loseText: 'A species was wiped out.',
+    winText: 'Both species colonized. Coexistence.',
+    loseText: 'Colony failed.',
   },
   {
     id: 2,
     name: 'THE HUNT',
-    briefing: 'Red is aggressive. Keep Teal alive.',
-    hint: 'Red is locked to chase Teal (+80). Teal will be slaughtered unless it runs. You only control Teal\'s reaction.',
+    briefing: 'Red is a predator. Help Teal colonize anyway.',
+    hint: 'Red chases Teal hard (+80, locked). You control Teal\'s instinct. Teal needs 15% territory AND must survive.',
     numColors: 2,
     particlesPerColor: 50,
-    duration: 25,
+    duration: 30,
+    territoryGoal: 15,
     lockedMatrix: [
-      [0.4, 0.8],     // Red clumps AND hunts Teal hard (locked!)
-      [null, 0.5],     // You set Teal→Red, Teal clumps
+      [0.3, 0.8],
+      [null, 0.3],
     ],
     sliders: [
-      { from: 1, to: 0, initial: 0 },   // Teal→Red — the only lever
+      { from: 1, to: 0, initial: 0, label: 'Teal feels about Red' },
     ],
-    winCondition: (s) => s.elapsed >= 25 && s.colorCounts.every(c => c >= 8),
-    winText: 'Teal survived the hunt. The prey adapts.',
-    loseText: 'Teal was hunted to extinction.',
+    winText: 'Teal colonized under pressure. The prey adapts.',
+    loseText: 'Teal couldn\'t hold territory.',
   },
   {
     id: 3,
     name: 'TRIANGLE',
-    briefing: 'Three species. All must survive.',
-    hint: 'Red hunts Teal. Teal hunts Yellow. Yellow is defenseless — unless you give it the right instincts.',
+    briefing: 'Three species. All must colonize.',
+    hint: 'Red hunts Teal. Teal hunts Yellow. Each species needs 10% territory. Give Yellow a survival strategy.',
     numColors: 3,
     particlesPerColor: 40,
-    duration: 30,
+    duration: 35,
+    territoryGoal: 10,
     lockedMatrix: [
-      [0.4,  0.7,  null],   // Red clumps, hunts Teal, you set Red→Yellow
-      [-0.5, 0.4,  0.7],    // Teal flees Red, clumps, hunts Yellow
-      [null, null, 0.4],    // you set Yellow→Red, Yellow→Teal, Yellow clumps
+      [0.3,  0.7,  null],
+      [-0.4, 0.3,  0.7],
+      [null, null, 0.3],
     ],
     sliders: [
-      { from: 0, to: 2, initial: 0 },     // Red→Yellow
-      { from: 2, to: 0, initial: 0 },     // Yellow→Red
-      { from: 2, to: 1, initial: 0 },     // Yellow→Teal
+      { from: 0, to: 2, initial: 0, label: 'Red feels about Yellow' },
+      { from: 2, to: 0, initial: 0, label: 'Yellow feels about Red' },
+      { from: 2, to: 1, initial: 0, label: 'Yellow feels about Teal' },
     ],
-    winCondition: (s) => s.elapsed >= 30 && s.colorCounts.every(c => c >= 5),
-    winText: 'All three species thrived. A stable triangle.',
-    loseText: 'The ecosystem collapsed. Extinction.',
+    winText: 'All three colonized. A balanced world.',
+    loseText: 'A species lost its territory.',
   },
 ];
 
@@ -125,15 +128,17 @@ interface Particle {
 
 function createLevelParticles(numColors: number, perColor: number, w: number, h: number): Particle[] {
   const particles: Particle[] = [];
-  const margin = 80;
+  // Place each color in distinct starting zones
+  const zones = numColors === 2
+    ? [{ x: w * 0.25, y: h * 0.5 }, { x: w * 0.75, y: h * 0.5 }]
+    : [{ x: w * 0.2, y: h * 0.3 }, { x: w * 0.8, y: h * 0.3 }, { x: w * 0.5, y: h * 0.75 }];
+
   for (let c = 0; c < numColors; c++) {
-    // Start each color in a cluster
-    const cx = margin + Math.random() * (w - margin * 2);
-    const cy = margin + Math.random() * (h - margin * 2);
+    const zone = zones[c];
     for (let i = 0; i < perColor; i++) {
       particles.push({
-        x: cx + (Math.random() - 0.5) * 60,
-        y: cy + (Math.random() - 0.5) * 60,
+        x: zone.x + (Math.random() - 0.5) * 50,
+        y: zone.y + (Math.random() - 0.5) * 50,
         vx: 0,
         vy: 0,
         color: c,
@@ -153,11 +158,39 @@ function buildMatrix(level: Level, sliderValues: number[]): number[][] {
       m[i][j] = level.lockedMatrix[i][j] ?? 0;
     }
   }
-  // Apply slider values
   level.sliders.forEach((s, idx) => {
     m[s.from][s.to] = sliderValues[idx];
   });
   return m;
+}
+
+// Calculate territory: divide screen into grid, count cells with presence per color
+function calcTerritory(particles: Particle[], w: number, h: number, numColors: number): number[] {
+  const cols = Math.ceil(w / GRID_SIZE);
+  const rows = Math.ceil(h / GRID_SIZE);
+  const totalCells = cols * rows;
+
+  // Count particles per color per cell
+  const grid: number[][] = new Array(totalCells);
+  for (let i = 0; i < totalCells; i++) grid[i] = new Array(numColors).fill(0);
+
+  for (const p of particles) {
+    if (p.health <= 0) continue;
+    const col = Math.min(cols - 1, Math.floor(p.x / GRID_SIZE));
+    const row = Math.min(rows - 1, Math.floor(p.y / GRID_SIZE));
+    const idx = row * cols + col;
+    if (idx >= 0 && idx < totalCells) grid[idx][p.color]++;
+  }
+
+  // Count cells claimed by each color (need TERRITORY_PRESENCE particles)
+  const claimed = new Array(numColors).fill(0);
+  for (let i = 0; i < totalCells; i++) {
+    for (let c = 0; c < numColors; c++) {
+      if (grid[i][c] >= TERRITORY_PRESENCE) claimed[c]++;
+    }
+  }
+
+  return claimed.map(c => Math.round((c / totalCells) * 100));
 }
 
 function isMobile(): boolean {
@@ -176,6 +209,7 @@ export default function GenesisPage() {
   const [sliderValues, setSliderValues] = useState<number[]>([]);
   const [simTime, setSimTime] = useState(0);
   const [colorCounts, setColorCounts] = useState<number[]>([]);
+  const [territory, setTerritory] = useState<number[]>([]);
   const [mobile, setMobile] = useState(false);
 
   const simRef = useRef<{
@@ -203,7 +237,6 @@ export default function GenesisPage() {
 
   const level = LEVELS[levelIdx];
 
-  // Initialize sliders for current level
   useEffect(() => {
     setSliderValues(level.sliders.map(s => s.initial));
   }, [levelIdx, level.sliders]);
@@ -263,8 +296,8 @@ export default function GenesisPage() {
       const ctx = canvas.getContext('2d');
       if (!ctx) { animRef.current = requestAnimationFrame(loop); return; }
 
-      // Trail
-      ctx.fillStyle = 'rgba(10, 10, 15, 0.08)';
+      // Clear with slight trail
+      ctx.fillStyle = 'rgba(10, 10, 15, 0.12)';
       ctx.fillRect(0, 0, s.w, s.h);
 
       const particles = s.particles;
@@ -287,13 +320,8 @@ export default function GenesisPage() {
             const q = particles[j];
             if (q.health <= 0) continue;
 
-            let dx = q.x - p.x;
-            let dy = q.y - p.y;
-            if (dx > s.w / 2) dx -= s.w;
-            if (dx < -s.w / 2) dx += s.w;
-            if (dy > s.h / 2) dy -= s.h;
-            if (dy < -s.h / 2) dy += s.h;
-
+            const dx = q.x - p.x;
+            const dy = q.y - p.y;
             const dist2 = dx * dx + dy * dy;
 
             // Count nearby allies/enemies for combat
@@ -317,64 +345,102 @@ export default function GenesisPage() {
             fy += (dy / dist) * force;
           }
 
-          // During tuning, particles move gently but don't die
           const speedMul = isSimulating ? 1 : 0.5;
           p.vx = (p.vx + fx * speedMul * (dt / 16)) * FRICTION;
           p.vy = (p.vy + fy * speedMul * (dt / 16)) * FRICTION;
           p.x += p.vx;
           p.y += p.vy;
 
-          if (p.x < 0) p.x += s.w;
-          if (p.x >= s.w) p.x -= s.w;
-          if (p.y < 0) p.y += s.h;
-          if (p.y >= s.h) p.y -= s.h;
+          // Wall bounce (no wrap-around)
+          if (p.x < PARTICLE_RADIUS) { p.x = PARTICLE_RADIUS; p.vx = Math.abs(p.vx) * WALL_BOUNCE; }
+          if (p.x > s.w - PARTICLE_RADIUS) { p.x = s.w - PARTICLE_RADIUS; p.vx = -Math.abs(p.vx) * WALL_BOUNCE; }
+          if (p.y < PARTICLE_RADIUS) { p.y = PARTICLE_RADIUS; p.vy = Math.abs(p.vy) * WALL_BOUNCE; }
+          if (p.y > s.h - PARTICLE_RADIUS) { p.y = s.h - PARTICLE_RADIUS; p.vy = -Math.abs(p.vy) * WALL_BOUNCE; }
 
-          // Combat health: outnumbered = taking damage
+          // Combat: outnumbered = damage
           if (isSimulating) {
-            // Damage when enemies outnumber allies nearby
             const pressure = nearbyEnemies - nearbyAllies;
             if (pressure > 0) {
               p.health -= DAMAGE_RATE * pressure * (dt / 16);
             } else {
-              // Heal slowly when safe (more allies than enemies)
-              p.health = Math.min(HEAL_CAP, p.health + HEAL_RATE * (dt / 16));
+              p.health = Math.min(1, p.health + HEAL_RATE * (dt / 16));
             }
           }
         }
 
-        // Remove dead particles
+        // Remove dead
         if (isSimulating) {
           for (let i = particles.length - 1; i >= 0; i--) {
             if (particles[i].health <= 0) particles.splice(i, 1);
           }
         }
 
-        // Track time
+        // Track time + check conditions
         if (isSimulating) {
           s.elapsed += dt / 1000;
-          // Update React state every ~500ms
           if (Math.floor(s.elapsed * 2) !== Math.floor((s.elapsed - dt / 1000) * 2)) {
-            setSimTime(Math.floor(s.elapsed));
+            const elapsed = Math.floor(s.elapsed);
+            setSimTime(elapsed);
+
             const counts: number[] = [];
             for (let c = 0; c < s.level.numColors; c++) {
               counts[c] = particles.filter(p => p.color === c).length;
             }
             setColorCounts(counts);
 
-            // Check win/lose
+            const terr = calcTerritory(particles, s.w, s.h, s.level.numColors);
+            setTerritory(terr);
+
+            // Lose: any species drops below 3
             if (counts.some(c => c < 3)) {
               s.phase = 'lose';
-              s.running = false;
               setPhase('lose');
-            } else if (s.level.winCondition({
-              colorCounts: counts,
-              elapsed: s.elapsed,
-              particles,
-              numColors: s.level.numColors,
-            })) {
-              s.phase = 'win';
-              s.running = false;
-              setPhase('win');
+            }
+            // Win: time up + all species alive + all meet territory goal
+            else if (s.elapsed >= s.level.duration) {
+              const goal = s.level.territoryGoal;
+              if (counts.every(c => c >= 5) && terr.every(t => t >= goal)) {
+                s.phase = 'win';
+                setPhase('win');
+              } else {
+                s.phase = 'lose';
+                setPhase('lose');
+              }
+            }
+          }
+        }
+      }
+
+      // Draw territory grid (subtle, during simulation only)
+      if ((s.phase === 'simulating' || s.phase === 'tuning') && particles.length > 0) {
+        const cols = Math.ceil(s.w / GRID_SIZE);
+        const rows = Math.ceil(s.h / GRID_SIZE);
+        const gridCounts: number[][] = [];
+        for (let i = 0; i < cols * rows; i++) gridCounts[i] = new Array(s.level.numColors).fill(0);
+
+        for (const p of particles) {
+          if (p.health <= 0) continue;
+          const col = Math.min(cols - 1, Math.floor(p.x / GRID_SIZE));
+          const row = Math.min(rows - 1, Math.floor(p.y / GRID_SIZE));
+          const idx = row * cols + col;
+          if (idx >= 0 && idx < cols * rows) gridCounts[idx][p.color]++;
+        }
+
+        // Draw claimed cells with very faint color
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            const idx = row * cols + col;
+            let dominant = -1;
+            let maxCount = 0;
+            for (let c = 0; c < s.level.numColors; c++) {
+              if (gridCounts[idx][c] > maxCount) {
+                maxCount = gridCounts[idx][c];
+                dominant = c;
+              }
+            }
+            if (dominant >= 0 && maxCount >= TERRITORY_PRESENCE) {
+              ctx.fillStyle = ALL_COLORS[dominant] + '0a'; // very faint
+              ctx.fillRect(col * GRID_SIZE, row * GRID_SIZE, GRID_SIZE, GRID_SIZE);
             }
           }
         }
@@ -384,8 +450,9 @@ export default function GenesisPage() {
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         if (p.health <= 0) continue;
-        const alpha = Math.max(0.1, p.health);
+        const alpha = Math.max(0.15, p.health);
         const color = ALL_COLORS[p.color];
+        const alphaHex = Math.round(alpha * 255).toString(16).padStart(2, '0');
 
         if (!s.mobile) {
           const speed2 = p.vx * p.vx + p.vy * p.vy;
@@ -400,7 +467,7 @@ export default function GenesisPage() {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, PARTICLE_RADIUS, 0, Math.PI * 2);
-        ctx.fillStyle = color + Math.round(alpha * 255).toString(16).padStart(2, '0');
+        ctx.fillStyle = color + alphaHex;
         ctx.fill();
       }
 
@@ -420,7 +487,6 @@ export default function GenesisPage() {
     };
   }, []);
 
-  // When entering tuning, spawn particles with preview physics
   const startTuning = useCallback(() => {
     const s = simRef.current;
     s.level = level;
@@ -432,30 +498,23 @@ export default function GenesisPage() {
     setPhase('tuning');
     setSimTime(0);
     setColorCounts(Array(level.numColors).fill(level.particlesPerColor));
+    setTerritory(Array(level.numColors).fill(0));
 
-    // Clear canvas
     const ctx = canvasRef.current?.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#0a0a0f';
-      ctx.fillRect(0, 0, s.w, s.h);
-    }
+    if (ctx) { ctx.fillStyle = '#0a0a0f'; ctx.fillRect(0, 0, s.w, s.h); }
   }, [level]);
 
-  // Update matrix when sliders change
   const updateSlider = useCallback((idx: number, value: number) => {
     setSliderValues(prev => {
       const next = [...prev];
       next[idx] = value;
-      // Update sim matrix
       simRef.current.matrix = buildMatrix(simRef.current.level, next);
       return next;
     });
   }, []);
 
-  // Start simulation
   const startSim = useCallback(() => {
     const s = simRef.current;
-    // Reset particles fresh
     s.particles = createLevelParticles(level.numColors, level.particlesPerColor, s.w, s.h);
     s.matrix = buildMatrix(level, sliderValues);
     s.elapsed = 0;
@@ -463,26 +522,19 @@ export default function GenesisPage() {
     s.running = true;
     setPhase('simulating');
     setSimTime(0);
+    setTerritory(Array(level.numColors).fill(0));
 
     const ctx = canvasRef.current?.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#0a0a0f';
-      ctx.fillRect(0, 0, s.w, s.h);
-    }
+    if (ctx) { ctx.fillStyle = '#0a0a0f'; ctx.fillRect(0, 0, s.w, s.h); }
   }, [level, sliderValues]);
 
-  // Retry same level
-  const retry = useCallback(() => {
-    startTuning();
-  }, [startTuning]);
+  const retry = useCallback(() => startTuning(), [startTuning]);
 
-  // Next level
   const nextLevel = useCallback(() => {
     if (levelIdx < LEVELS.length - 1) {
       setLevelIdx(levelIdx + 1);
       setPhase('intro');
     } else {
-      // All levels complete
       setPhase('intro');
       setLevelIdx(0);
     }
@@ -503,7 +555,7 @@ export default function GenesisPage() {
     }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0 }} />
 
-      {/* ── INTRO SCREEN ── */}
+      {/* ── INTRO ── */}
       {phase === 'intro' && (
         <div style={{
           position: 'absolute', inset: 0, zIndex: 30,
@@ -536,7 +588,6 @@ export default function GenesisPage() {
             {level.hint}
           </div>
 
-          {/* Color preview */}
           <div style={{ display: 'flex', gap: 16, marginBottom: 40 }}>
             {Array.from({ length: level.numColors }).map((_, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -563,10 +614,9 @@ export default function GenesisPage() {
         </div>
       )}
 
-      {/* ── TUNING SCREEN ── */}
+      {/* ── TUNING ── */}
       {phase === 'tuning' && (
         <>
-          {/* Top bar */}
           <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20,
             paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
@@ -582,9 +632,11 @@ export default function GenesisPage() {
                 Set the rules, then simulate
               </div>
             </div>
+            <div style={{ ...mono, fontSize: 10, color: '#ffffff20' }}>
+              Goal: {level.territoryGoal}% territory each
+            </div>
           </div>
 
-          {/* Slider panel */}
           <div style={{
             position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20,
             background: '#0a0a0fdd', backdropFilter: 'blur(12px)',
@@ -600,55 +652,57 @@ export default function GenesisPage() {
             </div>
 
             <div style={{
-              display: 'flex', flexDirection: 'column', gap: 12,
+              display: 'flex', flexDirection: 'column', gap: 14,
               maxWidth: 400, margin: '0 auto',
             }}>
               {level.sliders.map((slider, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {/* From color dot */}
+                <div key={idx}>
+                  {/* Label */}
                   <div style={{
-                    width: 10, height: 10, borderRadius: 9999,
-                    background: ALL_COLORS[slider.from], flexShrink: 0,
-                  }} />
-                  <span style={{ ...mono, fontSize: 9, color: ALL_COLORS[slider.from], width: 24, flexShrink: 0 }}>
-                    {ALL_NAMES[slider.from].slice(0, 3)}
-                  </span>
-                  <span style={{ ...mono, fontSize: 9, color: '#ffffff30', flexShrink: 0 }}>→</span>
-                  <div style={{
-                    width: 10, height: 10, borderRadius: 9999,
-                    background: ALL_COLORS[slider.to], flexShrink: 0,
-                  }} />
-                  <span style={{ ...mono, fontSize: 9, color: ALL_COLORS[slider.to], width: 24, flexShrink: 0 }}>
-                    {ALL_NAMES[slider.to].slice(0, 3)}
-                  </span>
-
-                  {/* Slider */}
-                  <input
-                    type="range"
-                    min="-100"
-                    max="100"
-                    value={Math.round((sliderValues[idx] ?? 0) * 100)}
-                    onChange={(e) => updateSlider(idx, parseInt(e.target.value) / 100)}
-                    style={{
-                      flex: 1,
-                      accentColor: (sliderValues[idx] ?? 0) >= 0 ? '#55efc4' : '#ff6b6b',
-                      height: 4,
-                    }}
-                  />
-
-                  {/* Value label */}
-                  <span style={{
-                    ...mono, fontSize: 9, width: 36, textAlign: 'right', flexShrink: 0,
-                    color: (sliderValues[idx] ?? 0) >= 0 ? '#55efc4' : '#ff6b6b',
+                    display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4,
                   }}>
-                    {(sliderValues[idx] ?? 0) >= 0 ? '+' : ''}{Math.round((sliderValues[idx] ?? 0) * 100)}
-                  </span>
+                    <div style={{
+                      width: 8, height: 8, borderRadius: 9999,
+                      background: ALL_COLORS[slider.from], flexShrink: 0,
+                    }} />
+                    <span style={{ ...mono, fontSize: 9, color: '#ffffff40' }}>
+                      {slider.label || `${ALL_NAMES[slider.from]} → ${ALL_NAMES[slider.to]}`}
+                    </span>
+                  </div>
+
+                  {/* Slider row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ ...mono, fontSize: 8, color: '#ff6b6b80', width: 32, flexShrink: 0 }}>
+                      repel
+                    </span>
+                    <input
+                      type="range"
+                      min="-100"
+                      max="100"
+                      value={Math.round((sliderValues[idx] ?? 0) * 100)}
+                      onChange={(e) => updateSlider(idx, parseInt(e.target.value) / 100)}
+                      style={{
+                        flex: 1,
+                        accentColor: (sliderValues[idx] ?? 0) >= 0 ? '#55efc4' : '#ff6b6b',
+                        height: 4,
+                      }}
+                    />
+                    <span style={{ ...mono, fontSize: 8, color: '#55efc480', width: 32, flexShrink: 0, textAlign: 'right' }}>
+                      attract
+                    </span>
+                    <span style={{
+                      ...mono, fontSize: 10, width: 36, textAlign: 'right', flexShrink: 0,
+                      color: (sliderValues[idx] ?? 0) >= 0 ? '#55efc4' : '#ff6b6b',
+                      fontWeight: 700,
+                    }}>
+                      {(sliderValues[idx] ?? 0) >= 0 ? '+' : ''}{Math.round((sliderValues[idx] ?? 0) * 100)}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
 
-            {/* Simulate button */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16, gap: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
               <button onClick={startSim} style={{
                 ...mono, fontSize: 12, letterSpacing: 3, color: '#0a0a0f',
                 background: '#55efc4', border: 'none', borderRadius: 20,
@@ -665,7 +719,6 @@ export default function GenesisPage() {
       {/* ── SIMULATING ── */}
       {phase === 'simulating' && (
         <>
-          {/* Top bar with timer + species counts */}
           <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20,
             paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
@@ -675,7 +728,7 @@ export default function GenesisPage() {
           }}>
             <div>
               <div style={{ ...mono, fontSize: 10, letterSpacing: 3, color: '#ffffff30', textTransform: 'uppercase' }}>
-                Level {level.id} &middot; Simulating
+                Colonizing...
               </div>
               <div style={{
                 ...mono, fontSize: 24, fontWeight: 900, color: '#ffffff60',
@@ -685,25 +738,37 @@ export default function GenesisPage() {
               </div>
             </div>
 
-            {/* Species counts */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-              {colorCounts.map((count, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{
-                    ...mono, fontSize: 11, fontVariantNumeric: 'tabular-nums',
-                    color: count < 10 ? '#ff6b6b' : ALL_COLORS[i],
-                    fontWeight: count < 10 ? 900 : 400,
-                  }}>
-                    {count}
-                  </span>
-                  <div style={{
-                    width: 8, height: 8, borderRadius: 9999,
-                    background: ALL_COLORS[i],
-                    opacity: count < 5 ? 0.3 : 1,
-                    boxShadow: count < 10 ? `0 0 6px #ff6b6b` : 'none',
-                  }} />
-                </div>
-              ))}
+            {/* Species status: count + territory % */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+              {colorCounts.map((count, i) => {
+                const terr = territory[i] ?? 0;
+                const goalMet = terr >= level.territoryGoal;
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{
+                      ...mono, fontSize: 10, fontVariantNumeric: 'tabular-nums',
+                      color: count < 10 ? '#ff6b6b' : '#ffffff40',
+                    }}>
+                      {count}
+                    </span>
+                    <div style={{
+                      width: 8, height: 8, borderRadius: 9999,
+                      background: ALL_COLORS[i],
+                      opacity: count < 5 ? 0.3 : 1,
+                    }} />
+                    <span style={{
+                      ...mono, fontSize: 10, fontVariantNumeric: 'tabular-nums',
+                      color: goalMet ? '#55efc4' : ALL_COLORS[i],
+                      fontWeight: goalMet ? 900 : 400,
+                    }}>
+                      {terr}%
+                    </span>
+                  </div>
+                );
+              })}
+              <div style={{ ...mono, fontSize: 8, color: '#ffffff20', marginTop: 2 }}>
+                goal: {level.territoryGoal}%
+              </div>
             </div>
           </div>
 
@@ -721,7 +786,7 @@ export default function GenesisPage() {
         </>
       )}
 
-      {/* ── WIN/LOSE SCREEN ── */}
+      {/* ── WIN/LOSE ── */}
       {(phase === 'win' || phase === 'lose') && (
         <div style={{
           position: 'absolute', inset: 0, zIndex: 30,
@@ -733,19 +798,33 @@ export default function GenesisPage() {
             color: phase === 'win' ? '#55efc4' : '#ff6b6b',
             letterSpacing: 6, marginBottom: 16, textTransform: 'uppercase',
           }}>
-            {phase === 'win' ? 'STABLE' : 'EXTINCT'}
+            {phase === 'win' ? 'COLONIZED' : 'FAILED'}
           </div>
           <div style={{
             ...mono, fontSize: 13, color: '#ffffff60',
-            marginBottom: 8, textAlign: 'center', maxWidth: 360,
+            marginBottom: 12, textAlign: 'center', maxWidth: 360,
           }}>
             {phase === 'win' ? level.winText : level.loseText}
           </div>
-          <div style={{
-            ...mono, fontSize: 11, color: '#ffffff30',
-            marginBottom: 40,
-          }}>
-            Time: {simTime}s &middot; {colorCounts.filter(c => c >= 3).length}/{level.numColors} species survived
+
+          {/* Final stats */}
+          <div style={{ display: 'flex', gap: 20, marginBottom: 32 }}>
+            {colorCounts.map((count, i) => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: 12, height: 12, borderRadius: 9999,
+                  background: ALL_COLORS[i], margin: '0 auto 4px',
+                  opacity: count < 3 ? 0.2 : 1,
+                }} />
+                <div style={{ ...mono, fontSize: 10, color: '#ffffff40' }}>{count}</div>
+                <div style={{
+                  ...mono, fontSize: 10, fontWeight: 700,
+                  color: (territory[i] ?? 0) >= level.territoryGoal ? '#55efc4' : '#ff6b6b',
+                }}>
+                  {territory[i] ?? 0}%
+                </div>
+              </div>
+            ))}
           </div>
 
           <div style={{ display: 'flex', gap: 12 }}>
