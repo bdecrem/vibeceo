@@ -620,10 +620,10 @@ function loop(ts) {
   lastTime = ts;
 
   if (entered) {
-    // Update all worlds (only active one is visible via CSS)
-    if (currentWorld === 0) crystalCavern.update(ts / 1000);
-    if (currentWorld === 1) oceanDepths.update(dt);
-    if (currentWorld === 2) solarForge.update(dt);
+    // Update ALL worlds every frame so they're alive when switched to
+    crystalCavern.update(ts / 1000);
+    oceanDepths.update(dt);
+    solarForge.update(dt);
   }
 
   requestAnimationFrame(loop);
@@ -789,9 +789,9 @@ document.getElementById('enter-btn').addEventListener('click', async () => {
   ocean.setParameter('pulseWidth', 0.5);
   ocean.setParameter('subLevel', 0.6);       // heavy sub — deep ocean
   ocean.setParameter('subMode', 1);
-  ocean.setParameter('cutoff', 0.08);        // very dark, muffled
+  ocean.setParameter('cutoff', 0.18);        // dark but audible
   ocean.setParameter('resonance', 0.0);
-  ocean.setParameter('envMod', 0.2);
+  ocean.setParameter('envMod', 0.35);
   ocean.setParameter('keyTrack', 0.15);
   ocean.setParameter('attack', 0.3);         // slow swell
   ocean.setParameter('decay', 0.8);
@@ -823,8 +823,8 @@ document.getElementById('enter-btn').addEventListener('click', async () => {
 
   // C natural minor low register: C Eb F G Bb (octaves 2-3)
   const oceanNotes = [
-    'C2','Eb2','F2','G2','Bb2',
-    'C3','Eb3','G2','F2','Bb2','C2'
+    'C2','Eb3','F2','G3','Bb2',
+    'C3','Eb3','G3','F3','Bb3','C3'
   ];
   let oceanStep = 0;
   function oceanTick() {
@@ -834,7 +834,7 @@ document.getElementById('enter-btn').addEventListener('click', async () => {
 
     // Very slow filter breathing
     const t = performance.now() / 1000;
-    ocean.setParameter('cutoff', 0.06 + Math.sin(t * 0.03) * 0.04);
+    ocean.setParameter('cutoff', 0.15 + Math.sin(t * 0.03) * 0.08);
 
     oceanStep++;
     // Very slow: 2.5-5 seconds between notes
