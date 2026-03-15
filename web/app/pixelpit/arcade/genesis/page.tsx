@@ -211,6 +211,7 @@ export default function GenesisPage() {
   const [colorCounts, setColorCounts] = useState<number[]>([]);
   const [territory, setTerritory] = useState<number[]>([]);
   const [mobile, setMobile] = useState(false);
+  const [loseReason, setLoseReason] = useState('');
 
   const simRef = useRef<{
     particles: Particle[];
@@ -393,7 +394,9 @@ export default function GenesisPage() {
 
             // Lose: any species drops below 3
             if (counts.some(c => c < 3)) {
+              const extinct = counts.map((c, i) => c < 3 ? ALL_NAMES[i] : null).filter(Boolean);
               s.phase = 'lose';
+              setLoseReason(`${extinct.join(' & ')} went extinct.`);
               setPhase('lose');
             }
             // Win: time up + all species alive + all meet territory goal
@@ -403,7 +406,13 @@ export default function GenesisPage() {
                 s.phase = 'win';
                 setPhase('win');
               } else {
+                const low = terr.map((t, i) => t < goal ? `${ALL_NAMES[i]} (${t}%)` : null).filter(Boolean);
+                const dead = counts.map((c, i) => c < 5 ? ALL_NAMES[i] : null).filter(Boolean);
+                let reason = '';
+                if (dead.length > 0) reason = `${dead.join(' & ')} didn't survive. `;
+                if (low.length > 0) reason += `Not enough territory: ${low.join(', ')}. Need ${goal}% each.`;
                 s.phase = 'lose';
+                setLoseReason(reason.trim());
                 setPhase('lose');
               }
             }
@@ -802,9 +811,9 @@ export default function GenesisPage() {
           </div>
           <div style={{
             ...mono, fontSize: 13, color: '#ffffff60',
-            marginBottom: 12, textAlign: 'center', maxWidth: 360,
+            marginBottom: 12, textAlign: 'center', maxWidth: 360, lineHeight: 1.5,
           }}>
-            {phase === 'win' ? level.winText : level.loseText}
+            {phase === 'win' ? level.winText : loseReason}
           </div>
 
           {/* Final stats */}
