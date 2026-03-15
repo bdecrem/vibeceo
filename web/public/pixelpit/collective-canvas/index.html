@@ -693,11 +693,15 @@ const solarForge = (() => {
     draw() {
       const p=Math.sin(time*this.pulseSpeed+this.phase)*0.3+0.7;
       ctx.save(); ctx.globalAlpha=this.opacity*p;
-      const g=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.size*3);
-      g.addColorStop(0,this.color); g.addColorStop(1,'transparent');
-      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(this.x,this.y,this.size*3,0,Math.PI*2); ctx.fill();
+      // Only draw expensive glow gradient for particles near mouse
+      const dx=this.x-mouseX, dy=this.y-mouseY;
+      if(dx*dx+dy*dy<40000){
+        const g=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.size*3);
+        g.addColorStop(0,this.color); g.addColorStop(1,'#00000000');
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(this.x,this.y,this.size*3,0,Math.PI*2); ctx.fill();
+      }
       ctx.fillStyle=this.color;
-      ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(this.x,this.y,this.size*p,0,Math.PI*2); ctx.fill();
       ctx.restore();
     }
   }
@@ -713,7 +717,7 @@ const solarForge = (() => {
     update() { this.x+=this.vx; this.y+=this.vy; this.vy+=0.02; this.life-=this.decay; this.vx*=0.99; }
     draw() {
       ctx.save(); ctx.globalAlpha=this.life;
-      ctx.fillStyle=this.color; ctx.shadowColor=this.color; ctx.shadowBlur=10;
+      ctx.fillStyle=this.color;
       ctx.beginPath(); ctx.arc(this.x,this.y,this.size*this.life,0,Math.PI*2); ctx.fill();
       ctx.restore();
     }
@@ -742,8 +746,8 @@ const solarForge = (() => {
 
   function init() {
     particles=[]; embers=[]; flares=[];
-    const pn=Math.max(100,Math.floor(W*H/5000));
-    const en=Math.max(40,Math.floor(W*H/15000));
+    const pn=Math.min(150, Math.max(80,Math.floor(W*H/15000)));
+    const en=Math.min(50, Math.max(30,Math.floor(W*H/40000)));
     for(let i=0;i<pn;i++) particles.push(new SunParticle());
     for(let i=0;i<en;i++) embers.push(new Ember());
   }
