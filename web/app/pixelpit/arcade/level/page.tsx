@@ -132,6 +132,12 @@ export default function LevelGame() {
       mouseActive: false,
       mouseX: 0,
       mouseY: 0,
+      // Scoring
+      points: 0,
+      centeredTime: 0, // continuous seconds in bullseye
+      multiplier: 1,
+      lastMultiplier: 1,
+      multiplierFlash: 0, // countdown for flash effect
     };
     gameRef.current = gs;
 
@@ -165,8 +171,7 @@ export default function LevelGame() {
     function endGame() {
       if (gs.gameOver) return;
       gs.gameOver = true;
-      // Score is elapsed time in tenths (e.g. 12.3s → 123 points)
-      const finalScore = Math.round(gs.elapsed * 10);
+      const finalScore = Math.round(gs.points);
       scoreRef.current = finalScore;
       setScore(finalScore);
       playTone(200, 0.4, 'sawtooth');
@@ -222,7 +227,30 @@ export default function LevelGame() {
       const targetRadius = Math.min(w, h) * 0.08;
       const centered = dist < targetRadius;
 
-      gs.toneTimer += 1 / 60;
+      // Scoring: accumulate points based on multiplier
+      const dt = 1 / 60;
+      if (centered) {
+        gs.centeredTime += dt;
+        // Multiplier tiers: 2s→2x, 5s→4x, 10s→8x
+        const newMult = gs.centeredTime >= 10 ? 8 : gs.centeredTime >= 5 ? 4 : gs.centeredTime >= 2 ? 2 : 1;
+        if (newMult > gs.multiplier) {
+          gs.multiplierFlash = 1.0;
+          playTone(600 + newMult * 100, 0.15, 'triangle');
+        }
+        gs.multiplier = newMult;
+        gs.points += gs.multiplier * dt * 10; // ~10 pts/sec at 1x, 80 pts/sec at 8x
+      } else {
+        if (gs.centeredTime > 0 && gs.multiplier > 1) {
+          // Lost the streak
+          playTone(250, 0.1, 'sawtooth');
+        }
+        gs.centeredTime = 0;
+        gs.multiplier = 1;
+        gs.points += dt * 2; // small trickle even when not centered (survival points)
+      }
+      if (gs.multiplierFlash > 0) gs.multiplierFlash -= dt * 2;
+
+      gs.toneTimer += dt;
       if (centered && gs.toneTimer > 0.2) {
         playTone(440 + gs.elapsed * 2, 0.05, 'sine');
         gs.toneTimer = 0;
@@ -235,7 +263,19 @@ export default function LevelGame() {
           vx: (Math.random() - 0.5) * 2,
           vy: (Math.random() - 0.5) * 2,
           life: 1,
-          color: Math.random() < 0.5 ? COLORS.primary : COLORS.teal,
+          color: gs.multiplier >= 4 ? '#FF69B4' : Math.random() < 0.5 ? COLORS.primary : COLORS.teal,
+        });
+      }
+
+      // More particles at higher multipliers
+      if (centered && gs.multiplier >= 4 && Math.random() < 0.5) {
+        gs.particles.push({
+          x: b.x + (Math.random() - 0.5) * b.radius * 2,
+          y: b.y + (Math.random() - 0.5) * b.radius * 2,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4,
+          life: 1,
+          color: gs.multiplier >= 8 ? COLORS.primary : '#FF69B4',
         });
       }
 
@@ -357,19 +397,43 @@ export default function LevelGame() {
       ctx!.lineWidth = 2;
       ctx!.stroke();
 
-      // HUD
-      ctx!.font = 'bold 28px ui-monospace, monospace';
+      // HUD — Score
+      ctx!.font = 'bold 32px ui-monospace, monospace';
       ctx!.textAlign = 'center';
       ctx!.textBaseline = 'top';
       ctx!.fillStyle = COLORS.primary;
       ctx!.shadowColor = COLORS.primary;
       ctx!.shadowBlur = 15;
-      ctx!.fillText(`${gs.elapsed.toFixed(1)}s`, w / 2, 20);
+      ctx!.fillText(`${Math.round(gs.points)}`, w / 2, 16);
       ctx!.shadowBlur = 0;
 
+      // Timer (smaller, below score)
       ctx!.font = '14px ui-monospace, monospace';
+      ctx!.fillStyle = COLORS.muted;
+      ctx!.fillText(`${gs.elapsed.toFixed(1)}s`, w / 2, 52);
+
+      // Multiplier badge
+      if (gs.multiplier > 1) {
+        const multColor = gs.multiplier >= 8 ? '#FF69B4' : gs.multiplier >= 4 ? COLORS.primary : COLORS.teal;
+        const flashScale = 1 + (gs.multiplierFlash > 0 ? gs.multiplierFlash * 0.3 : 0);
+        ctx!.save();
+        ctx!.translate(w / 2, 78);
+        ctx!.scale(flashScale, flashScale);
+        ctx!.font = 'bold 22px ui-monospace, monospace';
+        ctx!.fillStyle = multColor;
+        ctx!.shadowColor = multColor;
+        ctx!.shadowBlur = 20;
+        ctx!.fillText(`${gs.multiplier}×`, 0, 0);
+        ctx!.shadowBlur = 0;
+        ctx!.restore();
+      }
+
+      // Centered status
+      ctx!.font = '12px ui-monospace, monospace';
       ctx!.fillStyle = centered ? COLORS.teal : COLORS.text;
-      ctx!.fillText(centered ? '✓ CENTERED' : 'Tilt to center', w / 2, 55);
+      ctx!.globalAlpha = 0.6;
+      ctx!.fillText(centered ? '✓ CENTERED' : 'Tilt to center', w / 2, gs.multiplier > 1 ? 98 : 72);
+      ctx!.globalAlpha = 1;
     }
 
     function loop() {
@@ -398,7 +462,7 @@ export default function LevelGame() {
     setScreenState('playing');
   }, []);
 
-  const displayScore = (s: number) => `${(s / 10).toFixed(1)}s`;
+  const displayScore = (s: number) => `${s}`;
 
   return (
     <>
@@ -435,6 +499,7 @@ export default function LevelGame() {
           <p style={{ color: COLORS.teal, fontSize: 12, marginTop: 20, opacity: 0.6, textAlign: 'center', maxWidth: 280 }}>
             📱 Tilt your phone to move the bubble<br/>
             🖱️ Or move your mouse on desktop<br/><br/>
+            Stay centered for 2×, 4×, 8× multipliers!<br/>
             5s grace period, then the walls disappear!
           </p>
         </div>
@@ -463,7 +528,7 @@ export default function LevelGame() {
             </div>
 
             <div style={{ fontSize: 12, color: COLORS.muted, letterSpacing: 2, marginBottom: 30 }}>
-              survived
+              POINTS
             </div>
 
             {progression && (
@@ -479,7 +544,7 @@ export default function LevelGame() {
               score={score}
               gameId={GAME_ID}
               colors={SCORE_FLOW_COLORS}
-              maxScore={600}
+              maxScore={2000}
               onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
               onProgression={(prog) => setProgression(prog)}
             />
@@ -511,7 +576,7 @@ export default function LevelGame() {
                 <ShareButtonContainer
                   id="share-btn-container"
                   url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/${GAME_ID}/share/${score}` : ''}
-                  text={`I survived ${displayScore(score)} on LEVEL! Can you keep it centered longer?`}
+                  text={`I scored ${score} on LEVEL! Keep the bubble centered for multiplier streaks!`}
                   style="minimal"
                   socialLoaded={socialLoaded}
                 />

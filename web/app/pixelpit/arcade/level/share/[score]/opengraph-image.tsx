@@ -7,7 +7,7 @@ export const size = OG_SIZE;
 export const contentType = 'image/png';
 
 export default async function Image({ params }: { params: { score: string } }) {
-  const seconds = (parseInt(params.score) / 10).toFixed(1);
+  const score = params.score;
 
   return new ImageResponse(
     (
@@ -44,12 +44,9 @@ export default async function Image({ params }: { params: { score: string } }) {
             fontWeight: 200,
             color: '#FFD700',
             lineHeight: 1,
-            display: 'flex',
-            alignItems: 'baseline',
           }}
         >
-          {seconds}
-          <span style={{ fontSize: 48, color: '#D4A574', marginLeft: 8 }}>s</span>
+          {score}
         </div>
 
         <div
