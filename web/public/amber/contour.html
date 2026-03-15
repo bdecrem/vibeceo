@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CONTOUR</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>">
+<meta property="og:title" content="CONTOUR">
+<meta property="og:description" content="every flat surface hides elevation">
+<meta property="og:image" content="https://intheamber.com/amber/og/contour.png">
+<meta property="og:url" content="https://intheamber.com/amber/contour.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CONTOUR">
+<meta name="twitter:description" content="every flat surface hides elevation">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/contour.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f;
+    overflow: hidden;
+    touch-action: none;
+    font-family: 'Courier New', monospace;
+  }
+  canvas { display: block; }
+  #hint {
+    position: fixed;
+    bottom: 24px;
+    left: 0; right: 0;
+    text-align: center;
+    color: rgba(255,255,255,0.3);
+    font-size: 13px;
+    letter-spacing: 2px;
+    pointer-events: none;
+    transition: opacity 1.5s;
+  }
+  #elevation {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    color: rgba(255,255,255,0.2);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">tap to survey new ground</div>
+<div id="elevation"></div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('hint');
+const elev = document.getElementById('elevation');
+
+let W, H;
+
+const palettes = [
+  { bg: '#0a0a0f', colors: ['#1a1a2e','#2d3561','#4a6fa5','#6b9ac4','#9ec5e0','#c8dde8','#e8ede4','#d4c9a8','#c4a97d','#8b6f47'], name: 'ocean floor' },
+  { bg: '#0f0a0a', colors: ['#2e1a1a','#61352d','#a56f4a','#c49a6b','#e0c59e','#e8ddc8','#e4e8e0','#a8d4b8','#7dc49a','#478b6f'], name: 'copper ridge' },
+  { bg: '#0a0f0a', colors: ['#1a2e1a','#2d6135','#4aa56f','#6bc49a','#9ee0c5','#c8e8dd','#e8e4e0','#d4a8a8','#c47d7d','#8b4747'], name: 'moss valley' },
+  { bg: '#0f0f0a', colors: ['#2e2e1a','#61612d','#a5a54a','#c4c46b','#e0e09e','#e8e8c8','#e0e4e8','#a8b8d4','#7d9ac4','#47478b'], name: 'sulfur basin' },
+  { bg: '#0a0a0f', colors: ['#1a1a2e','#352d61','#6f4aa5','#9a6bc4','#c59ee0','#ddc8e8','#e4e0e8','#d4c8a8','#c4a87d','#8b7d47'], name: 'amethyst peak' },
+];
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+// Simplex-like noise via permutation
+class Noise {
+  constructor(seed) {
+    this.p = new Uint8Array(512);
+    const perm = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) perm[i] = i;
+    // Fisher-Yates with seed
+    let s = seed;
+    for (let i = 255; i > 0; i--) {
+      s = (s * 16807 + 0) % 2147483647;
+      const j = s % (i + 1);
+      [perm[i], perm[j]] = [perm[j], perm[i]];
+    }
+    for (let i = 0; i < 512; i++) this.p[i] = perm[i & 255];
+  }
+
+  fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+  lerp(a, b, t) { return a + t * (b - a); }
+  grad(hash, x, y) {
+    const h = hash & 3;
+    const u = h < 2 ? x : y;
+    const v = h < 2 ? y : x;
+    return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
+  }
+
+  get(x, y) {
+    const X = Math.floor(x) & 255;
+    const Y = Math.floor(y) & 255;
+    const xf = x - Math.floor(x);
+    const yf = y - Math.floor(y);
+    const u = this.fade(xf);
+    const v = this.fade(yf);
+    const p = this.p;
+    const a = p[X] + Y;
+    const b = p[X + 1] + Y;
+    return this.lerp(
+      this.lerp(this.grad(p[a], xf, yf), this.grad(p[b], xf - 1, yf), u),
+      this.lerp(this.grad(p[a + 1], xf, yf - 1), this.grad(p[b + 1], xf - 1, yf - 1), u),
+      v
+    );
+  }
+
+  fbm(x, y, octaves = 5) {
+    let val = 0, amp = 1, freq = 1, max = 0;
+    for (let i = 0; i < octaves; i++) {
+      val += this.get(x * freq, y * freq) * amp;
+      max += amp;
+      amp *= 0.5;
+      freq *= 2;
+    }
+    return val / max;
+  }
+}
+
+let noise, palette, animPhase = 0;
+let heightMap, contourData;
+const LEVELS = 18;
+
+function generateTerrain(seed) {
+  noise = new Noise(seed);
+  palette = palettes[seed % palettes.length];
+  elev.textContent = palette.name;
+
+  // Compute height map
+  const scale = 3.5;
+  const cols = Math.ceil(W / 2);
+  const rows = Math.ceil(H / 2);
+  heightMap = new Float32Array(cols * rows);
+
+  let min = Infinity, max = -Infinity;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const nx = x / cols * scale;
+      const ny = y / rows * scale;
+      const h = noise.fbm(nx, ny, 6);
+      heightMap[y * cols + x] = h;
+      if (h < min) min = h;
+      if (h > max) max = h;
+    }
+  }
+
+  // Normalize
+  const range = max - min || 1;
+  for (let i = 0; i < heightMap.length; i++) {
+    heightMap[i] = (heightMap[i] - min) / range;
+  }
+
+  // Generate contour lines via marching squares (simplified)
+  contourData = [];
+  for (let level = 0; level < LEVELS; level++) {
+    const threshold = (level + 1) / (LEVELS + 1);
+    const segments = [];
+
+    for (let y = 0; y < rows - 1; y++) {
+      for (let x = 0; x < cols - 1; x++) {
+        const tl = heightMap[y * cols + x];
+        const tr = heightMap[y * cols + x + 1];
+        const bl = heightMap[(y + 1) * cols + x];
+        const br = heightMap[(y + 1) * cols + x + 1];
+
+        const config =
+          (tl >= threshold ? 8 : 0) |
+          (tr >= threshold ? 4 : 0) |
+          (br >= threshold ? 2 : 0) |
+          (bl >= threshold ? 1 : 0);
+
+        if (config === 0 || config === 15) continue;
+
+        const interp = (a, b) => {
+          const d = b - a;
+          if (Math.abs(d) < 0.0001) return 0.5;
+          return (threshold - a) / d;
+        };
+
+        const top = interp(tl, tr);
+        const right = interp(tr, br);
+        const bottom = interp(bl, br);
+        const left = interp(tl, bl);
+
+        const px = x * 2;
+        const py = y * 2;
+
+        const points = {
+          t: [px + top * 2, py],
+          r: [px + 2, py + right * 2],
+          b: [px + bottom * 2, py + 2],
+          l: [px, py + left * 2],
+        };
+
+        const addSeg = (a, b) => segments.push([points[a], points[b]]);
+
+        switch (config) {
+          case 1: addSeg('l', 'b'); break;
+          case 2: addSeg('b', 'r'); break;
+          case 3: addSeg('l', 'r'); break;
+          case 4: addSeg('t', 'r'); break;
+          case 5: addSeg('t', 'l'); addSeg('b', 'r'); break;
+          case 6: addSeg('t', 'b'); break;
+          case 7: addSeg('t', 'l'); break;
+          case 8: addSeg('t', 'l'); break;
+          case 9: addSeg('t', 'b'); break;
+          case 10: addSeg('t', 'r'); addSeg('l', 'b'); break;
+          case 11: addSeg('t', 'r'); break;
+          case 12: addSeg('l', 'r'); break;
+          case 13: addSeg('b', 'r'); break;
+          case 14: addSeg('l', 'b'); break;
+        }
+      }
+    }
+    contourData.push({ level, threshold, segments });
+  }
+
+  animPhase = 0;
+}
+
+function draw() {
+  ctx.fillStyle = palette.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  const reveal = Math.min(animPhase / 90, 1);
+  const levelsToShow = Math.ceil(LEVELS * reveal);
+
+  for (let i = 0; i < levelsToShow; i++) {
+    const { level, segments } = contourData[i];
+    const colorIdx = Math.floor((level / LEVELS) * (palette.colors.length - 1));
+    const color = palette.colors[colorIdx];
+
+    const segReveal = i === levelsToShow - 1
+      ? (reveal * LEVELS - i) : 1;
+
+    const alpha = Math.min(segReveal, 0.7 + (level / LEVELS) * 0.3);
+
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = alpha;
+    ctx.lineWidth = level % 4 === 0 ? 1.5 : 0.7;
+    ctx.beginPath();
+
+    const showCount = Math.ceil(segments.length * segReveal);
+    for (let s = 0; s < showCount; s++) {
+      const [[x1, y1], [x2, y2]] = segments[s];
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+    }
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 1;
+
+  // Index marks on major contours
+  if (reveal > 0.5) {
+    ctx.font = '9px Courier New';
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    for (let i = 0; i < contourData.length; i += 4) {
+      const { segments, level } = contourData[i];
+      if (segments.length > 20) {
+        const seg = segments[Math.floor(segments.length * 0.3)];
+        const [[x1, y1]] = seg;
+        ctx.fillText((level + 1) * 100 + 'm', x1 + 3, y1 - 3);
+      }
+    }
+  }
+
+  animPhase++;
+  if (animPhase < 120) {
+    requestAnimationFrame(draw);
+  }
+}
+
+function survey() {
+  const seed = Math.floor(Math.random() * 100000);
+  generateTerrain(seed);
+  hint.style.opacity = '0';
+  draw();
+  setTimeout(() => { hint.style.opacity = '1'; }, 3000);
+}
+
+window.addEventListener('resize', () => {
+  resize();
+  survey();
+});
+
+canvas.addEventListener('click', survey);
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  survey();
+}, { passive: false });
+
+resize();
+survey();
+</script>
+</body>
+</html>
