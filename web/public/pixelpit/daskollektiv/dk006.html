@@ -192,7 +192,7 @@ function hasHats(bar) {
   return s !== 'foundation' && s !== 'close';
 }
 
-function hasRimshot(bar) {
+function hasClap(bar) {
   const s = getSection(bar);
   return s === 'foundation' || s === 'build' || s === 'drive' || s === 'peak';
 }
@@ -327,8 +327,10 @@ async function start() {
   drums.setVoiceParam('ch', 'level', 0.4);
   drums.setVoiceParam('ch', 'tone', 0.5);
 
-  // Rimshot: on the 'and' of 2 and 4
-  drums.setVoiceParam('rimshot', 'level', 0.45);
+  // Clap (replacing rimshot — JB01 has no rimshot, that's JT90)
+  // Used as ghost percussion on the 'and' of 2 and 4
+  drums.setVoiceParam('clap', 'level', 0.3);
+  drums.setVoiceParam('clap', 'decay', 0.15);  // tight, like a rimshot
 
   // Drums → mostly dry, tiny reverb send
   const drumGain = actx.createGain();
@@ -433,9 +435,9 @@ async function start() {
       hatDots.push(new HatDot());
     }
 
-    // ── RIMSHOT: on step 7 and 15 ──
-    if (hasRimshot(bar) && (stepInBar === 7 || stepInBar === 15)) {
-      drums.trigger('rimshot', 0.45 + Math.random() * 0.05);
+    // ── CLAP (as rimshot): on step 7 and 15 ──
+    if (hasClap(bar) && (stepInBar === 7 || stepInBar === 15)) {
+      drums.trigger('clap', 0.35 + Math.random() * 0.05);
     }
 
     // ── BASS ──
