@@ -155,7 +155,10 @@ export default function ParticleLifePage() {
       // Load JB01 (drums)
       let jb01: any = null;
       try {
-        const jb01Path = ['/jb01/dist/machines/jb01', 'engine.js'].join('/');
+        // Load from kochi.to — engines aren't in the Pixelpit Vercel build
+        const engineBase = typeof window !== 'undefined' && window.location.hostname.includes('pixelpit')
+          ? 'https://kochi.to' : '';
+        const jb01Path = `${engineBase}/jb01/dist/machines/jb01/engine.js`;
         const jb01Module = await import(/* webpackIgnore: true */ jb01Path);
         jb01 = new jb01Module.JB01Engine({ context: ctx });
         jb01.connectOutput(masterGain);
@@ -175,7 +178,7 @@ export default function ParticleLifePage() {
       // Load JT10 (melody synth)
       let jt10: any = null;
       try {
-        const jt10Path = ['/jt10/dist/machines/jt10', 'engine.js'].join('/');
+        const jt10Path = `${engineBase}/jt10/dist/machines/jt10/engine.js`;
         const jt10Module = await import(/* webpackIgnore: true */ jt10Path);
         jt10 = new jt10Module.JT10Engine({ context: ctx });
         jt10.connectOutput(masterGain);
