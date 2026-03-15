@@ -298,25 +298,8 @@ export default function LevelGame() {
       ctx!.fillStyle = 'rgba(10, 10, 15, 0.15)';
       ctx!.fillRect(0, 0, w, h);
 
-      // Grace/danger indicators
-      if (gs.graceActive) {
-        const remaining = Math.max(0, GRACE_PERIOD - gs.elapsed);
-        ctx!.save();
-        ctx!.font = 'bold 14px ui-monospace, monospace';
-        ctx!.textAlign = 'center';
-        ctx!.fillStyle = COLORS.primary;
-        ctx!.globalAlpha = 0.6 + Math.sin(gs.elapsed * 6) * 0.3;
-        ctx!.fillText(`GRACE: ${remaining.toFixed(1)}s`, w / 2, 90);
-        ctx!.restore();
-      } else {
-        ctx!.save();
-        ctx!.font = '12px ui-monospace, monospace';
-        ctx!.textAlign = 'center';
-        ctx!.fillStyle = COLORS.error;
-        ctx!.globalAlpha = 0.5;
-        ctx!.fillText('⚠ No walls — don\'t let it slide off!', w / 2, 90);
-        ctx!.restore();
-
+      // Edge danger glow (after grace period)
+      if (!gs.graceActive) {
         const edgeThreshold = 80;
         ctx!.save();
         ctx!.globalAlpha = 0.3;
@@ -428,12 +411,6 @@ export default function LevelGame() {
         ctx!.restore();
       }
 
-      // Centered status
-      ctx!.font = '12px ui-monospace, monospace';
-      ctx!.fillStyle = centered ? COLORS.teal : COLORS.text;
-      ctx!.globalAlpha = 0.6;
-      ctx!.fillText(centered ? '✓ CENTERED' : 'Tilt to center', w / 2, gs.multiplier > 1 ? 98 : 72);
-      ctx!.globalAlpha = 1;
     }
 
     function loop() {
@@ -485,7 +462,7 @@ export default function LevelGame() {
           <h1 style={{ fontSize: 36, color: COLORS.primary, textShadow: '0 0 30px rgba(255,215,0,0.4)', marginBottom: 4 }}>
             LEVEL
           </h1>
-          <p style={{ color: COLORS.text, fontSize: 14, marginBottom: 30, opacity: 0.7 }}>Keep it centered. Don't let it drift.</p>
+          <p style={{ color: COLORS.text, fontSize: 14, marginBottom: 30, opacity: 0.7 }}>Tilt to balance. Stay centered for multipliers.</p>
 
           <button onClick={startGame} style={{
             padding: '16px 48px', fontSize: 20, fontFamily: 'ui-monospace, monospace',
@@ -495,13 +472,6 @@ export default function LevelGame() {
           }}>
             START
           </button>
-
-          <p style={{ color: COLORS.teal, fontSize: 12, marginTop: 20, opacity: 0.6, textAlign: 'center', maxWidth: 280 }}>
-            📱 Tilt your phone to move the bubble<br/>
-            🖱️ Or move your mouse on desktop<br/><br/>
-            Stay centered for 2×, 4×, 8× multipliers!<br/>
-            5s grace period, then the walls disappear!
-          </p>
         </div>
       )}
 
