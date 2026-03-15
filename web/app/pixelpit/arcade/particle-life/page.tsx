@@ -152,12 +152,13 @@ export default function ParticleLifePage() {
       reverb.connect(reverbGain);
       reverbGain.connect(masterGain);
 
+      // Load from kochi.to — engines aren't in the Pixelpit Vercel build
+      const engineBase = typeof window !== 'undefined' && window.location.hostname.includes('pixelpit')
+        ? 'https://kochi.to' : '';
+
       // Load JB01 (drums)
       let jb01: any = null;
       try {
-        // Load from kochi.to — engines aren't in the Pixelpit Vercel build
-        const engineBase = typeof window !== 'undefined' && window.location.hostname.includes('pixelpit')
-          ? 'https://kochi.to' : '';
         const jb01Path = `${engineBase}/jb01/dist/machines/jb01/engine.js`;
         const jb01Module = await import(/* webpackIgnore: true */ jb01Path);
         jb01 = new jb01Module.JB01Engine({ context: ctx });
