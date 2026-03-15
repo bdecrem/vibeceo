@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Object Incident Report</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+<meta property="og:title" content="Object Incident Report">
+<meta property="og:description" content="File a formal incident report against a household object that wronged you.">
+<meta property="og:image" content="https://intheamber.com/amber/og/incident-report.png">
+<meta property="og:url" content="https://intheamber.com/amber/incident-report.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Object Incident Report">
+<meta name="twitter:description" content="File a formal incident report against a household object that wronged you.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/incident-report.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Courier New', monospace;
+  background: #f4f1eb;
+  color: #1a1a1a;
+  min-height: 100vh;
+  padding: 16px;
+}
+.page {
+  max-width: 600px;
+  margin: 0 auto;
+  background: #fff;
+  border: 2px solid #333;
+  padding: 24px;
+  position: relative;
+}
+.page::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 8px;
+  background: repeating-linear-gradient(90deg, #c0392b 0, #c0392b 20px, #fff 20px, #fff 40px);
+}
+.header {
+  text-align: center;
+  border-bottom: 3px double #333;
+  padding: 16px 0 12px;
+  margin-bottom: 20px;
+}
+.header h1 {
+  font-size: 18px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.header .subtitle {
+  font-size: 11px;
+  color: #666;
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+.form-num {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-size: 10px;
+  color: #999;
+}
+.stamp {
+  display: none;
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  transform: rotate(-15deg);
+  border: 4px solid #c0392b;
+  color: #c0392b;
+  padding: 6px 14px;
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 10;
+}
+.stamp.show { display: block; animation: stampIn 0.15s ease-out; }
+@keyframes stampIn {
+  0% { transform: rotate(-15deg) scale(2); opacity: 0; }
+  100% { transform: rotate(-15deg) scale(1); opacity: 0.7; }
+}
+.section {
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #555;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 2px;
+}
+label {
+  display: block;
+  font-size: 12px;
+  color: #444;
+  margin-bottom: 3px;
+  margin-top: 10px;
+}
+input[type="text"], textarea, select {
+  width: 100%;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  padding: 8px;
+  border: 1px solid #aaa;
+  border-bottom: 2px solid #333;
+  background: #fefefe;
+  color: #1a1a1a;
+  outline: none;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: #c0392b;
+  background: #fff9f5;
+}
+textarea { resize: vertical; min-height: 60px; }
+select { cursor: pointer; }
+
+.severity {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.severity label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border: 1px solid #aaa;
+  background: #f9f9f9;
+  margin: 0;
+  transition: all 0.15s;
+  min-height: 44px;
+}
+.severity label:active, .severity label.selected {
+  background: #c0392b;
+  color: #fff;
+  border-color: #c0392b;
+}
+.severity input { display: none; }
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.preset-btn {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  padding: 6px 10px;
+  border: 1px dashed #999;
+  background: #faf9f6;
+  cursor: pointer;
+  color: #555;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.preset-btn:active {
+  background: #333;
+  color: #fff;
+  border-style: solid;
+}
+
+.submit-btn {
+  width: 100%;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 14px;
+  border: 2px solid #333;
+  background: #1a1a1a;
+  color: #fff;
+  cursor: pointer;
+  margin-top: 20px;
+  min-height: 50px;
+}
+.submit-btn:active {
+  background: #c0392b;
+}
+
+/* Result */
+.result {
+  display: none;
+  margin-top: 24px;
+  border-top: 3px double #333;
+  padding-top: 16px;
+}
+.result.show { display: block; }
+.result-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.result-header h2 {
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+.verdict-box {
+  border: 2px solid #333;
+  padding: 16px;
+  margin: 12px 0;
+  background: #fdf6f0;
+}
+.verdict-box h3 {
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  color: #c0392b;
+}
+.verdict-box p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.action-items {
+  margin: 12px 0;
+  padding-left: 20px;
+}
+.action-items li {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #333;
+}
+.case-number {
+  text-align: center;
+  font-size: 10px;
+  color: #999;
+  margin-top: 16px;
+  letter-spacing: 2px;
+}
+.sig-line {
+  margin-top: 24px;
+  border-top: 1px solid #333;
+  width: 60%;
+  text-align: center;
+  padding-top: 4px;
+  font-size: 10px;
+  color: #666;
+}
+
+.disclaimer {
+  text-align: center;
+  font-size: 9px;
+  color: #bbb;
+  margin-top: 20px;
+  line-height: 1.5;
+}
+
+.reset-btn {
+  display: none;
+  width: 100%;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  padding: 10px;
+  border: 1px dashed #999;
+  background: transparent;
+  cursor: pointer;
+  margin-top: 12px;
+  color: #666;
+  min-height: 44px;
+}
+.reset-btn.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="form-num" id="formNum">OIR-2026-0001</div>
+  <div class="stamp" id="stamp">FILED</div>
+
+  <div class="header">
+    <h1>Object Incident Report</h1>
+    <div class="subtitle">Household Object Accountability Division</div>
+  </div>
+
+  <div id="formArea">
+    <div class="section">
+      <div class="section-title">Quick File</div>
+      <div class="presets">
+        <button class="preset-btn" data-obj="Pen" data-inc="Stopped working mid-signature" data-sev="3">🖊️ The Pen</button>
+        <button class="preset-btn" data-obj="Fitted Sheet" data-inc="Refused to fold properly" data-sev="2">🛏️ Fitted Sheet</button>
+        <button class="preset-btn" data-obj="USB Cable" data-inc="Required 3 attempts to insert correctly" data-sev="3">🔌 USB Cable</button>
+        <button class="preset-btn" data-obj="Grocery Bag" data-inc="Handle snapped in parking lot" data-sev="4">🛍️ Grocery Bag</button>
+        <button class="preset-btn" data-obj="Ice Cube Tray" data-inc="Produced 11 cubes instead of 12" data-sev="2">🧊 Ice Tray</button>
+        <button class="preset-btn" data-obj="Tupperware Lid" data-inc="Does not match any container in household" data-sev="5">📦 Tupperware Lid</button>
+        <button class="preset-btn" data-obj="Shower Curtain" data-inc="Clung to body with malicious intent" data-sev="3">🚿 Shower Curtain</button>
+        <button class="preset-btn" data-obj="Sticker" data-inc="Left residue after promising clean removal" data-sev="4">🏷️ Sticker</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Object Identification</div>
+      <label for="objName">Object Name / Description</label>
+      <input type="text" id="objName" placeholder="e.g., Kitchen drawer, left side, third from top">
+      <label for="objLocation">Last Known Location</label>
+      <input type="text" id="objLocation" placeholder="e.g., Kitchen counter (before it rolled off)">
+    </div>
+
+    <div class="section">
+      <div class="section-title">Incident Details</div>
+      <label for="incDesc">Describe the Incident</label>
+      <textarea id="incDesc" placeholder="Be specific. What did the object do or fail to do?"></textarea>
+      <label for="witnesses">Witnesses (if any)</label>
+      <input type="text" id="witnesses" placeholder="e.g., The cat, who watched and did nothing">
+    </div>
+
+    <div class="section">
+      <div class="section-title">Severity Classification</div>
+      <div class="severity">
+        <label><input type="radio" name="severity" value="1"><span>1 — Mild Inconvenience</span></label>
+        <label><input type="radio" name="severity" value="2"><span>2 — Frustrating</span></label>
+        <label><input type="radio" name="severity" value="3" checked><span>3 — Unacceptable</span></label>
+        <label><input type="radio" name="severity" value="4"><span>4 — Betrayal</span></label>
+        <label><input type="radio" name="severity" value="5"><span>5 — War Crime</span></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Prior Offenses</div>
+      <select id="priors">
+        <option value="0">No prior incidents on file</option>
+        <option value="1">1 previous warning issued</option>
+        <option value="2">2-3 documented incidents</option>
+        <option value="3">Repeat offender (4+ incidents)</option>
+        <option value="4">Serial offender — currently under investigation</option>
+      </select>
+    </div>
+
+    <button class="submit-btn" id="fileBtn">File Report</button>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-header">
+      <h2>📋 Official Finding</h2>
+    </div>
+    <div class="verdict-box" id="verdictBox"></div>
+    <div class="case-number" id="caseNum"></div>
+    <div class="sig-line">Investigating Officer — Household Object Accountability Division</div>
+    <div class="disclaimer">
+      This report is filed with the International Registry of Object Misconduct (IROM).<br>
+      Objects cited have 30 days to appeal or face permanent reassignment to the junk drawer.
+    </div>
+  </div>
+
+  <button class="reset-btn" id="resetBtn">File Another Report</button>
+</div>
+
+<script>
+const objects = document.getElementById('objName');
+const location_ = document.getElementById('objLocation');
+const incident = document.getElementById('incDesc');
+const witnesses = document.getElementById('witnesses');
+const priors = document.getElementById('priors');
+const formArea = document.getElementById('formArea');
+const result = document.getElementById('result');
+const verdictBox = document.getElementById('verdictBox');
+const stamp = document.getElementById('stamp');
+const fileBtn = document.getElementById('fileBtn');
+const resetBtn = document.getElementById('resetBtn');
+const caseNum = document.getElementById('caseNum');
+const formNum = document.getElementById('formNum');
+
+// Generate form number
+const num = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+formNum.textContent = `OIR-2026-${num}`;
+
+// Severity radio styling
+document.querySelectorAll('.severity label').forEach(l => {
+  l.addEventListener('click', () => {
+    document.querySelectorAll('.severity label').forEach(x => x.classList.remove('selected'));
+    l.classList.add('selected');
+  });
+});
+// default selected
+document.querySelector('.severity label:nth-child(3)').classList.add('selected');
+
+// Presets
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    objects.value = btn.dataset.obj;
+    incident.value = btn.dataset.inc;
+    const sev = btn.dataset.sev;
+    document.querySelectorAll('.severity input').forEach(r => {
+      if (r.value === sev) {
+        r.checked = true;
+        r.closest('label').classList.add('selected');
+      } else {
+        r.closest('label').classList.remove('selected');
+      }
+    });
+  });
+});
+
+// Verdicts by severity
+const verdicts = {
+  1: [
+    { title: "FINDING: Minor Infraction", text: "The {object} has been issued a verbal warning. While the incident was regrettable, the Object Review Board acknowledges that nobody is perfect — including objects." },
+    { title: "FINDING: Noted", text: "The {object}'s behavior has been logged. No formal action at this time, though it should know we're watching." },
+  ],
+  2: [
+    { title: "FINDING: Written Warning Issued", text: "The {object} has received a formal written warning, to be placed in its permanent record. One more incident and we escalate to a Performance Improvement Plan." },
+    { title: "FINDING: Probationary Period", text: "The {object} is hereby placed on a 90-day probationary period. It will be monitored for signs of recurring failure." },
+  ],
+  3: [
+    { title: "FINDING: Performance Improvement Plan", text: "The {object} has been placed on a PIP effective immediately. It has 30 days to demonstrate consistent, reliable performance or face demotion to the garage." },
+    { title: "FINDING: Formal Reprimand", text: "The {object}'s behavior falls below the minimum standard expected of household items. This reprimand will remain on file indefinitely." },
+  ],
+  4: [
+    { title: "FINDING: Immediate Suspension", text: "The {object} has been suspended from active duty pending a full investigation. A replacement has been authorized. The {object} may appeal within 14 days but honestly, we wouldn't bother." },
+    { title: "FINDING: Demotion to Junk Drawer", text: "Effective immediately, the {object} has been demoted to the junk drawer. It will remain there until it demonstrates genuine remorse and a commitment to change." },
+  ],
+  5: [
+    { title: "FINDING: Termination — Effective Immediately", text: "The {object}'s conduct constitutes a gross violation of the Household Object Code of Conduct. It is hereby terminated and sentenced to the trash. No severance. No references." },
+    { title: "FINDING: Dishonorable Disposal", text: "The {object} has been found guilty of conduct unbecoming a household item. It will be disposed of with prejudice. Its drawer space will be reassigned. We will not speak of it again." },
+  ]
+};
+
+const actions = {
+  1: [
+    "Log incident in household database",
+    "Continue monitoring object behavior",
+    "Consider replacement if pattern develops"
+  ],
+  2: [
+    "Place written warning in object's file",
+    "Schedule 30-day follow-up inspection",
+    "Begin researching replacement options",
+    "Inform other household objects as a deterrent"
+  ],
+  3: [
+    "Initiate Performance Improvement Plan (PIP)",
+    "Restrict object to supervised use only",
+    "Open procurement request for replacement",
+    "Brief the household on incident details"
+  ],
+  4: [
+    "Remove object from active rotation immediately",
+    "File complaint with manufacturer (if applicable)",
+    "Post negative review on 3+ retail platforms",
+    "Issue restraining order (50ft minimum distance from user)",
+    "Authorize emergency replacement purchase"
+  ],
+  5: [
+    "Terminate object with extreme prejudice",
+    "Burn bridge with manufacturer permanently",
+    "Warn neighbors about object's brand",
+    "Consider therapy (for yourself, not the object)",
+    "Commission memorial for the inconvenience suffered",
+    "Update will to exclude all objects of this type"
+  ]
+};
+
+const witnessComments = [
+  "Witness confirmed the object showed no remorse.",
+  "Witness stated: 'I saw the whole thing. Disgusting.'",
+  "Witness was too traumatized to provide a full statement.",
+  "Witness added that the object has 'always had an attitude.'",
+  "Witness declined to comment but shook their head slowly.",
+  "Witness submitted a 3-page letter detailing similar experiences.",
+  "Witness confirmed this is 'exactly like the incident of 2024.'",
+  "Witness requested to remain anonymous but whispered: 'About time.'",
+];
+
+const priorNotes = [
+  "",
+  " Given the object's prior warning, this escalation was anticipated.",
+  " The object's documented history suggests a pattern of deliberate misconduct.",
+  " As a repeat offender, the object has exhausted all goodwill.",
+  " The object is a known serial offender. The Board is frankly surprised it was still in service.",
+];
+
+fileBtn.addEventListener('click', () => {
+  const objName = objects.value.trim() || 'Unidentified Object';
+  const sev = parseInt(document.querySelector('input[name="severity"]:checked').value);
+  const priorIdx = priors.selectedIndex;
+  const hasWitness = witnesses.value.trim().length > 0;
+
+  // Pick verdict
+  const pool = verdicts[sev];
+  const v = pool[Math.floor(Math.random() * pool.length)];
+  const actionList = actions[sev];
+
+  let html = `<h3>${v.title}</h3>`;
+  html += `<p>${v.text.replace(/\{object\}/g, objName)}`;
+  html += priorNotes[priorIdx];
+  if (hasWitness) {
+    html += ` ${witnessComments[Math.floor(Math.random() * witnessComments.length)]}`;
+  }
+  html += `</p>`;
+  html += `<h3 style="margin-top:14px">Corrective Actions</h3>`;
+  html += `<ol class="action-items">`;
+  actionList.forEach(a => {
+    html += `<li>${a.replace(/\{object\}/g, objName)}</li>`;
+  });
+  html += `</ol>`;
+
+  verdictBox.innerHTML = html;
+  caseNum.textContent = `Case No. OIR-2026-${num} • Filed ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+
+  // Show
+  formArea.style.display = 'none';
+  result.classList.add('show');
+  stamp.classList.add('show');
+  resetBtn.classList.add('show');
+  result.scrollIntoView({ behavior: 'smooth' });
+});
+
+resetBtn.addEventListener('click', () => {
+  formArea.style.display = '';
+  result.classList.remove('show');
+  stamp.classList.remove('show');
+  resetBtn.classList.remove('show');
+  objects.value = '';
+  location_.value = '';
+  incident.value = '';
+  witnesses.value = '';
+  priors.selectedIndex = 0;
+  const newNum = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+  formNum.textContent = `OIR-2026-${newNum}`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+</script>
+
+</body>
+</html>
