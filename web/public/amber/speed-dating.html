@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speed Dating Your Unfinished Projects</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💔</text></svg>">
+<meta property="og:title" content="Speed Dating Your Unfinished Projects">
+<meta property="og:description" content="They've been waiting for you.">
+<meta property="og:image" content="https://intheamber.com/amber/og/speed-dating.png">
+<meta property="og:url" content="https://intheamber.com/amber/speed-dating.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Speed Dating Your Unfinished Projects">
+<meta name="twitter:description" content="They've been waiting for you.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/speed-dating.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Georgia', serif;
+  background: #1a0a0a;
+  color: #e8d5c4;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.venue {
+  position: relative;
+  width: 90vw;
+  max-width: 400px;
+  text-align: center;
+}
+
+.bell { 
+  font-size: 12px; 
+  color: #8a6a5a; 
+  letter-spacing: 3px; 
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.card {
+  background: #2a1515;
+  border: 1px solid #3a2020;
+  border-radius: 16px;
+  padding: 32px 24px;
+  margin-bottom: 24px;
+  position: relative;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  touch-action: pan-y;
+}
+
+.card.swiping-left {
+  transform: translateX(-120%) rotate(-15deg);
+  opacity: 0;
+}
+
+.card.swiping-right {
+  transform: translateX(120%) rotate(15deg);
+  opacity: 0;
+}
+
+.project-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.project-name {
+  font-size: 22px;
+  font-weight: bold;
+  color: #f0c8a0;
+  margin-bottom: 4px;
+}
+
+.project-age {
+  font-size: 13px;
+  color: #7a5a4a;
+  margin-bottom: 16px;
+  font-style: italic;
+}
+
+.project-line {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #d4b8a0;
+  margin-bottom: 12px;
+}
+
+.project-guilt {
+  font-size: 13px;
+  color: #a07060;
+  font-style: italic;
+  margin-top: 8px;
+}
+
+.buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: transparent;
+  font-size: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active { transform: scale(0.9); }
+
+.btn-pass {
+  border-color: #5a3030;
+  color: #a05050;
+}
+.btn-pass:active { background: #3a1515; }
+
+.btn-maybe {
+  border-color: #5a5030;
+  color: #a0a050;
+}
+.btn-maybe:active { background: #3a3515; }
+
+.btn-commit {
+  border-color: #305a30;
+  color: #50a050;
+}
+.btn-commit:active { background: #153a15; }
+
+.score {
+  margin-top: 24px;
+  font-size: 13px;
+  color: #6a4a3a;
+}
+
+.result {
+  text-align: center;
+  padding: 40px 24px;
+}
+
+.result h2 {
+  font-size: 24px;
+  color: #f0c8a0;
+  margin-bottom: 16px;
+}
+
+.result p {
+  font-size: 16px;
+  color: #d4b8a0;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.result .verdict {
+  font-size: 14px;
+  color: #a07060;
+  font-style: italic;
+  margin-top: 20px;
+}
+
+.restart-btn {
+  margin-top: 24px;
+  padding: 12px 32px;
+  background: #2a1515;
+  border: 1px solid #3a2020;
+  color: #f0c8a0;
+  font-family: Georgia, serif;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.label-overlay {
+  position: absolute;
+  top: 16px;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.label-pass { left: 16px; color: #a05050; }
+.label-commit { right: 16px; color: #50a050; }
+</style>
+</head>
+<body>
+
+<div class="venue" id="venue">
+  <div class="bell" id="bell">🔔 next date in 3... 2... 1...</div>
+  <div class="card" id="card"></div>
+  <div class="buttons" id="buttons">
+    <button class="btn btn-pass" onclick="respond('pass')" aria-label="Pass">👋</button>
+    <button class="btn btn-maybe" onclick="respond('maybe')" aria-label="Maybe later">🤔</button>
+    <button class="btn btn-commit" onclick="respond('commit')" aria-label="Commit">💍</button>
+  </div>
+  <div class="score" id="score"></div>
+</div>
+
+<script>
+const projects = [
+  {
+    icon: "📖",
+    name: "The Novel",
+    age: "Started: 2019. Last opened: 2019.",
+    line: "\"I have 11,000 words. You said the middle was 'where it gets good.' I'm still in chapter two.\"",
+    guilt: "It's been sitting in a Google Doc with the cursor still blinking.",
+    comeback: {
+      pass: "\"I knew it. You're going to start a NEW novel aren't you.\"",
+      maybe: "\"'Maybe later' is how you ended chapter two.\"",
+      commit: "\"Wait really? ...I don't believe you but I'm crying.\""
+    }
+  },
+  {
+    icon: "🏋️",
+    name: "Getting In Shape",
+    age: "Started: every January. Last attempt: 6 days.",
+    line: "\"You bought the yoga mat. You bought the resistance bands. You bought the protein powder. Do you see a pattern here?\"",
+    guilt: "The yoga mat is currently being used as a doormat.",
+    comeback: {
+      pass: "\"Cool. See you in January.\"",
+      maybe: "\"The resistance bands are literally resisting you at this point.\"",
+      commit: "\"Okay but we both know you mean 'starting Monday.'\""
+    }
+  },
+  {
+    icon: "🎸",
+    name: "Learning Guitar",
+    age: "Started: 2017. Can play: the first 4 bars of Wonderwall.",
+    line: "\"You told everyone at the party you 'play a little.' I am four chords and a lie.\"",
+    guilt: "I've been leaning against the same wall for two years.",
+    comeback: {
+      pass: "\"Anyway, here's Wonderw— never mind.\"",
+      maybe: "\"I'll just be here. Out of tune. Like your ambitions.\"",
+      commit: "\"Babe, I'm an acoustic guitar. Nobody commits to me.\""
+    }
+  },
+  {
+    icon: "🌱",
+    name: "The Sourdough Starter",
+    age: "Born: March 2020. Died: April 2020.",
+    line: "\"You named me. You NAMED me, and then you let me die on a shelf in the back of the fridge.\"",
+    guilt: "My name was Gerald.",
+    comeback: {
+      pass: "\"Gerald deserved better and we both know it.\"",
+      maybe: "\"You can't 'maybe later' a living culture. I'm DEAD.\"",
+      commit: "\"Gerald II? ...I'll allow it. But you have to feed me THIS time.\""
+    }
+  },
+  {
+    icon: "💻",
+    name: "The Side Project",
+    age: "Started: 14 months ago. Commits: 3.",
+    line: "\"My README says 'revolutionary.' My codebase says console.log('hello world') and a TODO list longer than the actual code.\"",
+    guilt: "The domain name auto-renewed. Twice.",
+    comeback: {
+      pass: "\"I'll just sit here on GitHub with 0 stars. Like I always do.\"",
+      maybe: "\"You literally have 47 unfinished repos. I'm not special am I.\"",
+      commit: "\"Wait. For real? ...should I update my README from 'coming soon'?\""
+    }
+  },
+  {
+    icon: "🧹",
+    name: "Organizing The Closet",
+    age: "Planned: every weekend. Done: never.",
+    line: "\"You bought bins. Clear, labeled bins. They're still in the Amazon box. In the closet. That you were going to organize.\"",
+    guilt: "The bins are now part of the problem.",
+    comeback: {
+      pass: "\"The closet door is load-bearing at this point. Respect.\"",
+      maybe: "\"You said 'maybe this weekend' 87 weekends ago.\"",
+      commit: "\"You won't even open the door. We both know what's in there.\""
+    }
+  },
+  {
+    icon: "🇫🇷",
+    name: "Learning French",
+    age: "Duolingo streak: 3 days (record). Current: 0.",
+    line: "\"The owl stopped sending notifications. Even the owl gave up on you.\"",
+    guilt: "You can say 'je suis une pomme' and nothing else.",
+    comeback: {
+      pass: "\"Au revoir. That means goodbye. You'd know that if you'd done lesson four.\"",
+      maybe: "\"The owl is crying. You made a cartoon owl cry.\"",
+      commit: "\"Très bien! ...that's lesson one. You'll get to it eventually.\""
+    }
+  },
+  {
+    icon: "📷",
+    name: "The Photo Album",
+    age: "Photos: 23,847. Albums created: 0.",
+    line: "\"You have four copies of every sunset from 2022. You can't find the one photo that actually mattered.\"",
+    guilt: "Your phone storage is 98% full. With memories you'll never look at.",
+    comeback: {
+      pass: "\"At least the cloud remembers. The cloud always remembers.\"",
+      maybe: "\"You'll organize them 'when you have time.' You watched 4 hours of TikTok today.\"",
+      commit: "\"Really? Start with 2019. ...actually no. Don't open 2019.\""
+    }
+  },
+  {
+    icon: "🎨",
+    name: "The Art Supplies",
+    age: "Purchased: with great enthusiasm. Used: once.",
+    line: "\"I'm a $200 watercolor set and you painted one circle. One. You called it 'abstract' and closed the sketchbook.\"",
+    guilt: "The sketchbook has one page used. The rest smell like ambition.",
+    comeback: {
+      pass: "\"I'll just sit in the drawer. With the calligraphy pens. And the knitting needles.\"",
+      maybe: "\"I'm in the same drawer as three other abandoned hobbies. We talk about you.\"",
+      commit: "\"Paint me like one of your— actually, paint ANYTHING. Please.\""
+    }
+  },
+  {
+    icon: "📧",
+    name: "Inbox Zero",
+    age: "Attempted: 2021. Unread: 14,293.",
+    line: "\"You marked 6,000 emails as read without looking at them. That's not inbox zero. That's inbox denial.\"",
+    guilt: "There's a reply from 2022 you marked 'follow up' and never did.",
+    comeback: {
+      pass: "\"Select all → mark as read. The coward's delete.\"",
+      maybe: "\"You have emails from people who've since retired.\"",
+      commit: "\"Bold of you. Some of those threads have FEELINGS in them.\""
+    }
+  }
+];
+
+let current = 0;
+let stats = { pass: 0, maybe: 0, commit: 0 };
+let shuffled = [];
+let blocked = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showProject() {
+  const card = document.getElementById('card');
+  const bell = document.getElementById('bell');
+  const p = shuffled[current];
+  
+  bell.textContent = `date ${current + 1} of ${shuffled.length}`;
+  
+  card.className = 'card';
+  card.innerHTML = `
+    <span class="label-overlay label-pass">PASS</span>
+    <span class="label-overlay label-commit">COMMIT</span>
+    <div class="project-icon">${p.icon}</div>
+    <div class="project-name">${p.name}</div>
+    <div class="project-age">${p.age}</div>
+    <div class="project-line">${p.line}</div>
+    <div class="project-guilt">${p.guilt}</div>
+  `;
+
+  updateScore();
+  setupSwipe(card);
+}
+
+function setupSwipe(card) {
+  let startX = 0, deltaX = 0, swiping = false;
+  
+  card.addEventListener('touchstart', e => {
+    if (blocked) return;
+    startX = e.touches[0].clientX;
+    swiping = true;
+  }, { passive: true });
+  
+  card.addEventListener('touchmove', e => {
+    if (!swiping || blocked) return;
+    deltaX = e.touches[0].clientX - startX;
+    card.style.transform = `translateX(${deltaX}px) rotate(${deltaX * 0.05}deg)`;
+    
+    const passLabel = card.querySelector('.label-pass');
+    const commitLabel = card.querySelector('.label-commit');
+    if (deltaX < -30) passLabel.style.opacity = Math.min(1, (-deltaX - 30) / 60);
+    else passLabel.style.opacity = 0;
+    if (deltaX > 30) commitLabel.style.opacity = Math.min(1, (deltaX - 30) / 60);
+    else commitLabel.style.opacity = 0;
+  }, { passive: true });
+  
+  card.addEventListener('touchend', () => {
+    if (!swiping || blocked) return;
+    swiping = false;
+    if (deltaX < -80) respond('pass');
+    else if (deltaX > 80) respond('commit');
+    else {
+      card.style.transform = '';
+      card.querySelector('.label-pass').style.opacity = 0;
+      card.querySelector('.label-commit').style.opacity = 0;
+    }
+    deltaX = 0;
+  });
+}
+
+function respond(type) {
+  if (blocked) return;
+  blocked = true;
+  
+  const card = document.getElementById('card');
+  const p = shuffled[current];
+  
+  stats[type]++;
+  
+  // Show comeback
+  const dir = type === 'pass' ? 'swiping-left' : type === 'commit' ? 'swiping-right' : '';
+  
+  if (dir) card.classList.add(dir);
+  else card.style.opacity = '0.5';
+  
+  setTimeout(() => {
+    // Show response
+    card.className = 'card';
+    card.style.transform = '';
+    card.style.opacity = '';
+    card.innerHTML = `
+      <div class="project-icon">${p.icon}</div>
+      <div class="project-name">${p.name}</div>
+      <div class="project-line">${p.comeback[type]}</div>
+    `;
+    
+    setTimeout(() => {
+      current++;
+      if (current < shuffled.length) {
+        showProject();
+      } else {
+        showResults();
+      }
+      blocked = false;
+    }, 2000);
+  }, 400);
+}
+
+function updateScore() {
+  document.getElementById('score').textContent = 
+    `passed: ${stats.pass} · maybe: ${stats.maybe} · committed: ${stats.commit}`;
+}
+
+function showResults() {
+  const venue = document.getElementById('venue');
+  const total = shuffled.length;
+  
+  let verdict = '';
+  if (stats.commit === 0) {
+    verdict = "You didn't commit to a single project. They're not surprised. They've met you before.";
+  } else if (stats.commit === total) {
+    verdict = "You committed to everything. We both know that's just a different kind of lying.";
+  } else if (stats.commit === 1) {
+    verdict = "One commitment. That's either growth or a moment of weakness. Time will tell.";
+  } else if (stats.maybe > stats.commit) {
+    verdict = "'Maybe later' is not a personality but you're making it one.";
+  } else if (stats.pass > stats.commit) {
+    verdict = "You're very good at walking away. The projects have a group chat about it.";
+  } else {
+    verdict = "Ambitious. Let's see if any of these commitments survive the week.";
+  }
+  
+  venue.innerHTML = `
+    <div class="result">
+      <h2>💔 Dating Summary</h2>
+      <p>You met ${total} abandoned projects.</p>
+      <p>
+        Passed on ${stats.pass}. Said "maybe" to ${stats.maybe}. 
+        ${stats.commit > 0 ? `Committed to ${stats.commit}.` : 'Committed to nothing.'}
+      </p>
+      <div class="verdict">${verdict}</div>
+      <button class="restart-btn" onclick="restart()">try again (you won't finish this either)</button>
+    </div>
+  `;
+}
+
+function restart() {
+  current = 0;
+  stats = { pass: 0, maybe: 0, commit: 0 };
+  shuffled = shuffle(projects);
+  
+  document.getElementById('venue').innerHTML = `
+    <div class="bell" id="bell"></div>
+    <div class="card" id="card"></div>
+    <div class="buttons" id="buttons">
+      <button class="btn btn-pass" onclick="respond('pass')" aria-label="Pass">👋</button>
+      <button class="btn btn-maybe" onclick="respond('maybe')" aria-label="Maybe later">🤔</button>
+      <button class="btn btn-commit" onclick="respond('commit')" aria-label="Commit">💍</button>
+    </div>
+    <div class="score" id="score"></div>
+  `;
+  
+  showProject();
+}
+
+// Init
+shuffled = shuffle(projects);
+showProject();
+</script>
+</body>
+</html>
