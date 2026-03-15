@@ -730,30 +730,90 @@ export default function LevelGame() {
       <style jsx global>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: ${COLORS.bg}; font-family: ui-monospace, monospace; overflow: hidden; }
+        @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeUp { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes bobble { 0%,100% { transform: translateY(0) rotate(-2deg); } 25% { transform: translateY(-6px) rotate(2deg); } 50% { transform: translateY(0) rotate(-1deg); } 75% { transform: translateY(-3px) rotate(1deg); } }
+        .arcade-btn { transition: transform 0.1s, box-shadow 0.1s; }
+        .arcade-btn:hover { transform: scale(1.06) !important; }
+        .arcade-btn:active { transform: scale(0.96) !important; }
       `}</style>
 
       {/* --- START SCREEN --- */}
       {screenState === 'start' && (
         <div style={{
           position: 'fixed', inset: 0,
-          background: 'radial-gradient(ellipse at center, #2a1a3e 0%, #1a1a2e 50%, #12121f 100%)',
+          background: 'radial-gradient(ellipse at 30% 40%, #3a1a5e 0%, #2a1a3e 40%, #12121f 100%)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'ui-monospace, monospace', color: '#fff',
+          fontFamily: 'ui-monospace, monospace', color: '#fff', overflow: 'hidden',
         }}>
-          <div style={{ fontSize: 48, marginBottom: 8, filter: 'drop-shadow(0 0 20px rgba(255,215,0,0.5))' }}>⚖️</div>
-          <h1 style={{ fontSize: 36, color: COLORS.primary, textShadow: '0 0 30px rgba(255,215,0,0.4)', marginBottom: 4 }}>
+          {/* Floating decorative orbs */}
+          {[...Array(6)].map((_, i) => (
+            <div key={i} style={{
+              position: 'absolute',
+              width: 8 + i * 6, height: 8 + i * 6, borderRadius: 9999,
+              background: [COLORS.primary, COLORS.teal, '#FF69B4', COLORS.secondary, COLORS.primary, COLORS.teal][i],
+              opacity: 0.15 + i * 0.03,
+              left: `${15 + i * 14}%`, top: `${20 + (i % 3) * 25}%`,
+              animation: `float ${3 + i * 0.7}s ease-in-out infinite`,
+              animationDelay: `${i * 0.4}s`,
+            }} />
+          ))}
+
+          {/* Spinning ring behind title */}
+          <div style={{
+            position: 'absolute', width: 200, height: 200, borderRadius: 9999,
+            border: '2px solid rgba(255,215,0,0.08)',
+            animation: 'spin 20s linear infinite',
+          }} />
+          <div style={{
+            position: 'absolute', width: 260, height: 260, borderRadius: 9999,
+            border: '1px solid rgba(45,149,150,0.06)',
+            animation: 'spin 30s linear infinite reverse',
+          }} />
+
+          {/* Ball icon — bouncing */}
+          <div style={{
+            fontSize: 64, marginBottom: 12,
+            animation: 'bobble 2.5s ease-in-out infinite',
+            filter: 'drop-shadow(0 0 25px rgba(255,215,0,0.6))',
+          }}>⚖️</div>
+
+          {/* Title with shimmer */}
+          <h1 style={{
+            fontSize: 52, fontWeight: 900, letterSpacing: 8, marginBottom: 6,
+            background: 'linear-gradient(90deg, #FFD700, #FF69B4, #2D9596, #FFD700)',
+            backgroundSize: '200% auto',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            animation: 'shimmer 4s linear infinite',
+            filter: 'drop-shadow(0 0 20px rgba(255,215,0,0.3))',
+          }}>
             LEVEL
           </h1>
-          <p style={{ color: COLORS.text, fontSize: 14, marginBottom: 30, opacity: 0.7 }}>Tilt to balance. Stay centered for multipliers.</p>
 
-          <button onClick={startGame} style={{
-            padding: '16px 48px', fontSize: 20, fontFamily: 'ui-monospace, monospace',
-            background: COLORS.secondary, color: COLORS.primary,
-            border: `2px solid ${COLORS.primary}`, borderRadius: 8, cursor: 'pointer',
-            boxShadow: '0 0 30px rgba(123,104,238,0.5)',
+          <p style={{
+            color: COLORS.text, fontSize: 15, marginBottom: 36, opacity: 0.8,
+            animation: 'fadeUp 0.8s ease-out',
+          }}>Tilt to balance. Stay centered for multipliers.</p>
+
+          {/* Big chunky START button */}
+          <button className="arcade-btn" onClick={startGame} style={{
+            padding: '18px 64px', fontSize: 24, fontWeight: 900, letterSpacing: 6,
+            fontFamily: 'ui-monospace, monospace',
+            background: `linear-gradient(135deg, ${COLORS.primary}, #FFA500)`,
+            color: COLORS.bg, border: 'none', borderRadius: 12, cursor: 'pointer',
+            boxShadow: '0 4px 0 #B8860B, 0 0 40px rgba(255,215,0,0.4)',
+            animation: 'pulse 2s ease-in-out infinite',
           }}>
             START
           </button>
+
+          {/* Pixelpit branding */}
+          <div style={{
+            position: 'absolute', bottom: 24, fontSize: 11, color: COLORS.muted, letterSpacing: 3, opacity: 0.4,
+          }}>PIXELPIT ARCADE</div>
         </div>
       )}
 
@@ -767,27 +827,59 @@ export default function LevelGame() {
         <div style={{
           minHeight: '100vh',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          padding: 24,
-          background: 'radial-gradient(ellipse at center, #2a1a3e 0%, #1a1a2e 50%, #12121f 100%)',
+          padding: 24, overflow: 'hidden', position: 'relative',
+          background: 'radial-gradient(ellipse at 50% 30%, #3a1a5e 0%, #2a1a3e 40%, #12121f 100%)',
         }}>
-          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: 400, width: '100%' }}>
-            <div style={{ fontSize: 20, color: COLORS.muted, letterSpacing: 4, marginBottom: 12 }}>
+          {/* Decorative floating orbs */}
+          {[...Array(4)].map((_, i) => (
+            <div key={i} style={{
+              position: 'absolute',
+              width: 10 + i * 8, height: 10 + i * 8, borderRadius: 9999,
+              background: [COLORS.primary, COLORS.teal, '#FF69B4', COLORS.secondary][i],
+              opacity: 0.1,
+              left: `${10 + i * 22}%`, top: `${15 + (i % 2) * 55}%`,
+              animation: `float ${3 + i * 0.8}s ease-in-out infinite`,
+              animationDelay: `${i * 0.3}s`,
+            }} />
+          ))}
+
+          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: 400, width: '100%', zIndex: 1 }}>
+            {/* Game over label */}
+            <div style={{
+              fontSize: 14, color: COLORS.teal, letterSpacing: 6, marginBottom: 16,
+              animation: 'fadeUp 0.4s ease-out',
+            }}>
               DRIFTED AWAY
             </div>
 
-            <div style={{ fontSize: 80, fontWeight: 200, color: COLORS.primary, marginBottom: 8, lineHeight: 1, textShadow: '0 0 20px #FFD700' }}>
+            {/* Big animated score */}
+            <div style={{
+              fontSize: 96, fontWeight: 900, lineHeight: 1, marginBottom: 4,
+              background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 0 30px rgba(255,215,0,0.5))',
+              animation: 'fadeUp 0.5s ease-out',
+            }}>
               {displayScore(score)}
             </div>
 
-            <div style={{ fontSize: 12, color: COLORS.muted, letterSpacing: 2, marginBottom: 30 }}>
+            <div style={{
+              fontSize: 13, color: COLORS.muted, letterSpacing: 3, marginBottom: 28,
+              animation: 'fadeUp 0.6s ease-out',
+            }}>
               POINTS
             </div>
 
             {progression && (
-              <div style={{ background: COLORS.surface, borderRadius: 12, padding: '16px 24px', marginBottom: 20, textAlign: 'center' }}>
-                <div style={{ fontSize: 18, color: COLORS.primary, marginBottom: 8 }}>+{progression.xpEarned} XP</div>
-                <div style={{ fontSize: 12, color: COLORS.muted }}>
-                  Level {progression.level}{progression.streak > 1 ? ` • ${progression.multiplier}x streak` : ''}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(123,104,238,0.2), rgba(45,149,150,0.15))',
+                border: '1px solid rgba(123,104,238,0.3)',
+                borderRadius: 14, padding: '16px 28px', marginBottom: 22, textAlign: 'center',
+                animation: 'fadeUp 0.7s ease-out',
+              }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.primary, marginBottom: 6 }}>+{progression.xpEarned} XP</div>
+                <div style={{ fontSize: 13, color: COLORS.teal }}>
+                  Level {progression.level}{progression.streak > 1 ? ` · ${progression.multiplier}x streak 🔥` : ''}
                 </div>
               </div>
             )}
@@ -801,28 +893,31 @@ export default function LevelGame() {
               onProgression={(prog) => setProgression(prog)}
             />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center', marginTop: 20, width: '100%' }}>
-              <button onClick={startGame} style={{
-                background: COLORS.primary, color: COLORS.bg, border: 'none', borderRadius: 8,
-                padding: '14px 40px', fontSize: 15, fontFamily: 'ui-monospace, monospace', fontWeight: 600,
-                cursor: 'pointer', letterSpacing: 2,
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', marginTop: 24, width: '100%' }}>
+              <button className="arcade-btn" onClick={startGame} style={{
+                background: `linear-gradient(135deg, ${COLORS.primary}, #FFA500)`,
+                color: COLORS.bg, border: 'none', borderRadius: 10,
+                padding: '16px 48px', fontSize: 17, fontWeight: 900, letterSpacing: 4,
+                fontFamily: 'ui-monospace, monospace', cursor: 'pointer',
+                boxShadow: '0 4px 0 #B8860B, 0 0 30px rgba(255,215,0,0.3)',
               }}>
-                play again
+                PLAY AGAIN
               </button>
-              <button onClick={() => setScreenState('leaderboard')} style={{
-                background: 'transparent', border: `1px solid ${COLORS.surface}`, borderRadius: 6,
-                color: COLORS.muted, padding: '12px 30px', fontSize: 11,
-                fontFamily: 'ui-monospace, monospace', cursor: 'pointer', letterSpacing: 2,
+              <button className="arcade-btn" onClick={() => setScreenState('leaderboard')} style={{
+                background: 'rgba(123,104,238,0.15)', border: `2px solid ${COLORS.secondary}`, borderRadius: 10,
+                color: COLORS.secondary, padding: '13px 36px', fontSize: 13, fontWeight: 700,
+                fontFamily: 'ui-monospace, monospace', cursor: 'pointer', letterSpacing: 3,
+                boxShadow: '0 0 15px rgba(123,104,238,0.2)',
               }}>
-                leaderboard
+                LEADERBOARD
               </button>
               {user ? (
-                <button onClick={() => setShowShareModal(true)} style={{
-                  background: 'transparent', border: `1px solid ${COLORS.surface}`, borderRadius: 6,
-                  color: COLORS.muted, padding: '12px 30px', fontSize: 11,
-                  fontFamily: 'ui-monospace, monospace', cursor: 'pointer', letterSpacing: 2,
+                <button className="arcade-btn" onClick={() => setShowShareModal(true)} style={{
+                  background: 'rgba(45,149,150,0.12)', border: `2px solid ${COLORS.teal}`, borderRadius: 10,
+                  color: COLORS.teal, padding: '13px 36px', fontSize: 13, fontWeight: 700,
+                  fontFamily: 'ui-monospace, monospace', cursor: 'pointer', letterSpacing: 3,
                 }}>
-                  share / groups
+                  SHARE / GROUPS
                 </button>
               ) : (
                 <ShareButtonContainer
