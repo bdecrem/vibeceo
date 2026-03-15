@@ -480,47 +480,57 @@ export default function LevelGame() {
       const dist = Math.hypot(b.x - centerX, b.y - centerY);
       const centered = dist < targetRadius;
 
-      // Living gradient background — dark but playful, always evolving
+      // Living gradient background — full clear each frame (no trail-to-black)
       const t = gs.bgTime;
-      const hue1 = 240 + Math.sin(t * 0.15) * 30; // deep blue ↔ purple
-      const hue2 = 280 + Math.sin(t * 0.1 + 2) * 40; // purple ↔ magenta
-      const hue3 = 200 + Math.sin(t * 0.08 + 4) * 25; // teal ↔ blue
-      // Undulating center point
-      const cx1 = w * (0.3 + Math.sin(t * 0.2) * 0.2);
-      const cy1 = h * (0.3 + Math.cos(t * 0.15) * 0.2);
-      const cx2 = w * (0.7 + Math.sin(t * 0.12 + 3) * 0.15);
-      const cy2 = h * (0.7 + Math.cos(t * 0.18 + 1) * 0.15);
+      const hue1 = 240 + Math.sin(t * 0.15) * 30;
+      const hue2 = 280 + Math.sin(t * 0.1 + 2) * 40;
+      const hue3 = 170 + Math.sin(t * 0.08 + 4) * 30;
 
-      // Base fill (mostly opaque for trail effect)
-      ctx!.fillStyle = `hsla(${hue1}, 40%, 6%, 0.25)`;
+      // Solid base — dark but NOT black
+      ctx!.fillStyle = `hsl(${hue1}, 35%, 10%)`;
       ctx!.fillRect(0, 0, w, h);
 
-      // Soft radial blob 1
-      ctx!.save();
-      const g1 = ctx!.createRadialGradient(cx1, cy1, 0, cx1, cy1, Math.max(w, h) * 0.5);
-      g1.addColorStop(0, `hsla(${hue2}, 50%, 12%, 0.08)`);
-      g1.addColorStop(1, `hsla(${hue2}, 50%, 5%, 0)`);
+      // Drifting blob 1 — large, warm purple/magenta
+      const cx1 = w * (0.3 + Math.sin(t * 0.2) * 0.2);
+      const cy1 = h * (0.3 + Math.cos(t * 0.15) * 0.2);
+      const g1 = ctx!.createRadialGradient(cx1, cy1, 0, cx1, cy1, Math.max(w, h) * 0.55);
+      g1.addColorStop(0, `hsla(${hue2}, 60%, 25%, 0.35)`);
+      g1.addColorStop(0.5, `hsla(${hue2}, 50%, 18%, 0.15)`);
+      g1.addColorStop(1, `hsla(${hue2}, 40%, 10%, 0)`);
       ctx!.fillStyle = g1;
       ctx!.fillRect(0, 0, w, h);
 
-      // Soft radial blob 2
-      const g2 = ctx!.createRadialGradient(cx2, cy2, 0, cx2, cy2, Math.max(w, h) * 0.4);
-      g2.addColorStop(0, `hsla(${hue3}, 45%, 10%, 0.06)`);
-      g2.addColorStop(1, `hsla(${hue3}, 45%, 5%, 0)`);
+      // Drifting blob 2 — teal/cyan, opposite corner
+      const cx2 = w * (0.7 + Math.sin(t * 0.12 + 3) * 0.2);
+      const cy2 = h * (0.7 + Math.cos(t * 0.18 + 1) * 0.2);
+      const g2 = ctx!.createRadialGradient(cx2, cy2, 0, cx2, cy2, Math.max(w, h) * 0.5);
+      g2.addColorStop(0, `hsla(${hue3}, 55%, 22%, 0.3)`);
+      g2.addColorStop(0.5, `hsla(${hue3}, 45%, 15%, 0.12)`);
+      g2.addColorStop(1, `hsla(${hue3}, 35%, 10%, 0)`);
       ctx!.fillStyle = g2;
       ctx!.fillRect(0, 0, w, h);
 
-      // Multiplier-reactive warmth: higher multiplier = warmer glow from center
+      // Third blob — smaller, faster moving, adds variety
+      const cx3 = w * (0.5 + Math.sin(t * 0.25 + 5) * 0.3);
+      const cy3 = h * (0.4 + Math.cos(t * 0.22 + 2) * 0.3);
+      const hue4 = 320 + Math.sin(t * 0.12) * 30;
+      const g3 = ctx!.createRadialGradient(cx3, cy3, 0, cx3, cy3, Math.max(w, h) * 0.3);
+      g3.addColorStop(0, `hsla(${hue4}, 50%, 20%, 0.2)`);
+      g3.addColorStop(1, `hsla(${hue4}, 40%, 10%, 0)`);
+      ctx!.fillStyle = g3;
+      ctx!.fillRect(0, 0, w, h);
+
+      // Multiplier-reactive warmth from center
       if (gs.multiplier > 1) {
-        const warmth = gs.multiplier >= 8 ? 0.06 : gs.multiplier >= 4 ? 0.04 : 0.02;
+        const warmth = gs.multiplier >= 8 ? 0.2 : gs.multiplier >= 4 ? 0.12 : 0.06;
         const warmHue = gs.multiplier >= 8 ? 320 : gs.multiplier >= 4 ? 45 : 170;
         const gw = ctx!.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.min(w, h) * 0.5);
-        gw.addColorStop(0, `hsla(${warmHue}, 60%, 20%, ${warmth})`);
-        gw.addColorStop(1, `hsla(${warmHue}, 60%, 5%, 0)`);
+        gw.addColorStop(0, `hsla(${warmHue}, 70%, 30%, ${warmth})`);
+        gw.addColorStop(0.6, `hsla(${warmHue}, 50%, 15%, ${warmth * 0.3})`);
+        gw.addColorStop(1, `hsla(${warmHue}, 40%, 10%, 0)`);
         ctx!.fillStyle = gw;
         ctx!.fillRect(0, 0, w, h);
       }
-      ctx!.restore();
 
       // Edge danger glow (after grace period)
       if (!gs.graceActive) {
