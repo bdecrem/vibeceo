@@ -630,5 +630,327 @@ function loop(ts) {
 }
 requestAnimationFrame(loop);
 </script>
+
+<!-- ============================================================ -->
+<!-- AUDIO: Three soundscapes, one per world                       -->
+<!-- ============================================================ -->
+<script type="module">
+import { JT10Engine } from 'https://kochi.to/jt10/dist/machines/jt10/engine.js';
+import { JB01Engine } from 'https://kochi.to/jb01/dist/machines/jb01/engine.js';
+
+let actx = null;
+let worldGains = [null, null, null];  // per-world gain nodes for crossfade
+let started = false;
+
+// ── REVERB FACTORY ──
+function createReverb(actx, time, decay, hpFreq) {
+  const sr = actx.sampleRate;
+  const len = sr * time;
+  const ir = actx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+  }
+  const conv = actx.createConvolver();
+  conv.buffer = ir;
+  const hp = actx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = hpFreq;
+  conv.connect(hp);
+  return { input: conv, output: hp };
+}
+
+// ── CROSSFADE ──
+function crossfadeTo(idx) {
+  if (!started) return;
+  const now = actx.currentTime;
+  worldGains.forEach((g, i) => {
+    if (!g) return;
+    g.gain.cancelScheduledValues(now);
+    g.gain.setValueAtTime(g.gain.value, now);
+    g.gain.linearRampToValueAtTime(i === idx ? 1.0 : 0.0, now + 1.0);
+  });
+}
+
+// Patch into the existing switchWorld
+const origSwitchWorld = window.switchWorld || (() => {});
+const navBtns = document.querySelectorAll('.nav-btn');
+navBtns.forEach(b => {
+  b.addEventListener('click', () => crossfadeTo(+b.dataset.world));
+});
+document.addEventListener('keydown', e => {
+  if (e.key === '1') crossfadeTo(0);
+  else if (e.key === '2') crossfadeTo(1);
+  else if (e.key === '3') crossfadeTo(2);
+  else if (e.key === 'ArrowRight') {
+    const cur = document.querySelector('.nav-btn.active');
+    if (cur) crossfadeTo(Math.min(2, +cur.dataset.world + 1));
+  }
+  else if (e.key === 'ArrowLeft') {
+    const cur = document.querySelector('.nav-btn.active');
+    if (cur) crossfadeTo(Math.max(0, +cur.dataset.world - 1));
+  }
+});
+
+// ── START AUDIO ON ENTER ──
+document.getElementById('enter-btn').addEventListener('click', async () => {
+  if (started) return;
+  started = true;
+
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === 'suspended') await actx.resume();
+
+  // Create per-world gain nodes
+  for (let i = 0; i < 3; i++) {
+    worldGains[i] = actx.createGain();
+    worldGains[i].gain.value = i === 0 ? 1.0 : 0.0;  // start with world 0 audible
+    worldGains[i].connect(actx.destination);
+  }
+
+  // ════════════════════════════════════════════
+  // WORLD 0: CRYSTAL CAVERN — Amber 💎
+  // Eb major pentatonic bells, sparse, ethereal
+  // ════════════════════════════════════════════
+  const crystal = new JT10Engine({ context: actx });
+
+  // Crystalline bell-like patch: bright, short attack, moderate decay, emphasis on high harmonics
+  crystal.setParameter('sawLevel', 0.3);
+  crystal.setParameter('pulseLevel', 0.5);   // pulse for bell-like quality
+  crystal.setParameter('pulseWidth', 0.3);
+  crystal.setParameter('subLevel', 0.1);     // barely any sub — airy
+  crystal.setParameter('subMode', 1);
+  crystal.setParameter('cutoff', 0.4);
+  crystal.setParameter('resonance', 0.0);
+  crystal.setParameter('envMod', 0.5);
+  crystal.setParameter('keyTrack', 0.5);     // higher notes = brighter
+  crystal.setParameter('attack', 0.02);
+  crystal.setParameter('decay', 0.6);
+  crystal.setParameter('sustain', 0.15);
+  crystal.setParameter('release', 0.7);      // long tail
+  crystal.setParameter('filterAttack', 0.01);
+  crystal.setParameter('filterDecay', 0.4);
+  crystal.setParameter('filterSustain', 0.1);
+  crystal.setParameter('filterRelease', 0.5);
+  crystal.setParameter('glideTime', 0.15);
+  crystal.setParameter('lfoRate', 0.05);
+  crystal.setParameter('lfoToFilter', 0.03);
+  crystal.masterVolume = 0.25;
+
+  // Crystal reverb: very long, bright
+  const crystalVerb = createReverb(actx, 7.0, 1.5, 200);
+  const crystalDry = actx.createGain(); crystalDry.gain.value = 0.30;
+  const crystalWet = actx.createGain(); crystalWet.gain.value = 0.80;
+  crystalVerb.output.connect(crystalWet);
+  crystalDry.connect(worldGains[0]);
+  crystalWet.connect(worldGains[0]);
+
+  // Wire JT10 → dry + reverb
+  await crystal.playNote('Eb3', 0.001, false);
+  if (crystal._scriptNode) {
+    crystal._scriptNode.disconnect();
+    crystal._scriptNode.connect(crystalDry);
+    crystal._scriptNode.connect(crystalVerb.input);
+  }
+
+  // Eb major pentatonic: Eb F G Bb C (across octaves 3-5)
+  const crystalNotes = [
+    'Eb3','F3','G3','Bb3','C4',
+    'Eb4','F4','G4','Bb4','C5',
+    'Eb5','G4','Bb4'
+  ];
+  let crystalStep = 0;
+  // Slow, sparse: trigger a note every 1.5-3 seconds randomly
+  function crystalTick() {
+    const note = crystalNotes[crystalStep % crystalNotes.length];
+    const vel = 0.4 + Math.random() * 0.3;
+    crystal.playNote(note, vel, Math.random() < 0.2);  // occasional slide
+
+    // Slowly shift cutoff
+    const t = performance.now() / 1000;
+    crystal.setParameter('cutoff', 0.3 + Math.sin(t * 0.05) * 0.15);
+
+    crystalStep++;
+    // Random interval: 1.5s - 3.5s
+    setTimeout(crystalTick, 1500 + Math.random() * 2000);
+  }
+  setTimeout(crystalTick, 500);
+
+  // ════════════════════════════════════════════
+  // WORLD 1: OCEAN DEPTHS — Mave 🌊
+  // C minor, deep, liquid, slow swells
+  // ════════════════════════════════════════════
+  const ocean = new JT10Engine({ context: actx });
+
+  // Deep underwater pad: heavy sub, slow attack, very dark
+  ocean.setParameter('sawLevel', 0.4);
+  ocean.setParameter('pulseLevel', 0.2);
+  ocean.setParameter('pulseWidth', 0.5);
+  ocean.setParameter('subLevel', 0.6);       // heavy sub — deep ocean
+  ocean.setParameter('subMode', 1);
+  ocean.setParameter('cutoff', 0.08);        // very dark, muffled
+  ocean.setParameter('resonance', 0.0);
+  ocean.setParameter('envMod', 0.2);
+  ocean.setParameter('keyTrack', 0.15);
+  ocean.setParameter('attack', 0.3);         // slow swell
+  ocean.setParameter('decay', 0.8);
+  ocean.setParameter('sustain', 0.5);
+  ocean.setParameter('release', 0.9);        // very long release
+  ocean.setParameter('filterAttack', 0.4);   // filter opens slowly
+  ocean.setParameter('filterDecay', 0.7);
+  ocean.setParameter('filterSustain', 0.15);
+  ocean.setParameter('filterRelease', 0.6);
+  ocean.setParameter('glideTime', 0.5);      // long portamento — liquid
+  ocean.setParameter('lfoRate', 0.04);        // very slow wobble
+  ocean.setParameter('lfoToFilter', 0.08);
+  ocean.masterVolume = 0.28;
+
+  // Ocean reverb: very deep, dark (low HP)
+  const oceanVerb = createReverb(actx, 8.0, 1.6, 60);
+  const oceanDry = actx.createGain(); oceanDry.gain.value = 0.35;
+  const oceanWet = actx.createGain(); oceanWet.gain.value = 0.75;
+  oceanVerb.output.connect(oceanWet);
+  oceanDry.connect(worldGains[1]);
+  oceanWet.connect(worldGains[1]);
+
+  await ocean.playNote('C2', 0.001, false);
+  if (ocean._scriptNode) {
+    ocean._scriptNode.disconnect();
+    ocean._scriptNode.connect(oceanDry);
+    ocean._scriptNode.connect(oceanVerb.input);
+  }
+
+  // C natural minor low register: C Eb F G Bb (octaves 2-3)
+  const oceanNotes = [
+    'C2','Eb2','F2','G2','Bb2',
+    'C3','Eb3','G2','F2','Bb2','C2'
+  ];
+  let oceanStep = 0;
+  function oceanTick() {
+    const note = oceanNotes[oceanStep % oceanNotes.length];
+    const vel = 0.35 + Math.random() * 0.2;
+    ocean.playNote(note, vel, true);  // always slide — liquid movement
+
+    // Very slow filter breathing
+    const t = performance.now() / 1000;
+    ocean.setParameter('cutoff', 0.06 + Math.sin(t * 0.03) * 0.04);
+
+    oceanStep++;
+    // Very slow: 2.5-5 seconds between notes
+    setTimeout(oceanTick, 2500 + Math.random() * 2500);
+  }
+  setTimeout(oceanTick, 1000);
+
+  // ════════════════════════════════════════════
+  // WORLD 2: SOLAR FORGE — Hallman 🔥
+  // A minor, JB01 kick pulse + JT10 bass, driving
+  // ════════════════════════════════════════════
+  const solar = new JT10Engine({ context: actx });
+  const forge = new JB01Engine({ context: actx });
+
+  // Warm, driving bass: saw-heavy, punchy envelope
+  solar.setParameter('sawLevel', 0.7);
+  solar.setParameter('pulseLevel', 0.15);
+  solar.setParameter('pulseWidth', 0.4);
+  solar.setParameter('subLevel', 0.4);
+  solar.setParameter('subMode', 1);
+  solar.setParameter('cutoff', 0.15);
+  solar.setParameter('resonance', 0.0);
+  solar.setParameter('envMod', 0.35);
+  solar.setParameter('keyTrack', 0.25);
+  solar.setParameter('attack', 0.02);
+  solar.setParameter('decay', 0.4);
+  solar.setParameter('sustain', 0.25);
+  solar.setParameter('release', 0.3);
+  solar.setParameter('filterAttack', 0.01);
+  solar.setParameter('filterDecay', 0.35);
+  solar.setParameter('filterSustain', 0.1);
+  solar.setParameter('filterRelease', 0.25);
+  solar.setParameter('glideTime', 0.2);
+  solar.setParameter('lfoRate', 0.06);
+  solar.setParameter('lfoToFilter', 0.04);
+  solar.masterVolume = 0.22;
+
+  // JB01 kick: tight, warm
+  forge.setVoiceParam('kick', 'decay', 0.3);
+  forge.setVoiceParam('kick', 'tune', -0.15);
+  forge.setVoiceParam('kick', 'attack', 0.55);
+  forge.setVoiceParam('kick', 'level', 0.65);
+
+  // Solar reverb: medium, warm
+  const solarVerb = createReverb(actx, 4.0, 2.0, 120);
+  const solarDry = actx.createGain(); solarDry.gain.value = 0.55;
+  const solarWet = actx.createGain(); solarWet.gain.value = 0.45;
+  solarVerb.output.connect(solarWet);
+  solarDry.connect(worldGains[2]);
+  solarWet.connect(worldGains[2]);
+
+  // Wire JT10
+  await solar.playNote('A1', 0.001, false);
+  if (solar._scriptNode) {
+    solar._scriptNode.disconnect();
+    solar._scriptNode.connect(solarDry);
+    solar._scriptNode.connect(solarVerb.input);
+  }
+
+  // Wire JB01 — kick mostly dry
+  const kickGain = actx.createGain();
+  kickGain.gain.value = 0.316;  // -10dB
+  forge.connectOutput(kickGain);
+  const kickDry = actx.createGain();
+  kickDry.gain.value = 0.9;
+  kickGain.connect(kickDry);
+  kickGain.connect(solarVerb.input);  // tiny reverb send
+  kickDry.connect(worldGains[2]);
+
+  // A minor pattern: driving 16ths with the forge's heat
+  const BPM = 122;
+  const STEP_DUR = 60 / BPM / 4;
+
+  const solarArp = [
+    { note: 'A2',  gate: true,  accent: false, slide: false },
+    { note: 'A2',  gate: false, accent: false, slide: false },
+    { note: 'C3',  gate: true,  accent: false, slide: true  },
+    { note: 'E3',  gate: true,  accent: true,  slide: false },
+    { note: 'E3',  gate: false, accent: false, slide: false },
+    { note: 'A2',  gate: true,  accent: false, slide: false },
+    { note: 'G2',  gate: true,  accent: false, slide: true  },  // minor 7th — heat
+    { note: 'A2',  gate: false, accent: false, slide: false },
+    { note: 'A2',  gate: true,  accent: false, slide: false },
+    { note: 'C3',  gate: true,  accent: false, slide: false },
+    { note: 'D3',  gate: true,  accent: false, slide: true  },  // 4th — tension
+    { note: 'E3',  gate: true,  accent: true,  slide: false },
+    { note: 'E3',  gate: false, accent: false, slide: false },
+    { note: 'C3',  gate: true,  accent: false, slide: true  },
+    { note: 'A2',  gate: true,  accent: false, slide: false },
+    { note: 'A2',  gate: false, accent: false, slide: false },
+  ];
+
+  let solarStep = 0;
+  setInterval(() => {
+    const stepInBar = solarStep % 16;
+    const s = solarArp[stepInBar];
+
+    // 4x4 kick
+    if (stepInBar % 4 === 0) {
+      forge.trigger('kick', 0.75 + Math.random() * 0.05);
+    }
+
+    // Bass arp
+    if (s.gate) {
+      const vel = s.accent ? 0.7 : 0.45;
+      solar.playNote(s.note, vel, s.slide);
+    }
+
+    // Slow filter automation
+    const bar = Math.floor(solarStep / 16);
+    const cutoff = 0.12 + Math.sin(bar * 0.15) * 0.08;
+    solar.setParameter('cutoff', cutoff);
+
+    solarStep++;
+  }, STEP_DUR * 1000);
+});
+</script>
 </body>
 </html>
