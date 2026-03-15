@@ -235,45 +235,47 @@ function getBassFilter(bar) {
   return 0.05;
 }
 
-// Bass pattern — minimal. C minor. Mostly root, occasional 3rd and 5th.
-// The notes barely matter. The filter does the talking.
+// Bass pattern — Plastikman style. NOT a melody.
+// One note (C2) repeated. The filter does ALL the talking.
+// Occasional Bb1 (half-step down) for micro-tension.
+// Lots of rests. "Subtraction is addition."
 const bassPatterns = {
-  // Standard: root-heavy with gaps
+  // A: Root pulse with gaps — the filter envelope is the melody
   A: [
     { note: 'C2',  gate: true,  accent: true,  slide: false },
     { note: 'C2',  gate: false, accent: false, slide: false },
     { note: 'C2',  gate: true,  accent: false, slide: false },
     { note: 'C2',  gate: false, accent: false, slide: false },
     { note: 'C2',  gate: true,  accent: false, slide: false },
-    { note: 'C2',  gate: true,  accent: false, slide: true  },
-    { note: 'Eb2', gate: true,  accent: false, slide: false },
-    { note: 'Eb2', gate: false, accent: false, slide: false },
+    { note: 'C2',  gate: false, accent: false, slide: false },
+    { note: 'C2',  gate: false, accent: false, slide: false },
+    { note: 'C2',  gate: false, accent: false, slide: false },
     { note: 'C2',  gate: true,  accent: false, slide: false },
     { note: 'C2',  gate: false, accent: false, slide: false },
     { note: 'C2',  gate: true,  accent: false, slide: false },
-    { note: 'G2',  gate: true,  accent: true,  slide: false },
-    { note: 'G2',  gate: false, accent: false, slide: false },
-    { note: 'C2',  gate: true,  accent: false, slide: true  },
-    { note: 'C2',  gate: true,  accent: false, slide: false },
-    { note: 'C2',  gate: false, accent: false, slide: false },
-  ],
-  // Variation: sparser, more Eb
-  B: [
     { note: 'C2',  gate: true,  accent: true,  slide: false },
     { note: 'C2',  gate: false, accent: false, slide: false },
     { note: 'C2',  gate: false, accent: false, slide: false },
+    { note: 'C2',  gate: true,  accent: false, slide: false },
     { note: 'C2',  gate: false, accent: false, slide: false },
-    { note: 'Eb2', gate: true,  accent: false, slide: false },
-    { note: 'Eb2', gate: false, accent: false, slide: false },
-    { note: 'C2',  gate: true,  accent: false, slide: true  },
+  ],
+  // B: Even sparser — one note deleted, Bb1 tension on step 11
+  B: [
+    { note: 'C2',  gate: true,  accent: true,  slide: false },
+    { note: 'C2',  gate: false, accent: false, slide: false },
+    { note: 'C2',  gate: true,  accent: false, slide: false },
+    { note: 'C2',  gate: false, accent: false, slide: false },
+    { note: 'C2',  gate: true,  accent: false, slide: false },
     { note: 'C2',  gate: false, accent: false, slide: false },
     { note: 'C2',  gate: false, accent: false, slide: false },
     { note: 'C2',  gate: false, accent: false, slide: false },
-    { note: 'G2',  gate: true,  accent: false, slide: false },
-    { note: 'G2',  gate: false, accent: false, slide: false },
-    { note: 'C2',  gate: true,  accent: false, slide: true  },
+    { note: 'C2',  gate: true,  accent: false, slide: false },
     { note: 'C2',  gate: false, accent: false, slide: false },
     { note: 'C2',  gate: false, accent: false, slide: false },
+    { note: 'Bb1', gate: true,  accent: false, slide: true  },
+    { note: 'C2',  gate: false, accent: false, slide: false },
+    { note: 'C2',  gate: false, accent: false, slide: false },
+    { note: 'C2',  gate: true,  accent: false, slide: false },
     { note: 'C2',  gate: false, accent: false, slide: false },
   ],
 };
