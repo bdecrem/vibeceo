@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>JAWBREAKER</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚫</text></svg>">
+<meta property="og:title" content="JAWBREAKER">
+<meta property="og:description" content="the iPaq classic, reborn">
+<meta property="og:image" content="https://intheamber.com/amber/og/jawbreaker.png">
+<meta property="og:url" content="https://intheamber.com/amber/jawbreaker.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JAWBREAKER">
+<meta name="twitter:description" content="the iPaq classic, reborn">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/jawbreaker.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #e8e4dc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100dvh;
+    font-family: -apple-system, system-ui, 'Segoe UI', sans-serif;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+    overflow: hidden;
+    padding-top: env(safe-area-inset-top);
+  }
+  #header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: min(95vw, 420px);
+    padding: 10px 4px 6px;
+  }
+  #title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #444;
+  }
+  #score-display {
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+  }
+  #score-val {
+    color: #222;
+    font-variant-numeric: tabular-nums;
+  }
+  canvas {
+    border-radius: 8px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+    cursor: pointer;
+  }
+  #preview {
+    height: 22px;
+    color: #999;
+    font-size: 12px;
+    margin-top: 6px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  #combo {
+    position: fixed;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 42px;
+    font-weight: 900;
+    color: #ff3366;
+    text-shadow: 0 2px 8px rgba(255,51,102,0.3);
+    pointer-events: none;
+    opacity: 0;
+    z-index: 10;
+  }
+  #combo.show {
+    animation: comboFlash 0.9s ease-out forwards;
+  }
+  @keyframes comboFlash {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.6); }
+    25% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1) translateY(-40px); }
+  }
+  #game-over {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(232,228,220,0.92);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+  }
+  #game-over.show { display: flex; }
+  #game-over h2 { font-size: 28px; color: #222; margin-bottom: 4px; font-weight: 800; letter-spacing: 2px; }
+  #game-over .sub { font-size: 14px; color: #888; margin-bottom: 20px; }
+  #game-over .final-score { font-size: 48px; font-weight: 900; color: #222; margin-bottom: 24px; }
+  #game-over button {
+    font-size: 15px;
+    padding: 12px 36px;
+    border: 2px solid #222;
+    background: #222;
+    color: #e8e4dc;
+    border-radius: 24px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  #game-over button:active { background: #444; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="title">Jawbreaker</div>
+  <div id="score-display"><span id="score-val">0</span></div>
+</div>
+<canvas id="c"></canvas>
+<div id="preview"></div>
+<div id="combo"></div>
+<div id="game-over">
+  <h2>GAME OVER</h2>
+  <div class="sub">no more moves</div>
+  <div class="final-score"><span id="final-score">0</span></div>
+  <button id="restart">AGAIN</button>
+</div>
+
+<script>
+const COLS = 10;
+const ROWS = 15;
+const COLORS = [
+  '#e74c3c', // red
+  '#3498db', // blue
+  '#2ecc71', // green
+  '#f39c12', // orange
+  '#9b59b6', // purple
+];
+const HIGHLIGHT_COLORS = [
+  '#ff7675',
+  '#74b9ff',
+  '#55efc4',
+  '#ffeaa7',
+  '#d6a2e8',
+];
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score-val');
+const previewEl = document.getElementById('preview');
+const comboEl = document.getElementById('combo');
+const gameOverEl = document.getElementById('game-over');
+const finalScoreEl = document.getElementById('final-score');
+
+let grid = [];
+let score = 0;
+let cellSize = 0;
+let busy = false;
+let hoveredGroup = [];
+let animations = []; // {r, c, type, progress, startTime}
+
+function resize() {
+  const maxW = Math.min(window.innerWidth * 0.95, 420);
+  cellSize = Math.floor(maxW / COLS);
+  canvas.width = cellSize * COLS;
+  canvas.height = cellSize * ROWS;
+  draw();
+}
+
+function init() {
+  grid = [];
+  score = 0;
+  busy = false;
+  hoveredGroup = [];
+  animations = [];
+  scoreEl.textContent = '0';
+  previewEl.textContent = '';
+  gameOverEl.classList.remove('show');
+  
+  for (let r = 0; r < ROWS; r++) {
+    grid[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      grid[r][c] = Math.floor(Math.random() * COLORS.length);
+    }
+  }
+  resize();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Background
+  ctx.fillStyle = '#d4d0c8';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  const hoverSet = new Set(hoveredGroup.map(([r,c]) => r * COLS + c));
+  const now = performance.now();
+  
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (grid[r][c] === null) continue;
+      
+      const x = c * cellSize;
+      const y = r * cellSize;
+      const colorIdx = grid[r][c];
+      const isHovered = hoverSet.has(r * COLS + c);
+      const radius = cellSize * 0.42;
+      const cx = x + cellSize / 2;
+      const cy = y + cellSize / 2;
+      
+      // Draw ball with gradient
+      const grad = ctx.createRadialGradient(
+        cx - radius * 0.25, cy - radius * 0.3, radius * 0.1,
+        cx, cy, radius
+      );
+      
+      if (isHovered) {
+        grad.addColorStop(0, '#fff');
+        grad.addColorStop(0.4, HIGHLIGHT_COLORS[colorIdx]);
+        grad.addColorStop(1, COLORS[colorIdx]);
+      } else {
+        grad.addColorStop(0, HIGHLIGHT_COLORS[colorIdx]);
+        grad.addColorStop(1, COLORS[colorIdx]);
+      }
+      
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      
+      // Subtle shadow
+      if (!isHovered) {
+        ctx.beginPath();
+        ctx.arc(cx + 1, cy + 2, radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.06)';
+        ctx.fill();
+        
+        // Redraw ball on top of shadow
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+      
+      // Highlight ring
+      if (isHovered) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius + 1, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+  }
+  
+  // Draw pop animations
+  for (let i = animations.length - 1; i >= 0; i--) {
+    const a = animations[i];
+    const elapsed = now - a.startTime;
+    const progress = Math.min(elapsed / 250, 1);
+    
+    if (a.type === 'pop') {
+      const cx = a.c * cellSize + cellSize / 2;
+      const cy = a.r * cellSize + cellSize / 2;
+      const baseRadius = cellSize * 0.42;
+      const r = baseRadius * (1 + progress * 0.5);
+      const alpha = 1 - progress;
+      
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha * 0.5})`;
+      ctx.fill();
+    }
+    
+    if (progress >= 1) {
+      animations.splice(i, 1);
+    }
+  }
+  
+  if (animations.length > 0) {
+    requestAnimationFrame(draw);
+  }
+}
+
+function findGroup(r, c) {
+  const color = grid[r][c];
+  if (color === null) return [];
+  const visited = new Set();
+  const stack = [[r, c]];
+  const group = [];
+  while (stack.length) {
+    const [cr, cc] = stack.pop();
+    const key = cr * COLS + cc;
+    if (visited.has(key)) continue;
+    if (cr < 0 || cr >= ROWS || cc < 0 || cc >= COLS) continue;
+    if (grid[cr][cc] !== color) continue;
+    visited.add(key);
+    group.push([cr, cc]);
+    stack.push([cr-1, cc], [cr+1, cc], [cr, cc-1], [cr, cc+1]);
+  }
+  return group;
+}
+
+function getGridPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  const c = Math.floor(x / cellSize);
+  const r = Math.floor(y / cellSize);
+  if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null;
+  return [r, c];
+}
+
+canvas.addEventListener('mousemove', (e) => {
+  if (busy) return;
+  const pos = getGridPos(e);
+  if (!pos) { hoveredGroup = []; previewEl.textContent = ''; draw(); return; }
+  const [r, c] = pos;
+  if (grid[r][c] === null) { hoveredGroup = []; previewEl.textContent = ''; draw(); return; }
+  const group = findGroup(r, c);
+  if (group.length < 2) { hoveredGroup = []; previewEl.textContent = ''; draw(); return; }
+  hoveredGroup = group;
+  previewEl.textContent = `${group.length} balls · ${group.length * group.length * 10} pts`;
+  draw();
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoveredGroup = [];
+  previewEl.textContent = '';
+  draw();
+});
+
+canvas.addEventListener('click', handleTap);
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  handleTap(e);
+}, { passive: false });
+
+async function handleTap(e) {
+  if (busy) return;
+  const pos = getGridPos(e);
+  if (!pos) return;
+  const [r, c] = pos;
+  if (grid[r][c] === null) return;
+  
+  const group = findGroup(r, c);
+  if (group.length < 2) return;
+  
+  busy = true;
+  hoveredGroup = [];
+  previewEl.textContent = '';
+  
+  // Score
+  const pts = group.length * group.length * 10;
+  score += pts;
+  scoreEl.textContent = score.toLocaleString();
+  
+  // Combo text
+  if (group.length >= 6) {
+    comboEl.textContent = group.length >= 15 ? 'INCREDIBLE' :
+                          group.length >= 10 ? 'MASSIVE' : 'NICE';
+    comboEl.className = 'show';
+    setTimeout(() => comboEl.className = '', 900);
+  }
+  
+  // Pop animation
+  const now = performance.now();
+  for (const [gr, gc] of group) {
+    animations.push({ r: gr, c: gc, type: 'pop', startTime: now });
+    grid[gr][gc] = null;
+  }
+  draw();
+  
+  await sleep(280);
+  
+  // Gravity
+  for (let c = 0; c < COLS; c++) {
+    let writeRow = ROWS - 1;
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (grid[r][c] !== null) {
+        if (r !== writeRow) {
+          grid[writeRow][c] = grid[r][c];
+          grid[r][c] = null;
+        }
+        writeRow--;
+      }
+    }
+    for (let r = writeRow; r >= 0; r--) {
+      grid[r][c] = null;
+    }
+  }
+  
+  // Collapse empty columns left
+  let activeCols = [];
+  for (let c = 0; c < COLS; c++) {
+    if (grid[ROWS-1][c] !== null) activeCols.push(c);
+  }
+  
+  if (activeCols.length < COLS) {
+    let newGrid = [];
+    for (let r = 0; r < ROWS; r++) {
+      newGrid[r] = [];
+      for (let i = 0; i < activeCols.length; i++) {
+        newGrid[r][i] = grid[r][activeCols[i]];
+      }
+      for (let i = activeCols.length; i < COLS; i++) {
+        newGrid[r][i] = null;
+      }
+    }
+    grid = newGrid;
+  }
+  
+  draw();
+  
+  // Check game over
+  if (!hasValidMoves()) {
+    await sleep(600);
+    let remaining = 0;
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        if (grid[r][c] !== null) remaining++;
+    
+    if (remaining === 0) {
+      score += 2000;
+      scoreEl.textContent = score.toLocaleString();
+      comboEl.textContent = 'PERFECT';
+      comboEl.className = 'show';
+      await sleep(1200);
+    }
+    
+    finalScoreEl.textContent = score.toLocaleString();
+    gameOverEl.classList.add('show');
+  }
+  
+  busy = false;
+}
+
+function hasValidMoves() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (grid[r][c] === null) continue;
+      if (findGroup(r, c).length >= 2) return true;
+    }
+  }
+  return false;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+document.getElementById('restart').addEventListener('click', init);
+window.addEventListener('resize', resize);
+init();
+</script>
+</body>
+</html>
