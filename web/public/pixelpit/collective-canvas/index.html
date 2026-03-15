@@ -160,7 +160,7 @@ function startCrystalAudio(ctx) {
   const master = ctx.createGain(); master.gain.value = 0.15; master.connect(ctx.destination);
   let running = true;
   const notes = [311.13, 349.23, 392.00, 466.16, 523.25, 622.25, 698.46, 783.99]; // Eb maj pentatonic
-  
+
   function chime() {
     if (!running) return;
     const freq = notes[Math.floor(Math.random() * notes.length)];
@@ -168,7 +168,6 @@ function startCrystalAudio(ctx) {
     const g = ctx.createGain();
     osc.type = 'sine';
     osc.frequency.value = freq;
-    // Add slight detune for shimmer
     const osc2 = ctx.createOscillator();
     const g2 = ctx.createGain();
     osc2.type = 'triangle';
@@ -184,6 +183,8 @@ function startCrystalAudio(ctx) {
     g2.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
     osc.start(now); osc.stop(now + 2.5);
     osc2.start(now); osc2.stop(now + 2.0);
+    osc.onended = () => { osc.disconnect(); g.disconnect(); };
+    osc2.onended = () => { osc2.disconnect(); g2.disconnect(); };
     setTimeout(chime, 1500 + Math.random() * 2500);
   }
   chime();
@@ -194,30 +195,30 @@ function startCrystalAudio(ctx) {
   padG.gain.value = 0.04;
   pad.connect(padG); padG.connect(master);
   pad.start();
-  
-  return () => { running = false; master.gain.value = 0; try { pad.stop(); } catch(e){} };
+
+  return () => { running = false; master.disconnect(); try { pad.stop(); } catch(e){} };
 }
 
 // ── Ocean Depths Audio: deep pads + bubbles ──
 function startOceanAudio(ctx) {
   const master = ctx.createGain(); master.gain.value = 0.2; master.connect(ctx.destination);
   let running = true;
-  
+
   // Deep drone pad
   const drone1 = ctx.createOscillator(); const dg1 = ctx.createGain();
   drone1.type = 'sine'; drone1.frequency.value = 65.41; // C2
   dg1.gain.value = 0.12; drone1.connect(dg1); dg1.connect(master); drone1.start();
-  
+
   const drone2 = ctx.createOscillator(); const dg2 = ctx.createGain();
   drone2.type = 'sine'; drone2.frequency.value = 97.99; // G2
   dg2.gain.value = 0.08; drone2.connect(dg2); dg2.connect(master); drone2.start();
-  
+
   // Slow LFO on drone volume for breathing effect
   const lfo = ctx.createOscillator(); const lfoG = ctx.createGain();
   lfo.type = 'sine'; lfo.frequency.value = 0.08;
   lfoG.gain.value = 0.04;
   lfo.connect(lfoG); lfoG.connect(dg1.gain); lfo.start();
-  
+
   // Bubble sounds
   function bubble() {
     if (!running) return;
@@ -231,10 +232,11 @@ function startOceanAudio(ctx) {
     g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
     osc.connect(g); g.connect(master);
     osc.start(); osc.stop(ctx.currentTime + 0.25);
+    osc.onended = () => { osc.disconnect(); g.disconnect(); };
     setTimeout(bubble, 500 + Math.random() * 3000);
   }
   bubble();
-  
+
   // Occasional whale-like tone
   function whale() {
     if (!running) return;
@@ -250,48 +252,49 @@ function startOceanAudio(ctx) {
     g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3);
     osc.connect(g); g.connect(master);
     osc.start(); osc.stop(ctx.currentTime + 3.5);
+    osc.onended = () => { osc.disconnect(); g.disconnect(); };
     setTimeout(whale, 4000 + Math.random() * 6000);
   }
   setTimeout(whale, 2000);
-  
-  return () => { running = false; master.gain.value = 0; try { drone1.stop(); drone2.stop(); lfo.stop(); } catch(e){} };
+
+  return () => { running = false; master.disconnect(); try { drone1.stop(); drone2.stop(); lfo.stop(); } catch(e){} };
 }
 
 // ── Solar Forge Audio: pulsing bass + fire crackle ──
 function startSolarAudio(ctx) {
   const master = ctx.createGain(); master.gain.value = 0.18; master.connect(ctx.destination);
   let running = true;
-  
+
   // Pulsing bass drone
   const bass = ctx.createOscillator(); const bg = ctx.createGain();
   bass.type = 'sawtooth'; bass.frequency.value = 55; // A1
-  // Low-pass filter for warmth
   const lpf = ctx.createBiquadFilter();
   lpf.type = 'lowpass'; lpf.frequency.value = 200; lpf.Q.value = 2;
   bass.connect(lpf); lpf.connect(bg); bg.gain.value = 0.15; bg.connect(master); bass.start();
-  
+
   // Pulse the bass with LFO
   const pulseLfo = ctx.createOscillator(); const pulseG = ctx.createGain();
-  pulseLfo.type = 'square'; pulseLfo.frequency.value = 2.03; // ~122 BPM feel
+  pulseLfo.type = 'square'; pulseLfo.frequency.value = 2.03;
   pulseG.gain.value = 0.08;
   pulseLfo.connect(pulseG); pulseG.connect(bg.gain); pulseLfo.start();
-  
-  // Fire crackle
+
+  // Fire crackle — reuse a single buffer, disconnect nodes after playback
+  const crackleBufSize = Math.floor(ctx.sampleRate * 0.04);
   function crackle() {
     if (!running) return;
-    const bufSize = ctx.sampleRate * 0.04;
-    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const buf = ctx.createBuffer(1, crackleBufSize, ctx.sampleRate);
     const data = buf.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/bufSize, 3);
+    for (let i = 0; i < crackleBufSize; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/crackleBufSize, 3);
     const src = ctx.createBufferSource();
     const g = ctx.createGain();
     src.buffer = buf;
     g.gain.value = 0.1 + Math.random() * 0.15;
     src.connect(g); g.connect(master); src.start();
-    setTimeout(crackle, 50 + Math.random() * 300);
+    src.onended = () => { src.disconnect(); g.disconnect(); };
+    setTimeout(crackle, 150 + Math.random() * 400);
   }
   crackle();
-  
+
   // Occasional flare tone
   function flare() {
     if (!running) return;
@@ -306,11 +309,12 @@ function startSolarAudio(ctx) {
     g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
     osc.connect(flpf); flpf.connect(g); g.connect(master);
     osc.start(); osc.stop(ctx.currentTime + 1);
+    osc.onended = () => { osc.disconnect(); flpf.disconnect(); g.disconnect(); };
     setTimeout(flare, 2000 + Math.random() * 4000);
   }
   setTimeout(flare, 1000);
-  
-  return () => { running = false; master.gain.value = 0; try { bass.stop(); pulseLfo.stop(); } catch(e){} };
+
+  return () => { running = false; master.disconnect(); try { bass.stop(); pulseLfo.stop(); } catch(e){} };
 }
 
 function switchWorld(idx) {
