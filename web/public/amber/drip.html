@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRIP</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>">
+<meta property="og:title" content="DRIP">
+<meta property="og:description" content="a leaky faucet that accidentally makes techno">
+<meta property="og:image" content="https://intheamber.com/amber/og/drip.png">
+<meta property="og:url" content="https://intheamber.com/amber/drip.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DRIP">
+<meta name="twitter:description" content="a leaky faucet that accidentally makes techno">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/drip.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a1628;
+  color: #7ec8e3;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+#start-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  background: #0a1628;
+}
+#start-screen h1 {
+  font-size: 14vw;
+  color: #4a9ebb;
+  letter-spacing: 0.15em;
+  margin-bottom: 1rem;
+  font-weight: 300;
+}
+#start-screen p {
+  font-size: 3.5vw;
+  color: #3a7a99;
+  margin-bottom: 3rem;
+  max-width: 80%;
+  text-align: center;
+  line-height: 1.6;
+}
+#play-btn {
+  background: none;
+  border: 1px solid #4a9ebb44;
+  color: #7ec8e3;
+  font-family: 'Courier New', monospace;
+  font-size: 5vw;
+  padding: 1rem 3rem;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 22vw;
+  height: 22vw;
+  min-width: 90px;
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+#play-btn:hover, #play-btn:active {
+  background: #4a9ebb22;
+  border-color: #7ec8e3;
+}
+#hint {
+  position: fixed;
+  bottom: max(2vh, 12px);
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: max(12px, 2.5vw);
+  color: #3a7a9966;
+  z-index: 5;
+  pointer-events: none;
+  transition: opacity 1s;
+}
+#count {
+  position: fixed;
+  top: max(2vh, 12px);
+  right: max(2vw, 12px);
+  font-size: max(11px, 2vw);
+  color: #3a7a9944;
+  z-index: 5;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div id="start-screen">
+  <h1>DRIP</h1>
+  <p>a leaky faucet that accidentally makes techno</p>
+  <button id="play-btn">💧</button>
+</div>
+<canvas id="c"></canvas>
+<div id="hint">tap to add leaks</div>
+<div id="count"></div>
+
+<script type="module">
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+
+const canvas = document.getElementById('c');
+const ctx2d = canvas.getContext('2d');
+const hintEl = document.getElementById('hint');
+const countEl = document.getElementById('count');
+
+let audioCtx, engine;
+let faucets = [];
+let drops = [];
+let ripples = [];
+let started = false;
+let globalStep = 0;
+let nextTime = 0;
+
+const BPM = 124;
+const STEP_TIME = (60 / BPM) / 4;
+
+// Voice assignments for different faucet positions
+const voiceMap = ['kick', 'ch', 'oh', 'snare', 'clap', 'lowtom', 'hitom', 'cymbal'];
+const voiceColors = {
+  kick:   '#1a5276',
+  ch:     '#5dade2',
+  oh:     '#85c1e9',
+  snare:  '#2e86c1',
+  clap:   '#3498db',
+  lowtom: '#1b4f72',
+  hitom:  '#2471a3',
+  cymbal: '#aed6f1'
+};
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  ctx2d.scale(dpr, dpr);
+}
+window.addEventListener('resize', resize);
+resize();
+
+const W = () => window.innerWidth;
+const H = () => window.innerHeight;
+
+document.getElementById('play-btn').addEventListener('click', async () => {
+  audioCtx = new AudioContext({ sampleRate: 44100 });
+  engine = new JB01Engine({ context: audioCtx, bpm: BPM });
+
+  // Tune voices for watery, dripping feel
+  engine.setVoiceParam('kick', 'decay', 0.15);
+  engine.setVoiceParam('kick', 'level', 0.75);
+  engine.setVoiceParam('kick', 'attack', 0.8);
+  engine.setVoiceParam('kick', 'tune', 0.3);
+
+  engine.setVoiceParam('ch', 'decay', 0.05);
+  engine.setVoiceParam('ch', 'level', 0.4);
+  engine.setVoiceParam('ch', 'tone', 0.8);
+
+  engine.setVoiceParam('oh', 'decay', 0.2);
+  engine.setVoiceParam('oh', 'level', 0.35);
+  engine.setVoiceParam('oh', 'tone', 0.7);
+
+  engine.setVoiceParam('snare', 'decay', 0.12);
+  engine.setVoiceParam('snare', 'level', 0.45);
+  engine.setVoiceParam('snare', 'tune', 0.5);
+
+  engine.setVoiceParam('clap', 'decay', 0.18);
+  engine.setVoiceParam('clap', 'level', 0.35);
+
+  engine.setVoiceParam('lowtom', 'decay', 0.25);
+  engine.setVoiceParam('lowtom', 'level', 0.5);
+  engine.setVoiceParam('lowtom', 'tune', -0.3);
+
+  engine.setVoiceParam('hitom', 'decay', 0.15);
+  engine.setVoiceParam('hitom', 'level', 0.4);
+  engine.setVoiceParam('hitom', 'tune', 0.4);
+
+  engine.setVoiceParam('cymbal', 'decay', 0.3);
+  engine.setVoiceParam('cymbal', 'level', 0.25);
+
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+  document.getElementById('start-screen').style.display = 'none';
+  started = true;
+  nextTime = audioCtx.currentTime + 0.1;
+
+  // Add first faucet in center
+  addFaucet(W() / 2, H() * 0.15);
+
+  tick();
+  draw();
+});
+
+// Each faucet has: position, voice, pattern (which of 16 steps trigger), rate
+function addFaucet(x, y) {
+  const idx = faucets.length;
+  const voice = voiceMap[idx % voiceMap.length];
+
+  // Generate a pattern based on position
+  // x position affects which beats, y affects density
+  const density = Math.max(1, Math.floor((1 - y / H()) * 5) + 1);
+  const offset = Math.floor((x / W()) * 16);
+  const pattern = [];
+  for (let i = 0; i < 16; i++) {
+    if ((i + offset) % (17 - density * 2) === 0 || (idx === 0 && [0, 4, 8, 12].includes(i))) {
+      pattern.push(i);
+    }
+  }
+  // Ensure at least one hit
+  if (pattern.length === 0) pattern.push(offset % 16);
+
+  const velocity = 0.3 + (y / H()) * 0.5;
+  const faucet = { x, y, voice, pattern, velocity, color: voiceColors[voice], born: Date.now() };
+  faucets.push(faucet);
+
+  countEl.textContent = faucets.length + ' leak' + (faucets.length > 1 ? 's' : '');
+  if (faucets.length >= 3) hintEl.style.opacity = '0';
+}
+
+// Tap/click to add faucets
+canvas.addEventListener('click', (e) => {
+  if (!started) return;
+  if (faucets.length >= 12) return; // max leaks
+  addFaucet(e.clientX, Math.min(e.clientY, H() * 0.4)); // faucets stay in top 40%
+});
+canvas.addEventListener('touchstart', (e) => {
+  if (!started) return;
+  e.preventDefault();
+  if (faucets.length >= 12) return;
+  const t = e.touches[0];
+  addFaucet(t.clientX, Math.min(t.clientY, H() * 0.4));
+}, { passive: false });
+
+function tick() {
+  if (!started) return;
+
+  while (nextTime < audioCtx.currentTime + 0.1) {
+    const s = globalStep % 16;
+
+    for (const f of faucets) {
+      if (f.pattern.includes(s)) {
+        engine.trigger(f.voice, f.velocity, nextTime);
+
+        // Spawn a drop
+        drops.push({
+          x: f.x + (Math.random() - 0.5) * 6,
+          startY: f.y + 20,
+          y: f.y + 20,
+          vy: 0,
+          targetY: H() * (0.65 + Math.random() * 0.25),
+          color: f.color,
+          radius: 2 + Math.random() * 3,
+          alive: true,
+          step: s
+        });
+      }
+    }
+
+    globalStep++;
+    nextTime += STEP_TIME;
+  }
+
+  requestAnimationFrame(tick);
+}
+
+function draw() {
+  if (!started) { requestAnimationFrame(draw); return; }
+
+  const w = W(), h = H();
+  ctx2d.clearRect(0, 0, w, h);
+
+  // Background gradient — dark water
+  const bgGrad = ctx2d.createLinearGradient(0, 0, 0, h);
+  bgGrad.addColorStop(0, '#0a1628');
+  bgGrad.addColorStop(0.5, '#0d1f3c');
+  bgGrad.addColorStop(1, '#0a1628');
+  ctx2d.fillStyle = bgGrad;
+  ctx2d.fillRect(0, 0, w, h);
+
+  // Water surface line
+  const waterY = h * 0.7;
+  ctx2d.strokeStyle = '#1a4a6a22';
+  ctx2d.lineWidth = 1;
+  ctx2d.beginPath();
+  const t = Date.now() / 1000;
+  for (let x = 0; x < w; x += 3) {
+    const wave = Math.sin(x * 0.02 + t) * 2 + Math.sin(x * 0.005 + t * 0.7) * 4;
+    if (x === 0) ctx2d.moveTo(x, waterY + wave);
+    else ctx2d.lineTo(x, waterY + wave);
+  }
+  ctx2d.stroke();
+
+  // Draw faucets (simple pipe representations)
+  for (const f of faucets) {
+    const age = (Date.now() - f.born) / 1000;
+    const alpha = Math.min(1, age / 0.5);
+
+    // Pipe
+    ctx2d.strokeStyle = `rgba(74, 158, 187, ${0.3 * alpha})`;
+    ctx2d.lineWidth = 3;
+    ctx2d.beginPath();
+    ctx2d.moveTo(f.x - 10, 0);
+    ctx2d.lineTo(f.x - 10, f.y);
+    ctx2d.lineTo(f.x + 10, f.y);
+    ctx2d.lineTo(f.x + 10, f.y + 12);
+    ctx2d.stroke();
+
+    // Drip point glow
+    ctx2d.beginPath();
+    ctx2d.arc(f.x, f.y + 16, 4, 0, Math.PI * 2);
+    ctx2d.fillStyle = `rgba(126, 200, 227, ${0.15 * alpha + Math.sin(t * 3 + f.x) * 0.05})`;
+    ctx2d.fill();
+  }
+
+  // Update and draw drops
+  for (let i = drops.length - 1; i >= 0; i--) {
+    const d = drops[i];
+    d.vy += 0.4; // gravity
+    d.y += d.vy;
+
+    if (d.y >= d.targetY) {
+      // Hit water — create ripple
+      ripples.push({
+        x: d.x,
+        y: d.targetY,
+        radius: 0,
+        maxRadius: 20 + d.radius * 8,
+        color: d.color,
+        alpha: 0.6,
+        speed: 1.2 + Math.random() * 0.8
+      });
+      drops.splice(i, 1);
+      continue;
+    }
+
+    // Draw drop
+    const stretch = Math.min(d.vy * 0.3, 6);
+    ctx2d.beginPath();
+    ctx2d.ellipse(d.x, d.y, d.radius, d.radius + stretch, 0, 0, Math.PI * 2);
+    ctx2d.fillStyle = d.color;
+    ctx2d.globalAlpha = 0.8;
+    ctx2d.fill();
+    ctx2d.globalAlpha = 1;
+  }
+
+  // Update and draw ripples
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const r = ripples[i];
+    r.radius += r.speed;
+    r.alpha *= 0.97;
+
+    if (r.alpha < 0.01 || r.radius > r.maxRadius) {
+      ripples.splice(i, 1);
+      continue;
+    }
+
+    ctx2d.beginPath();
+    ctx2d.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+    ctx2d.strokeStyle = r.color;
+    ctx2d.globalAlpha = r.alpha;
+    ctx2d.lineWidth = 1.5;
+    ctx2d.stroke();
+    ctx2d.globalAlpha = 1;
+
+    // Inner ring
+    if (r.radius > 5) {
+      ctx2d.beginPath();
+      ctx2d.arc(r.x, r.y, r.radius * 0.5, 0, Math.PI * 2);
+      ctx2d.strokeStyle = r.color;
+      ctx2d.globalAlpha = r.alpha * 0.4;
+      ctx2d.lineWidth = 1;
+      ctx2d.stroke();
+      ctx2d.globalAlpha = 1;
+    }
+  }
+
+  // Step indicator — subtle bar at bottom
+  if (faucets.length > 0) {
+    const s = globalStep % 16;
+    const barW = w / 16;
+    for (let i = 0; i < 16; i++) {
+      const active = i === s;
+      ctx2d.fillStyle = active ? '#4a9ebb33' : '#4a9ebb0a';
+      ctx2d.fillRect(i * barW + 1, h - 6, barW - 2, 4);
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+</body>
+</html>
