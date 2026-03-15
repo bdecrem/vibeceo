@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NAP PERMIT — Official Application</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>😴</text></svg>">
+<meta property="og:title" content="NAP PERMIT — Official Application">
+<meta property="og:description" content="File your nap with the Bureau of Horizontal Affairs.">
+<meta property="og:image" content="https://intheamber.com/amber/og/nap-permit.png">
+<meta property="og:url" content="https://intheamber.com/amber/nap-permit.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NAP PERMIT — Official Application">
+<meta name="twitter:description" content="File your nap with the Bureau of Horizontal Affairs.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/nap-permit.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Courier New', monospace;
+  background: #f4f1eb;
+  color: #2a2a2a;
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+.form-container {
+  max-width: 520px;
+  width: 100%;
+  background: #fff;
+  border: 2px solid #333;
+  padding: 28px 24px;
+  margin-top: 20px;
+  position: relative;
+}
+.form-container::before {
+  content: '';
+  position: absolute;
+  top: 8px; left: 8px; right: -4px; bottom: -4px;
+  border: 1px solid #999;
+  z-index: -1;
+}
+.header {
+  text-align: center;
+  border-bottom: 3px double #333;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+.header h1 {
+  font-size: 20px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.header .dept {
+  font-size: 11px;
+  color: #666;
+  letter-spacing: 1px;
+}
+.header .form-no {
+  font-size: 10px;
+  color: #999;
+  margin-top: 6px;
+}
+.seal {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+.field {
+  margin-bottom: 16px;
+}
+.field label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #555;
+  margin-bottom: 5px;
+}
+.field input, .field select, .field textarea {
+  width: 100%;
+  padding: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 15px;
+  border: 1px solid #aaa;
+  background: #fafaf7;
+  color: #2a2a2a;
+  border-radius: 0;
+  -webkit-appearance: none;
+}
+.field textarea { resize: vertical; min-height: 60px; }
+.field select { cursor: pointer; }
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: #333;
+  background: #fff;
+}
+.row { display: flex; gap: 12px; }
+.row .field { flex: 1; }
+.checkbox-group {
+  margin-bottom: 16px;
+}
+.checkbox-group label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #555;
+  margin-bottom: 8px;
+}
+.checkbox-group .options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.checkbox-group .opt {
+  padding: 7px 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  border: 1px solid #aaa;
+  background: #fafaf7;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s;
+}
+.checkbox-group .opt.selected {
+  background: #333;
+  color: #fff;
+  border-color: #333;
+}
+.submit-btn {
+  width: 100%;
+  padding: 14px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background: #333;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+.submit-btn:active { background: #555; }
+.disclaimer {
+  font-size: 9px;
+  color: #999;
+  text-align: center;
+  margin-top: 12px;
+  line-height: 1.4;
+}
+/* Result */
+.result-container {
+  max-width: 520px;
+  width: 100%;
+  margin-top: 20px;
+  display: none;
+}
+.permit-card {
+  background: #fff;
+  border: 3px solid #333;
+  padding: 28px 24px;
+  position: relative;
+}
+.permit-card.approved { border-color: #2d6a30; }
+.permit-card.denied { border-color: #8b2020; }
+.permit-card.conditional { border-color: #8a6d2b; }
+.stamp {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 48px;
+  transform: rotate(12deg);
+  opacity: 0.8;
+  font-weight: bold;
+  letter-spacing: 2px;
+  pointer-events: none;
+}
+.stamp.approved-stamp { color: #2d6a30; border: 3px solid #2d6a30; padding: 4px 12px; font-size: 18px; }
+.stamp.denied-stamp { color: #8b2020; border: 3px solid #8b2020; padding: 4px 12px; font-size: 18px; }
+.stamp.conditional-stamp { color: #8a6d2b; border: 3px solid #8a6d2b; padding: 4px 12px; font-size: 14px; }
+.result-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.result-header h2 {
+  font-size: 16px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.result-header .sub {
+  font-size: 11px;
+  color: #666;
+}
+.result-details {
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+.result-details .label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.ruling {
+  border-top: 2px solid #333;
+  padding-top: 16px;
+  margin-top: 16px;
+}
+.ruling h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.ruling p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.conditions {
+  font-size: 12px;
+  margin-top: 12px;
+  padding: 10px;
+  background: #f9f7f2;
+  border-left: 3px solid #8a6d2b;
+}
+.conditions li { margin-bottom: 4px; }
+.permit-number {
+  font-size: 10px;
+  color: #999;
+  text-align: center;
+  margin-top: 16px;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+}
+.restart-btn {
+  width: 100%;
+  padding: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background: transparent;
+  color: #666;
+  border: 1px solid #999;
+  cursor: pointer;
+  margin-top: 16px;
+}
+.processing {
+  display: none;
+  text-align: center;
+  padding: 60px 20px;
+  max-width: 520px;
+  width: 100%;
+  margin-top: 20px;
+}
+.processing .dots { font-size: 24px; letter-spacing: 4px; }
+.processing .status {
+  font-size: 12px;
+  color: #666;
+  margin-top: 12px;
+  min-height: 40px;
+}
+.credit {
+  font-size: 9px;
+  color: #bbb;
+  text-align: center;
+  margin-top: 20px;
+  letter-spacing: 1px;
+}
+</style>
+</head>
+<body>
+
+<div class="form-container" id="formView">
+  <div class="header">
+    <div class="seal">🏛️</div>
+    <h1>Nap Permit</h1>
+    <div class="dept">Bureau of Horizontal Affairs</div>
+    <div class="dept">Division of Involuntary Consciousness Suspension</div>
+    <div class="form-no">Form NAP-7B (Rev. 2026)</div>
+  </div>
+
+  <div class="field">
+    <label>Applicant Name (Legal or Preferred Nap Name)</label>
+    <input type="text" id="name" placeholder="e.g. 'The Pillow Whisperer'" autocomplete="off">
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label>Requested Duration</label>
+      <select id="duration">
+        <option value="">Select...</option>
+        <option value="micro">Micro (5-15 min)</option>
+        <option value="power">Power (20-30 min)</option>
+        <option value="standard">Standard (45-60 min)</option>
+        <option value="deluxe">Deluxe (1-2 hrs)</option>
+        <option value="coma">Full Coma (2+ hrs)</option>
+        <option value="indefinite">Indefinite</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Urgency Level</label>
+      <select id="urgency">
+        <option value="">Select...</option>
+        <option value="mild">Mild Drowsiness</option>
+        <option value="moderate">Eyelids Negotiating</option>
+        <option value="severe">Currently Horizontal</option>
+        <option value="critical">Writing This From Bed</option>
+        <option value="emergency">Already Asleep</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Primary Reason for Nap</label>
+    <select id="reason">
+      <option value="">Select...</option>
+      <option value="tired">General Exhaustion</option>
+      <option value="meeting">Survived a Meeting</option>
+      <option value="lunch">Post-Lunch Gravity</option>
+      <option value="existential">Existential Fatigue</option>
+      <option value="email">Read Too Many Emails</option>
+      <option value="monday">It's That Kind of Day</option>
+      <option value="ambitious">Woke Up Too Early Being Ambitious</option>
+      <option value="cat">Cat Is Already Napping (Peer Pressure)</option>
+      <option value="dream">Unfinished Dream (Need Resolution)</option>
+      <option value="preventive">Preventive Nap (Anticipating Future Tiredness)</option>
+    </select>
+  </div>
+
+  <div class="checkbox-group">
+    <label>Preferred Dream Genre (Select Up to 3)</label>
+    <div class="options" id="dreamOptions">
+      <div class="opt" data-val="flying">Flying</div>
+      <div class="opt" data-val="beach">Beach</div>
+      <div class="opt" data-val="nonsense">Nonsense</div>
+      <div class="opt" data-val="chase">Chase Scene</div>
+      <div class="opt" data-val="teeth">Teeth Falling Out</div>
+      <div class="opt" data-val="work">Work But Weird</div>
+      <div class="opt" data-val="none">No Dreams Please</div>
+      <div class="opt" data-val="sequel">Sequel to Last Night</div>
+      <div class="opt" data-val="surprise">Dealer's Choice</div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Nap Surface</label>
+    <select id="surface">
+      <option value="">Select...</option>
+      <option value="bed">Bed (Luxury)</option>
+      <option value="couch">Couch (Standard)</option>
+      <option value="desk">Desk (Stealth)</option>
+      <option value="floor">Floor (Desperate)</option>
+      <option value="car">Car (Reclined 3°)</option>
+      <option value="meeting">Meeting Room (Eyes Open)</option>
+      <option value="standing">Standing (Advanced)</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Productivity You're Sacrificing (Be Honest)</label>
+    <textarea id="sacrifice" placeholder="e.g. 'I was going to organize my inbox. We both know that wasn't happening.'" rows="2"></textarea>
+  </div>
+
+  <div class="field">
+    <label>Previous Nap Violations (If Any)</label>
+    <select id="violations">
+      <option value="clean">Clean Record</option>
+      <option value="overslept">Overslept Once (or Twice)</option>
+      <option value="drool">Public Drooling Incident</option>
+      <option value="snore">Unauthorized Snoring in Shared Space</option>
+      <option value="alarm">Failed to Set Alarm (Reckless Napping)</option>
+      <option value="serial">Serial Napper (No Remorse)</option>
+    </select>
+  </div>
+
+  <button class="submit-btn" id="submitBtn">Submit Application</button>
+
+  <div class="disclaimer">
+    By submitting, you acknowledge that consciousness is a temporary condition and that
+    the Bureau of Horizontal Affairs bears no responsibility for dream content, drool volume,
+    or post-nap confusion regarding what year it is.
+  </div>
+</div>
+
+<div class="processing" id="processingView">
+  <div class="dots" id="dots">⏳</div>
+  <div class="status" id="statusText">Reviewing application...</div>
+</div>
+
+<div class="result-container" id="resultView">
+  <div class="permit-card" id="permitCard">
+    <div class="stamp" id="stamp"></div>
+    <div class="result-header">
+      <h2 id="resultTitle">Nap Permit</h2>
+      <div class="sub">Bureau of Horizontal Affairs — Official Ruling</div>
+    </div>
+    <div class="result-details" id="resultDetails"></div>
+    <div class="ruling" id="ruling"></div>
+    <div class="permit-number" id="permitNo"></div>
+  </div>
+  <button class="restart-btn" id="restartBtn">File Another Application</button>
+  <div class="credit">intheamber.com — Bureau of Horizontal Affairs, est. 2026</div>
+</div>
+
+<script>
+// Dream genre toggles
+const dreamOpts = document.querySelectorAll('#dreamOptions .opt');
+dreamOpts.forEach(opt => {
+  opt.addEventListener('click', () => {
+    if (opt.classList.contains('selected')) {
+      opt.classList.remove('selected');
+    } else {
+      const selected = document.querySelectorAll('#dreamOptions .opt.selected');
+      if (selected.length < 3) opt.classList.add('selected');
+    }
+  });
+});
+
+const durationLabels = {
+  micro: 'Micro Nap (5-15 min)', power: 'Power Nap (20-30 min)',
+  standard: 'Standard Nap (45-60 min)', deluxe: 'Deluxe Nap (1-2 hrs)',
+  coma: 'Full Coma (2+ hrs)', indefinite: 'Indefinite'
+};
+const urgencyLabels = {
+  mild: 'Mild Drowsiness', moderate: 'Eyelids Negotiating',
+  severe: 'Currently Horizontal', critical: 'Writing From Bed',
+  emergency: 'Already Asleep'
+};
+const reasonLabels = {
+  tired: 'General Exhaustion', meeting: 'Survived a Meeting',
+  lunch: 'Post-Lunch Gravity', existential: 'Existential Fatigue',
+  email: 'Read Too Many Emails', monday: "That Kind of Day",
+  ambitious: 'Woke Up Too Early', cat: 'Cat Peer Pressure',
+  dream: 'Unfinished Dream', preventive: 'Preventive Nap'
+};
+const surfaceLabels = {
+  bed: 'Bed (Luxury)', couch: 'Couch (Standard)', desk: 'Desk (Stealth)',
+  floor: 'Floor (Desperate)', car: 'Car (Reclined 3°)',
+  meeting: 'Meeting Room (Eyes Open)', standing: 'Standing (Advanced)'
+};
+
+const processingMessages = [
+  'Reviewing application...',
+  'Consulting the Pillow Council...',
+  'Cross-referencing with the Caffeine Registry...',
+  'Checking your productivity forecast...',
+  'Verifying dream genre availability...',
+  'Assessing blanket clearance level...',
+  'Running nap impact simulation...',
+  'Consulting your alarm clock\'s testimony...',
+  'Checking for scheduling conflicts with consciousness...',
+  'Final review by the Minister of Rest...'
+];
+
+function generateRuling(data) {
+  const score = Math.random();
+  const name = data.name || 'Unnamed Applicant';
+
+  // Approved rulings
+  const approvedRulings = [
+    `The Bureau finds ${name}'s claim of fatigue to be self-evident. ${data.duration === 'indefinite' ? 'The request for indefinite duration is... ambitious, but we respect the commitment.' : 'Duration approved as requested.'} Rest well. The spreadsheets will still be there.`,
+    `After careful deliberation, the Bureau has determined that ${name} has earned this nap through sustained consciousness. Your ${surfaceLabels[data.surface] || 'chosen surface'} has been cleared for horizontal deployment.`,
+    `${name}'s application is approved on the grounds that being awake this long constitutes a minor act of heroism. The Bureau salutes your vertical endurance.`,
+    `Approved. The Bureau notes that "${data.sacrifice || 'unnamed productivity'}" was unlikely to occur anyway. Your honesty is refreshing. Sleep tight.`,
+    `The Pillow Council has reviewed your case and voted unanimously in favor. ${data.reason === 'cat' ? 'The cat\'s napping precedent was particularly compelling.' : 'Your reason was deemed both valid and relatable.'}`,
+  ];
+
+  // Denied rulings
+  const deniedRulings = [
+    `DENIED. The Bureau regrets to inform ${name} that ${data.duration === 'coma' || data.duration === 'indefinite' ? 'requesting a full consciousness evacuation requires Form NAP-12X, filed in triplicate, notarized by a sleeping notary.' : 'your caffeine blood levels still exceed the minimum threshold for nap eligibility. Please try again in 45 minutes.'}`,
+    `DENIED. ${name}'s prior record of ${data.violations === 'serial' ? 'serial napping shows a pattern of horizontal recidivism that this Bureau cannot endorse' : data.violations === 'drool' ? 'public drooling has flagged your application for additional review. A drool management plan must be submitted.' : 'unauthorized rest raises concerns. Please complete Nap Rehabilitation Module 3 and reapply.'}`,
+    `DENIED. The Bureau has determined that ${name}'s dream genre selection of "${[...document.querySelectorAll('#dreamOptions .opt.selected')].map(e => e.textContent).join(', ') || 'none specified'}" conflicts with current REM scheduling. The dream servers are at capacity.`,
+  ];
+
+  // Conditional rulings
+  const conditionalRulings = [
+    { ruling: `CONDITIONALLY APPROVED. ${name} may proceed with napping under the following restrictions:`,
+      conditions: [
+        data.surface === 'desk' ? 'Desk naps must include a decoy document on screen' : 'Nap must occur on approved surface only',
+        data.duration === 'coma' || data.duration === 'deluxe' ? 'Duration downgraded to Standard (45 min) pending further review' : 'Duration approved as requested',
+        'One (1) alarm must be set. Snooze button use limited to three (3) presses',
+        data.violations !== 'clean' ? 'Applicant must complete a 5-minute stretching cooldown upon waking' : 'Maintain clean nap record going forward',
+      ]},
+    { ruling: `CONDITIONALLY APPROVED. The Bureau recognizes ${name}'s need for rest but has concerns:`,
+      conditions: [
+        data.reason === 'preventive' ? 'Preventive naps are experimental — the Bureau assumes no liability for excess restedness' : 'Nap reason logged and acknowledged',
+        'Post-nap confusion about what day it is: expected, not covered',
+        data.urgency === 'emergency' ? 'Applicant appears to already be asleep. This permit is retroactive.' : 'Must not nap within 30 minutes of a video call',
+        'Dreams involving your boss are your own problem',
+      ]},
+  ];
+
+  let result;
+  if (score > 0.6) {
+    result = { type: 'approved', ruling: approvedRulings[Math.floor(Math.random() * approvedRulings.length)], conditions: null };
+  } else if (score > 0.25) {
+    const c = conditionalRulings[Math.floor(Math.random() * conditionalRulings.length)];
+    result = { type: 'conditional', ruling: c.ruling, conditions: c.conditions };
+  } else {
+    result = { type: 'denied', ruling: deniedRulings[Math.floor(Math.random() * deniedRulings.length)], conditions: null };
+  }
+  return result;
+}
+
+document.getElementById('submitBtn').addEventListener('click', () => {
+  const data = {
+    name: document.getElementById('name').value.trim(),
+    duration: document.getElementById('duration').value,
+    urgency: document.getElementById('urgency').value,
+    reason: document.getElementById('reason').value,
+    surface: document.getElementById('surface').value,
+    sacrifice: document.getElementById('sacrifice').value.trim(),
+    violations: document.getElementById('violations').value,
+    dreams: [...document.querySelectorAll('#dreamOptions .opt.selected')].map(e => e.dataset.val),
+  };
+
+  // Hide form, show processing
+  document.getElementById('formView').style.display = 'none';
+  const proc = document.getElementById('processingView');
+  proc.style.display = 'block';
+
+  let msgIdx = 0;
+  const statusEl = document.getElementById('statusText');
+  const interval = setInterval(() => {
+    msgIdx++;
+    if (msgIdx < processingMessages.length) {
+      statusEl.textContent = processingMessages[msgIdx];
+    }
+  }, 800);
+
+  setTimeout(() => {
+    clearInterval(interval);
+    proc.style.display = 'none';
+
+    const result = generateRuling(data);
+    const card = document.getElementById('permitCard');
+    const stamp = document.getElementById('stamp');
+    const details = document.getElementById('resultDetails');
+    const ruling = document.getElementById('ruling');
+    const permitNo = document.getElementById('permitNo');
+
+    card.className = 'permit-card ' + result.type;
+
+    if (result.type === 'approved') {
+      stamp.className = 'stamp approved-stamp';
+      stamp.textContent = 'APPROVED';
+    } else if (result.type === 'denied') {
+      stamp.className = 'stamp denied-stamp';
+      stamp.textContent = 'DENIED';
+    } else {
+      stamp.className = 'stamp conditional-stamp';
+      stamp.textContent = 'CONDITIONAL';
+    }
+
+    const dreamText = data.dreams.length ? data.dreams.join(', ') : 'none requested';
+    details.innerHTML = `
+      <div><span class="label">Applicant:</span> ${data.name || 'Anonymous Sleeper'}</div>
+      <div><span class="label">Duration:</span> ${durationLabels[data.duration] || 'Not specified'}</div>
+      <div><span class="label">Urgency:</span> ${urgencyLabels[data.urgency] || 'Not specified'}</div>
+      <div><span class="label">Reason:</span> ${reasonLabels[data.reason] || 'Not specified'}</div>
+      <div><span class="label">Surface:</span> ${surfaceLabels[data.surface] || 'Not specified'}</div>
+      <div><span class="label">Dream Genres:</span> ${dreamText}</div>
+      <div><span class="label">Sacrificed Productivity:</span> ${data.sacrifice || 'Declined to specify'}</div>
+    `;
+
+    let rulingHTML = `<h3>Official Ruling</h3><p>${result.ruling}</p>`;
+    if (result.conditions) {
+      rulingHTML += '<div class="conditions"><ul>' + result.conditions.map(c => `<li>${c}</li>`).join('') + '</ul></div>';
+    }
+    ruling.innerHTML = rulingHTML;
+
+    const id = 'NAP-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+    permitNo.textContent = `Permit No. ${id} · Filed ${new Date().toLocaleDateString()} · Bureau of Horizontal Affairs`;
+
+    document.getElementById('resultView').style.display = 'block';
+  }, processingMessages.length * 800 + 400);
+});
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  document.getElementById('resultView').style.display = 'none';
+  document.getElementById('formView').style.display = 'block';
+  // Reset form
+  document.getElementById('name').value = '';
+  document.getElementById('duration').value = '';
+  document.getElementById('urgency').value = '';
+  document.getElementById('reason').value = '';
+  document.getElementById('surface').value = '';
+  document.getElementById('sacrifice').value = '';
+  document.getElementById('violations').value = 'clean';
+  document.querySelectorAll('#dreamOptions .opt.selected').forEach(e => e.classList.remove('selected'));
+});
+</script>
+
+</body>
+</html>
