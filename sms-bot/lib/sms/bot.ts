@@ -73,7 +73,7 @@ export async function startSmsBot(): Promise<void> {
     registerRivalAlertDailyJob(); // RIVALALERT - Competitor monitoring at 7am PT (i1/Forge)
     registerAmberAwarenessJobs(twilioClient); // AMBER - Environment awareness at 7:30am and 6pm PT
     // registerAITwitterDailyJob(twilioClient); // DISABLED - hitting Twitter API cap
-    registerAmberSocialJobs(); // AMBER SOCIAL - Create at 6:45am/4:30pm, tweet at 7am/4:50pm PT
+    // registerAmberSocialJobs(); // AMBER SOCIAL - DISABLED: moved to OpenClaw cron jobs
     registerAmberMoodJobs(); // AMBER MOOD - Daily mood at midnight, weather pulse hourly
     registerTraderJob(); // TRADER - Commodity ETF trading every 15min during market hours (9:30am-4pm ET)
   } else {
