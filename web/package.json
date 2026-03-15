@@ -8,7 +8,7 @@
 		"dev": "concurrently \"node server.js\" \"node ws-server.js\"",
 		"dev:web": "node server.js",
 		"dev:ws": "node ws-server.js",
-		"build": "next build",
+		"build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
 		"start": "npm run start:web",
 		"start:all": "concurrently \"NODE_ENV=production node server.js\" \"NODE_ENV=production node ws-server.js\"",
 		"start:web": "NODE_ENV=production node server.js",
