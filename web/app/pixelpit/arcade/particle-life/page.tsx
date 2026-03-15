@@ -55,6 +55,11 @@ function createParticles(count: number, w: number, h: number): Particle[] {
   return particles;
 }
 
+function isMobile(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
+
 export default function ParticleLifePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<{
@@ -66,7 +71,7 @@ export default function ParticleLifePage() {
     trail: number;
     showMatrix: boolean;
     speed: number;
-    hoveredRule: { i: number; j: number } | null;
+    mobile: boolean;
   }>({
     particles: [],
     matrix: randomMatrix(),
@@ -76,13 +81,14 @@ export default function ParticleLifePage() {
     trail: 0.08,
     showMatrix: false,
     speed: 1,
-    hoveredRule: null,
+    mobile: false,
   });
   const [, forceRender] = useState(0);
   const [showUI, setShowUI] = useState(true);
   const [showMatrix, setShowMatrix] = useState(false);
   const [particleCount, setParticleCount] = useState(0);
   const [universeAge, setUniverseAge] = useState(0);
+  const [mobile, setMobile] = useState(false);
   const ageRef = useRef(0);
   const animRef = useRef<number>(0);
 
@@ -90,23 +96,31 @@ export default function ParticleLifePage() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const s = stateRef.current;
+    const dpr = window.devicePixelRatio || 1;
     s.w = window.innerWidth;
     s.h = window.innerHeight;
-    canvas.width = s.w;
-    canvas.height = s.h;
-    const count = Math.min(600, Math.floor((s.w * s.h) / 2000));
+    canvas.width = s.w * dpr;
+    canvas.height = s.h * dpr;
+    canvas.style.width = s.w + 'px';
+    canvas.style.height = s.h + 'px';
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = '#0a0a0f';
+      ctx.fillRect(0, 0, s.w, s.h);
+    }
+
+    s.mobile = isMobile();
+    setMobile(s.mobile);
+
+    // Fewer particles on mobile for performance
+    const maxParticles = s.mobile ? 250 : 600;
+    const count = Math.min(maxParticles, Math.floor((s.w * s.h) / (s.mobile ? 1200 : 2000)));
     s.particles = createParticles(count, s.w, s.h);
     s.matrix = randomMatrix();
     ageRef.current = 0;
     setParticleCount(count);
     setUniverseAge(0);
-
-    // Clear canvas
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#0a0a0f';
-      ctx.fillRect(0, 0, s.w, s.h);
-    }
   }, []);
 
   const newUniverse = useCallback(() => {
@@ -124,7 +138,7 @@ export default function ParticleLifePage() {
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) {
       ctx.fillStyle = '#0a0a0f';
-      ctx.fillRect(0, 0, s.w, s.h);
+      ctx.fillRect(0, 0, stateRef.current.w, stateRef.current.h);
     }
     forceRender(n => n + 1);
   }, []);
@@ -136,13 +150,26 @@ export default function ParticleLifePage() {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const s = stateRef.current;
+      const dpr = window.devicePixelRatio || 1;
       s.w = window.innerWidth;
       s.h = window.innerHeight;
-      canvas.width = s.w;
-      canvas.height = s.h;
+      canvas.width = s.w * dpr;
+      canvas.height = s.h * dpr;
+      canvas.style.width = s.w + 'px';
+      canvas.style.height = s.h + 'px';
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
     window.addEventListener('resize', handleResize);
+
+    // Prevent iOS rubber-band scrolling
+    const preventScroll = (e: TouchEvent) => e.preventDefault();
+    document.body.addEventListener('touchmove', preventScroll, { passive: false });
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
 
     // Game loop
     let lastTime = 0;
@@ -179,6 +206,9 @@ export default function ParticleLifePage() {
       const matrix = s.matrix;
       const speed = s.speed;
 
+      // On mobile, use smaller force range for fewer calculations
+      const forceRange = s.mobile ? 80 : FORCE_RANGE;
+
       // Physics update
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
@@ -197,19 +227,18 @@ export default function ParticleLifePage() {
           if (dy > s.h / 2) dy -= s.h;
           if (dy < -s.h / 2) dy += s.h;
 
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist > FORCE_RANGE || dist < 1) continue;
+          // Quick distance reject (skip sqrt for far particles)
+          const dist2 = dx * dx + dy * dy;
+          if (dist2 > forceRange * forceRange || dist2 < 1) continue;
 
+          const dist = Math.sqrt(dist2);
           const attraction = matrix[p.color][q.color];
 
           let force: number;
           if (dist < MIN_DIST) {
-            // Strong repulsion at very close range
             force = (dist / MIN_DIST - 1) * MAX_FORCE;
           } else {
-            // Attraction/repulsion based on matrix
-            const normalDist = (dist - MIN_DIST) / (FORCE_RANGE - MIN_DIST);
-            // Bell-shaped force curve
+            const normalDist = (dist - MIN_DIST) / (forceRange - MIN_DIST);
             force = attraction * MAX_FORCE * (1 - Math.abs(2 * normalDist - 1));
           }
 
@@ -222,30 +251,39 @@ export default function ParticleLifePage() {
         p.x += p.vx;
         p.y += p.vy;
 
-        // Wrap around
         if (p.x < 0) p.x += s.w;
         if (p.x >= s.w) p.x -= s.w;
         if (p.y < 0) p.y += s.h;
         if (p.y >= s.h) p.y -= s.h;
       }
 
-      // Draw particles with glow
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        const speed2 = p.vx * p.vx + p.vy * p.vy;
-        const glow = Math.min(speed2 * 0.5, 8);
-
-        if (glow > 1) {
+      // Draw particles — skip glow on mobile for perf
+      if (s.mobile) {
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
           ctx.beginPath();
-          ctx.arc(p.x, p.y, PARTICLE_RADIUS + glow, 0, Math.PI * 2);
-          ctx.fillStyle = COLORS[p.color] + '18';
+          ctx.arc(p.x, p.y, PARTICLE_RADIUS, 0, Math.PI * 2);
+          ctx.fillStyle = COLORS[p.color];
           ctx.fill();
         }
+      } else {
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          const speed2 = p.vx * p.vx + p.vy * p.vy;
+          const glow = Math.min(speed2 * 0.5, 8);
 
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, PARTICLE_RADIUS, 0, Math.PI * 2);
-        ctx.fillStyle = COLORS[p.color];
-        ctx.fill();
+          if (glow > 1) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, PARTICLE_RADIUS + glow, 0, Math.PI * 2);
+            ctx.fillStyle = COLORS[p.color] + '18';
+            ctx.fill();
+          }
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, PARTICLE_RADIUS, 0, Math.PI * 2);
+          ctx.fillStyle = COLORS[p.color];
+          ctx.fill();
+        }
       }
 
       animRef.current = requestAnimationFrame(loop);
@@ -256,28 +294,43 @@ export default function ParticleLifePage() {
     return () => {
       cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', handleResize);
+      document.body.removeEventListener('touchmove', preventScroll);
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
     };
   }, [init]);
 
   // Touch/click to add particles
-  const handleCanvasClick = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+  const handleCanvasTouch = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
     const s = stateRef.current;
-    let x: number, y: number;
-    if ('touches' in e) {
-      x = e.touches[0].clientX;
-      y = e.touches[0].clientY;
-    } else {
-      x = e.clientX;
-      y = e.clientY;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const color = Math.floor(Math.random() * NUM_COLORS);
+    const burst = s.mobile ? 5 : 8;
+    for (let i = 0; i < burst; i++) {
+      const angle = (Math.PI * 2 * i) / burst;
+      s.particles.push({
+        x: touch.clientX + Math.cos(angle) * 10,
+        y: touch.clientY + Math.sin(angle) * 10,
+        vx: Math.cos(angle) * 0.5,
+        vy: Math.sin(angle) * 0.5,
+        color,
+      });
     }
+    setParticleCount(s.particles.length);
+  }, []);
 
-    // Add a burst of particles at tap location
+  const handleCanvasClick = useCallback((e: React.MouseEvent) => {
+    const s = stateRef.current;
     const color = Math.floor(Math.random() * NUM_COLORS);
     for (let i = 0; i < 8; i++) {
       const angle = (Math.PI * 2 * i) / 8;
       s.particles.push({
-        x: x + Math.cos(angle) * 10,
-        y: y + Math.sin(angle) * 10,
+        x: e.clientX + Math.cos(angle) * 10,
+        y: e.clientY + Math.sin(angle) * 10,
         vx: Math.cos(angle) * 0.5,
         vy: Math.sin(angle) * 0.5,
         color,
@@ -289,8 +342,8 @@ export default function ParticleLifePage() {
   const formatAge = (seconds: number): string => {
     if (seconds < 60) return `${seconds}s`;
     const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    if (m < 60) return `${m}m ${s}s`;
+    const secs = seconds % 60;
+    if (m < 60) return `${m}m ${secs}s`;
     const h = Math.floor(m / 60);
     return `${h}h ${m % 60}m`;
   };
@@ -301,25 +354,30 @@ export default function ParticleLifePage() {
     <div style={{
       background: '#0a0a0f',
       width: '100vw',
-      height: '100vh',
+      height: '100dvh',
       overflow: 'hidden',
       position: 'relative',
       cursor: 'crosshair',
       userSelect: 'none',
+      WebkitUserSelect: 'none',
+      touchAction: 'none',
     }}>
       <canvas
         ref={canvasRef}
         onClick={handleCanvasClick}
-        onTouchStart={handleCanvasClick}
+        onTouchStart={handleCanvasTouch}
         style={{ position: 'absolute', top: 0, left: 0 }}
       />
 
-      {/* Top HUD */}
+      {/* Top HUD — safe area aware */}
       <div style={{
         position: 'absolute',
-        top: 16,
-        left: 16,
-        right: 16,
+        top: 0,
+        left: 0,
+        right: 0,
+        paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
+        paddingLeft: 'max(16px, env(safe-area-inset-left, 16px))',
+        paddingRight: 'max(16px, env(safe-area-inset-right, 16px))',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
@@ -353,7 +411,7 @@ export default function ParticleLifePage() {
           color: '#ffffff25',
           textAlign: 'right',
         }}>
-          tap to seed &middot; space for new universe
+          {mobile ? 'tap to seed' : 'tap to seed \u00b7 space for new universe'}
         </div>
       </div>
 
@@ -361,15 +419,16 @@ export default function ParticleLifePage() {
       {showMatrix && (
         <div style={{
           position: 'absolute',
-          bottom: 80,
+          bottom: mobile ? 100 : 80,
           left: '50%',
           transform: 'translateX(-50%)',
-          background: '#0a0a0f99',
+          background: '#0a0a0fdd',
           backdropFilter: 'blur(10px)',
           borderRadius: 12,
-          padding: 16,
+          padding: mobile ? 12 : 16,
           zIndex: 20,
           border: '1px solid #ffffff10',
+          maxWidth: 'calc(100vw - 32px)',
         }}>
           <div style={{
             fontFamily: 'monospace',
@@ -382,14 +441,15 @@ export default function ParticleLifePage() {
           }}>
             Rules of this Universe
           </div>
-          <div style={{ display: 'flex', gap: 1 }}>
+          <div style={{ display: 'flex', gap: 1, overflowX: 'auto' }}>
             {/* Row labels */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1, marginRight: 4, justifyContent: 'flex-end' }}>
               {COLORS.map((c, i) => (
                 <div key={i} style={{
-                  width: 28, height: 28,
+                  width: mobile ? 22 : 28, height: mobile ? 22 : 28,
                   display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                  fontFamily: 'monospace', fontSize: 8, color: c, paddingRight: 4,
+                  fontFamily: 'monospace', fontSize: mobile ? 7 : 8, color: c, paddingRight: 4,
+                  flexShrink: 0,
                 }}>
                   {COLOR_NAMES[i].slice(0, 3)}
                 </div>
@@ -400,9 +460,10 @@ export default function ParticleLifePage() {
               <div style={{ display: 'flex', gap: 1, marginBottom: 2 }}>
                 {COLORS.map((c, j) => (
                   <div key={j} style={{
-                    width: 28, height: 14,
+                    width: mobile ? 22 : 28, height: 14,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'monospace', fontSize: 8, color: c,
+                    fontFamily: 'monospace', fontSize: mobile ? 7 : 8, color: c,
+                    flexShrink: 0,
                   }}>
                     {COLOR_NAMES[j].slice(0, 3)}
                   </div>
@@ -413,25 +474,24 @@ export default function ParticleLifePage() {
                 <div key={i} style={{ display: 'flex', gap: 1 }}>
                   {row.map((val, j) => {
                     const intensity = Math.abs(val);
-                    const hue = val > 0 ? '140' : '0'; // green for attract, red for repel
+                    const hue = val > 0 ? '140' : '0';
                     return (
                       <div
                         key={j}
                         style={{
-                          width: 28,
-                          height: 28,
+                          width: mobile ? 22 : 28,
+                          height: mobile ? 22 : 28,
                           borderRadius: 4,
                           background: `hsla(${hue}, 70%, 50%, ${intensity * 0.6})`,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontFamily: 'monospace',
-                          fontSize: 8,
+                          fontSize: mobile ? 6 : 8,
                           color: '#ffffff80',
-                          cursor: 'pointer',
                           border: '1px solid #ffffff08',
+                          flexShrink: 0,
                         }}
-                        title={`${COLOR_NAMES[i]} → ${COLOR_NAMES[j]}: ${val > 0 ? 'attracts' : 'repels'} (${(val * 100).toFixed(0)}%)`}
                       >
                         {val > 0 ? '+' : ''}{(val * 100).toFixed(0)}
                       </div>
@@ -448,26 +508,29 @@ export default function ParticleLifePage() {
             textAlign: 'center',
             marginTop: 8,
           }}>
-            green = attract &middot; red = repel &middot; row acts on column
+            green = attract &middot; red = repel
           </div>
         </div>
       )}
 
-      {/* Bottom controls */}
+      {/* Bottom controls — safe area aware */}
       <div style={{
         position: 'absolute',
-        bottom: 20,
-        left: '50%',
-        transform: 'translateX(-50%)',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))',
         display: 'flex',
+        justifyContent: 'center',
         gap: 8,
         zIndex: 10,
         opacity: showUI ? 1 : 0,
         transition: 'opacity 0.3s',
+        flexWrap: 'wrap',
       }}>
         {[
           { label: 'NEW UNIVERSE', action: newUniverse },
-          { label: showMatrix ? 'HIDE RULES' : 'SHOW RULES', action: () => { stateRef.current.showMatrix = !showMatrix; setShowMatrix(!showMatrix); } },
+          { label: showMatrix ? 'HIDE RULES' : 'RULES', action: () => { stateRef.current.showMatrix = !showMatrix; setShowMatrix(!showMatrix); } },
           { label: 'CLEAR', action: () => {
             const s = stateRef.current;
             s.particles = [];
@@ -481,16 +544,17 @@ export default function ParticleLifePage() {
             onClick={btn.action}
             style={{
               fontFamily: 'monospace',
-              fontSize: 10,
+              fontSize: mobile ? 11 : 10,
               letterSpacing: 2,
               color: '#ffffff60',
               background: '#ffffff08',
               border: '1px solid #ffffff15',
               borderRadius: 20,
-              padding: '8px 18px',
+              padding: mobile ? '12px 20px' : '8px 18px',
               cursor: 'pointer',
               textTransform: 'uppercase',
               transition: 'all 0.2s',
+              WebkitTapHighlightColor: 'transparent',
             }}
             onMouseEnter={e => {
               e.currentTarget.style.background = '#ffffff18';
@@ -506,7 +570,7 @@ export default function ParticleLifePage() {
         ))}
       </div>
 
-      {/* Keyboard handler */}
+      {/* Keyboard handler (desktop only) */}
       <KeyboardHandler
         onSpace={newUniverse}
         onH={() => setShowUI(u => !u)}
