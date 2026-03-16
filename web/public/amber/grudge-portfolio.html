@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GRUDGE PORTFOLIO — Petty Exchange</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+<meta property="og:title" content="GRUDGE PORTFOLIO">
+<meta property="og:description" content="Track your petty grudges like stocks. The market never sleeps.">
+<meta property="og:image" content="https://intheamber.com/amber/og/grudge-portfolio.png">
+<meta property="og:url" content="https://intheamber.com/amber/grudge-portfolio.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GRUDGE PORTFOLIO">
+<meta name="twitter:description" content="Track your petty grudges like stocks. The market never sleeps.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/grudge-portfolio.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0f;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+.ticker-bar {
+  background: #111118;
+  border-bottom: 1px solid #1a1a2e;
+  padding: 8px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.ticker-content {
+  display: inline-block;
+  animation: scroll 30s linear infinite;
+}
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-item { display: inline-block; margin: 0 24px; }
+.up { color: #00ff87; }
+.down { color: #ff4757; }
+.flat { color: #ffa502; }
+
+header {
+  text-align: center;
+  padding: 24px 16px 8px;
+  border-bottom: 1px solid #1a1a2e;
+}
+header h1 {
+  font-size: clamp(20px, 5vw, 28px);
+  letter-spacing: 4px;
+  color: #ffa502;
+  margin-bottom: 4px;
+}
+header .subtitle {
+  font-size: 12px;
+  color: #666;
+  letter-spacing: 2px;
+}
+.market-status {
+  text-align: center;
+  padding: 8px;
+  font-size: 11px;
+  color: #00ff87;
+  letter-spacing: 1px;
+}
+.market-status span { animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.portfolio-summary {
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 16px;
+  border-bottom: 1px solid #1a1a2e;
+  font-size: 12px;
+}
+.portfolio-summary .label { color: #666; display: block; }
+.portfolio-summary .value { color: #ffa502; font-size: 16px; font-weight: bold; }
+
+.grudges-list {
+  padding: 8px 12px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.grudge-card {
+  background: #111118;
+  border: 1px solid #1a1a2e;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.grudge-card:active { border-color: #ffa502; }
+.grudge-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.grudge-ticker {
+  font-weight: bold;
+  font-size: 15px;
+  color: #fff;
+}
+.grudge-price {
+  font-size: 18px;
+  font-weight: bold;
+}
+.grudge-name {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 6px;
+}
+.grudge-chart {
+  height: 32px;
+  margin: 6px 0;
+}
+.grudge-chart canvas { width: 100%; height: 100%; }
+.grudge-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #666;
+}
+.grudge-analysis {
+  display: none;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #1a1a2e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.grudge-analysis.open { display: block; }
+.analyst-rating {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  margin-top: 6px;
+}
+.rating-hold { background: #ffa50233; color: #ffa502; }
+.rating-sell { background: #00ff8733; color: #00ff87; }
+.rating-buy { background: #ff475733; color: #ff4757; }
+
+.add-section {
+  padding: 16px 12px;
+  border-top: 1px solid #1a1a2e;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #0a0a0f;
+}
+.add-btn {
+  width: 100%;
+  padding: 14px;
+  background: #ffa502;
+  color: #0a0a0f;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  cursor: pointer;
+}
+.add-btn:active { background: #e09400; }
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: #111118;
+  border: 1px solid #ffa502;
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 380px;
+}
+.modal h2 {
+  color: #ffa502;
+  font-size: 16px;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+.modal input, .modal select {
+  width: 100%;
+  padding: 12px;
+  background: #0a0a0f;
+  border: 1px solid #1a1a2e;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+.modal input::placeholder { color: #444; }
+.modal input:focus, .modal select:focus { outline: none; border-color: #ffa502; }
+.modal-buttons { display: flex; gap: 10px; margin-top: 8px; }
+.modal-buttons button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.btn-cancel { background: #1a1a2e; color: #888; }
+.btn-file { background: #ffa502; color: #0a0a0f; }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #444;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.empty-state .big { font-size: 40px; margin-bottom: 12px; }
+
+.delete-zone {
+  text-align: center;
+  padding: 8px;
+  font-size: 11px;
+  color: #ff4757;
+  cursor: pointer;
+  display: none;
+}
+.delete-zone.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="ticker-bar">
+  <div class="ticker-content" id="tickerContent"></div>
+</div>
+
+<header>
+  <h1>GRUDGE PORTFOLIO</h1>
+  <div class="subtitle">PETTY EXCHANGE™ — EST. TODAY</div>
+</header>
+
+<div class="market-status">
+  <span>● MARKET OPEN</span> — PETTINESS INDEX: <span id="indexValue">0.00</span>
+</div>
+
+<div class="portfolio-summary">
+  <div><span class="label">HOLDINGS</span><span class="value" id="holdingsCount">0</span></div>
+  <div><span class="label">TOTAL SPITE</span><span class="value" id="totalSpite">$0</span></div>
+  <div><span class="label">TODAY</span><span class="value up" id="todayChange">+0%</span></div>
+</div>
+
+<div class="grudges-list" id="grudgesList">
+  <div class="empty-state" id="emptyState">
+    <div class="big">📊</div>
+    your grudge portfolio is empty.<br>
+    that's either very healthy<br>
+    or a lie.<br><br>
+    <span style="color:#ffa502">tap below to file a grudge.</span>
+  </div>
+</div>
+
+<div class="add-section">
+  <button class="add-btn" id="addBtn">+ FILE NEW GRUDGE</button>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>📋 FILE A GRUDGE</h2>
+    <input type="text" id="grudgeInput" placeholder="what happened?" maxlength="80">
+    <select id="severityInput">
+      <option value="micro">MICRO — barely registering</option>
+      <option value="mild">MILD — you still think about it</option>
+      <option value="moderate" selected>MODERATE — brought up at dinner</option>
+      <option value="severe">SEVERE — lifestyle-altering</option>
+      <option value="nuclear">NUCLEAR — identity-defining</option>
+    </select>
+    <select id="ageInput">
+      <option value="fresh">happened today</option>
+      <option value="recent">this week</option>
+      <option value="aged">months ago</option>
+      <option value="vintage" selected>years ago, still mad</option>
+      <option value="heirloom">inherited from a relative</option>
+    </select>
+    <div class="modal-buttons">
+      <button class="btn-cancel" id="cancelBtn">DISMISS</button>
+      <button class="btn-file" id="fileBtn">FILE IT</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TICKERS = ['SLGHT','PETTY','SNUB','GHOST','THEFT','BTRAY','NERVE','AUDCT','GALL','SPITE'];
+const ANALYSTS = [
+  "Strong fundamentals. This grudge has legs.",
+  "Overvalued. Consider letting go before Q3.",
+  "Underperforming peers. Your friend's grudge about the parking spot is up 200%.",
+  "Analysts recommend accumulating. Hold through the holidays.",
+  "SELL. The emotional overhead exceeds the pettiness yield.",
+  "This grudge has been trading sideways for years. Classic bagholding behavior.",
+  "New catalyst detected: they did it AGAIN.",
+  "Downgrade to HOLD. Time is diluting the spite.",
+  "Upgrade to STRONG BUY. Fresh intel confirms they knew exactly what they were doing.",
+  "Market consensus: nobody else remembers this happened. Only you.",
+  "Dividend alert: this grudge pays out in passive-aggressive comments quarterly.",
+  "Insider trading detected. They told someone else their version first.",
+  "Bear case: you might have been wrong. Bull case: absolutely not.",
+  "Technical analysis shows a double-top in resentment. Classic.",
+  "This grudge is recession-proof. Economic conditions cannot dilute pure spite.",
+];
+const RATINGS = ['STRONG HOLD','HOLD','ACCUMULATE','LET GO (lol jk)','DOUBLE DOWN','SELL (you won\'t)','BUY THE DIP'];
+const RATING_CLASSES = ['rating-hold','rating-hold','rating-buy','rating-sell','rating-buy','rating-sell','rating-buy'];
+
+const BASE_VALUES = { micro: 12, mild: 47, moderate: 156, severe: 892, nuclear: 4200 };
+const AGE_MULT = { fresh: 0.5, recent: 0.8, aged: 1.5, vintage: 3.2, heirloom: 8.7 };
+
+let grudges = JSON.parse(localStorage.getItem('grudge-portfolio') || '[]');
+
+function generateTicker(text) {
+  const words = text.toUpperCase().replace(/[^A-Z\s]/g,'').split(/\s+/).filter(w=>w.length>2);
+  if (words.length === 0) return TICKERS[Math.floor(Math.random()*TICKERS.length)];
+  const w = words[Math.floor(Math.random()*words.length)];
+  return w.slice(0, Math.min(5, w.length));
+}
+
+function generateHistory(baseVal, steps) {
+  const hist = [baseVal];
+  for (let i = 1; i < steps; i++) {
+    const change = (Math.random() - 0.42) * baseVal * 0.08;
+    hist.push(Math.max(1, hist[i-1] + change));
+  }
+  return hist;
+}
+
+function drawMiniChart(canvas, history) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.offsetWidth * 2;
+  const h = canvas.height = canvas.offsetHeight * 2;
+  ctx.clearRect(0,0,w,h);
+  
+  const min = Math.min(...history);
+  const max = Math.max(...history);
+  const range = max - min || 1;
+  const isUp = history[history.length-1] >= history[0];
+  
+  ctx.strokeStyle = isUp ? '#00ff87' : '#ff4757';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  history.forEach((v, i) => {
+    const x = (i / (history.length-1)) * w;
+    const y = h - ((v - min) / range) * h * 0.8 - h * 0.1;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+function save() {
+  localStorage.setItem('grudge-portfolio', JSON.stringify(grudges));
+}
+
+function render() {
+  const list = document.getElementById('grudgesList');
+  const empty = document.getElementById('emptyState');
+  
+  if (grudges.length === 0) {
+    list.innerHTML = '';
+    list.appendChild(empty);
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    list.innerHTML = grudges.map((g, i) => {
+      const current = g.history[g.history.length - 1];
+      const prev = g.history[g.history.length - 2] || current;
+      const change = ((current - prev) / prev * 100).toFixed(1);
+      const dayChange = ((current - g.history[0]) / g.history[0] * 100).toFixed(1);
+      const isUp = change >= 0;
+      const rIdx = Math.abs(hashStr(g.text)) % RATINGS.length;
+      const aIdx = Math.abs(hashStr(g.text + 'a')) % ANALYSTS.length;
+      
+      return `<div class="grudge-card" data-idx="${i}" onclick="toggleAnalysis(${i})">
+        <div class="grudge-header">
+          <div>
+            <div class="grudge-ticker">$${g.ticker}</div>
+            <div class="grudge-name">${escHtml(g.text)}</div>
+          </div>
+          <div class="grudge-price ${isUp?'up':'down'}">$${current.toFixed(2)}<br><span style="font-size:11px">${isUp?'▲':'▼'} ${Math.abs(change)}%</span></div>
+        </div>
+        <div class="grudge-chart"><canvas id="chart-${i}"></canvas></div>
+        <div class="grudge-meta">
+          <span>AGE: ${g.age.toUpperCase()}</span>
+          <span>SEV: ${g.severity.toUpperCase()}</span>
+          <span>ALL-TIME: <span class="${dayChange>=0?'up':'down'}">${dayChange>=0?'+':''}${dayChange}%</span></span>
+        </div>
+        <div class="grudge-analysis" id="analysis-${i}">
+          <div style="color:#888">ANALYST NOTE:</div>
+          <div style="margin:4px 0">"${ANALYSTS[aIdx]}"</div>
+          <span class="analyst-rating ${RATING_CLASSES[rIdx]}">${RATINGS[rIdx]}</span>
+          <div class="delete-zone visible" onclick="event.stopPropagation();removeGrudge(${i})">[ FORGIVE & DELIST ]</div>
+        </div>
+      </div>`;
+    }).join('');
+    
+    requestAnimationFrame(() => {
+      grudges.forEach((g, i) => {
+        const c = document.getElementById('chart-' + i);
+        if (c) drawMiniChart(c, g.history);
+      });
+    });
+  }
+  
+  document.getElementById('holdingsCount').textContent = grudges.length;
+  const total = grudges.reduce((s, g) => s + g.history[g.history.length-1], 0);
+  document.getElementById('totalSpite').textContent = '$' + total.toFixed(0);
+  
+  const idx = grudges.length > 0 ? (total / grudges.length).toFixed(2) : '0.00';
+  document.getElementById('indexValue').textContent = idx;
+  
+  const allChange = grudges.length > 0 
+    ? grudges.reduce((s,g) => s + (g.history[g.history.length-1] - g.history[0]) / g.history[0] * 100, 0) / grudges.length 
+    : 0;
+  const tc = document.getElementById('todayChange');
+  tc.textContent = (allChange >= 0 ? '+' : '') + allChange.toFixed(1) + '%';
+  tc.className = 'value ' + (allChange >= 0 ? 'up' : 'down');
+}
+
+function toggleAnalysis(idx) {
+  const el = document.getElementById('analysis-' + idx);
+  if (el) el.classList.toggle('open');
+}
+
+function removeGrudge(idx) {
+  grudges.splice(idx, 1);
+  save();
+  render();
+}
+
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
+  return h;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Ticker bar
+function buildTicker() {
+  const items = grudges.length > 0 
+    ? grudges.map(g => {
+        const c = g.history[g.history.length-1];
+        const p = g.history[Math.max(0, g.history.length-5)];
+        const ch = ((c-p)/p*100).toFixed(1);
+        return `<span class="ticker-item"><span style="color:#fff">$${g.ticker}</span> <span class="${ch>=0?'up':'down'}">${ch>=0?'▲':'▼'}${Math.abs(ch)}%</span></span>`;
+      })
+    : TICKERS.map(t => {
+        const ch = (Math.random()*20-8).toFixed(1);
+        return `<span class="ticker-item"><span style="color:#fff">$${t}</span> <span class="${ch>=0?'up':'down'}">${ch>=0?'▲':'▼'}${Math.abs(ch)}%</span></span>`;
+      });
+  const content = items.join('') + items.join('');
+  document.getElementById('tickerContent').innerHTML = content;
+}
+
+// Market simulation
+function simulate() {
+  grudges.forEach(g => {
+    const last = g.history[g.history.length - 1];
+    const bias = g.severity === 'nuclear' ? 0.06 : g.severity === 'severe' ? 0.04 : 0;
+    const change = (Math.random() - 0.44 + bias) * last * 0.03;
+    g.history.push(Math.max(0.5, last + change));
+    if (g.history.length > 50) g.history.shift();
+  });
+  save();
+  render();
+  buildTicker();
+}
+
+// Modal
+document.getElementById('addBtn').addEventListener('click', () => {
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('grudgeInput').focus();
+});
+document.getElementById('cancelBtn').addEventListener('click', () => {
+  document.getElementById('modal').classList.remove('open');
+});
+document.getElementById('fileBtn').addEventListener('click', () => {
+  const text = document.getElementById('grudgeInput').value.trim();
+  if (!text) return;
+  const severity = document.getElementById('severityInput').value;
+  const age = document.getElementById('ageInput').value;
+  const baseVal = BASE_VALUES[severity] * AGE_MULT[age];
+  const g = {
+    text,
+    ticker: generateTicker(text),
+    severity,
+    age,
+    history: generateHistory(baseVal, 20),
+    filed: Date.now()
+  };
+  grudges.unshift(g);
+  save();
+  render();
+  buildTicker();
+  document.getElementById('grudgeInput').value = '';
+  document.getElementById('modal').classList.remove('open');
+});
+
+// Seed some defaults if first visit
+if (grudges.length === 0) {
+  const seeds = [
+    { text: "they said they'd be there in 5 minutes. that was 2019.", severity: 'severe', age: 'vintage' },
+    { text: "someone ate my clearly labeled lunch", severity: 'moderate', age: 'aged' },
+    { text: "read my text and never responded", severity: 'mild', age: 'recent' },
+    { text: "they pronounce it 'expresso'", severity: 'nuclear', age: 'heirloom' },
+  ];
+  seeds.forEach(s => {
+    const baseVal = BASE_VALUES[s.severity] * AGE_MULT[s.age];
+    grudges.push({
+      ...s,
+      ticker: generateTicker(s.text),
+      history: generateHistory(baseVal, 20),
+      filed: Date.now()
+    });
+  });
+  save();
+}
+
+render();
+buildTicker();
+setInterval(simulate, 4000);
+</script>
+</body>
+</html>
