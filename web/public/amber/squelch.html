@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SQUELCH</title>
+  <meta property="og:title" content="SQUELCH">
+  <meta property="og:description" content="that acid bass sound">
+  <meta property="og:image" content="https://intheamber.com/amber/og/squelch.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SQUELCH">
+  <meta name="twitter:description" content="that acid bass sound">
+  <meta name="twitter:image" content="https://intheamber.com/amber/og/squelch.png">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #08080f;
+      color: #a090b0;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      width: 90vw;
+      max-width: 400px;
+    }
+    #title {
+      font-size: 11px;
+      letter-spacing: 8px;
+      color: #3a3050;
+      text-transform: uppercase;
+    }
+    #viz {
+      width: 100%;
+      height: 140px;
+      border-radius: 8px;
+      background: #0c0c18;
+      cursor: ns-resize;
+      border: 1px solid #1a1828;
+    }
+    #cutoff-label {
+      font-size: 10px;
+      color: #2a2040;
+      letter-spacing: 3px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+      width: 100%;
+    }
+    .pad {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      background: #0e0e1a;
+      border: 1px solid #1a1828;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #2a2040;
+      transition: background 0.08s, border-color 0.08s, box-shadow 0.08s;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+    .pad.active {
+      background: #1a1430;
+      border-color: #4a3870;
+      color: #7a68a0;
+    }
+    .pad.current {
+      border-color: #6a5090;
+      box-shadow: 0 0 8px rgba(106, 80, 144, 0.3);
+    }
+    .pad.active.current {
+      background: #2a1e48;
+      border-color: #b48c64;
+      box-shadow: 0 0 16px rgba(180, 140, 100, 0.4);
+      color: #d4b888;
+    }
+    .pad .slide-dot {
+      position: absolute;
+      bottom: 3px;
+      right: 3px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #4a3870;
+    }
+    .pad.active .slide-dot { background: #7a68a0; }
+    #start-btn {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8, 8, 15, 0.95);
+      z-index: 100;
+      cursor: pointer;
+    }
+    #start-btn span {
+      padding: 28px 56px;
+      font-size: 18px;
+      font-family: 'Courier New', monospace;
+      background: rgba(74, 56, 112, 0.15);
+      border: 1px solid rgba(74, 56, 112, 0.4);
+      color: #7a68a0;
+      border-radius: 6px;
+      letter-spacing: 6px;
+      text-transform: lowercase;
+    }
+    #start-btn:active span { background: rgba(74, 56, 112, 0.3); }
+    #hint {
+      font-size: 9px;
+      color: #201830;
+      letter-spacing: 2px;
+      text-align: center;
+      line-height: 1.6;
+      transition: opacity 1s;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <div id="title">squelch</div>
+    <canvas id="viz"></canvas>
+    <div id="cutoff-label">↕ drag to filter</div>
+    <div class="grid" id="grid"></div>
+    <div id="hint">tap pads to compose</div>
+  </div>
+  <div id="start-btn"><span>squelch</span></div>
+
+  <script type="module">
+    import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+    import { JT10Engine } from '/jt10/dist/machines/jt10/engine.js';
+
+    const BPM = 122;
+    const NOTES = [
+      'C2','C2','Eb2','C2','F2','Eb2','G2','G2',
+      'Ab2','G2','Eb2','F2','Eb2','C2','Eb2','C2'
+    ];
+    const SLIDES = [0,0,0,0,0,1,0,0,0,1,0,0,1,0,0,0];
+    let active =   [1,0,1,0,1,0,0,1,1,0,1,0,0,1,0,1];
+    let currentStep = -1;
+    let cutoff = 0.3;
+    let playing = false;
+
+    // Build pads
+    const grid = document.getElementById('grid');
+    const pads = [];
+    for (let i = 0; i < 16; i++) {
+      const pad = document.createElement('div');
+      pad.className = 'pad' + (active[i] ? ' active' : '');
+      pad.textContent = NOTES[i].replace(/(\d)/, '\u2080'.charCodeAt(0) - 48 + '').length ? NOTES[i] : NOTES[i];
+      // Show note name simply
+      pad.textContent = NOTES[i];
+      if (SLIDES[i]) {
+        const dot = document.createElement('div');
+        dot.className = 'slide-dot';
+        pad.appendChild(dot);
+      }
+      pad.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        active[i] = active[i] ? 0 : 1;
+        pad.classList.toggle('active');
+        // Fade hint after first interaction
+        const hint = document.getElementById('hint');
+        if (hint) hint.style.opacity = '0';
+      });
+      grid.appendChild(pad);
+      pads.push(pad);
+    }
+
+    // Viz canvas setup
+    const canvas = document.getElementById('viz');
+    const vCtx = canvas.getContext('2d');
+    let analyser;
+
+    function sizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * Math.min(devicePixelRatio, 2);
+      canvas.height = rect.height * Math.min(devicePixelRatio, 2);
+    }
+    sizeCanvas();
+    window.addEventListener('resize', sizeCanvas);
+
+    // Cutoff control via viz drag
+    let dragging = false;
+    canvas.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      updateCutoff(e);
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (dragging) updateCutoff(e);
+    });
+    window.addEventListener('pointerup', () => { dragging = false; });
+    window.addEventListener('pointercancel', () => { dragging = false; });
+
+    function updateCutoff(e) {
+      const rect = canvas.getBoundingClientRect();
+      const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+      cutoff = 1 - y; // top = high cutoff, bottom = low
+      if (bass) {
+        bass.setParameter('cutoff', cutoff * 0.7 + 0.05);
+        bass.setParameter('resonance', 0.05 + cutoff * 0.25);
+      }
+    }
+
+    // Audio
+    let ctx, drums, bass;
+
+    document.getElementById('start-btn').addEventListener('click', async () => {
+      document.getElementById('start-btn').style.display = 'none';
+
+      ctx = new AudioContext({ sampleRate: 44100 });
+
+      // Analyser for bass waveform
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.8;
+      analyser.connect(ctx.destination);
+
+      // Drums
+      drums = new JB01Engine({ context: ctx, bpm: BPM });
+      drums.setVoiceParam('kick', 'decay', 0.3);
+      drums.setVoiceParam('kick', 'level', 0.8);
+      drums.setVoiceParam('kick', 'attack', 0.65);
+      drums.setVoiceParam('ch', 'decay', 0.12);
+      drums.setVoiceParam('ch', 'level', 0.45);
+      drums.setVoiceParam('ch', 'tone', 0.55);
+      drums.setVoiceParam('snare', 'decay', 0.3);
+      drums.setVoiceParam('snare', 'level', 0.5);
+      drums.setVoiceParam('oh', 'decay', 0.2);
+      drums.setVoiceParam('oh', 'level', 0.3);
+
+      // Bass — JT10 acid
+      bass = new JT10Engine({ context: ctx, bpm: BPM });
+      bass._ensureVoice();
+
+      bass.setParameter('sawLevel', 0.7);
+      bass.setParameter('pulseLevel', 0.3);
+      bass.setParameter('subLevel', 0.4);
+      bass.setParameter('cutoff', 0.3);
+      bass.setParameter('resonance', 0.1);
+      bass.setParameter('envMod', 0.4);
+      bass.setParameter('decay', 0.3);
+      bass.setParameter('sustain', 0.1);
+      bass.setParameter('release', 0.7);
+      bass.setParameter('level', 0.32);
+
+      const bassNode = ctx.createScriptProcessor(1024, 0, 2);
+      bassNode.onaudioprocess = (e) => {
+        const L = e.outputBuffer.getChannelData(0);
+        const R = e.outputBuffer.getChannelData(1);
+        for (let i = 0; i < L.length; i++) {
+          const s = bass._voice ? bass._voice.processSample(bass.masterVolume) : 0;
+          L[i] = s; R[i] = s;
+        }
+      };
+      bassNode.connect(analyser);
+
+      if (ctx.state === 'suspended') await ctx.resume();
+
+      playing = true;
+
+      const stepTime = (60 / BPM) / 4;
+      let nextTime = ctx.currentTime;
+      let step = 0;
+
+      function tick() {
+        while (nextTime < ctx.currentTime + 0.1) {
+          const s = step % 16;
+          currentStep = s;
+
+          // Drums
+          if ([0, 4, 8, 12].includes(s)) drums.trigger('kick', 0.9, nextTime);
+          if ([0, 2, 4, 6, 8, 10, 12, 14].includes(s)) drums.trigger('ch', 0.45, nextTime);
+          if ([4, 12].includes(s)) drums.trigger('snare', 0.55, nextTime);
+          if (s === 14) drums.trigger('oh', 0.35, nextTime);
+
+          // Bass
+          if (active[s]) {
+            bass._voice.triggerNote(NOTES[s], 0.8, SLIDES[s] ? true : false);
+          }
+
+          nextTime += stepTime;
+          step++;
+        }
+
+        // Update pads
+        for (let i = 0; i < 16; i++) {
+          pads[i].classList.toggle('current', i === currentStep);
+        }
+
+        drawViz();
+        requestAnimationFrame(tick);
+      }
+      tick();
+    });
+
+    // Visualization
+    const freqData = new Uint8Array(1024);
+    const waveData = new Uint8Array(2048);
+    let vizPhase = 0;
+
+    function drawViz() {
+      const w = canvas.width;
+      const h = canvas.height;
+      const dpr = Math.min(devicePixelRatio, 2);
+
+      vCtx.fillStyle = '#0c0c18';
+      vCtx.fillRect(0, 0, w, h);
+
+      if (!analyser) return;
+
+      analyser.getByteFrequencyData(freqData);
+      analyser.getByteTimeDomainData(waveData);
+
+      // Frequency bars — bottom half
+      const barCount = 48;
+      const barW = w / barCount;
+      const binStep = Math.floor(freqData.length / barCount / 2);
+      for (let i = 0; i < barCount; i++) {
+        const val = freqData[i * binStep] / 255;
+        const barH = val * h * 0.6;
+        const hue = 260 + val * 40;
+        const alpha = 0.3 + val * 0.5;
+        vCtx.fillStyle = `hsla(${hue}, 40%, ${20 + val * 30}%, ${alpha})`;
+        vCtx.fillRect(
+          i * barW + 1,
+          h - barH,
+          barW - 2,
+          barH
+        );
+      }
+
+      // Waveform — center
+      vCtx.beginPath();
+      vCtx.strokeStyle = `rgba(180, 140, 100, ${0.4 + cutoff * 0.4})`;
+      vCtx.lineWidth = 2 * dpr;
+      vCtx.shadowColor = 'rgba(180, 140, 100, 0.3)';
+      vCtx.shadowBlur = 8;
+
+      const sliceW = w / waveData.length;
+      for (let i = 0; i < waveData.length; i++) {
+        const x = i * sliceW;
+        const v = waveData[i] / 128.0;
+        const y = (v * h) / 2;
+        if (i === 0) vCtx.moveTo(x, y);
+        else vCtx.lineTo(x, y);
+      }
+      vCtx.stroke();
+      vCtx.shadowBlur = 0;
+
+      // Step position indicator at bottom
+      const stepW = w / 16;
+      vCtx.fillStyle = 'rgba(180, 140, 100, 0.15)';
+      vCtx.fillRect(currentStep * stepW, h - 3 * dpr, stepW, 3 * dpr);
+
+      // Cutoff indicator line
+      const cutY = (1 - cutoff) * h;
+      vCtx.strokeStyle = 'rgba(106, 80, 144, 0.2)';
+      vCtx.lineWidth = 1;
+      vCtx.setLineDash([4, 4]);
+      vCtx.beginPath();
+      vCtx.moveTo(0, cutY);
+      vCtx.lineTo(w, cutY);
+      vCtx.stroke();
+      vCtx.setLineDash([]);
+    }
+
+    // Initial draw
+    drawViz();
+  </script>
+</body>
+</html>
