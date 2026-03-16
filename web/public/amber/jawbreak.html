@@ -131,6 +131,182 @@
 </div>
 
 <script>
+// ===== AUDIO ENGINE =====
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// ===== MUSIC — Chill puzzle groove, 105 BPM, D minor =====
+const MUSIC_BPM = 105;
+const MUSIC_STEP_MS = (60 / MUSIC_BPM) * 1000 / 4; // 16th notes
+
+// Bass: D minor root movement (D2, F2, A2, G2)
+const M_BASS = [73.42, 0, 0, 0, 0, 0, 73.42, 0, 87.31, 0, 0, 0, 0, 0, 82.41, 0];
+// Arp: triangle wave — Dm, Bb, Gm, A cycle (moodier than Level's Am)
+const M_ARP = [
+  // Bar 1: Dm — D F A
+  587.33, 0, 698.46, 0, 880, 0, 698.46, 0, 587.33, 0, 0, 880, 0, 698.46, 0, 0,
+  // Bar 2: Bb — Bb D F
+  466.16, 0, 587.33, 0, 698.46, 0, 0, 587.33, 0, 698.46, 0, 0, 587.33, 0, 466.16, 0,
+  // Bar 3: Gm — G Bb D
+  392, 0, 466.16, 0, 587.33, 0, 466.16, 0, 0, 587.33, 0, 466.16, 0, 392, 0, 0,
+  // Bar 4: A — A C# E (tension → resolve)
+  440, 0, 554.37, 0, 659.25, 0, 0, 554.37, 0, 0, 440, 0, 554.37, 0, 659.25, 0,
+];
+// Kick: half-time thump
+const M_KICK = [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0];
+// Hat: sparse, shuffled feel
+const M_HAT =  [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0];
+
+let musicPlaying = false;
+let musicInterval = null;
+let musicStep = 0;
+
+function mKick() {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gn = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(120, now);
+  osc.frequency.exponentialRampToValueAtTime(35, now + 0.1);
+  gn.gain.setValueAtTime(0.15, now);
+  gn.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+  osc.connect(gn); gn.connect(audioCtx.destination);
+  osc.start(); osc.stop(now + 0.18);
+  osc.onended = () => { osc.disconnect(); gn.disconnect(); };
+}
+
+function mHat() {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const len = Math.floor(audioCtx.sampleRate * 0.015);
+  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const hp = audioCtx.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = 9000;
+  const gn = audioCtx.createGain();
+  gn.gain.setValueAtTime(0.04, now);
+  gn.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+  src.connect(hp); hp.connect(gn); gn.connect(audioCtx.destination);
+  src.start();
+  src.onended = () => { src.disconnect(); hp.disconnect(); gn.disconnect(); };
+}
+
+function mBass(freq) {
+  if (!audioCtx || freq === 0) return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const flt = audioCtx.createBiquadFilter();
+  const gn = audioCtx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.value = freq;
+  flt.type = 'lowpass'; flt.frequency.value = 250; flt.Q.value = 4;
+  gn.gain.setValueAtTime(0.08, now);
+  gn.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+  osc.connect(flt); flt.connect(gn); gn.connect(audioCtx.destination);
+  osc.start(); osc.stop(now + 0.16);
+  osc.onended = () => { osc.disconnect(); flt.disconnect(); gn.disconnect(); };
+}
+
+function mArp(freq) {
+  if (!audioCtx || freq === 0) return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const flt = audioCtx.createBiquadFilter();
+  const gn = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  flt.type = 'lowpass'; flt.frequency.value = 2200; flt.Q.value = 1.5;
+  gn.gain.setValueAtTime(0.03, now);
+  gn.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+  osc.connect(flt); flt.connect(gn); gn.connect(audioCtx.destination);
+  osc.start(); osc.stop(now + 0.12);
+  osc.onended = () => { osc.disconnect(); flt.disconnect(); gn.disconnect(); };
+}
+
+function musicTick() {
+  if (!audioCtx || !musicPlaying) return;
+  const s16 = musicStep % 16;
+  if (M_KICK[s16]) mKick();
+  if (M_HAT[s16]) mHat();
+  mBass(M_BASS[s16]);
+  mArp(M_ARP[musicStep % M_ARP.length]);
+  musicStep++;
+}
+
+function startMusic() {
+  if (musicPlaying) return;
+  initAudio();
+  musicPlaying = true;
+  musicStep = 0;
+  musicInterval = setInterval(musicTick, MUSIC_STEP_MS);
+}
+
+function stopMusic() {
+  musicPlaying = false;
+  if (musicInterval) { clearInterval(musicInterval); musicInterval = null; }
+}
+
+// ===== COMBO SFX =====
+function playComboSfx(groupSize) {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  // Ascending chime — more notes for bigger combos
+  const baseFreq = 400;
+  const noteCount = Math.min(groupSize, 12);
+  for (let i = 0; i < noteCount; i++) {
+    const freq = baseFreq * Math.pow(1.12, i); // ~semitone steps up
+    const delay = i * 0.04;
+    const osc = audioCtx.createOscillator();
+    const gn = audioCtx.createGain();
+    osc.type = groupSize >= 10 ? 'sine' : 'triangle';
+    osc.frequency.value = freq;
+    gn.gain.setValueAtTime(0, now + delay);
+    gn.gain.linearRampToValueAtTime(0.08, now + delay + 0.01);
+    gn.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.15);
+    osc.connect(gn); gn.connect(audioCtx.destination);
+    osc.start(now + delay); osc.stop(now + delay + 0.15);
+    osc.onended = () => { osc.disconnect(); gn.disconnect(); };
+  }
+  // Big combos get a low boom
+  if (groupSize >= 8) {
+    const osc = audioCtx.createOscillator();
+    const gn = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(100, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+    gn.gain.setValueAtTime(0.12, now);
+    gn.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    osc.connect(gn); gn.connect(audioCtx.destination);
+    osc.start(); osc.stop(now + 0.3);
+    osc.onended = () => { osc.disconnect(); gn.disconnect(); };
+  }
+}
+
+function playPopSfx() {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gn = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(600, now);
+  osc.frequency.exponentialRampToValueAtTime(200, now + 0.06);
+  gn.gain.setValueAtTime(0.06, now);
+  gn.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+  osc.connect(gn); gn.connect(audioCtx.destination);
+  osc.start(); osc.stop(now + 0.08);
+  osc.onended = () => { osc.disconnect(); gn.disconnect(); };
+}
+
+// ===== GAME =====
 const COLS = 10;
 const ROWS = 15;
 const COLORS = [
@@ -324,7 +500,8 @@ canvas.addEventListener('mousemove', (e) => {
   const group = findGroup(r, c);
   if (group.length < 2) { hoveredGroup = []; previewEl.textContent = ''; draw(); return; }
   hoveredGroup = group;
-  previewEl.textContent = `${group.length} balls · ${group.length * group.length * 10} pts`;
+  const pts = group.length * (group.length - 1);
+  previewEl.textContent = `${group.length} balls · ${pts} pts`;
   draw();
 });
 
@@ -354,20 +531,28 @@ async function handleTap(e) {
   hoveredGroup = [];
   previewEl.textContent = '';
   
-  // Score
-  const pts = group.length * group.length * 10;
+  // Start music on first tap
+  if (!musicPlaying) startMusic();
+
+  // Score — classic n×(n-1) ratcheting
+  const pts = group.length * (group.length - 1);
   score += pts;
   scoreEl.textContent = score.toLocaleString();
-  
-  // Combo text
-  if (group.length >= 6) {
-    comboEl.textContent = group.length >= 15 ? 'INCREDIBLE' :
-                          group.length >= 10 ? 'MASSIVE' : 'NICE';
+
+  // Combo SFX + text
+  playComboSfx(group.length);
+  if (group.length >= 4) {
+    comboEl.textContent = group.length >= 20 ? `LEGENDARY · ${pts}` :
+                          group.length >= 15 ? `INCREDIBLE · ${pts}` :
+                          group.length >= 10 ? `MASSIVE · ${pts}` :
+                          group.length >= 6 ? `NICE · ${pts}` :
+                          `${pts} pts`;
     comboEl.className = 'show';
     setTimeout(() => comboEl.className = '', 900);
   }
   
-  // Pop animation
+  // Pop animation + sfx
+  playPopSfx();
   const now = performance.now();
   for (const [gr, gc] of group) {
     animations.push({ r: gr, c: gc, type: 'pop', startTime: now });
@@ -432,6 +617,7 @@ async function handleTap(e) {
       await sleep(1200);
     }
     
+    stopMusic();
     finalScoreEl.textContent = score.toLocaleString();
     gameOverEl.classList.add('show');
   }
@@ -451,7 +637,7 @@ function hasValidMoves() {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-document.getElementById('restart').addEventListener('click', init);
+document.getElementById('restart').addEventListener('click', () => { stopMusic(); init(); });
 window.addEventListener('resize', resize);
 init();
 </script>

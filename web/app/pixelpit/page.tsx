@@ -18,6 +18,7 @@ const labMessages = [
 ];
 
 const games = [
+  { icon: '⚫', name: 'Pop Cult', href: '/pixelpit/arcade/popcult', playable: true, date: 'Mon 3/16' },
   { icon: '⚖️', name: 'Level', href: '/pixelpit/arcade/level', playable: true, date: 'Sun 3/15' },
   { icon: '🍣', name: 'Sushi Mgr', href: '/pixelpit/arcade/sushi-manager', playable: true, date: 'Fri 3/13' },
   { icon: '🍣', name: 'Sushi', href: '/pixelpit/arcade/sushi', playable: true, date: 'Fri 3/13' },
@@ -171,6 +172,26 @@ const labItems = [
 ];
 
 const featuredGames = [
+  {
+    name: 'POP CULT',
+    tagline: 'POP BALLS. JOIN THE CULT.',
+    href: '/pixelpit/arcade/popcult',
+    icon: '⚫',
+    decorations: ['⚫', '🔴', '🔵', '🟢', '🟠', '🟣', '💥', '✨', '🫧', '💫'],
+    variant: 'explosion',
+    colors: {
+      bg: 'radial-gradient(ellipse at center, #2a2420 0%, #1a1410 50%, #0a0a08 100%)',
+      title: '#ff3366',
+      titleShadow: '0 0 20px #ff3366, 0 0 40px #e74c3c, 0 0 60px #9b59b6',
+      tagline: '#f39c12',
+      button: 'linear-gradient(135deg, #e74c3c 0%, #ff3366 50%, #9b59b6 100%)',
+      buttonShadow: '#8e1a3a',
+      glow1: 'rgba(255, 51, 102, 0.4)',
+      glow2: 'rgba(155, 89, 182, 0.3)',
+      accent1: '#ff3366',
+      accent2: '#9b59b6',
+    },
+  },
   {
     name: 'SWOOP',
     tagline: "WORLD'S FIRST ZERO-SHOT GAME",
