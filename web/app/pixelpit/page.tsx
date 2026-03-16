@@ -18,7 +18,7 @@ const labMessages = [
 ];
 
 const games = [
-  { icon: '⚫', name: 'Pop Cult', href: '/pixelpit/arcade/popcult', playable: true, date: 'Mon 3/16' },
+  { icon: '🫧', name: 'Pop Cult', href: '/pixelpit/arcade/popcult', playable: true, date: 'Mon 3/16' },
   { icon: '⚖️', name: 'Level', href: '/pixelpit/arcade/level', playable: true, date: 'Sun 3/15' },
   { icon: '🍣', name: 'Sushi Mgr', href: '/pixelpit/arcade/sushi-manager', playable: true, date: 'Fri 3/13' },
   { icon: '🍣', name: 'Sushi', href: '/pixelpit/arcade/sushi', playable: true, date: 'Fri 3/13' },
