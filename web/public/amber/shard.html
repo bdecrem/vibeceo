@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHARD</title>
+<meta property="og:title" content="SHARD">
+<meta property="og:description" content="broken things catch more light">
+<meta property="og:image" content="https://intheamber.com/amber/og/shard.png">
+<meta property="og:url" content="https://intheamber.com/amber/shard.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SHARD">
+<meta name="twitter:description" content="broken things catch more light">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/shard.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0f; }
+canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
+#hint {
+  position: fixed; bottom: 20px; left: 0; right: 0; text-align: center;
+  font-family: 'Courier New', monospace; font-size: 14px; color: rgba(200, 160, 100, 0.4);
+  pointer-events: none; transition: opacity 1.5s;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">tap to shatter</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('hint');
+
+let W, H, cx, cy;
+let shards = [];
+let lightPulses = [];
+let time = 0;
+let hintShown = true;
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cx = W / 2;
+  cy = H / 2;
+}
+
+class Shard {
+  constructor(x, y, angle, length, width, generation) {
+    this.x = x;
+    this.y = y;
+    this.angle = angle;
+    this.targetLength = length;
+    this.length = 0;
+    this.width = width;
+    this.generation = generation;
+    this.birth = time;
+    this.growSpeed = 0.3 + Math.random() * 0.4;
+    this.hue = 25 + Math.random() * 30; // amber range
+    this.sat = 50 + Math.random() * 30;
+    this.lightBase = 30 + Math.random() * 20;
+    this.facets = 3 + Math.floor(Math.random() * 3);
+    this.shimmer = Math.random() * Math.PI * 2;
+    this.shimmerSpeed = 0.01 + Math.random() * 0.02;
+    this.alive = true;
+    this.breaking = false;
+    this.breakTime = 0;
+    this.opacity = 1;
+    this.children = [];
+    this.rotSpeed = (Math.random() - 0.5) * 0.002;
+    this.baseAngle = angle;
+  }
+
+  grow() {
+    if (this.breaking) {
+      const bt = (time - this.breakTime) / 60;
+      this.opacity = Math.max(0, 1 - bt);
+      if (this.opacity <= 0) this.alive = false;
+      return;
+    }
+    if (this.length < this.targetLength) {
+      this.length += this.growSpeed * (this.targetLength - this.length) * 0.05 + 0.2;
+      if (this.length > this.targetLength) this.length = this.targetLength;
+    }
+    this.angle = this.baseAngle + Math.sin(time * 0.005 + this.shimmer) * 0.03;
+  }
+
+  draw() {
+    const shimmerVal = Math.sin(time * this.shimmerSpeed + this.shimmer);
+    const light = this.lightBase + shimmerVal * 15;
+
+    // Check if any light pulse is nearby
+    let extraLight = 0;
+    for (const pulse of lightPulses) {
+      const dx = this.x + Math.cos(this.angle) * this.length * 0.5 - pulse.x;
+      const dy = this.y + Math.sin(this.angle) * this.length * 0.5 - pulse.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const pulseRadius = pulse.radius;
+      const proximity = Math.max(0, 1 - Math.abs(dist - pulseRadius) / 80);
+      extraLight += proximity * 30 * pulse.opacity;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = this.opacity;
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+
+    // Main crystal body
+    const grad = ctx.createLinearGradient(0, 0, this.length, 0);
+    const col1 = `hsla(${this.hue}, ${this.sat}%, ${light + extraLight}%, 0.8)`;
+    const col2 = `hsla(${this.hue + 10}, ${this.sat - 10}%, ${light * 0.6 + extraLight}%, 0.4)`;
+    const col3 = `hsla(${this.hue + 20}, ${this.sat}%, ${light + extraLight + 10}%, 0.6)`;
+    grad.addColorStop(0, col1);
+    grad.addColorStop(0.5, col3);
+    grad.addColorStop(1, col2);
+
+    // Draw crystalline shape
+    ctx.beginPath();
+    const hw = this.width / 2;
+    ctx.moveTo(0, 0);
+    for (let i = 1; i <= this.facets; i++) {
+      const t = i / this.facets;
+      const wx = hw * (1 - t * 0.6) * (1 + Math.sin(t * Math.PI + this.shimmer) * 0.3);
+      const lx = this.length * t;
+      if (i % 2 === 1) {
+        ctx.lineTo(lx, -wx);
+      } else {
+        ctx.lineTo(lx, wx);
+      }
+    }
+    ctx.lineTo(this.length, 0);
+    for (let i = this.facets; i >= 1; i--) {
+      const t = i / this.facets;
+      const wx = hw * (1 - t * 0.6) * (1 + Math.sin(t * Math.PI + this.shimmer) * 0.3);
+      const lx = this.length * t;
+      if (i % 2 === 1) {
+        ctx.lineTo(lx, wx);
+      } else {
+        ctx.lineTo(lx, -wx);
+      }
+    }
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Edge highlights
+    ctx.strokeStyle = `hsla(${this.hue - 5}, ${this.sat + 20}%, ${Math.min(90, light + 25 + extraLight)}%, ${0.3 + extraLight * 0.01})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // Internal refraction lines
+    if (this.length > 15) {
+      ctx.globalAlpha = this.opacity * (0.15 + extraLight * 0.01);
+      for (let i = 1; i < this.facets; i++) {
+        const t = i / this.facets;
+        const lx = this.length * t;
+        ctx.beginPath();
+        const rw = hw * (1 - t * 0.5);
+        ctx.moveTo(lx, -rw * 0.8);
+        ctx.lineTo(lx, rw * 0.8);
+        ctx.strokeStyle = `hsla(${this.hue + 30}, 80%, ${70 + extraLight}%, 0.5)`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+
+    // Bright tip
+    if (this.length > 5) {
+      const tipGlow = ctx.createRadialGradient(this.length, 0, 0, this.length, 0, 8 + extraLight * 0.3);
+      tipGlow.addColorStop(0, `hsla(${this.hue}, 90%, ${80 + extraLight}%, ${0.4 + shimmerVal * 0.1})`);
+      tipGlow.addColorStop(1, 'transparent');
+      ctx.globalAlpha = this.opacity;
+      ctx.fillStyle = tipGlow;
+      ctx.beginPath();
+      ctx.arc(this.length, 0, 8 + extraLight * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  shatter(sx, sy) {
+    if (this.breaking) return [];
+    const tipX = this.x + Math.cos(this.angle) * this.length;
+    const tipY = this.y + Math.sin(this.angle) * this.length;
+    const dx = (this.x + tipX) / 2 - sx;
+    const dy = (this.y + tipY) / 2 - sy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist > this.length * 1.5 + 40) return [];
+
+    this.breaking = true;
+    this.breakTime = time;
+
+    // Spawn children
+    const newShards = [];
+    const count = 2 + Math.floor(Math.random() * 3);
+    const nextGen = this.generation + 1;
+    if (nextGen > 5) return newShards;
+
+    for (let i = 0; i < count; i++) {
+      const spawnT = 0.3 + Math.random() * 0.5;
+      const spawnX = this.x + Math.cos(this.angle) * this.length * spawnT;
+      const spawnY = this.y + Math.sin(this.angle) * this.length * spawnT;
+      const newAngle = this.angle + (Math.random() - 0.5) * 1.2;
+      const newLen = this.targetLength * (0.4 + Math.random() * 0.3);
+      const newWidth = this.width * (0.5 + Math.random() * 0.3);
+
+      newShards.push(new Shard(spawnX, spawnY, newAngle, newLen, newWidth, nextGen));
+    }
+    return newShards;
+  }
+}
+
+class LightPulse {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = 0;
+    this.maxRadius = Math.max(W, H) * 0.7;
+    this.opacity = 1;
+    this.birth = time;
+    this.alive = true;
+  }
+
+  update() {
+    this.radius += 3;
+    this.opacity = Math.max(0, 1 - this.radius / this.maxRadius);
+    if (this.opacity <= 0) this.alive = false;
+  }
+
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.opacity * 0.15;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.strokeStyle = `hsla(35, 80%, 70%, ${this.opacity * 0.5})`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Inner ring
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius * 0.95, 0, Math.PI * 2);
+    ctx.strokeStyle = `hsla(45, 90%, 85%, ${this.opacity * 0.3})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function seedShards() {
+  const count = 8 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.3;
+    const dist = 10 + Math.random() * 20;
+    const x = cx + Math.cos(angle) * dist;
+    const y = cy + Math.sin(angle) * dist;
+    const len = 50 + Math.random() * 120;
+    const w = 4 + Math.random() * 10;
+    shards.push(new Shard(x, y, angle, len, w, 0));
+  }
+}
+
+function handleInteraction(px, py) {
+  if (hintShown) {
+    hint.style.opacity = '0';
+    hintShown = false;
+  }
+
+  lightPulses.push(new LightPulse(px, py));
+
+  let newShards = [];
+  let shattered = 0;
+  for (const s of shards) {
+    if (!s.breaking && shattered < 5) {
+      const children = s.shatter(px, py);
+      if (children.length > 0) shattered++;
+      newShards.push(...children);
+    }
+  }
+  shards.push(...newShards);
+
+  // If we shattered things, also seed a couple new root shards from the tap point
+  if (shattered > 0) {
+    const newCount = 2 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < newCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const len = 30 + Math.random() * 80;
+      const w = 3 + Math.random() * 6;
+      shards.push(new Shard(px, py, angle, len, w, 1));
+    }
+  }
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  handleInteraction(e.clientX, e.clientY);
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (e.pressure > 0) {
+    handleInteraction(e.clientX, e.clientY);
+  }
+});
+
+function drawCenterGlow() {
+  const pulse = Math.sin(time * 0.01) * 0.1 + 0.3;
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80);
+  grad.addColorStop(0, `hsla(30, 80%, 60%, ${pulse})`);
+  grad.addColorStop(0.5, `hsla(35, 60%, 30%, ${pulse * 0.3})`);
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 80, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function draw() {
+  time++;
+  ctx.fillStyle = 'rgba(10, 10, 15, 0.15)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Dim background
+  if (time % 3 === 0) {
+    ctx.fillStyle = 'rgba(10, 10, 15, 0.02)';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  drawCenterGlow();
+
+  // Update and draw light pulses
+  for (const p of lightPulses) {
+    p.update();
+    p.draw();
+  }
+  lightPulses = lightPulses.filter(p => p.alive);
+
+  // Update and draw shards
+  for (const s of shards) {
+    s.grow();
+    s.draw();
+  }
+  shards = shards.filter(s => s.alive);
+
+  // Regrow if too few shards
+  if (shards.filter(s => !s.breaking).length < 5) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 10 + Math.random() * 30;
+    const x = cx + Math.cos(angle) * dist;
+    const y = cy + Math.sin(angle) * dist;
+    const len = 40 + Math.random() * 100;
+    const w = 3 + Math.random() * 8;
+    shards.push(new Shard(x, y, angle, len, w, 0));
+  }
+
+  requestAnimationFrame(draw);
+}
+
+window.addEventListener('resize', resize);
+resize();
+seedShards();
+draw();
+</script>
+</body>
+</html>
