@@ -86,93 +86,6 @@ const TOTAL_BARS = 72;
 
 // ── ARRANGEMENT DATA ──
 // Each section defines which voices are active and their patterns
-function getArrangement(bar) {
-  const voices = {};
-
-  // ── KICK — 4x4 from bar 9 onward, except strip (53-56) ──
-  if (bar < 9) {
-    // ACT I: No kick — intro is just hats
-  } else if (bar >= 53 && bar < 57) {
-    // STRIP: NO KICK. Tension peak.
-  } else if (bar >= 57 && bar < 65) {
-    // RETURN: kick back, slightly louder (the return IS the drop)
-    voices.kick = { steps: [0,4,8,12], velBase: 0.95, velRange: 0.03 };
-  } else {
-    // Standard 4x4 everywhere else
-    voices.kick = { steps: [0,4,8,12], velBase: 0.9, velRange: 0.05 };
-  }
-
-  // ── CH (closed hat) ──
-  if (bar < 25) {
-    // 8ths for first 24 bars
-    voices.ch = { steps: [0,2,4,6,8,10,12,14], velBase: 0.5, velRange: 0.15 };
-  } else {
-    // 16ths from ACT IV onward
-    voices.ch = {
-      steps: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
-      velBase: 0.45, velRange: 0.2
-    };
-  }
-  // Hat decay — tighter early, opens through strip, tightens on return
-  if (bar < 9) voices.ch.decay = 0.10;
-  else if (bar < 17) voices.ch.decay = 0.12;
-  else if (bar < 25) voices.ch.decay = 0.15;
-  else if (bar < 33) voices.ch.decay = 0.18;
-  else if (bar < 41) voices.ch.decay = 0.20;
-  else if (bar < 49) voices.ch.decay = 0.22;
-  else if (bar < 57) voices.ch.decay = 0.28;  // widest during strip (hats are the star)
-  else if (bar < 65) voices.ch.decay = 0.18;
-  else voices.ch.decay = 0.15;
-
-  // ── RIDE ──
-  if (bar >= 17 && bar < 53) {
-    // Present from ACT III through ACT VI, exits during strip
-    voices.ride = { steps: [0,2,4,6,8,10,12,14], velBase: 0.30, velRange: 0.08 };
-  } else if (bar >= 57 && bar < 65) {
-    // Sparse on return
-    voices.ride = { steps: [0,4,8,12], velBase: 0.25, velRange: 0.05 };
-  } else if (bar >= 65) {
-    // Full lock — ride 8ths back
-    voices.ride = { steps: [0,2,4,6,8,10,12,14], velBase: 0.28, velRange: 0.06 };
-  }
-
-  // ── OH (open hat) ──
-  if (bar >= 25 && bar < 49) {
-    voices.oh = { steps: [6,14], velBase: 0.35, velRange: 0.05 };
-  } else if (bar >= 65) {
-    // Lock section — OH returns
-    voices.oh = { steps: [6,14], velBase: 0.30, velRange: 0.05 };
-  }
-
-  // ── RIMSHOT ──
-  if (bar >= 33 && bar < 49) {
-    voices.rimshot = { steps: [3,7,11,15], velBase: 0.40, velRange: 0.08 };
-  } else if (bar >= 65) {
-    // Lock — rimshot back but sparser
-    voices.rimshot = { steps: [7,15], velBase: 0.35, velRange: 0.05 };
-  }
-
-  // ── TOMS (peak section only) ──
-  if (bar >= 41 && bar < 49) {
-    voices.lowtom = { steps: [2,10], velBase: 0.55, velRange: 0.1 };
-    voices.hitom = { steps: [5,13], velBase: 0.45, velRange: 0.1 };
-  }
-
-  // ── SNARE (return + lock) ──
-  if (bar >= 59 && bar < 65) {
-    voices.snare = { steps: [4,12], velBase: 0.65, velRange: 0.05 };
-  } else if (bar >= 65) {
-    voices.snare = { steps: [4,12], velBase: 0.7, velRange: 0.03 };
-  }
-
-  // ── CRASH (return marker) ──
-  if (bar === 57) {
-    voices.crash = { steps: [0], velBase: 0.5, velRange: 0 };
-  }
-
-  return voices;
-}
-
 // ── CANVAS ──
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
@@ -289,37 +202,106 @@ async function start() {
 
     engine.setVoiceParameter('crash', 'level', 0.5);
 
-    // Pre-render bar by bar with arrangement changes
-    const barBuffers = [];
+    // Pre-render in sections — each section gets its own pattern + multi-bar render.
+    // Avoids per-bar setPattern calls which can cause alternating-bar engine bugs.
+    const sections = [
+      // ACT I - INTRO (bars 0-7): CH 8ths only, no kick
+      { startBar: 0, bars: 8, pattern: buildSectionPattern({
+          ch: { steps: [0,2,4,6,8,10,12,14], velBase: 0.5, velRange: 0.15 }
+        }), chDecay: 0.10 },
+      // ACT II - FOUNDATION (bars 8-15): Kick 4x4 + CH 8ths
+      { startBar: 8, bars: 8, pattern: buildSectionPattern({
+          kick: { steps: [0,4,8,12], velBase: 0.9, velRange: 0.05 },
+          ch: { steps: [0,2,4,6,8,10,12,14], velBase: 0.5, velRange: 0.15 }
+        }), chDecay: 0.12 },
+      // ACT III - TEXTURE (bars 16-23): + Ride 8ths
+      { startBar: 16, bars: 8, pattern: buildSectionPattern({
+          kick: { steps: [0,4,8,12], velBase: 0.9, velRange: 0.05 },
+          ch: { steps: [0,2,4,6,8,10,12,14], velBase: 0.5, velRange: 0.15 },
+          ride: { steps: [0,2,4,6,8,10,12,14], velBase: 0.30, velRange: 0.08 }
+        }), chDecay: 0.15 },
+      // ACT IV - DRIVE (bars 24-31): CH 16ths + OH offbeats
+      { startBar: 24, bars: 8, pattern: buildSectionPattern({
+          kick: { steps: [0,4,8,12], velBase: 0.9, velRange: 0.05 },
+          ch: { steps: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], velBase: 0.45, velRange: 0.2 },
+          ride: { steps: [0,2,4,6,8,10,12,14], velBase: 0.30, velRange: 0.08 },
+          oh: { steps: [6,14], velBase: 0.35, velRange: 0.05 }
+        }), chDecay: 0.18 },
+      // ACT V - LAYERS (bars 32-39): + Rimshot
+      { startBar: 32, bars: 8, pattern: buildSectionPattern({
+          kick: { steps: [0,4,8,12], velBase: 0.9, velRange: 0.05 },
+          ch: { steps: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], velBase: 0.45, velRange: 0.2 },
+          ride: { steps: [0,2,4,6,8,10,12,14], velBase: 0.30, velRange: 0.08 },
+          oh: { steps: [6,14], velBase: 0.35, velRange: 0.05 },
+          rimshot: { steps: [3,7,11,15], velBase: 0.40, velRange: 0.08 }
+        }), chDecay: 0.20 },
+      // ACT VI - PEAK (bars 40-47): + Toms, full groove
+      { startBar: 40, bars: 8, pattern: buildSectionPattern({
+          kick: { steps: [0,4,8,12], velBase: 0.9, velRange: 0.05 },
+          ch: { steps: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], velBase: 0.45, velRange: 0.2 },
+          ride: { steps: [0,2,4,6,8,10,12,14], velBase: 0.30, velRange: 0.08 },
+          oh: { steps: [6,14], velBase: 0.35, velRange: 0.05 },
+          rimshot: { steps: [3,7,11,15], velBase: 0.40, velRange: 0.08 },
+          lowtom: { steps: [2,10], velBase: 0.55, velRange: 0.1 },
+          hitom: { steps: [5,13], velBase: 0.45, velRange: 0.1 }
+        }), chDecay: 0.22 },
+      // ACT VII - STRIP part 1 (bars 48-52): Kick + CH 16ths + ride only
+      { startBar: 48, bars: 5, pattern: buildSectionPattern({
+          kick: { steps: [0,4,8,12], velBase: 0.9, velRange: 0.05 },
+          ch: { steps: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], velBase: 0.45, velRange: 0.2 },
+          ride: { steps: [0,2,4,6,8,10,12,14], velBase: 0.28, velRange: 0.06 }
+        }), chDecay: 0.25 },
+      // ACT VII - STRIP part 2 (bars 53-56): NO KICK — tension peak
+      { startBar: 53, bars: 4, pattern: buildSectionPattern({
+          ch: { steps: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], velBase: 0.45, velRange: 0.2 },
+          ride: { steps: [0,2,4,6,8,10,12,14], velBase: 0.28, velRange: 0.06 }
+        }), chDecay: 0.28 },
+      // ACT VIII - RETURN (bars 57-58): Kick back + crash
+      { startBar: 57, bars: 2, pattern: buildSectionPattern({
+          kick: { steps: [0,4,8,12], velBase: 0.95, velRange: 0.03 },
+          ch: { steps: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], velBase: 0.45, velRange: 0.2 },
+          ride: { steps: [0,4,8,12], velBase: 0.25, velRange: 0.05 },
+          crash: { steps: [0], velBase: 0.5, velRange: 0 }
+        }), chDecay: 0.18 },
+      // ACT VIII cont (bars 59-64): + Snare
+      { startBar: 59, bars: 6, pattern: buildSectionPattern({
+          kick: { steps: [0,4,8,12], velBase: 0.95, velRange: 0.03 },
+          ch: { steps: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], velBase: 0.45, velRange: 0.2 },
+          ride: { steps: [0,4,8,12], velBase: 0.25, velRange: 0.05 },
+          snare: { steps: [4,12], velBase: 0.65, velRange: 0.05 }
+        }), chDecay: 0.18 },
+      // ACT IX - LOCK (bars 65-71): Full groove
+      { startBar: 65, bars: 7, pattern: buildSectionPattern({
+          kick: { steps: [0,4,8,12], velBase: 0.9, velRange: 0.05 },
+          ch: { steps: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], velBase: 0.45, velRange: 0.2 },
+          ride: { steps: [0,2,4,6,8,10,12,14], velBase: 0.28, velRange: 0.06 },
+          oh: { steps: [6,14], velBase: 0.30, velRange: 0.05 },
+          rimshot: { steps: [7,15], velBase: 0.35, velRange: 0.05 },
+          snare: { steps: [4,12], velBase: 0.7, velRange: 0.03 }
+        }), chDecay: 0.15 },
+    ];
 
-    for (let bar = 0; bar < TOTAL_BARS; bar++) {
-      const arr = getArrangement(bar);
-
-      // Build pattern for this bar
+    function buildSectionPattern(voices) {
       const allVoices = ['kick','snare','clap','ch','oh','ride','rimshot','lowtom','midtom','hitom','crash'];
       const pattern = {};
       for (const voiceId of allVoices) {
         pattern[voiceId] = Array.from({ length: 16 }, (_, i) => {
-          const voiceArr = arr[voiceId];
-          if (!voiceArr || !voiceArr.steps.includes(i)) {
-            return { velocity: 0, accent: false };
-          }
-          // Velocity variation — Mills' expression
-          const vel = voiceArr.velBase + (Math.random() * 2 - 1) * voiceArr.velRange;
+          const v = voices[voiceId];
+          if (!v || !v.steps.includes(i)) return { velocity: 0, accent: false };
+          const vel = v.velBase + (Math.random() * 2 - 1) * v.velRange;
           return { velocity: Math.max(0.1, Math.min(1.0, vel)), accent: false };
         });
       }
+      return pattern;
+    }
 
-      engine.setPattern(pattern);
-
-      // Hat decay per bar
-      const chDecay = arr.ch ? arr.ch.decay : 0.15;
-      const chDecayArray = Array(16).fill(chDecay);
-      // Add micro-variation to hat decay
-      const chDecayAuto = chDecayArray.map(d => d + (Math.random() * 0.04 - 0.02));
-
+    const barBuffers = [];
+    for (const sec of sections) {
+      engine.setPattern(sec.pattern);
+      // Build hat decay automation for the full section
+      const chDecayAuto = Array(16).fill(0).map(() => sec.chDecay + (Math.random() * 0.04 - 0.02));
       const buffer = await engine.renderPattern({
-        bars: 1,
+        bars: sec.bars,
         bpm: BPM,
         automation: { 'ch.decay': chDecayAuto },
       });
@@ -337,8 +319,9 @@ async function start() {
     }
 
     // Apply master fade on last 2 bars
-    const fadeStart = totalLength - (barBuffers[0].length * 2);
-    const fadeLen = barBuffers[0].length * 2;
+    const samplesPerBar = Math.round(barBuffers[0].sampleRate * (60 / BPM) * 4);
+    const fadeStart = totalLength - (samplesPerBar * 2);
+    const fadeLen = samplesPerBar * 2;
     for (let i = 0; i < fadeLen; i++) {
       const idx = fadeStart + i;
       channel[idx] *= 1.0 - (i / fadeLen);
@@ -374,16 +357,27 @@ async function start() {
       if (bar >= TOTAL_BARS) { clearInterval(timer); return; }
 
       const stepInBar = step % 16;
-      const arr = getArrangement(bar);
+
+      // Determine what's active at this bar for visuals
+      const hasKick = (bar >= 8 && bar < 53) || (bar >= 57);
+      const hasCh = true;  // always
+      const hasRide = (bar >= 16 && bar < 53) || (bar >= 57);
+      const hasOH = (bar >= 24 && bar < 48) || (bar >= 65);
+      const hasRimshot = (bar >= 32 && bar < 48) || (bar >= 65);
+      const hasToms = (bar >= 40 && bar < 48);
+      const hasSnare = (bar >= 59);
+      const hasCrash = (bar === 57);
+      const chDecay = bar < 8 ? 0.10 : bar < 16 ? 0.12 : bar < 24 ? 0.15 :
+                      bar < 32 ? 0.18 : bar < 40 ? 0.20 : bar < 48 ? 0.22 :
+                      bar < 57 ? 0.28 : 0.18;
 
       // Viz brightness ramp
-      if (bar < 24) vizBrightness = Math.min(bar / 23, 1.0);
-      else if (bar >= 46) vizBrightness = Math.max(1.0 - (bar - 46) / 2, 0);
+      if (bar < 32) vizBrightness = Math.min(bar / 31, 1.0);
+      else if (bar >= 70) vizBrightness = Math.max(1.0 - (bar - 70) / 2, 0);
 
-      // Kick visual
-      if (arr.kick && arr.kick.steps.includes(stepInBar)) {
+      // Kick visual (4x4)
+      if (hasKick && [0,4,8,12].includes(stepInBar)) {
         kickPulse = 1;
-        // Expanding ring of dots
         const count = 6;
         for (let i = 0; i < count; i++) {
           const angle = (i / count) * Math.PI * 2 + Math.random() * 0.3;
@@ -396,22 +390,24 @@ async function start() {
         }
       }
 
-      // Hat visual — scattered dots at current radius
-      if (arr.ch && arr.ch.steps.includes(stepInBar)) {
+      // Hat visual
+      const chSteps16 = bar >= 24;
+      const chActive = chSteps16 ? true : [0,2,4,6,8,10,12,14].includes(stepInBar);
+      if (hasCh && chActive) {
         const radius = 80 + (bar / TOTAL_BARS) * 150;
-        const count = arr.ch.steps.length > 8 ? 2 : 1;  // more dots for 16ths
+        const count = chSteps16 ? 2 : 1;
         for (let i = 0; i < count; i++) {
           const angle = Math.random() * Math.PI * 2;
           visuals.push(new Particle(
             cx + Math.cos(angle) * radius + (Math.random()-0.5)*20,
             cy + Math.sin(angle) * radius + (Math.random()-0.5)*20,
-            1 + arr.ch.decay * 4, 0.4 * vizBrightness, 4
+            1 + chDecay * 4, 0.4 * vizBrightness, 4
           ));
         }
       }
 
-      // Ride visual — thin line flashes
-      if (arr.ride && arr.ride.steps.includes(stepInBar)) {
+      // Ride visual
+      if (hasRide && [0,2,4,6,8,10,12,14].includes(stepInBar)) {
         const angle = (step * 0.1) % (Math.PI * 2);
         const dist = 120 + Math.random() * 60;
         visuals.push(new Particle(
@@ -421,8 +417,8 @@ async function start() {
         ));
       }
 
-      // Tom visual — larger blobs
-      if (arr.lowtom && arr.lowtom.steps.includes(stepInBar)) {
+      // Tom visuals
+      if (hasToms && [2,10].includes(stepInBar)) {
         const angle = Math.random() * Math.PI * 2;
         visuals.push(new Particle(
           cx + Math.cos(angle) * 50,
@@ -430,7 +426,7 @@ async function start() {
           4, 0.6 * vizBrightness, 2
         ));
       }
-      if (arr.hitom && arr.hitom.steps.includes(stepInBar)) {
+      if (hasToms && [5,13].includes(stepInBar)) {
         const angle = Math.random() * Math.PI * 2;
         visuals.push(new Particle(
           cx + Math.cos(angle) * 70,
@@ -439,8 +435,8 @@ async function start() {
         ));
       }
 
-      // Rimshot visual — sharp dots
-      if (arr.rimshot && arr.rimshot.steps.includes(stepInBar)) {
+      // Rimshot visual
+      if (hasRimshot && [3,7,11,15].includes(stepInBar)) {
         for (let i = 0; i < 3; i++) {
           const angle = Math.random() * Math.PI * 2;
           const dist = 90 + Math.random() * 40;
@@ -452,8 +448,8 @@ async function start() {
         }
       }
 
-      // Crash visual — burst
-      if (arr.crash && arr.crash.steps.includes(stepInBar)) {
+      // Crash visual — burst on bar 57 beat 1
+      if (hasCrash && stepInBar === 0) {
         for (let i = 0; i < 20; i++) {
           const angle = Math.random() * Math.PI * 2;
           const dist = Math.random() * 200;
