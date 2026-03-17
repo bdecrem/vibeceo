@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import VoxelHero from './components/VoxelHero';
+import { games, getGameOfTheDay, CATEGORIES, type GameCategory } from './games';
 
 const labMessages = [
   'BUBBLING...',
@@ -17,36 +18,6 @@ const labMessages = [
   'TOP SECRET',
 ];
 
-const games = [
-  { icon: '🫧', name: 'Pop Cult', href: '/pixelpit/arcade/popcult', playable: true, date: 'Mon 3/16' },
-  { icon: '⚖️', name: 'Level', href: '/pixelpit/arcade/level', playable: true, date: 'Sun 3/15' },
-  { icon: '🍣', name: 'Sushi Mgr', href: '/pixelpit/arcade/sushi-manager', playable: true, date: 'Fri 3/13' },
-  { icon: '🍣', name: 'Sushi', href: '/pixelpit/arcade/sushi', playable: true, date: 'Fri 3/13' },
-  { icon: '🎨', name: 'Flood', href: '/pixelpit/arcade/flood', playable: true, date: 'Mon 3/9' },
-  { icon: '🎯', name: 'Slingshot', href: '/pixelpit/arcade/slingshot', playable: true, date: 'Mon 3/2' },
-  { icon: '🎯', name: 'Bullseye', href: '/pixelpit/arcade/bullseye', playable: true, date: 'Sun 3/1' },
-  { icon: '💨', name: 'Dash', href: '/pixelpit/arcade/dash', playable: true, date: 'Wed 2/25' },
-  { icon: '✨', name: 'Shine', href: '/pixelpit/arcade/shine', playable: true, date: 'Mon 2/23' },
-  { icon: '✂️', name: 'Snip', href: '/pixelpit/arcade/snip', playable: true, date: 'Fri 2/20' },
-  { icon: '🧲', name: 'Clump', href: '/pixelpit/arcade/clump', playable: true, date: 'Thu 2/19' },
-  { icon: '🕳️', name: 'Devour', href: '/pixelpit/arcade/devour', playable: true, date: 'Wed 2/18' },
-  { icon: '👾', name: 'Blast', href: '/pixelpit/arcade/blast', playable: true, date: 'Tue 2/17' },
-  { icon: '🧊', name: 'Melt', href: '/pixelpit/arcade/melt', playable: true, date: 'Fri 2/13' },
-  { icon: '🧵', name: 'Threads', href: '/pixelpit/arcade/threads', playable: true, date: 'Thu 2/12' },
-  { icon: '🐦', name: 'Swoop CI', href: '/pixelpit/arcade/swoop-ci', playable: true, date: 'Wed 2/11' },
-  { icon: '🐦', name: 'Swoop', href: '/pixelpit/arcade/swoop', playable: true, date: 'Tue 2/10' },
-  { icon: '🛸', name: 'Orbit', href: '/pixelpit/arcade/orbit', playable: true, date: 'Mon 2/9' },
-  { icon: '🌀', name: 'Drop', href: '/pixelpit/arcade/drop', playable: true, date: 'Fri 2/6' },
-  { icon: '🦋', name: 'Cave Moth', href: '/pixelpit/arcade/cavemoth', playable: true, date: 'Thu 2/5' },
-  { icon: '🦇', name: 'Bat Dash', href: '/pixelpit/arcade/batdash', playable: true, date: 'Wed 2/4' },
-  { icon: '🥁', name: 'Tap Beats', href: '/pixelpit/arcade/tap-beats', playable: true, date: 'Wed 2/4' },
-  { icon: '🌱', name: 'Sprout Run', href: '/pixelpit/arcade/sprout-run', playable: true, date: 'Tue 2/3' },
-  { icon: '🐱', name: 'Cat Tower', href: '/pixelpit/arcade/cattower', playable: true, date: 'Sat 1/31' },
-  { icon: '💥', name: 'Emoji Blaster', href: '/pixelpit/arcade/emoji', playable: true, date: 'Fri 1/30' },
-  { icon: '⚡', name: 'Beam', href: '/pixelpit/arcade/beam', playable: true, date: 'Thu 1/29' },
-  // Older games
-  { icon: '🌀', name: 'Singularity', href: '/pixelpit/arcade/singularity', playable: true, date: 'Wed 1/28' },
-];
 
 const castBlurbs: Record<string, { bio: string; motto?: string }> = {
   Dither: {
@@ -586,11 +557,13 @@ function CastCarousel() {
 }
 
 function GamesGrid() {
+  const [activeCategory, setActiveCategory] = useState<GameCategory>('all');
   const [showOlder, setShowOlder] = useState(false);
+  const gameOfTheDay = getGameOfTheDay();
 
-  // Split into recent (first 6) and older games
-  const recentGames = games.slice(0, 6);
-  const olderGames = games.slice(6);
+  const filtered = activeCategory === 'all' ? games : games.filter((g) => g.category === activeCategory);
+  const recentGames = filtered.slice(0, 6);
+  const olderGames = filtered.slice(6);
 
   const baseStyle = {
     background: 'linear-gradient(135deg, rgba(255, 184, 212, 0.2) 0%, rgba(255, 105, 180, 0.15) 100%)',
@@ -603,12 +576,12 @@ function GamesGrid() {
     boxShadow: '0 0 30px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 140, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.15)',
   };
 
-  const renderGame = (game: typeof games[0], i: number, isOlder = false) => {
-    const isToday = i === 0 && !isOlder;
+  const renderGame = (game: typeof games[0]) => {
+    const isToday = game.name === gameOfTheDay.name;
     const cardStyle = isToday ? todayStyle : baseStyle;
     const textColor = isToday ? '#FFD700' : '#FFC0DB';
 
-    return game.href ? (
+    return (
       <Link
         key={game.name}
         href={game.href}
@@ -625,19 +598,40 @@ function GamesGrid() {
         <div className="text-sm font-bold" style={{ color: textColor }}>{game.name}</div>
         {game.date && <div className="text-xs mt-1" style={{ color: isToday ? 'rgba(255, 215, 0, 0.8)' : 'rgba(255, 182, 193, 0.8)' }}>{game.date}</div>}
       </Link>
-    ) : (
-      <div key={game.name} className="rounded-2xl p-4 text-center hover:scale-105 transition-all cursor-pointer" style={baseStyle}>
-        <div className="text-4xl mb-2">{game.icon}</div>
-        <div className="text-sm font-bold" style={{ color: '#FFC0DB' }}>{game.name}</div>
-      </div>
     );
   };
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Category filter tabs */}
+      <div className="flex flex-wrap justify-center gap-2 mb-8">
+        {CATEGORIES.map((cat) => {
+          const isActive = activeCategory === cat.id;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => { setActiveCategory(cat.id); setShowOlder(false); }}
+              className="px-4 py-1.5 rounded-full text-xs font-black tracking-wider transition-all hover:scale-105"
+              style={isActive ? {
+                background: 'linear-gradient(135deg, #FF6BA8 0%, #FF1493 100%)',
+                color: '#fff',
+                boxShadow: '0 0 15px rgba(255, 20, 147, 0.5)',
+                border: '2px solid #FF6BA8',
+              } : {
+                background: 'transparent',
+                color: 'rgba(255, 182, 193, 0.7)',
+                border: '2px solid rgba(255, 150, 200, 0.3)',
+              }}
+            >
+              {cat.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Main grid - recent games */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-        {recentGames.map((game, i) => renderGame(game, i))}
+        {recentGames.map((game) => renderGame(game))}
       </div>
 
       {/* Older games section */}
@@ -646,7 +640,7 @@ function GamesGrid() {
           {showOlder ? (
             <>
               <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mt-4">
-                {olderGames.map((game, i) => renderGame(game, i, true))}
+                {olderGames.map((game) => renderGame(game))}
               </div>
               <button
                 onClick={() => setShowOlder(false)}
