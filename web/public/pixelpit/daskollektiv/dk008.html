@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Das Kollektiv #008</title>
+<meta property="og:title" content="Das Kollektiv #008">
+<meta property="og:description" content="Dub techno. D minor. 118 BPM. The delay chain is the composition.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050505; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.3);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.06); z-index: 10;
+  }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.05); z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="title">DAS KOLLEKTIV #008</div>
+<div id="overlay"><button id="play-btn">▶</button></div>
+<div id="credits">DAS KOLLEKTIV · HALLMAN · JB01 + JT10 · DUB</div>
+
+<script type="module">
+import { JT10Engine } from 'https://kochi.to/jt10/dist/machines/jt10/engine.js';
+import { JB01Engine } from 'https://kochi.to/jb01/dist/machines/jb01/engine.js';
+
+const BPM = 118;
+const STEP_DUR = 60 / BPM / 4;
+// Dotted 8th delay time = 3 16th-notes = STEP_DUR * 3
+const DELAY_TIME_DOTTED_8TH = STEP_DUR * 3;
+// Quarter note delay
+const DELAY_TIME_QUARTER = STEP_DUR * 4;
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── VISUALS — concentric ripples expanding from center ──
+// Each stab or delay echo spawns a ring that expands outward
+// Representing sound propagating through space / echo chamber
+
+const rings = [];
+let vizBrightness = 0;
+
+class Ring {
+  constructor(x, y, brightness, speed) {
+    this.x = x;
+    this.y = y;
+    this.radius = 2;
+    this.alpha = brightness * 0.12;
+    this.speed = speed || (0.3 + Math.random() * 0.4);
+    this.born = performance.now();
+  }
+  update() {
+    this.radius += this.speed;
+    const age = (performance.now() - this.born) / 1000;
+    if (age > 1) this.alpha *= 0.993;
+    return this.alpha > 0.002 && this.radius < Math.max(W, H) * 0.8;
+  }
+  draw() {
+    const a = this.alpha * vizBrightness;
+    if (a < 0.002) return;
+    ctx.strokeStyle = `rgba(255,255,255,${a})`;
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+function render() {
+  requestAnimationFrame(render);
+  // Very slow fade — rings accumulate into a fog
+  ctx.fillStyle = 'rgba(5,5,5,0.008)';
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = rings.length - 1; i >= 0; i--) {
+    if (rings[i].update()) rings[i].draw(); else rings.splice(i, 1);
+  }
+}
+render();
+
+// ── ARRANGEMENT ──
+// 80 bars at 118 BPM (~4:04)
+//
+// Dub techno — delay chains generate complexity from simplicity
+//
+// VOID (0-7):         Kick alone. Soft, distant. Setting the pulse.
+// EMERGE (8-15):      Stab enters. Delay chain building up. No hats yet.
+// DEPTH (16-31):      Hats enter (sparse offbeats). Clap on 4,12 (quiet, reverbed).
+//                     Sub bass enters bar 20. Delay chains fully developed.
+// IMMERSE (32-47):    Peak. Everything present. Delay filter slowly opens.
+//                     Rimshot-style clap on [3,11]. OH on [6,14].
+// DISSOLVE (48-63):   Elements drop out one by one. Sub first, then hats.
+//                     Stab becomes sparser. Delay tails ring longer (wetter).
+// ECHO (64-79):       Just kick and delay tails. Stab hits once every 4 bars.
+//                     The echoes ARE the music. Fades to nothing.
+
+const TOTAL_BARS = 80;
+
+function getSection(bar) {
+  if (bar < 8) return 'void';
+  if (bar < 16) return 'emerge';
+  if (bar < 32) return 'depth';
+  if (bar < 48) return 'immerse';
+  if (bar < 64) return 'dissolve';
+  return 'echo';
+}
+
+// Stab pattern — D minor chord stab. Since JT10 is mono, we play
+// the root (D3) as a percussive stab. The delay chain creates harmony.
+// Sparse: only a few hits per bar, letting delay fill the space.
+function getStabPattern(section, bar) {
+  // Returns array of step indices where stab should fire
+  if (section === 'void') return [];
+  if (section === 'emerge') return [0, 6];                    // sparse — two per bar
+  if (section === 'depth') return [0, 3, 6, 10];              // building
+  if (section === 'immerse') return [0, 3, 6, 10, 14];        // fullest
+  if (section === 'dissolve') {
+    const progress = (bar - 48) / 15;
+    if (progress < 0.5) return [0, 6, 10];                    // thinning
+    return [0, 6];                                             // sparse
+  }
+  // echo — one stab every 4 bars
+  return (bar % 4 === 0) ? [0] : [];
+}
+
+// Stab notes — mostly D3 with occasional F3 (minor 3rd) and A3 (5th)
+function getStabNote(stepInBar) {
+  if (stepInBar === 3) return 'F3';   // minor 3rd on offbeat
+  if (stepInBar === 10) return 'A3';  // 5th
+  if (stepInBar === 14) return 'F3';  // minor 3rd again
+  return 'D3';                         // root
+}
+
+// Sub bass — D1, very simple
+function shouldPlaySub(section, bar, stepInBar) {
+  if (section === 'void' || section === 'emerge') return false;
+  if (section === 'depth' && bar < 20) return false;
+  if (section === 'dissolve' && bar > 55) return false;
+  if (section === 'echo') return false;
+  // Play on beat 1 only, sustains
+  return stepInBar === 0;
+}
+
+function getKickPattern(section, bar) {
+  if (section === 'echo' && bar >= 76) return [];  // kick drops last 4 bars
+  return [0, 4, 8, 12];  // always 4x4, soft
+}
+
+function getHatPattern(section) {
+  if (section === 'void' || section === 'emerge') return [];
+  if (section === 'echo') return [];
+  if (section === 'dissolve') return [6];  // one ghost hat
+  return [2, 6, 10, 14];  // offbeat 8ths
+}
+
+function getClap(section) {
+  if (section === 'immerse') return [4, 12];
+  if (section === 'depth') return [4];
+  return [];
+}
+
+function getOH(section) {
+  if (section === 'immerse') return [14];
+  return [];
+}
+
+// Delay filter cutoff — opens slowly during peak
+function getDelayFilterCutoff(bar) {
+  const s = getSection(bar);
+  if (s === 'void') return 1500;
+  if (s === 'emerge') return 1500 + (bar - 8) / 7 * 500;       // 1500→2000
+  if (s === 'depth') return 2000 + (bar - 16) / 15 * 1000;      // 2000→3000
+  if (s === 'immerse') return 3000 + (bar - 32) / 15 * 1500;    // 3000→4500
+  if (s === 'dissolve') return 4500 - (bar - 48) / 15 * 2500;   // 4500→2000
+  return 2000 - (bar - 64) / 15 * 800;                           // 2000→1200
+}
+
+// Delay feedback — increases during peak, lots during echo
+function getDelayFeedback(bar) {
+  const s = getSection(bar);
+  if (s === 'void') return 0.75;
+  if (s === 'emerge') return 0.78;
+  if (s === 'depth') return 0.82;
+  if (s === 'immerse') return 0.85 + (bar - 32) / 15 * 0.05;   // 0.85→0.90
+  if (s === 'dissolve') return 0.90;                              // keep high — tails ring
+  return 0.88;
+}
+
+// Reverb wet amount
+function getReverbWet(bar) {
+  const s = getSection(bar);
+  if (s === 'void') return 0.3;
+  if (s === 'emerge') return 0.4;
+  if (s === 'depth') return 0.5;
+  if (s === 'immerse') return 0.55;
+  if (s === 'dissolve') return 0.65;
+  return 0.75;  // echo — very wet, spacious
+}
+
+async function start() {
+  const actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === 'suspended') await actx.resume();
+
+  const masterGain = actx.createGain();
+  masterGain.gain.value = 0.9;
+  masterGain.connect(actx.destination);
+
+  // ── REVERB (long tail — 6s, dub techno cavernous) ──
+  function createReverb(time, decay, hpFreq) {
+    const sr = actx.sampleRate;
+    const len = sr * time;
+    const ir = actx.createBuffer(2, len, sr);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch);
+      for (let i = 0; i < len; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      }
+    }
+    const conv = actx.createConvolver();
+    conv.buffer = ir;
+    const hp = actx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = hpFreq;
+    conv.connect(hp);
+    return { input: conv, output: hp };
+  }
+
+  const mainReverb = createReverb(6.0, 1.5, 80);
+  const reverbDry = actx.createGain(); reverbDry.gain.value = 0.55;
+  const reverbWet = actx.createGain(); reverbWet.gain.value = 0.45;
+  mainReverb.output.connect(reverbWet);
+  reverbDry.connect(masterGain);
+  reverbWet.connect(masterGain);
+
+  // ── DELAY CHAIN (the heart of dub techno) ──
+  // Dotted 8th ping-pong delay with LP filter in feedback loop
+
+  // Left delay (dotted 8th)
+  const delayL = actx.createDelay(2.0);
+  delayL.delayTime.value = DELAY_TIME_DOTTED_8TH;
+
+  // Right delay (quarter note — different time for stereo spread)
+  const delayR = actx.createDelay(2.0);
+  delayR.delayTime.value = DELAY_TIME_QUARTER;
+
+  // Feedback gains
+  const fbGainL = actx.createGain(); fbGainL.gain.value = 0.82;
+  const fbGainR = actx.createGain(); fbGainR.gain.value = 0.80;
+
+  // LP filter IN the feedback loop — THE dub techno sound
+  const fbFilterL = actx.createBiquadFilter();
+  fbFilterL.type = 'lowpass';
+  fbFilterL.frequency.value = 2500;
+  fbFilterL.Q.value = 0.7;
+
+  const fbFilterR = actx.createBiquadFilter();
+  fbFilterR.type = 'lowpass';
+  fbFilterR.frequency.value = 2500;
+  fbFilterR.Q.value = 0.7;
+
+  // Delay output gains (for mixing)
+  const delayOutL = actx.createGain(); delayOutL.gain.value = 0.6;
+  const delayOutR = actx.createGain(); delayOutR.gain.value = 0.6;
+
+  // Stereo merger for delay
+  const delayMerger = actx.createChannelMerger(2);
+
+  // Wire up ping-pong:
+  // Input → delayL → fbFilterL → fbGainL → delayR (cross-feed)
+  // Input → delayR → fbFilterR → fbGainR → delayL (cross-feed)
+  delayL.connect(fbFilterL);
+  fbFilterL.connect(fbGainL);
+  fbGainL.connect(delayR);  // ping to right
+
+  delayR.connect(fbFilterR);
+  fbFilterR.connect(fbGainR);
+  fbGainR.connect(delayL);  // pong to left
+
+  // Delay outputs to stereo
+  delayL.connect(delayOutL);
+  delayR.connect(delayOutR);
+  delayOutL.connect(delayMerger, 0, 0);  // left channel
+  delayOutR.connect(delayMerger, 0, 1);  // right channel
+  delayMerger.connect(reverbDry);         // delay → dry bus
+  delayMerger.connect(mainReverb.input);  // delay → reverb too
+
+  // Delay send (stab feeds into this)
+  const delaySend = actx.createGain();
+  delaySend.gain.value = 0.7;
+  delaySend.connect(delayL);
+  delaySend.connect(delayR);
+
+  // ── JB01 DRUMS ──
+  const drums = new JB01Engine({ context: actx });
+
+  // Kick: soft, round — "heartbeat in the distance"
+  drums.setVoiceParam('kick', 'decay', 0.4);
+  drums.setVoiceParam('kick', 'tune', -0.3);   // tuned low
+  drums.setVoiceParam('kick', 'attack', 0.35);  // soft attack — no click
+  drums.setVoiceParam('kick', 'level', 0.55);   // quiet — not the star
+
+  // CH: wispy, high-passed feel
+  drums.setVoiceParam('ch', 'decay', 0.08);     // very short
+  drums.setVoiceParam('ch', 'level', 0.22);     // barely there
+  drums.setVoiceParam('ch', 'tone', 0.5);
+
+  // OH: textural wash
+  drums.setVoiceParam('oh', 'decay', 0.25);
+  drums.setVoiceParam('oh', 'level', 0.15);
+
+  // Clap: quiet, reverb-drenched (will route through reverb)
+  drums.setVoiceParam('clap', 'decay', 0.3);
+  drums.setVoiceParam('clap', 'level', 0.2);
+
+  // Drums → dry + reverb
+  const drumGain = actx.createGain();
+  drumGain.gain.value = 1.0;
+  drums.connectOutput(drumGain);
+
+  const drumDry = actx.createGain(); drumDry.gain.value = 0.7;
+  const drumToReverb = actx.createGain(); drumToReverb.gain.value = 0.3;
+  drumGain.connect(drumDry);
+  drumGain.connect(drumToReverb);
+  drumDry.connect(masterGain);
+  drumToReverb.connect(mainReverb.input);
+
+  // Drums also get a bit of delay (hats through delay chain)
+  const drumToDelay = actx.createGain();
+  drumToDelay.gain.value = 0.15;  // subtle
+  drumGain.connect(drumToDelay);
+  drumToDelay.connect(delaySend);
+
+  // ── JT10 STAB ──
+  const stab = new JT10Engine({ context: actx });
+
+  // Percussive chord stab — very short decay, bright attack
+  // The delay chain creates the harmonic cloud
+  stab.setParameter('sawLevel', 0.65);
+  stab.setParameter('pulseLevel', 0.35);
+  stab.setParameter('pulseWidth', 0.45);
+  stab.setParameter('subLevel', 0.0);       // no sub — bass comes from separate voice
+  stab.setParameter('cutoff', 0.25);        // moderate — delay filter will shape it
+  stab.setParameter('resonance', 0.0);
+  stab.setParameter('envMod', 0.55);        // bright attack, dark tail
+  stab.setParameter('attack', 0.005);       // instant
+  stab.setParameter('decay', 0.08);         // VERY short — percussive tick
+  stab.setParameter('sustain', 0.0);        // no sustain — the delay IS the sustain
+  stab.setParameter('release', 0.04);
+  stab.setParameter('filterAttack', 0.003);
+  stab.setParameter('filterDecay', 0.06);
+  stab.setParameter('filterSustain', 0.0);
+  stab.setParameter('filterRelease', 0.03);
+  stab.setParameter('glideTime', 0.0);      // no glide — staccato
+  stab.masterVolume = 0.4;
+
+  // Route stab: dry (quiet) + delay send (main) + reverb
+  // First, trigger a silent note to initialize the script node
+  await stab.playNote('D2', 0.001, false);
+  if (stab._scriptNode) {
+    stab._scriptNode.disconnect();
+    const stabDry = actx.createGain(); stabDry.gain.value = 0.25;  // dry stab is quiet
+    stab._scriptNode.connect(stabDry);
+    stabDry.connect(reverbDry);
+    stab._scriptNode.connect(delaySend);    // main signal → delay chain
+    stab._scriptNode.connect(mainReverb.input);  // also direct to reverb
+  }
+
+  // ── JT10 SUB BASS (separate instance) ──
+  const sub = new JT10Engine({ context: actx });
+
+  // Deep sub — sine-like, minimal harmonic content
+  sub.setParameter('sawLevel', 0.0);
+  sub.setParameter('pulseLevel', 0.0);
+  sub.setParameter('subLevel', 0.8);        // almost all sub
+  sub.setParameter('subMode', 1);            // -1 octave
+  sub.setParameter('cutoff', 0.06);          // very dark
+  sub.setParameter('resonance', 0.0);
+  sub.setParameter('envMod', 0.1);
+  sub.setParameter('attack', 0.15);          // slow swell
+  sub.setParameter('decay', 0.7);
+  sub.setParameter('sustain', 0.6);
+  sub.setParameter('release', 0.5);
+  sub.setParameter('filterAttack', 0.1);
+  sub.setParameter('filterDecay', 0.6);
+  sub.setParameter('filterSustain', 0.4);
+  sub.setParameter('filterRelease', 0.4);
+  sub.masterVolume = 0.2;
+
+  await sub.playNote('D1', 0.001, false);
+  if (sub._scriptNode) {
+    sub._scriptNode.disconnect();
+    const subGain = actx.createGain(); subGain.gain.value = 1.0;
+    sub._scriptNode.connect(subGain);
+    subGain.connect(masterGain);  // sub stays mono/dry — no delay, no reverb
+  }
+
+  // ── NOISE TEXTURE (vinyl crackle / hiss) ──
+  const noiseLen = actx.sampleRate * 2;
+  const noiseBuf = actx.createBuffer(1, noiseLen, actx.sampleRate);
+  const noiseData = noiseBuf.getChannelData(0);
+  for (let i = 0; i < noiseLen; i++) {
+    noiseData[i] = (Math.random() * 2 - 1) * 0.015;  // very quiet
+  }
+  const noiseNode = actx.createBufferSource();
+  noiseNode.buffer = noiseBuf;
+  noiseNode.loop = true;
+  const noiseFilter = actx.createBiquadFilter();
+  noiseFilter.type = 'bandpass';
+  noiseFilter.frequency.value = 4000;
+  noiseFilter.Q.value = 0.3;
+  const noiseGain = actx.createGain();
+  noiseGain.gain.value = 0.4;
+  noiseNode.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(masterGain);
+  noiseNode.start();
+
+  // ── SEQUENCER ──
+  let step = 0;
+  vizBrightness = 0;
+
+  setInterval(() => {
+    const bar = Math.floor(step / 16);
+    const stepInBar = step % 16;
+
+    if (bar >= TOTAL_BARS) {
+      // Fade noise out
+      noiseGain.gain.linearRampToValueAtTime(0, actx.currentTime + 3);
+      return;
+    }
+
+    const section = getSection(bar);
+
+    // Update delay chain parameters
+    const filterCutoff = getDelayFilterCutoff(bar);
+    const feedback = getDelayFeedback(bar);
+    fbFilterL.frequency.value = filterCutoff;
+    fbFilterR.frequency.value = filterCutoff;
+    fbGainL.gain.value = feedback;
+    fbGainR.gain.value = feedback * 0.97;  // slightly less on right
+
+    // Update reverb wet
+    const wet = getReverbWet(bar);
+    reverbWet.gain.value = wet;
+    reverbDry.gain.value = 1.0 - wet * 0.5;
+
+    // Viz brightness
+    if (bar < 32) vizBrightness = Math.min(bar / 31, 1.0);
+    else if (bar >= 64) vizBrightness = Math.max(1.0 - (bar - 64) / 15, 0);
+
+    // ── KICK ──
+    const kickSteps = getKickPattern(section, bar);
+    if (kickSteps.includes(stepInBar)) {
+      const vel = 0.55 + Math.random() * 0.05;
+      drums.trigger('kick', vel);
+
+      // Subtle central ring
+      rings.push(new Ring(cx, cy, 0.5, 0.2));
+    }
+
+    // ── HATS ──
+    const hatSteps = getHatPattern(section);
+    if (hatSteps.includes(stepInBar)) {
+      drums.trigger('ch', 0.25 + Math.random() * 0.08);
+    }
+
+    // ── OH ──
+    const ohSteps = getOH(section);
+    if (ohSteps.includes(stepInBar)) {
+      drums.trigger('oh', 0.18 + Math.random() * 0.05);
+    }
+
+    // ── CLAP (as rimshot substitute) ──
+    const clapSteps = getClap(section);
+    if (clapSteps.includes(stepInBar)) {
+      drums.trigger('clap', 0.2 + Math.random() * 0.05);
+    }
+
+    // ── STAB ──
+    const stabSteps = getStabPattern(section, bar);
+    if (stabSteps.includes(stepInBar)) {
+      const note = getStabNote(stepInBar);
+      const vel = (stepInBar === 0) ? 0.6 : 0.4;  // accent on beat 1
+      stab.playNote(note, vel, false);
+
+      // Ring from offset position — delay echoes spread
+      const angle = (stepInBar / 16) * Math.PI * 2;
+      const dist = 60 + Math.random() * 40;
+      rings.push(new Ring(
+        cx + Math.cos(angle) * dist,
+        cy + Math.sin(angle) * dist,
+        0.8,
+        0.5
+      ));
+
+      // Spawn ghost rings for delay echoes (visual representation)
+      for (let echo = 1; echo <= 3; echo++) {
+        setTimeout(() => {
+          const ea = angle + echo * 0.3;
+          const ed = dist + echo * 30;
+          rings.push(new Ring(
+            cx + Math.cos(ea) * ed,
+            cy + Math.sin(ea) * ed,
+            0.4 / echo,
+            0.3
+          ));
+        }, DELAY_TIME_DOTTED_8TH * 1000 * echo);
+      }
+    }
+
+    // ── SUB BASS ──
+    if (shouldPlaySub(section, bar, stepInBar)) {
+      sub.playNote('D2', 0.35, false);
+    }
+
+    // ── MASTER FADE last 4 bars ──
+    if (bar >= 76) {
+      const fadeProgress = (bar - 76 + stepInBar / 16) / 4;
+      masterGain.gain.value = Math.max(0.9 * (1.0 - fadeProgress), 0);
+      noiseGain.gain.value = Math.max(0.4 * (1.0 - fadeProgress), 0);
+    }
+
+    step++;
+  }, STEP_DUR * 1000);
+}
+
+// ── PLAY ──
+document.getElementById('play-btn').addEventListener('click', async () => {
+  document.getElementById('play-btn').classList.add('playing');
+  await start();
+});
+</script>
+</body>
+</html>
