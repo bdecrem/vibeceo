@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 type Block = {
   id: string;
@@ -67,6 +68,23 @@ function BlockRenderer({ block }: { block: Block }) {
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const doc = await fetchDocument(params.slug);
+  if (!doc) return { title: "Document not found" };
+  return {
+    title: doc.title,
+    description: `Read "${doc.title}" on notabl`,
+    openGraph: {
+      title: doc.title,
+      description: `Read "${doc.title}" on notabl`,
+    },
+  };
 }
 
 export default async function SharedDocumentPage({
