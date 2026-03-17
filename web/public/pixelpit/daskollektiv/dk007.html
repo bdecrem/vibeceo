@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Das Kollektiv #007</title>
+<meta property="og:title" content="Das Kollektiv #007">
+<meta property="og:description" content="Consumed. 116 BPM. F minor. The silence between notes is the composition.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Das Kollektiv #007">
+<meta name="twitter:description" content="Consumed. The silence between notes is the composition.">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050505; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.3);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.06); z-index: 10;
+  }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.05); z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="title">DAS KOLLEKTIV #007</div>
+<div id="overlay"><button id="play-btn">▶</button></div>
+<div id="credits">DAS KOLLEKTIV · HALLMAN · JB01 + JT10</div>
+
+<script type="module">
+import { JT10Engine } from 'https://kochi.to/jt10/dist/machines/jt10/engine.js';
+import { JB01Engine } from 'https://kochi.to/jb01/dist/machines/jb01/engine.js';
+
+const BPM = 116;
+const STEP_DUR = 60 / BPM / 4;
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── VISUALS — fog/mist that barely moves ──
+// Soft circles that bloom and fade extremely slowly
+// Representing the negative space — the emptiness IS the visual
+
+const mists = [];
+let globalAlpha = 0;  // overall brightness, rises slowly
+
+class Mist {
+  constructor(x, y, intensity) {
+    this.x = x;
+    this.y = y;
+    this.size = 40 + Math.random() * 120;
+    this.alpha = intensity * 0.015;
+    this.maxAlpha = this.alpha;
+    this.growRate = 0.08 + Math.random() * 0.12;
+    this.born = performance.now();
+  }
+  update() {
+    this.size += this.growRate;
+    // Very slow fade
+    const age = (performance.now() - this.born) / 1000;
+    if (age > 3) this.alpha *= 0.999;
+    return this.alpha > 0.001 && this.size < Math.max(W, H);
+  }
+  draw() {
+    const a = this.alpha * globalAlpha;
+    if (a < 0.001) return;
+    const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+    g.addColorStop(0, `rgba(255,255,255,${a})`);
+    g.addColorStop(0.5, `rgba(255,255,255,${a * 0.3})`);
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function render() {
+  requestAnimationFrame(render);
+
+  // Barely fade — fog accumulates
+  ctx.fillStyle = 'rgba(5,5,5,0.003)';
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = mists.length - 1; i >= 0; i--) {
+    if (mists[i].update()) mists[i].draw(); else mists.splice(i, 1);
+  }
+}
+render();
+
+// ── ARRANGEMENT ──
+// 96 bars at 116 BPM (~199 seconds, ~3:19)
+//
+// "Consumed" era Plastikman — negative space IS the music
+//
+// VOID (0-15):       Bass alone. No kick. Filter almost closed.
+//                    Notes appear every 2-4 steps. Mostly silence.
+// PULSE (16-31):     Kick enters — half-time (steps 0, 8 only).
+//                    Bass gets slightly more active. Filter still dark.
+// CONVERGE (32-47):  Kick goes 4x4. Bass filter opening very slowly.
+//                    One hat enters on step 8 only (one per bar).
+// SURFACE (48-63):   Peak. Filter at widest. Hats on offbeats.
+//                    Still minimal — no fills, no breaks, just presence.
+// DISSOLVE (64-79):  Kick goes back to half-time. Filter closing.
+//                    Notes start dropping out (probability 1.0 → 0.3).
+// VOID 2 (80-95):    Kick gone. Bass alone again, sparser than before.
+//                    Filter almost closed. Fades to nothing.
+
+const TOTAL_BARS = 96;
+const TOTAL_STEPS = TOTAL_BARS * 16;
+
+function getSection(bar) {
+  if (bar < 16) return 'void';
+  if (bar < 32) return 'pulse';
+  if (bar < 48) return 'converge';
+  if (bar < 64) return 'surface';
+  if (bar < 80) return 'dissolve';
+  return 'void2';
+}
+
+// Kick patterns per section
+function getKickSteps(section) {
+  if (section === 'void' || section === 'void2') return [];           // no kick
+  if (section === 'pulse') return [0, 8];                              // half-time
+  if (section === 'dissolve') return [0, 8];                           // half-time return
+  return [0, 4, 8, 12];                                               // 4x4
+}
+
+function getHatSteps(section) {
+  if (section === 'converge') return [8];                              // one hat per bar
+  if (section === 'surface') return [2, 6, 10, 14];                   // offbeats
+  if (section === 'dissolve') return [6];                              // one ghost hat
+  return [];                                                           // silence
+}
+
+// Bass filter — glacially slow
+function getBassFilter(bar) {
+  const s = getSection(bar);
+  if (s === 'void') return 0.04 + (bar / 15) * 0.02;                 // 0.04 → 0.06
+  if (s === 'pulse') return 0.06 + ((bar - 16) / 15) * 0.04;         // 0.06 → 0.10
+  if (s === 'converge') return 0.10 + ((bar - 32) / 15) * 0.10;      // 0.10 → 0.20
+  if (s === 'surface') return 0.20 + ((bar - 48) / 15) * 0.10;       // 0.20 → 0.30
+  if (s === 'dissolve') return 0.30 - ((bar - 64) / 15) * 0.20;      // 0.30 → 0.10
+  return 0.10 - ((bar - 80) / 15) * 0.08;                            // 0.10 → 0.02
+}
+
+// Note probability — controls sparseness
+function getNoteProbability(bar) {
+  const s = getSection(bar);
+  if (s === 'void') return 0.4;                                       // very sparse
+  if (s === 'pulse') return 0.5 + ((bar - 16) / 15) * 0.2;           // 0.5 → 0.7
+  if (s === 'converge') return 0.7 + ((bar - 32) / 15) * 0.2;        // 0.7 → 0.9
+  if (s === 'surface') return 0.9;                                     // most active (still gaps)
+  if (s === 'dissolve') return 0.9 - ((bar - 64) / 15) * 0.6;        // 0.9 → 0.3
+  return 0.3 - ((bar - 80) / 15) * 0.2;                               // 0.3 → 0.1
+}
+
+// Reverb
+function createReverb(actx, time, decay, hpFreq) {
+  const sr = actx.sampleRate;
+  const len = sr * time;
+  const ir = actx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+  }
+  const conv = actx.createConvolver();
+  conv.buffer = ir;
+  const hp = actx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = hpFreq;
+  conv.connect(hp);
+  return { input: conv, output: hp };
+}
+
+// Bass pattern — F minor. Even sparser than DK006.
+// Mostly F1 with occasional Ab1 (minor 3rd) and C2 (5th).
+// Many rests. The silence between notes IS the composition.
+const bassPattern = [
+  { note: 'F1',  gate: true,  accent: true,  slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: true,  accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'Ab1', gate: true,  accent: false, slide: true  },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: true,  accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+];
+
+// Variation: even less. The 1% rule — delete a note.
+const bassPatternB = [
+  { note: 'F1',  gate: true,  accent: true,  slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },  // deleted step 5
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'C2',  gate: true,  accent: false, slide: false },  // 5th instead of rest
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },  // deleted Ab1
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: true,  accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+  { note: 'F1',  gate: false, accent: false, slide: false },
+];
+
+function getBassForBar(bar) {
+  return (Math.floor(bar / 8) % 2 === 0) ? bassPattern : bassPatternB;
+}
+
+async function start() {
+  const actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === 'suspended') await actx.resume();
+
+  const masterGain = actx.createGain();
+  masterGain.gain.value = 1.0;
+  masterGain.connect(actx.destination);
+
+  // ── JB01 DRUMS ──
+  const drums = new JB01Engine({ context: actx });
+
+  // Kick: deeper and longer than DK006 — more weight, less punch
+  drums.setVoiceParam('kick', 'decay', 0.35);
+  drums.setVoiceParam('kick', 'tune', -0.25);    // tuned lower
+  drums.setVoiceParam('kick', 'attack', 0.45);   // softer attack
+  drums.setVoiceParam('kick', 'level', 0.7);
+
+  // Hats: barely there
+  drums.setVoiceParam('ch', 'decay', 0.1);
+  drums.setVoiceParam('ch', 'level', 0.25);
+  drums.setVoiceParam('ch', 'tone', 0.35);       // darker
+
+  // Drums: more reverb than DK006 — spacious
+  const drumGain = actx.createGain();
+  drumGain.gain.value = 1.0;
+  drums.connectOutput(drumGain);
+
+  const drumVerb = createReverb(actx, 4.5, 1.8, 150);
+  const drumDry = actx.createGain(); drumDry.gain.value = 0.65;
+  const drumWet = actx.createGain(); drumWet.gain.value = 0.35;
+  drumVerb.output.connect(drumWet);
+  drumGain.connect(drumDry);
+  drumGain.connect(drumVerb.input);
+  drumDry.connect(masterGain);
+  drumWet.connect(masterGain);
+
+  // ── JT10 BASS ──
+  const bass = new JT10Engine({ context: actx });
+
+  // Deeper, darker, more sub-heavy than DK006
+  bass.setParameter('sawLevel', 0.5);       // less saw — darker
+  bass.setParameter('pulseLevel', 0.0);
+  bass.setParameter('subLevel', 0.55);      // heavy sub
+  bass.setParameter('subMode', 1);
+  bass.setParameter('cutoff', 0.04);        // starts nearly closed
+  bass.setParameter('resonance', 0.0);
+  bass.setParameter('envMod', 0.4);         // less envMod — smoother
+  bass.setParameter('keyTrack', 0.1);
+  bass.setParameter('attack', 0.05);        // slower attack — notes swell slightly
+  bass.setParameter('decay', 0.5);          // longer decay — notes ring
+  bass.setParameter('sustain', 0.15);
+  bass.setParameter('release', 0.6);        // long release into reverb
+  bass.setParameter('filterAttack', 0.03);
+  bass.setParameter('filterDecay', 0.45);
+  bass.setParameter('filterSustain', 0.08);
+  bass.setParameter('filterRelease', 0.4);
+  bass.setParameter('glideTime', 0.3);      // long glide — liquid
+  bass.setParameter('lfoRate', 0.02);        // very slow wobble
+  bass.setParameter('lfoToFilter', 0.02);
+  bass.masterVolume = 0.25;
+
+  // Bass reverb: MUCH longer than DK006 — cavernous
+  const bassVerb = createReverb(actx, 7.0, 1.5, 70);
+  const bassDry = actx.createGain(); bassDry.gain.value = 0.40;
+  const bassWet = actx.createGain(); bassWet.gain.value = 0.60;  // 60% wet — deep
+  bassVerb.output.connect(bassWet);
+  bassDry.connect(masterGain);
+  bassWet.connect(masterGain);
+
+  await bass.playNote('F0', 0.001, false);
+  if (bass._scriptNode) {
+    bass._scriptNode.disconnect();
+    bass._scriptNode.connect(bassDry);
+    bass._scriptNode.connect(bassVerb.input);
+  }
+
+  // ── SEQUENCER ──
+  let step = 0;
+  globalAlpha = 0;
+
+  setInterval(() => {
+    const bar = Math.floor(step / 16);
+    const stepInBar = step % 16;
+
+    if (bar >= TOTAL_BARS) {
+      step = 0;
+      return;
+    }
+
+    const section = getSection(bar);
+    const cutoff = getBassFilter(bar);
+    const prob = getNoteProbability(bar);
+    const kickSteps = getKickSteps(section);
+    const hatSteps = getHatSteps(section);
+
+    // Update filter
+    bass.setParameter('cutoff', cutoff);
+
+    // Global viz brightness — rises slowly over whole track
+    if (bar < 48) {
+      globalAlpha = Math.min(bar / 47, 1.0);
+    } else if (bar >= 80) {
+      globalAlpha = Math.max(1.0 - (bar - 80) / 15, 0);
+    }
+
+    // ── KICK ──
+    if (kickSteps.includes(stepInBar)) {
+      const vel = 0.65 + Math.random() * 0.05;
+      drums.trigger('kick', vel);
+
+      // Visual: soft central bloom
+      mists.push(new Mist(
+        cx + (Math.random() - 0.5) * 30,
+        cy + (Math.random() - 0.5) * 30,
+        0.8
+      ));
+    }
+
+    // ── HATS ──
+    if (hatSteps.includes(stepInBar)) {
+      drums.trigger('ch', 0.3 + Math.random() * 0.1);
+    }
+
+    // ── BASS ──
+    const pattern = getBassForBar(bar);
+    const s = pattern[stepInBar];
+    if (s.gate && Math.random() < prob) {
+      const vel = s.accent ? 0.55 : 0.35;  // quieter than DK006
+      bass.playNote(s.note, vel, s.slide);
+
+      // Visual: mist bloom offset from center
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 50 + cutoff * 300;
+      mists.push(new Mist(
+        cx + Math.cos(angle) * dist,
+        cy + Math.sin(angle) * dist,
+        cutoff * 3
+      ));
+    }
+
+    // ── MASTER FADE last 4 bars ──
+    if (bar >= 92) {
+      const fadeProgress = (bar - 92 + stepInBar / 16) / 4;
+      masterGain.gain.value = Math.max(1.0 - fadeProgress, 0);
+    }
+
+    step++;
+  }, STEP_DUR * 1000);
+}
+
+// ── PLAY ──
+document.getElementById('play-btn').addEventListener('click', async () => {
+  document.getElementById('play-btn').classList.add('playing');
+  await start();
+});
+</script>
+</body>
+</html>
