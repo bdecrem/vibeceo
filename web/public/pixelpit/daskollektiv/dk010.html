@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Das Kollektiv #010</title>
 <meta property="og:title" content="Das Kollektiv #010">
-<meta property="og:description" content="Jeff Mills 909 session. 132 BPM. Tension through subtraction. The kick is the anchor.">
+<meta property="og:description" content="Jeff Mills 909 session. 132 BPM. 72 bars. Tension through subtraction.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <style>
@@ -67,95 +67,106 @@ import { JT90Engine } from 'https://kochi.to/jt90/dist/machines/jt90/engine.js';
 // - Space is sacred
 // - The kick is the anchor — even when absent, its return defines the drop
 //
-// Arrangement:
-// ACT I   - PULSE (1-8):     Kick + CH 8ths. The foundation. Lock it.
-// ACT II  - LOCK (9-16):     + Ride 8ths. Metallic texture layer.
-// ACT III - DRIVE (17-24):   CH goes 16ths. + OH on offbeats. Energy builds.
-// ACT IV  - TRIBAL (25-32):  Kick syncopates. + Rimshot. + Toms. Polyrhythmic.
-// ACT V   - STRIP (33-40):   Remove toms. Remove rimshot. Remove OH.
-//                             Then remove kick. Just CH 16ths + ride. TENSION PEAK.
-// ACT VI  - RETURN (41-48):  Kick returns bar 41. Snare on 4,12 bar 43.
-//                             Full groove locks. Crash on bar 41 beat 1.
-//                             Fade out last 2 bars.
+// Arrangement (72 bars, ~2:11):
+// ACT I   - INTRO (1-8):       CH 8ths only. No kick. Anticipation.
+// ACT II  - FOUNDATION (9-16): Kick 4x4 enters. CH 8ths. Lock it.
+// ACT III - TEXTURE (17-24):   + Ride 8ths. Metallic layer.
+// ACT IV  - DRIVE (25-32):     CH goes 16ths. + OH offbeats. Energy builds.
+// ACT V   - LAYERS (33-40):    + Rimshot syncopation. Kick stays 4x4.
+// ACT VI  - PEAK (41-48):      + Toms. Full groove. Kick 4x4.
+// ACT VII - STRIP (49-56):     Remove toms, rimshot, OH.
+//                               Kick drops bar 53. Just hats + ride. TENSION.
+// ACT VIII- RETURN (57-64):    Kick back bar 57. Crash. Snare bar 59.
+// ACT IX  - LOCK (65-72):      Full locked groove. Fade last 2 bars.
 // ══════════════════════════════════════════
 
 const BPM = 132;
 const STEP_DUR = 60 / BPM / 4;
-const TOTAL_BARS = 48;
+const TOTAL_BARS = 72;
 
 // ── ARRANGEMENT DATA ──
 // Each section defines which voices are active and their patterns
 function getArrangement(bar) {
   const voices = {};
 
-  // ── KICK ──
-  if (bar < 25) {
-    // Standard 4x4
-    voices.kick = { steps: [0,4,8,12], velBase: 0.9, velRange: 0.05 };
-  } else if (bar < 33) {
-    // Tribal syncopation (Acts IV)
-    voices.kick = { steps: [0,3,6,8,12], velBase: 0.85, velRange: 0.08 };
-  } else if (bar < 37) {
-    // Strip: kick still present bars 33-36
-    voices.kick = { steps: [0,4,8,12], velBase: 0.85, velRange: 0.05 };
-  } else if (bar < 41) {
-    // Bars 37-40: NO KICK. Tension peak.
-    // (kick omitted)
-  } else {
-    // Return: kick back, slightly louder (the return IS the drop)
+  // ── KICK — 4x4 from bar 9 onward, except strip (53-56) ──
+  if (bar < 9) {
+    // ACT I: No kick — intro is just hats
+  } else if (bar >= 53 && bar < 57) {
+    // STRIP: NO KICK. Tension peak.
+  } else if (bar >= 57 && bar < 65) {
+    // RETURN: kick back, slightly louder (the return IS the drop)
     voices.kick = { steps: [0,4,8,12], velBase: 0.95, velRange: 0.03 };
+  } else {
+    // Standard 4x4 everywhere else
+    voices.kick = { steps: [0,4,8,12], velBase: 0.9, velRange: 0.05 };
   }
 
   // ── CH (closed hat) ──
-  if (bar < 17) {
-    // 8ths
+  if (bar < 25) {
+    // 8ths for first 24 bars
     voices.ch = { steps: [0,2,4,6,8,10,12,14], velBase: 0.5, velRange: 0.15 };
   } else {
-    // 16ths from Act III onward
+    // 16ths from ACT IV onward
     voices.ch = {
       steps: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
       velBase: 0.45, velRange: 0.2
     };
   }
-  // Hat decay automation — tighter early, opens later
-  if (bar < 9) voices.ch.decay = 0.12;
-  else if (bar < 17) voices.ch.decay = 0.15;
-  else if (bar < 25) voices.ch.decay = 0.18;
-  else if (bar < 33) voices.ch.decay = 0.22;
-  else if (bar < 41) voices.ch.decay = 0.25;  // widest during strip (hats are the star)
-  else voices.ch.decay = 0.18;
+  // Hat decay — tighter early, opens through strip, tightens on return
+  if (bar < 9) voices.ch.decay = 0.10;
+  else if (bar < 17) voices.ch.decay = 0.12;
+  else if (bar < 25) voices.ch.decay = 0.15;
+  else if (bar < 33) voices.ch.decay = 0.18;
+  else if (bar < 41) voices.ch.decay = 0.20;
+  else if (bar < 49) voices.ch.decay = 0.22;
+  else if (bar < 57) voices.ch.decay = 0.28;  // widest during strip (hats are the star)
+  else if (bar < 65) voices.ch.decay = 0.18;
+  else voices.ch.decay = 0.15;
 
   // ── RIDE ──
-  if (bar >= 9 && bar < 37) {
+  if (bar >= 17 && bar < 53) {
+    // Present from ACT III through ACT VI, exits during strip
     voices.ride = { steps: [0,2,4,6,8,10,12,14], velBase: 0.30, velRange: 0.08 };
-  } else if (bar >= 41) {
-    voices.ride = { steps: [0,4,8,12], velBase: 0.25, velRange: 0.05 }; // sparse on return
+  } else if (bar >= 57 && bar < 65) {
+    // Sparse on return
+    voices.ride = { steps: [0,4,8,12], velBase: 0.25, velRange: 0.05 };
+  } else if (bar >= 65) {
+    // Full lock — ride 8ths back
+    voices.ride = { steps: [0,2,4,6,8,10,12,14], velBase: 0.28, velRange: 0.06 };
   }
 
   // ── OH (open hat) ──
-  if (bar >= 17 && bar < 33) {
+  if (bar >= 25 && bar < 49) {
     voices.oh = { steps: [6,14], velBase: 0.35, velRange: 0.05 };
+  } else if (bar >= 65) {
+    // Lock section — OH returns
+    voices.oh = { steps: [6,14], velBase: 0.30, velRange: 0.05 };
   }
 
   // ── RIMSHOT ──
-  if (bar >= 25 && bar < 35) {
-    // Syncopated accents
+  if (bar >= 33 && bar < 49) {
     voices.rimshot = { steps: [3,7,11,15], velBase: 0.40, velRange: 0.08 };
+  } else if (bar >= 65) {
+    // Lock — rimshot back but sparser
+    voices.rimshot = { steps: [7,15], velBase: 0.35, velRange: 0.05 };
   }
 
-  // ── TOMS (tribal section only) ──
-  if (bar >= 25 && bar < 33) {
+  // ── TOMS (peak section only) ──
+  if (bar >= 41 && bar < 49) {
     voices.lowtom = { steps: [2,10], velBase: 0.55, velRange: 0.1 };
     voices.hitom = { steps: [5,13], velBase: 0.45, velRange: 0.1 };
   }
 
-  // ── SNARE (return only) ──
-  if (bar >= 43) {
+  // ── SNARE (return + lock) ──
+  if (bar >= 59 && bar < 65) {
     voices.snare = { steps: [4,12], velBase: 0.65, velRange: 0.05 };
+  } else if (bar >= 65) {
+    voices.snare = { steps: [4,12], velBase: 0.7, velRange: 0.03 };
   }
 
   // ── CRASH (return marker) ──
-  if (bar === 41) {
+  if (bar === 57) {
     voices.crash = { steps: [0], velBase: 0.5, velRange: 0 };
   }
 
