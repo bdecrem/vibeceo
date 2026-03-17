@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Das Kollektiv #010</title>
+<meta property="og:title" content="Das Kollektiv #010">
+<meta property="og:description" content="Jeff Mills 909 session. 132 BPM. Tension through subtraction. The kick is the anchor.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050505; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.3);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.06); z-index: 10;
+  }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.05); z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="title">DAS KOLLEKTIV #010</div>
+<div id="overlay"><button id="play-btn">▶</button></div>
+<div id="credits">DAS KOLLEKTIV · HALLMAN · JT90 · 909</div>
+
+<script type="module">
+import { JT90Engine } from 'https://kochi.to/jt90/dist/machines/jt90/engine.js';
+
+// ══════════════════════════════════════════
+// DAS KOLLEKTIV #010
+// Jeff Mills 909 session. 132 BPM.
+// 48 bars (~87 seconds)
+//
+// Philosophy from library.json:
+// - Tension through subtraction and addition
+// - Lock a groove for 8-16 bars before changing
+// - Change ONE element at a time
+// - Velocity is expression
+// - Space is sacred
+// - The kick is the anchor — even when absent, its return defines the drop
+//
+// Arrangement:
+// ACT I   - PULSE (1-8):     Kick + CH 8ths. The foundation. Lock it.
+// ACT II  - LOCK (9-16):     + Ride 8ths. Metallic texture layer.
+// ACT III - DRIVE (17-24):   CH goes 16ths. + OH on offbeats. Energy builds.
+// ACT IV  - TRIBAL (25-32):  Kick syncopates. + Rimshot. + Toms. Polyrhythmic.
+// ACT V   - STRIP (33-40):   Remove toms. Remove rimshot. Remove OH.
+//                             Then remove kick. Just CH 16ths + ride. TENSION PEAK.
+// ACT VI  - RETURN (41-48):  Kick returns bar 41. Snare on 4,12 bar 43.
+//                             Full groove locks. Crash on bar 41 beat 1.
+//                             Fade out last 2 bars.
+// ══════════════════════════════════════════
+
+const BPM = 132;
+const STEP_DUR = 60 / BPM / 4;
+const TOTAL_BARS = 48;
+
+// ── ARRANGEMENT DATA ──
+// Each section defines which voices are active and their patterns
+function getArrangement(bar) {
+  const voices = {};
+
+  // ── KICK ──
+  if (bar < 25) {
+    // Standard 4x4
+    voices.kick = { steps: [0,4,8,12], velBase: 0.9, velRange: 0.05 };
+  } else if (bar < 33) {
+    // Tribal syncopation (Acts IV)
+    voices.kick = { steps: [0,3,6,8,12], velBase: 0.85, velRange: 0.08 };
+  } else if (bar < 37) {
+    // Strip: kick still present bars 33-36
+    voices.kick = { steps: [0,4,8,12], velBase: 0.85, velRange: 0.05 };
+  } else if (bar < 41) {
+    // Bars 37-40: NO KICK. Tension peak.
+    // (kick omitted)
+  } else {
+    // Return: kick back, slightly louder (the return IS the drop)
+    voices.kick = { steps: [0,4,8,12], velBase: 0.95, velRange: 0.03 };
+  }
+
+  // ── CH (closed hat) ──
+  if (bar < 17) {
+    // 8ths
+    voices.ch = { steps: [0,2,4,6,8,10,12,14], velBase: 0.5, velRange: 0.15 };
+  } else {
+    // 16ths from Act III onward
+    voices.ch = {
+      steps: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
+      velBase: 0.45, velRange: 0.2
+    };
+  }
+  // Hat decay automation — tighter early, opens later
+  if (bar < 9) voices.ch.decay = 0.12;
+  else if (bar < 17) voices.ch.decay = 0.15;
+  else if (bar < 25) voices.ch.decay = 0.18;
+  else if (bar < 33) voices.ch.decay = 0.22;
+  else if (bar < 41) voices.ch.decay = 0.25;  // widest during strip (hats are the star)
+  else voices.ch.decay = 0.18;
+
+  // ── RIDE ──
+  if (bar >= 9 && bar < 37) {
+    voices.ride = { steps: [0,2,4,6,8,10,12,14], velBase: 0.30, velRange: 0.08 };
+  } else if (bar >= 41) {
+    voices.ride = { steps: [0,4,8,12], velBase: 0.25, velRange: 0.05 }; // sparse on return
+  }
+
+  // ── OH (open hat) ──
+  if (bar >= 17 && bar < 33) {
+    voices.oh = { steps: [6,14], velBase: 0.35, velRange: 0.05 };
+  }
+
+  // ── RIMSHOT ──
+  if (bar >= 25 && bar < 35) {
+    // Syncopated accents
+    voices.rimshot = { steps: [3,7,11,15], velBase: 0.40, velRange: 0.08 };
+  }
+
+  // ── TOMS (tribal section only) ──
+  if (bar >= 25 && bar < 33) {
+    voices.lowtom = { steps: [2,10], velBase: 0.55, velRange: 0.1 };
+    voices.hitom = { steps: [5,13], velBase: 0.45, velRange: 0.1 };
+  }
+
+  // ── SNARE (return only) ──
+  if (bar >= 43) {
+    voices.snare = { steps: [4,12], velBase: 0.65, velRange: 0.05 };
+  }
+
+  // ── CRASH (return marker) ──
+  if (bar === 41) {
+    voices.crash = { steps: [0], velBase: 0.5, velRange: 0 };
+  }
+
+  return voices;
+}
+
+// ── CANVAS ──
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Visual elements
+const visuals = [];
+class Particle {
+  constructor(x, y, size, brightness, life) {
+    this.x = x; this.y = y;
+    this.size = size;
+    this.brightness = brightness;
+    this.alpha = brightness * 0.3;
+    this.life = life;
+    this.born = performance.now();
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.vy = (Math.random() - 0.5) * 0.3;
+  }
+  update() {
+    const age = (performance.now() - this.born) / 1000;
+    if (age > this.life) return false;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.alpha = this.brightness * 0.3 * (1 - age / this.life);
+    return true;
+  }
+  draw() {
+    if (this.alpha < 0.003) return;
+    const c = Math.floor(220 * this.brightness);
+    ctx.fillStyle = `rgba(${c},${c},${c},${this.alpha})`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+let kickPulse = 0;
+let vizBrightness = 0;
+
+function render() {
+  requestAnimationFrame(render);
+  kickPulse *= 0.92;
+
+  ctx.fillStyle = 'rgba(5,5,5,0.015)';
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = visuals.length - 1; i >= 0; i--) {
+    if (visuals[i].update()) visuals[i].draw();
+    else visuals.splice(i, 1);
+  }
+
+  // Kick center pulse
+  if (kickPulse > 0.05) {
+    const a = kickPulse * 0.06 * vizBrightness;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 60);
+    grad.addColorStop(0, `rgba(200,200,200,${a})`);
+    grad.addColorStop(1, 'rgba(200,200,200,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 60, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+render();
+
+// ── PRE-RENDER ──
+async function start() {
+  const playBtn = document.getElementById('play-btn');
+  playBtn.textContent = '...';
+
+  try {
+    const audioCtx = new AudioContext();
+
+    const engine = new JT90Engine({ bpm: BPM });
+    await engine.loadSamples('https://kochi.to/jt90/samples');
+    engine._ensureVoices();
+
+    // Voice params — Mills-style tuning
+    engine.setVoiceParameter('kick', 'decay', 0.35);
+    engine.setVoiceParameter('kick', 'tune', 0);
+    engine.setVoiceParameter('kick', 'level', 0.9);
+
+    engine.setVoiceParameter('snare', 'decay', 0.25);
+    engine.setVoiceParameter('snare', 'level', 0.7);
+
+    engine.setVoiceParameter('clap', 'decay', 0.3);
+    engine.setVoiceParameter('clap', 'level', 0.6);
+
+    engine.setVoiceParameter('ch', 'level', 0.5);
+    engine.setVoiceParameter('ch', 'tone', 0.35);
+
+    engine.setVoiceParameter('oh', 'decay', 0.25);
+    engine.setVoiceParameter('oh', 'level', 0.4);
+
+    engine.setVoiceParameter('ride', 'decay', 0.3);
+    engine.setVoiceParameter('ride', 'level', 0.35);
+
+    engine.setVoiceParameter('rimshot', 'level', 0.45);
+
+    engine.setVoiceParameter('lowtom', 'decay', 0.3);
+    engine.setVoiceParameter('lowtom', 'level', 0.55);
+    engine.setVoiceParameter('lowtom', 'tune', -200);
+
+    engine.setVoiceParameter('hitom', 'decay', 0.25);
+    engine.setVoiceParameter('hitom', 'level', 0.45);
+    engine.setVoiceParameter('hitom', 'tune', 200);
+
+    engine.setVoiceParameter('crash', 'level', 0.5);
+
+    // Pre-render bar by bar with arrangement changes
+    const barBuffers = [];
+
+    for (let bar = 0; bar < TOTAL_BARS; bar++) {
+      const arr = getArrangement(bar);
+
+      // Build pattern for this bar
+      const allVoices = ['kick','snare','clap','ch','oh','ride','rimshot','lowtom','midtom','hitom','crash'];
+      const pattern = {};
+      for (const voiceId of allVoices) {
+        pattern[voiceId] = Array.from({ length: 16 }, (_, i) => {
+          const voiceArr = arr[voiceId];
+          if (!voiceArr || !voiceArr.steps.includes(i)) {
+            return { velocity: 0, accent: false };
+          }
+          // Velocity variation — Mills' expression
+          const vel = voiceArr.velBase + (Math.random() * 2 - 1) * voiceArr.velRange;
+          return { velocity: Math.max(0.1, Math.min(1.0, vel)), accent: false };
+        });
+      }
+
+      engine.setPattern(pattern);
+
+      // Hat decay per bar
+      const chDecay = arr.ch ? arr.ch.decay : 0.15;
+      const chDecayArray = Array(16).fill(chDecay);
+      // Add micro-variation to hat decay
+      const chDecayAuto = chDecayArray.map(d => d + (Math.random() * 0.04 - 0.02));
+
+      const buffer = await engine.renderPattern({
+        bars: 1,
+        bpm: BPM,
+        automation: { 'ch.decay': chDecayAuto },
+      });
+      barBuffers.push(buffer);
+    }
+
+    // Concatenate
+    const totalLength = barBuffers.reduce((sum, b) => sum + b.length, 0);
+    const fullBuffer = audioCtx.createBuffer(1, totalLength, barBuffers[0].sampleRate);
+    const channel = fullBuffer.getChannelData(0);
+    let offset = 0;
+    for (const buf of barBuffers) {
+      channel.set(buf.getChannelData(0), offset);
+      offset += buf.length;
+    }
+
+    // Apply master fade on last 2 bars
+    const fadeStart = totalLength - (barBuffers[0].length * 2);
+    const fadeLen = barBuffers[0].length * 2;
+    for (let i = 0; i < fadeLen; i++) {
+      const idx = fadeStart + i;
+      channel[idx] *= 1.0 - (i / fadeLen);
+    }
+
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    const source = audioCtx.createBufferSource();
+    source.buffer = fullBuffer;
+
+    // Soft clip master
+    const waveshaper = audioCtx.createWaveShaper();
+    const curve = new Float32Array(65536);
+    for (let i = 0; i < 65536; i++) {
+      const x = (i / 32768) - 1;
+      curve[i] = Math.tanh(x * 1.1);
+    }
+    waveshaper.curve = curve;
+
+    source.connect(waveshaper);
+    waveshaper.connect(audioCtx.destination);
+    source.start();
+
+    playBtn.classList.add('playing');
+    vizBrightness = 0;
+
+    // Visual step timer
+    let step = 0;
+    const stepMs = STEP_DUR * 1000;
+
+    const timer = setInterval(() => {
+      const bar = Math.floor(step / 16);
+      if (bar >= TOTAL_BARS) { clearInterval(timer); return; }
+
+      const stepInBar = step % 16;
+      const arr = getArrangement(bar);
+
+      // Viz brightness ramp
+      if (bar < 24) vizBrightness = Math.min(bar / 23, 1.0);
+      else if (bar >= 46) vizBrightness = Math.max(1.0 - (bar - 46) / 2, 0);
+
+      // Kick visual
+      if (arr.kick && arr.kick.steps.includes(stepInBar)) {
+        kickPulse = 1;
+        // Expanding ring of dots
+        const count = 6;
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2 + Math.random() * 0.3;
+          const dist = 30 + Math.random() * 20;
+          visuals.push(new Particle(
+            cx + Math.cos(angle) * dist,
+            cy + Math.sin(angle) * dist,
+            2, 0.8 * vizBrightness, 3
+          ));
+        }
+      }
+
+      // Hat visual — scattered dots at current radius
+      if (arr.ch && arr.ch.steps.includes(stepInBar)) {
+        const radius = 80 + (bar / TOTAL_BARS) * 150;
+        const count = arr.ch.steps.length > 8 ? 2 : 1;  // more dots for 16ths
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          visuals.push(new Particle(
+            cx + Math.cos(angle) * radius + (Math.random()-0.5)*20,
+            cy + Math.sin(angle) * radius + (Math.random()-0.5)*20,
+            1 + arr.ch.decay * 4, 0.4 * vizBrightness, 4
+          ));
+        }
+      }
+
+      // Ride visual — thin line flashes
+      if (arr.ride && arr.ride.steps.includes(stepInBar)) {
+        const angle = (step * 0.1) % (Math.PI * 2);
+        const dist = 120 + Math.random() * 60;
+        visuals.push(new Particle(
+          cx + Math.cos(angle) * dist,
+          cy + Math.sin(angle) * dist,
+          1, 0.3 * vizBrightness, 5
+        ));
+      }
+
+      // Tom visual — larger blobs
+      if (arr.lowtom && arr.lowtom.steps.includes(stepInBar)) {
+        const angle = Math.random() * Math.PI * 2;
+        visuals.push(new Particle(
+          cx + Math.cos(angle) * 50,
+          cy + Math.sin(angle) * 50,
+          4, 0.6 * vizBrightness, 2
+        ));
+      }
+      if (arr.hitom && arr.hitom.steps.includes(stepInBar)) {
+        const angle = Math.random() * Math.PI * 2;
+        visuals.push(new Particle(
+          cx + Math.cos(angle) * 70,
+          cy + Math.sin(angle) * 70,
+          3, 0.5 * vizBrightness, 2
+        ));
+      }
+
+      // Rimshot visual — sharp dots
+      if (arr.rimshot && arr.rimshot.steps.includes(stepInBar)) {
+        for (let i = 0; i < 3; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = 90 + Math.random() * 40;
+          visuals.push(new Particle(
+            cx + Math.cos(angle) * dist,
+            cy + Math.sin(angle) * dist,
+            1.5, 0.7 * vizBrightness, 1.5
+          ));
+        }
+      }
+
+      // Crash visual — burst
+      if (arr.crash && arr.crash.steps.includes(stepInBar)) {
+        for (let i = 0; i < 20; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = Math.random() * 200;
+          visuals.push(new Particle(
+            cx + Math.cos(angle) * dist,
+            cy + Math.sin(angle) * dist,
+            2 + Math.random() * 3, 0.9, 3
+          ));
+        }
+      }
+
+      step++;
+    }, stepMs);
+
+  } catch (err) {
+    console.error(err);
+    playBtn.textContent = '▶';
+  }
+}
+
+document.getElementById('play-btn').addEventListener('click', async () => {
+  document.getElementById('play-btn').classList.add('playing');
+  await start();
+});
+</script>
+</body>
+</html>
