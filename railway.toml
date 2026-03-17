@@ -58,3 +58,5 @@ builder = "NIXPACKS"
 buildCommand = "npm ci && npm run build"
 [services.vibeceo-discord-bot.deploy]
 startCommand = "npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
