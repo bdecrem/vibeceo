@@ -6,14 +6,15 @@
 import os
 from dotenv import load_dotenv
 
-# 加载项目根目录的 .env 文件
-# 路径: MiroFish/.env (相对于 backend/app/config.py)
+# Load from sms-bot/.env.local (single source of truth for all keys)
+sms_bot_env = os.path.join(os.path.dirname(__file__), '../../../sms-bot/.env.local')
 project_root_env = os.path.join(os.path.dirname(__file__), '../../.env')
 
-if os.path.exists(project_root_env):
+if os.path.exists(sms_bot_env):
+    load_dotenv(sms_bot_env, override=True)
+elif os.path.exists(project_root_env):
     load_dotenv(project_root_env, override=True)
 else:
-    # 如果根目录没有 .env，尝试加载环境变量（用于生产环境）
     load_dotenv(override=True)
 
 
@@ -28,7 +29,8 @@ class Config:
     JSON_AS_ASCII = False
     
     # LLM配置（统一使用OpenAI格式）
-    LLM_API_KEY = os.environ.get('LLM_API_KEY')
+    # Falls back to OPENAI_API_KEY from sms-bot/.env.local
+    LLM_API_KEY = os.environ.get('LLM_API_KEY') or os.environ.get('OPENAI_API_KEY')
     LLM_BASE_URL = os.environ.get('LLM_BASE_URL', 'https://api.openai.com/v1')
     LLM_MODEL_NAME = os.environ.get('LLM_MODEL_NAME', 'gpt-4o-mini')
     
