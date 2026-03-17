@@ -9,7 +9,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://kochi.to"),
+  metadataBase: new URL("https://mutabl.co"),
   title: {
     template: "%s — mutabl",
     default: "mutabl",
