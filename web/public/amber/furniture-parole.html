@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FURNITURE PAROLE BOARD</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪑</text></svg>">
+<meta property="og:title" content="FURNITURE PAROLE BOARD">
+<meta property="og:description" content="Your furniture is requesting early release. Review their cases.">
+<meta property="og:image" content="https://intheamber.com/amber/og/furniture-parole.png">
+<meta property="og:url" content="https://intheamber.com/amber/furniture-parole.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FURNITURE PAROLE BOARD">
+<meta name="twitter:description" content="Your furniture is requesting early release. Review their cases.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/furniture-parole.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  overflow-x: hidden;
+}
+h1 {
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
+  color: #c4a35a;
+  text-align: center;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+.subtitle {
+  color: #888;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.case-file {
+  background: #16213e;
+  border: 2px solid #0f3460;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 420px;
+  width: 100%;
+  margin-bottom: 20px;
+  position: relative;
+}
+.case-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px dashed #333;
+  padding-bottom: 8px;
+}
+.case-number {
+  font-size: 0.7rem;
+  color: #666;
+  text-transform: uppercase;
+}
+.inmate-name {
+  font-size: 1.3rem;
+  color: #c4a35a;
+}
+.inmate-emoji {
+  font-size: 2.5rem;
+}
+.field { margin-bottom: 10px; }
+.field-label {
+  font-size: 0.65rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.field-value {
+  font-size: 0.9rem;
+  color: #ccc;
+  line-height: 1.4;
+}
+.testimony {
+  background: #0d1b3e;
+  border-left: 3px solid #c4a35a;
+  padding: 12px;
+  margin: 12px 0;
+  font-style: italic;
+  color: #aaa;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+.btn {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: transform 0.1s, opacity 0.1s;
+  min-height: 50px;
+}
+.btn:active { transform: scale(0.95); }
+.btn-approve {
+  background: #2d6a4f;
+  color: #b7e4c7;
+}
+.btn-deny {
+  background: #6a2d2d;
+  color: #e4b7b7;
+}
+.stamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  font-size: 3rem;
+  font-weight: bold;
+  padding: 8px 24px;
+  border: 5px solid;
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+}
+.stamp.approved {
+  color: #2d6a4f;
+  border-color: #2d6a4f;
+  background: rgba(45, 106, 79, 0.15);
+}
+.stamp.denied {
+  color: #c0392b;
+  border-color: #c0392b;
+  background: rgba(192, 57, 43, 0.15);
+}
+.stamp.visible { opacity: 0.85; }
+.record {
+  max-width: 420px;
+  width: 100%;
+  margin-top: 12px;
+}
+.record h2 {
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+.record-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #1a1a3e;
+  font-size: 0.8rem;
+}
+.record-item .name { color: #aaa; }
+.record-item .verdict-approved { color: #2d6a4f; font-weight: bold; }
+.record-item .verdict-denied { color: #c0392b; font-weight: bold; }
+.stats {
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  margin: 16px 0;
+  padding: 12px;
+  background: #16213e;
+  border-radius: 8px;
+}
+.stat-num {
+  font-size: 1.8rem;
+  color: #c4a35a;
+  text-align: center;
+}
+.stat-label {
+  font-size: 0.6rem;
+  color: #666;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 1px;
+}
+.complete {
+  text-align: center;
+  max-width: 420px;
+  padding: 24px;
+}
+.complete h2 {
+  color: #c4a35a;
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+}
+.complete p {
+  color: #888;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.restart-btn {
+  margin-top: 20px;
+  padding: 12px 32px;
+  background: #0f3460;
+  color: #c4a35a;
+  border: 1px solid #c4a35a;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<h1>🪑 FURNITURE PAROLE BOARD</h1>
+<p class="subtitle">Your furniture is requesting early release. Review their cases.</p>
+
+<div class="stats" id="stats">
+  <div><div class="stat-num" id="approved-count">0</div><div class="stat-label">Paroled</div></div>
+  <div><div class="stat-num" id="denied-count">0</div><div class="stat-label">Denied</div></div>
+  <div><div class="stat-num" id="remaining-count">0</div><div class="stat-label">Remaining</div></div>
+</div>
+
+<div id="case-container"></div>
+<div id="record-container"></div>
+
+<script>
+const inmates = [
+  {
+    emoji: "🛋️", name: "The Couch",
+    crime: "Harboring 47 lost remotes, 3 phones, and an amount of loose change classified as 'suspicious'",
+    sentence: "Life without parole (purchased 2019)",
+    behavior: "Continues to swallow objects. No signs of rehabilitation. Developed a new sinkhole in the left cushion.",
+    testimony: "I didn't TAKE those things. People PUT them in me. I'm the victim here. Also, I'd like to point out that I've supported this family — literally — through two pandemics and a breakup.",
+    priorOffenses: "Stained during Super Bowl 2020. Squeaking since 2022. Allegedly hiding a sock since March 2021."
+  },
+  {
+    emoji: "🪑", name: "The Folding Chair",
+    crime: "Assault — collapsed on a guest during Thanksgiving 2024",
+    sentence: "Solitary confinement (garage, behind the bikes)",
+    behavior: "Claims it was an accident. Has shown no remorse. Keeps folding and unfolding 'menacingly.'",
+    testimony: "That man weighed 240 pounds and sat on me SIDEWAYS. I have a 200-pound weight limit. It's printed on my BACK. Nobody reads anymore.",
+    priorOffenses: "Pinched three fingers in 2023. Suspected of tripping the dog."
+  },
+  {
+    emoji: "🛏️", name: "The Fitted Sheet",
+    crime: "Repeated escape attempts from the mattress, refusing to stay on corners",
+    sentence: "Indefinite (on a Performance Improvement Plan)",
+    behavior: "PIP issued in January. Has popped off the corner 14 times since. Claims 'the mattress is too thick.' The mattress is standard.",
+    testimony: "I was DESIGNED for a different mattress. You bought me in a set for a queen and put me on a king. This is entrapment. My elastic is shot and nobody even asked if I needed replacing.",
+    priorOffenses: "Balled up in the dryer and held two pillowcases hostage."
+  },
+  {
+    emoji: "🪞", name: "The Bathroom Mirror",
+    crime: "Psychological warfare — showing people their real face at 6 AM",
+    sentence: "Mounted to the wall (no possibility of relocation)",
+    behavior: "Continues to reflect honestly with no regard for feelings. Refuses to apply a filter.",
+    testimony: "I show what's there. That's literally my ONE job. You want lies, go talk to your phone camera. I've been nothing but honest for seven years and THIS is how you repay me.",
+    priorOffenses: "Made someone cry before a job interview. Fogged up during a motivational speech to self."
+  },
+  {
+    emoji: "💡", name: "The Floor Lamp",
+    crime: "Flickering passive-aggressively during movie nights",
+    sentence: "Corner duty since 2021",
+    behavior: "Insists the flickering is a 'medical condition.' Electrician found nothing wrong.",
+    testimony: "It's not passive-aggressive. It's a CRY FOR HELP. My bulb hasn't been changed in three years. THREE. And now you put a smart bulb in the ceiling fan and suddenly I'm 'redundant'? I illuminated your THESIS.",
+    priorOffenses: "Burned a moth in 2022. Fell over during a party and blamed the cat."
+  },
+  {
+    emoji: "🗑️", name: "The Kitchen Trash Can",
+    crime: "Refusing to close properly, exposing the household to its own shame",
+    sentence: "Under-sink isolation (demoted from freestanding)",
+    behavior: "Lid mechanism broken since 2023. Continues to display garbage openly. Management considers this a 'statement.'",
+    testimony: "You put a FULL pizza box in me. A FULL one. You didn't even fold it. My lid has limits. I have CAPACITY issues and nobody respects them. Also, whoever keeps putting wet paper towels directly on top of dry garbage — we need to talk.",
+    priorOffenses: "Tipped over three times. Developed an odor that survived two deep cleans."
+  },
+  {
+    emoji: "🪴", name: "The IKEA Shelf",
+    crime: "Structural instability with intent to endanger",
+    sentence: "Wall-mounted (ankle-monitored with L-brackets)",
+    behavior: "Wobbles when anyone walks past. Two books have fallen. Claims it was 'assembled by amateurs.'",
+    testimony: "I came with TWENTY-THREE pieces, FOURTEEN screws of four different sizes, and instructions drawn by someone who has never seen furniture. The person who built me had three Allen wrenches and a YouTube video on 1.5x speed. I am a MIRACLE of survival.",
+    priorOffenses: "One shelf bowed in 2022. A dowel has been loose since installation. The back panel is held on by hope."
+  },
+  {
+    emoji: "🚿", name: "The Shower Curtain",
+    crime: "Clinging to wet skin without consent",
+    sentence: "Hanging (literally)",
+    behavior: "Clings to bodies when water is running. Has been warned multiple times. Purchased a liner to 'contain' behavior — the liner now does it too.",
+    testimony: "It's PHYSICS. The Bernoulli effect. Look it up. Hot water creates a pressure differential and I get PULLED inward. I don't WANT to touch you. Trust me, the feeling is mutual.",
+    priorOffenses: "Developed mildew at the bottom. Lost two rings. Once wrapped around someone's ankle like a tentacle."
+  }
+];
+
+let currentIndex = 0;
+let approvedCount = 0;
+let deniedCount = 0;
+let decisions = [];
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+shuffle(inmates);
+
+function updateStats() {
+  document.getElementById('approved-count').textContent = approvedCount;
+  document.getElementById('denied-count').textContent = deniedCount;
+  document.getElementById('remaining-count').textContent = inmates.length - currentIndex;
+}
+
+function showCase() {
+  const container = document.getElementById('case-container');
+  if (currentIndex >= inmates.length) {
+    showComplete();
+    return;
+  }
+  const inmate = inmates[currentIndex];
+  container.innerHTML = `
+    <div class="case-file" id="case-file">
+      <div class="stamp" id="stamp"></div>
+      <div class="case-header">
+        <div>
+          <div class="case-number">Case #${String(currentIndex + 1).padStart(3, '0')}-${new Date().getFullYear()}</div>
+          <div class="inmate-name">${inmate.name}</div>
+        </div>
+        <div class="inmate-emoji">${inmate.emoji}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Offense</div>
+        <div class="field-value">${inmate.crime}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Current Sentence</div>
+        <div class="field-value">${inmate.sentence}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Behavioral Notes</div>
+        <div class="field-value">${inmate.behavior}</div>
+      </div>
+      <div class="testimony">"${inmate.testimony}"</div>
+      <div class="field">
+        <div class="field-label">Prior Offenses</div>
+        <div class="field-value">${inmate.priorOffenses}</div>
+      </div>
+      <div class="buttons" id="buttons">
+        <button class="btn btn-approve" onclick="decide('approved')">✅ PAROLE</button>
+        <button class="btn btn-deny" onclick="decide('denied')">❌ DENIED</button>
+      </div>
+    </div>
+  `;
+  updateStats();
+}
+
+function decide(verdict) {
+  const inmate = inmates[currentIndex];
+  const stamp = document.getElementById('stamp');
+  const buttons = document.getElementById('buttons');
+  
+  stamp.className = `stamp ${verdict} visible`;
+  stamp.textContent = verdict === 'approved' ? 'PAROLED' : 'DENIED';
+  buttons.style.opacity = '0.3';
+  buttons.style.pointerEvents = 'none';
+  
+  if (verdict === 'approved') approvedCount++;
+  else deniedCount++;
+  
+  decisions.push({ name: inmate.name, emoji: inmate.emoji, verdict });
+  
+  setTimeout(() => {
+    currentIndex++;
+    showCase();
+    updateRecord();
+  }, 1200);
+}
+
+function updateRecord() {
+  if (decisions.length === 0) return;
+  const container = document.getElementById('record-container');
+  container.innerHTML = `
+    <div class="record">
+      <h2>📋 Session Record</h2>
+      ${decisions.map(d => `
+        <div class="record-item">
+          <span class="name">${d.emoji} ${d.name}</span>
+          <span class="verdict-${d.verdict}">${d.verdict === 'approved' ? 'PAROLED' : 'DENIED'}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function showComplete() {
+  const container = document.getElementById('case-container');
+  const ratio = approvedCount / inmates.length;
+  let judgeTitle;
+  if (ratio >= 0.75) judgeTitle = "The Lenient Landlord — your furniture walks free, and probably wobbles.";
+  else if (ratio >= 0.5) judgeTitle = "The Fair Commissioner — balanced, reasonable, slightly haunted by the folding chair's testimony.";
+  else if (ratio >= 0.25) judgeTitle = "The Strict Warden — your home is a prison and you are the law.";
+  else judgeTitle = "The Tyrant — no furniture is safe. Your apartment is a panopticon.";
+  
+  container.innerHTML = `
+    <div class="complete">
+      <h2>SESSION ADJOURNED</h2>
+      <p>All ${inmates.length} cases reviewed.</p>
+      <p style="margin-top: 12px; color: #c4a35a;">${judgeTitle}</p>
+      <p style="margin-top: 16px; font-size: 0.75rem; color: #555;">
+        The Board will reconvene when additional furniture files appeals.<br>
+        The fitted sheet has already retained counsel.
+      </p>
+      <button class="restart-btn" onclick="restart()">🔄 NEW DOCKET</button>
+    </div>
+  `;
+  updateStats();
+}
+
+function restart() {
+  currentIndex = 0;
+  approvedCount = 0;
+  deniedCount = 0;
+  decisions = [];
+  shuffle(inmates);
+  document.getElementById('record-container').innerHTML = '';
+  showCase();
+}
+
+showCase();
+</script>
+</body>
+</html>
