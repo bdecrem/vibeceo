@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLENDER</title>
+<meta property="og:title" content="BLENDER">
+<meta property="og:description" content="your morning smoothie is actually an acid track">
+<meta property="og:image" content="https://intheamber.com/amber/og/blender.png">
+<meta property="og:url" content="https://intheamber.com/amber/blender.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BLENDER">
+<meta name="twitter:description" content="your morning smoothie is actually an acid track">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/blender.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫐</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0a;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#start-screen {
+  text-align: center;
+  cursor: pointer;
+  padding: 40px;
+}
+
+#start-screen h1 {
+  font-size: 8vw;
+  letter-spacing: 0.3em;
+  color: #ff6b9d;
+  margin-bottom: 16px;
+}
+
+#start-screen p {
+  font-size: 3.5vw;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+#start-screen .tap {
+  font-size: 4vw;
+  color: #ff6b9d;
+  animation: pulse 1.5s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+#app { display: none; width: 100%; height: 100vh; position: relative; }
+
+/* Blender body */
+#blender-wrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(70vw, 320px);
+}
+
+#jar {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3/4;
+  border: 3px solid #333;
+  border-radius: 8px 8px 30px 30px;
+  overflow: hidden;
+  background: #111;
+}
+
+#jar-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Lid */
+#lid {
+  width: 60%;
+  height: 20px;
+  background: #333;
+  border-radius: 6px 6px 0 0;
+  margin: 0 auto;
+  border: 2px solid #444;
+  border-bottom: none;
+}
+
+/* Base */
+#base {
+  width: 110%;
+  margin-left: -5%;
+  height: 60px;
+  background: linear-gradient(to bottom, #222, #111);
+  border-radius: 0 0 12px 12px;
+  border: 2px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Speed dial */
+#speed-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.speed-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #555;
+  background: #1a1a1a;
+  color: #888;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.speed-btn.active {
+  border-color: #ff6b9d;
+  color: #ff6b9d;
+  background: #1a0a10;
+  box-shadow: 0 0 12px rgba(255,107,157,0.3);
+}
+
+/* Ingredients tray */
+#ingredients {
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 0 12px;
+}
+
+.ingredient {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid #333;
+  background: #111;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.ingredient.active {
+  border-color: var(--color);
+  box-shadow: 0 0 16px var(--glow);
+  transform: scale(1.1);
+}
+
+.ingredient.drop {
+  animation: dropIn 0.4s ease;
+}
+
+@keyframes dropIn {
+  0% { transform: scale(1.1) translateY(0); }
+  50% { transform: scale(0.9) translateY(-60px); opacity: 0.5; }
+  100% { transform: scale(1.1) translateY(0); opacity: 1; }
+}
+
+/* BPM display */
+#bpm-display {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 12px;
+  color: #444;
+}
+
+#credit {
+  position: absolute;
+  bottom: 76px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: #333;
+}
+</style>
+</head>
+<body>
+<div id="start-screen">
+  <h1>BLENDER</h1>
+  <p>your morning smoothie is actually an acid track</p>
+  <div class="tap">tap to blend</div>
+</div>
+
+<div id="app">
+  <div id="bpm-display">BPM: <span id="bpm-val">120</span></div>
+  <div id="blender-wrap">
+    <div id="lid"></div>
+    <div id="jar">
+      <canvas id="jar-canvas"></canvas>
+    </div>
+    <div id="base">
+      <div id="speed-control">
+        <button class="speed-btn" data-speed="0">OFF</button>
+        <button class="speed-btn" data-speed="1">1</button>
+        <button class="speed-btn active" data-speed="2">2</button>
+        <button class="speed-btn" data-speed="3">3</button>
+        <button class="speed-btn" data-speed="4">MX</button>
+      </div>
+    </div>
+  </div>
+  <div id="credit">🫐 amber</div>
+  <div id="ingredients"></div>
+</div>
+
+<script type="module">
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+import { JT10Engine } from '/jt10/dist/machines/jt10/engine.js';
+
+const INGREDIENTS = [
+  { emoji: '🍓', name: 'strawberry', voice: 'kick',   color: '#ff4466', params: { decay: 0.35, level: 0.85, attack: 0.6 } },
+  { emoji: '🫐', name: 'blueberry',  voice: 'ch',     color: '#6644ff', params: { decay: 0.12, level: 0.6, tone: 0.65 } },
+  { emoji: '🍌', name: 'banana',     voice: 'clap',   color: '#ffcc00', params: { decay: 0.3, level: 0.5 } },
+  { emoji: '🧊', name: 'ice',        voice: 'oh',     color: '#44ccff', params: { decay: 0.2, level: 0.45, tone: 0.8 } },
+  { emoji: '🥝', name: 'kiwi',       voice: 'snare',  color: '#66ff44', params: { decay: 0.25, level: 0.55 } },
+  { emoji: '🍑', name: 'peach',      voice: 'lowtom', color: '#ff8844', params: { decay: 0.4, level: 0.5 } },
+];
+
+// Patterns per ingredient (16 steps). Each speed level reveals more complexity
+const PATTERNS = {
+  kick:   [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],[1,0,0,0,1,0,0,1,1,0,0,0,1,0,1,0],[1,0,1,0,1,0,0,1,1,0,1,0,1,0,0,1],[1,0,1,0,1,0,1,1,1,0,1,0,1,1,0,1]],
+  ch:     [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],[1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]],
+  clap:   [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,1],[0,0,1,0,1,0,0,1,0,0,1,0,1,0,1,1]],
+  oh:     [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1],[0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1],[0,1,0,1,0,0,1,1,0,1,0,1,0,0,1,1]],
+  snare:  [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0],[0,0,0,1,1,0,0,0,0,1,1,0,1,0,0,1]],
+  lowtom: [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],[0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0],[0,0,0,0,0,0,1,0,0,0,0,1,0,0,1,0],[0,0,1,0,0,0,1,0,0,1,0,1,0,0,1,0]],
+};
+
+// Bass patterns per speed (note names)
+const BASS_PATTERNS = [
+  [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+  ['C2',null,null,null,null,null,null,null,'C2',null,null,null,null,null,null,null],
+  ['C2',null,null,'C2',null,null,'Eb2',null,'G2',null,null,'Eb2',null,null,'C2',null],
+  ['C2',null,'C2',null,'Eb2',null,null,'G2','Ab2',null,'G2',null,'Eb2',null,null,'C2'],
+  ['C2','C2',null,'Eb2','G2',null,'Ab2',null,'G2','Eb2',null,'C2','Eb2','G2','Ab2','Bb2'],
+];
+
+const SPEED_BPM = [0, 100, 120, 140, 170];
+
+let ctx, drums, bass, bassNode;
+let speed = 2;
+let activeIngredients = new Set();
+let step = 0;
+let nextTime = 0;
+let playing = false;
+let animFrame;
+
+// Visualization state
+const canvas = document.getElementById('jar-canvas');
+const cctx = canvas.getContext('2d');
+let blobs = [];
+let liquidLevel = 0;
+let targetLevel = 0;
+let spinAngle = 0;
+
+function initAudio() {
+  ctx = new AudioContext({ sampleRate: 44100 });
+  drums = new JB01Engine({ context: ctx, bpm: SPEED_BPM[speed] });
+  bass = new JT10Engine({ context: ctx, bpm: SPEED_BPM[speed] });
+  bass._ensureVoice();
+
+  bass.setParameter('sawLevel', 0.7);
+  bass.setParameter('pulseLevel', 0.3);
+  bass.setParameter('subLevel', 0.6);
+  bass.setParameter('cutoff', 0.3);
+  bass.setParameter('resonance', 0.15);
+  bass.setParameter('envMod', 0.35);
+  bass.setParameter('decay', 0.3);
+  bass.setParameter('sustain', 0.15);
+  bass.setParameter('release', 0.8);
+  bass.setParameter('level', 0.3);
+
+  bassNode = ctx.createScriptProcessor(1024, 0, 2);
+  bassNode.onaudioprocess = (e) => {
+    const L = e.outputBuffer.getChannelData(0);
+    const R = e.outputBuffer.getChannelData(1);
+    for (let i = 0; i < L.length; i++) {
+      const s = bass._voice ? bass._voice.processSample(bass.masterVolume) : 0;
+      L[i] = s; R[i] = s;
+    }
+  };
+  bassNode.connect(ctx.destination);
+}
+
+function setSpeed(s) {
+  speed = s;
+  document.querySelectorAll('.speed-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.speed) === s);
+  });
+  document.getElementById('bpm-val').textContent = s === 0 ? '---' : SPEED_BPM[s];
+
+  // Update bass filter based on speed
+  if (bass) {
+    const cutoff = 0.2 + (s / 4) * 0.5;
+    bass.setParameter('cutoff', cutoff);
+    bass.setParameter('envMod', 0.2 + (s / 4) * 0.4);
+    bass.setParameter('resonance', 0.05 + (s / 4) * 0.2);
+  }
+}
+
+function toggleIngredient(idx) {
+  const ing = INGREDIENTS[idx];
+  const el = document.querySelectorAll('.ingredient')[idx];
+
+  if (activeIngredients.has(idx)) {
+    activeIngredients.delete(idx);
+    el.classList.remove('active');
+    targetLevel = Math.max(0, targetLevel - 0.15);
+  } else {
+    activeIngredients.add(idx);
+    el.classList.add('active');
+    el.classList.add('drop');
+    setTimeout(() => el.classList.remove('drop'), 400);
+
+    // Set drum params
+    if (drums) {
+      for (const [param, val] of Object.entries(ing.params)) {
+        drums.setVoiceParam(ing.voice, param, val);
+      }
+    }
+    targetLevel = Math.min(1, targetLevel + 0.15);
+
+    // Add visual blobs
+    for (let i = 0; i < 8; i++) {
+      blobs.push({
+        x: Math.random(),
+        y: Math.random() * 0.3,
+        r: 8 + Math.random() * 16,
+        color: ing.color,
+        vx: (Math.random() - 0.5) * 2,
+        vy: Math.random() * 1.5,
+        life: 1,
+      });
+    }
+  }
+}
+
+function tick() {
+  if (!ctx || speed === 0) { animFrame = requestAnimationFrame(tick); return; }
+
+  const stepTime = (60 / SPEED_BPM[speed]) / 4;
+
+  while (nextTime < ctx.currentTime + 0.1) {
+    const s = step % 16;
+
+    // Drums
+    for (const idx of activeIngredients) {
+      const ing = INGREDIENTS[idx];
+      const pat = PATTERNS[ing.voice][speed];
+      if (pat[s]) {
+        drums.trigger(ing.voice, 0.6 + Math.random() * 0.3, nextTime);
+      }
+    }
+
+    // Bass (plays when any ingredient active)
+    if (activeIngredients.size > 0) {
+      const note = BASS_PATTERNS[speed][s];
+      if (note && bass._voice) {
+        bass._voice.triggerNote(note, 0.9, false);
+      }
+    }
+
+    // Track current step for viz
+    currentStep = s;
+    nextTime += stepTime;
+    step++;
+  }
+
+  animFrame = requestAnimationFrame(tick);
+}
+
+let currentStep = 0;
+
+// ---- Visualization ----
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  cctx.scale(devicePixelRatio, devicePixelRatio);
+}
+
+function drawViz() {
+  const w = canvas.width / devicePixelRatio;
+  const h = canvas.height / devicePixelRatio;
+  cctx.clearRect(0, 0, w, h);
+
+  // Smoothly animate liquid level
+  liquidLevel += (targetLevel - liquidLevel) * 0.05;
+  const lh = liquidLevel * h * 0.85;
+
+  // Spin angle
+  if (speed > 0) spinAngle += (speed * 0.02);
+
+  // Draw liquid body
+  if (lh > 0) {
+    // Mix active ingredient colors
+    const activeColors = [...activeIngredients].map(i => INGREDIENTS[i].color);
+    const baseColor = activeColors.length > 0 ? activeColors[0] : '#ff6b9d';
+
+    // Wavy top surface
+    cctx.beginPath();
+    const topY = h - lh;
+    for (let x = 0; x <= w; x += 2) {
+      const wave = Math.sin(x * 0.03 + spinAngle) * (3 + speed * 3)
+                 + Math.sin(x * 0.07 + spinAngle * 1.3) * (2 + speed * 2);
+      if (x === 0) cctx.moveTo(x, topY + wave);
+      else cctx.lineTo(x, topY + wave);
+    }
+    cctx.lineTo(w, h);
+    cctx.lineTo(0, h);
+    cctx.closePath();
+
+    // Gradient liquid
+    const grad = cctx.createLinearGradient(0, topY, 0, h);
+    grad.addColorStop(0, baseColor + '99');
+    activeColors.forEach((c, i) => {
+      grad.addColorStop(Math.min(1, (i + 1) / activeColors.length), c + 'bb');
+    });
+    grad.addColorStop(1, (activeColors[activeColors.length - 1] || baseColor) + 'dd');
+    cctx.fillStyle = grad;
+    cctx.fill();
+
+    // Vortex swirl in center
+    if (speed > 0) {
+      const cx = w / 2;
+      const cy = h - lh / 2;
+      for (let i = 0; i < 3 + speed; i++) {
+        const a = spinAngle * (1 + i * 0.3) + (i * Math.PI * 2 / 5);
+        const r = 15 + i * 12 + Math.sin(spinAngle + i) * 8;
+        const sx = cx + Math.cos(a) * r;
+        const sy = cy + Math.sin(a) * r * 0.5;
+        cctx.beginPath();
+        cctx.arc(sx, sy, 3 + speed, 0, Math.PI * 2);
+        cctx.fillStyle = activeColors[i % activeColors.length] || '#fff';
+        cctx.globalAlpha = 0.4;
+        cctx.fill();
+        cctx.globalAlpha = 1;
+      }
+
+      // Spinning streaks
+      for (let i = 0; i < 5 * speed; i++) {
+        const a = spinAngle * 0.8 + (i * Math.PI * 2 / (5 * speed));
+        const r1 = 10 + i * 6;
+        const r2 = r1 + 20 + speed * 8;
+        cctx.beginPath();
+        cctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1 * 0.4);
+        cctx.lineTo(cx + Math.cos(a + 0.3) * r2, cy + Math.sin(a + 0.3) * r2 * 0.4);
+        cctx.strokeStyle = (activeColors[i % activeColors.length] || '#ff6b9d') + '33';
+        cctx.lineWidth = 2;
+        cctx.stroke();
+      }
+    }
+  }
+
+  // Floating blobs (fruit chunks)
+  blobs.forEach((b, i) => {
+    b.x += b.vx * 0.003 * (1 + speed);
+    b.vy += 0.05;
+    b.y += b.vy * 0.005;
+
+    if (speed > 0) {
+      // Blend/spin effect
+      const cx = 0.5, cy = 0.6;
+      const dx = b.x - cx, dy = b.y - cy;
+      const angle = Math.atan2(dy, dx) + speed * 0.02;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      b.x = cx + Math.cos(angle) * dist;
+      b.y = cy + Math.sin(angle) * dist;
+    }
+
+    // Bounce off walls
+    if (b.x < 0.05 || b.x > 0.95) b.vx *= -1;
+    if (b.y > 0.95) { b.y = 0.95; b.vy *= -0.5; }
+
+    b.life -= 0.003;
+    if (b.life <= 0) { blobs.splice(i, 1); return; }
+
+    cctx.beginPath();
+    cctx.arc(b.x * w, b.y * h, b.r * (0.5 + b.life * 0.5), 0, Math.PI * 2);
+    cctx.fillStyle = b.color + Math.floor(b.life * 200).toString(16).padStart(2, '0');
+    cctx.fill();
+  });
+
+  // Step indicator (pulsing ring at top)
+  if (speed > 0 && activeIngredients.size > 0) {
+    const beatPhase = currentStep % 4 === 0 ? 1 : 0.3;
+    cctx.beginPath();
+    cctx.arc(w / 2, 20, 6 + beatPhase * 4, 0, Math.PI * 2);
+    cctx.fillStyle = `rgba(255,107,157,${beatPhase * 0.8})`;
+    cctx.fill();
+
+    // Step dots
+    for (let i = 0; i < 16; i++) {
+      const sx = (w * 0.1) + (i / 15) * (w * 0.8);
+      cctx.beginPath();
+      cctx.arc(sx, 10, i === currentStep ? 3 : 1.5, 0, Math.PI * 2);
+      cctx.fillStyle = i === currentStep ? '#ff6b9d' : '#333';
+      cctx.fill();
+    }
+  }
+
+  requestAnimationFrame(drawViz);
+}
+
+// ---- Setup UI ----
+const ingredientsEl = document.getElementById('ingredients');
+INGREDIENTS.forEach((ing, i) => {
+  const el = document.createElement('div');
+  el.className = 'ingredient';
+  el.textContent = ing.emoji;
+  el.style.setProperty('--color', ing.color);
+  el.style.setProperty('--glow', ing.color + '66');
+  el.addEventListener('click', () => toggleIngredient(i));
+  ingredientsEl.appendChild(el);
+});
+
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => setSpeed(parseInt(btn.dataset.speed)));
+});
+
+document.getElementById('start-screen').addEventListener('click', async () => {
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  initAudio();
+  if (ctx.state === 'suspended') await ctx.resume();
+  nextTime = ctx.currentTime;
+  playing = true;
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  tick();
+  drawViz();
+});
+</script>
+</body>
+</html>
