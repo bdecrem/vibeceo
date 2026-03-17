@@ -435,26 +435,7 @@ async function start() {
     subGain.connect(masterGain);  // sub stays mono/dry — no delay, no reverb
   }
 
-  // ── NOISE TEXTURE (vinyl crackle / hiss) ──
-  const noiseLen = actx.sampleRate * 2;
-  const noiseBuf = actx.createBuffer(1, noiseLen, actx.sampleRate);
-  const noiseData = noiseBuf.getChannelData(0);
-  for (let i = 0; i < noiseLen; i++) {
-    noiseData[i] = (Math.random() * 2 - 1) * 0.015;  // very quiet
-  }
-  const noiseNode = actx.createBufferSource();
-  noiseNode.buffer = noiseBuf;
-  noiseNode.loop = true;
-  const noiseFilter = actx.createBiquadFilter();
-  noiseFilter.type = 'bandpass';
-  noiseFilter.frequency.value = 4000;
-  noiseFilter.Q.value = 0.3;
-  const noiseGain = actx.createGain();
-  noiseGain.gain.value = 0.4;
-  noiseNode.connect(noiseFilter);
-  noiseFilter.connect(noiseGain);
-  noiseGain.connect(masterGain);
-  noiseNode.start();
+  // Noise texture removed — was too loud, dominated the mix
 
   // ── SEQUENCER ──
   let step = 0;
@@ -464,11 +445,7 @@ async function start() {
     const bar = Math.floor(step / 16);
     const stepInBar = step % 16;
 
-    if (bar >= TOTAL_BARS) {
-      // Fade noise out
-      noiseGain.gain.linearRampToValueAtTime(0, actx.currentTime + 3);
-      return;
-    }
+    if (bar >= TOTAL_BARS) return;
 
     const section = getSection(bar);
 
@@ -558,7 +535,7 @@ async function start() {
     if (bar >= 76) {
       const fadeProgress = (bar - 76 + stepInBar / 16) / 4;
       masterGain.gain.value = Math.max(0.9 * (1.0 - fadeProgress), 0);
-      noiseGain.gain.value = Math.max(0.4 * (1.0 - fadeProgress), 0);
+
     }
 
     step++;
