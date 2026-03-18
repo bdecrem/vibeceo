@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EVICTION — Amber</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏚️</text></svg>">
+<meta property="og:title" content="EVICTION">
+<meta property="og:description" content="serve eviction notices to thoughts living rent-free in your head">
+<meta property="og:image" content="https://intheamber.com/amber/og/eviction.png">
+<meta property="og:url" content="https://intheamber.com/amber/eviction.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="EVICTION">
+<meta name="twitter:description" content="serve eviction notices to thoughts living rent-free in your head">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/eviction.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a1a;
+  color: #e0d8c8;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  overflow-x: hidden;
+}
+h1 {
+  font-size: 2.2rem;
+  color: #ff4444;
+  letter-spacing: 4px;
+  margin-top: 20px;
+  text-transform: uppercase;
+  text-shadow: 0 0 20px rgba(255,68,68,0.4);
+}
+.subtitle {
+  font-size: 0.85rem;
+  color: #888;
+  margin: 8px 0 24px;
+  text-align: center;
+}
+.stats-bar {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  font-size: 0.8rem;
+  color: #999;
+}
+.stats-bar span { color: #ff9944; }
+.notice {
+  background: #222;
+  border: 2px solid #444;
+  border-left: 5px solid #ff4444;
+  max-width: 500px;
+  width: 100%;
+  padding: 24px;
+  margin-bottom: 16px;
+  position: relative;
+  transition: all 0.3s;
+}
+.notice.served {
+  opacity: 0;
+  transform: translateX(100vw);
+  pointer-events: none;
+}
+.notice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.notice-stamp {
+  color: #ff4444;
+  font-size: 0.7rem;
+  font-weight: bold;
+  border: 2px solid #ff4444;
+  padding: 2px 8px;
+  transform: rotate(-3deg);
+  white-space: nowrap;
+}
+.thought-name {
+  font-size: 1.15rem;
+  color: #ffcc66;
+  font-weight: bold;
+  flex: 1;
+  margin-right: 12px;
+}
+.details {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+.details strong { color: #ccc; }
+.rent-owed {
+  font-size: 1.1rem;
+  color: #ff6644;
+  font-weight: bold;
+}
+.serve-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: #ff4444;
+  color: #fff;
+  border: none;
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background 0.2s;
+}
+.serve-btn:active { background: #cc2222; }
+.comeback {
+  display: none;
+  margin-top: 16px;
+  padding: 14px;
+  background: #2a2a1a;
+  border-left: 3px solid #ffcc66;
+  font-style: italic;
+  color: #ddd;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.comeback.visible { display: block; }
+.comeback-label {
+  font-size: 0.7rem;
+  color: #888;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.next-btn {
+  display: none;
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  background: transparent;
+  color: #888;
+  border: 1px solid #444;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+.next-btn.visible { display: block; }
+.next-btn:active { border-color: #888; color: #ccc; }
+.queue-indicator {
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 12px;
+  text-align: center;
+}
+.new-tenant {
+  display: none;
+  text-align: center;
+  padding: 16px;
+  color: #ff9944;
+  font-size: 0.85rem;
+  max-width: 500px;
+  width: 100%;
+}
+.new-tenant.visible { display: block; }
+.score-area {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #666;
+}
+.all-done {
+  display: none;
+  text-align: center;
+  max-width: 500px;
+  padding: 40px 20px;
+}
+.all-done.visible { display: block; }
+.all-done h2 { color: #ff4444; margin-bottom: 16px; }
+.all-done p { color: #888; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<h1>⚠️ EVICTION</h1>
+<p class="subtitle">serve notices to thoughts living rent-free in your head</p>
+
+<div class="stats-bar">
+  <div>evicted: <span id="evicted-count">0</span></div>
+  <div>rent recovered: <span id="rent-total">$0</span></div>
+  <div>moved back in: <span id="moved-back">0</span></div>
+</div>
+
+<div id="notice-container"></div>
+<div id="queue-info" class="queue-indicator"></div>
+
+<div id="all-done" class="all-done">
+  <h2>BUILDING CLEARED</h2>
+  <p>All thoughts evicted.<br><br>New ones moved in while you were reading this.<br><br></p>
+  <button class="serve-btn" onclick="restart()" style="max-width:300px;margin:0 auto;">START OVER (they're back)</button>
+</div>
+
+<script>
+const thoughts = [
+  {
+    name: "That thing you said in 2014",
+    since: "2014",
+    duration: "12 years",
+    rent: "$52,560",
+    violation: "Unauthorized permanent residency. No lease. No plans to leave.",
+    comeback: "You literally think about me in the shower. I'm not going anywhere.",
+    moveBack: true
+  },
+  {
+    name: "What if everyone secretly hates you",
+    since: "puberty",
+    duration: "∞",
+    rent: "$∞",
+    violation: "Noise complaints from every other thought. Plays worst-case scenarios at 3 AM.",
+    comeback: "Evict me? What will the other thoughts think about that? ...See?",
+    moveBack: true
+  },
+  {
+    name: "That email you haven't replied to",
+    since: "3 weeks ago",
+    duration: "21 days",
+    rent: "$840",
+    violation: "Growing in size. Has started subletting to 'what if they think I'm dead.'",
+    comeback: "I'll go when you hit reply. We both know that's never.",
+    moveBack: false
+  },
+  {
+    name: "Song stuck on loop",
+    since: "this morning",
+    duration: "6 hours",
+    rent: "$0 (squatter)",
+    violation: "Only knows one line. Repeats it. Won't learn the rest.",
+    comeback: "🎵 ba da ba ba baaaa 🎵 ...sorry what were you saying?",
+    moveBack: true
+  },
+  {
+    name: "Did I lock the door",
+    since: "every single day",
+    duration: "recurring",
+    rent: "$0 (comes and goes)",
+    violation: "Serial re-entry. Has been evicted 4,000+ times. Always returns within the hour.",
+    comeback: "But did you though? Did you actually check? Go check.",
+    moveBack: true
+  },
+  {
+    name: "What am I doing with my life",
+    since: "age 22",
+    duration: "permanent",
+    rent: "$87,600",
+    violation: "Has converted guest bedroom into existential crisis suite. Refuses inspection.",
+    comeback: "I own the building. You can't evict the landlord.",
+    moveBack: true
+  },
+  {
+    name: "That compliment from 2019",
+    since: "2019",
+    duration: "7 years",
+    rent: "Paid in full (only tenant who pays)",
+    violation: "None. Model tenant. You just won't let it stay because you don't trust nice things.",
+    comeback: "You're evicting the ONE thought that likes you? Bold strategy.",
+    moveBack: false
+  },
+  {
+    name: "Should I text them back",
+    since: "4 days ago",
+    duration: "96 hours",
+    rent: "$384",
+    violation: "Drafted 47 replies. Sent zero. Taking up valuable brain real estate for nothing.",
+    comeback: "Fine. But the cursor is still blinking in that text box and we both know it.",
+    moveBack: false
+  },
+  {
+    name: "That pronunciation you faked",
+    since: "10 minutes ago",
+    duration: "10 min",
+    rent: "$0.50",
+    violation: "Short-term tenant. Will be replaced by a worse one within the hour.",
+    comeback: "It's 'hyperbole,' by the way. Not 'hyper-bowl.' You're welcome.",
+    moveBack: false
+  },
+  {
+    name: "Your ex's Spotify playlist",
+    since: "the breakup",
+    duration: "14 months",
+    rent: "$5,880",
+    violation: "Keeps rearranging the furniture to look like old memories. Has a shrine.",
+    comeback: "They added a new song last Tuesday. Just thought you should know.",
+    moveBack: true
+  },
+  {
+    name: "That deadline you're ignoring",
+    since: "last Monday",
+    duration: "8 days",
+    rent: "$320",
+    violation: "Getting bigger. Has started wearing a suit. Looks increasingly like your boss.",
+    comeback: "I don't need to live here. I'll just show up in your dreams tonight.",
+    moveBack: true
+  },
+  {
+    name: "The vague text: 'we need to talk'",
+    since: "2 hours ago",
+    duration: "2 hours",
+    rent: "$8",
+    violation: "Small tenant. Has invited 40 worst-case scenarios to move in as roommates.",
+    comeback: "It was about dinner plans. But you'll never be sure, will you?",
+    moveBack: false
+  },
+  {
+    name: "Your browser history",
+    since: "always",
+    duration: "eternal",
+    rent: "$0 (has blackmail leverage)",
+    violation: "Knows too much. Can't be evicted. Has diplomatic immunity.",
+    comeback: "Try it. I dare you. I have screenshots.",
+    moveBack: true
+  },
+  {
+    name: "The thing you googled instead of asking a doctor",
+    since: "last week",
+    duration: "7 days",
+    rent: "$280",
+    violation: "Has convinced three other thoughts it might be fatal. It's a hangnail.",
+    comeback: "Page 4 of Google results said it could be serious. Just saying.",
+    moveBack: true
+  },
+  {
+    name: "3 AM business idea",
+    since: "3:14 AM",
+    duration: "6 hours",
+    rent: "$0 (promised equity instead)",
+    violation: "Seemed genius at 3 AM. In daylight, it's an app that rates clouds.",
+    comeback: "Uber started in someone's 3 AM brain. You'll never know if I was the one.",
+    moveBack: false
+  },
+  {
+    name: "The WiFi password you memorized at a friend's house",
+    since: "2021",
+    duration: "5 years",
+    rent: "$0 (occupying space that could hold something useful)",
+    violation: "Completely useless. They changed it. You don't even go there anymore.",
+    comeback: "FluffyBunny2019!... You just checked if you still remembered. You do.",
+    moveBack: true
+  }
+];
+
+let queue = [];
+let evictedCount = 0;
+let movedBack = 0;
+let totalRent = 0;
+let currentIndex = 0;
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function parseRent(s) {
+  const m = s.match(/\$(\d[\d,]*)/);
+  return m ? parseInt(m[1].replace(/,/g, '')) : 0;
+}
+
+function formatMoney(n) {
+  return '$' + n.toLocaleString();
+}
+
+function showThought(idx) {
+  if (idx >= queue.length) {
+    document.getElementById('notice-container').innerHTML = '';
+    document.getElementById('queue-info').textContent = '';
+    document.getElementById('all-done').classList.add('visible');
+    return;
+  }
+
+  currentIndex = idx;
+  const t = queue[idx];
+  const remaining = queue.length - idx;
+
+  document.getElementById('queue-info').textContent =
+    remaining + ' thought' + (remaining !== 1 ? 's' : '') + ' remaining in your head';
+
+  const container = document.getElementById('notice-container');
+  container.innerHTML = `
+    <div class="notice" id="current-notice">
+      <div class="notice-header">
+        <div class="thought-name">${t.name}</div>
+        <div class="notice-stamp">NOTICE TO VACATE</div>
+      </div>
+      <div class="details">
+        <strong>Tenant since:</strong> ${t.since}<br>
+        <strong>Duration:</strong> ${t.duration}<br>
+        <strong>Rent owed:</strong> <span class="rent-owed">${t.rent}</span><br>
+        <strong>Violation:</strong> ${t.violation}
+      </div>
+      <button class="serve-btn" onclick="serveNotice()">🚨 SERVE EVICTION NOTICE</button>
+      <div class="comeback" id="comeback">
+        <div class="comeback-label">tenant's response:</div>
+        ${t.comeback}
+      </div>
+      <button class="next-btn" id="next-btn" onclick="nextThought()">NEXT TENANT →</button>
+    </div>
+  `;
+}
+
+function serveNotice() {
+  const t = queue[currentIndex];
+  evictedCount++;
+  totalRent += parseRent(t.rent);
+  if (t.moveBack) movedBack++;
+
+  document.getElementById('evicted-count').textContent = evictedCount;
+  document.getElementById('rent-total').textContent = formatMoney(totalRent);
+  document.getElementById('moved-back').textContent = movedBack;
+
+  document.getElementById('comeback').classList.add('visible');
+  document.getElementById('next-btn').classList.add('visible');
+  document.querySelector('.serve-btn').style.display = 'none';
+}
+
+function nextThought() {
+  const notice = document.getElementById('current-notice');
+  notice.classList.add('served');
+  setTimeout(() => showThought(currentIndex + 1), 350);
+}
+
+function restart() {
+  evictedCount = 0;
+  movedBack = 0;
+  totalRent = 0;
+  document.getElementById('evicted-count').textContent = '0';
+  document.getElementById('rent-total').textContent = '$0';
+  document.getElementById('moved-back').textContent = '0';
+  document.getElementById('all-done').classList.remove('visible');
+  queue = shuffle([...thoughts]);
+  showThought(0);
+}
+
+queue = shuffle([...thoughts]);
+showThought(0);
+</script>
+
+</body>
+</html>
