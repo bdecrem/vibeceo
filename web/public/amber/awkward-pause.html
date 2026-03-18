@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AWKWARD PAUSE CALCULATOR</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>😶</text></svg>">
+<meta property="og:title" content="AWKWARD PAUSE CALCULATOR">
+<meta property="og:description" content="precision silence measurement">
+<meta property="og:image" content="https://intheamber.com/amber/og/awkward-pause.png">
+<meta property="og:url" content="https://intheamber.com/amber/awkward-pause.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AWKWARD PAUSE CALCULATOR">
+<meta name="twitter:description" content="precision silence measurement">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/awkward-pause.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0f;
+  color: #e0ddd5;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+h1 {
+  font-size: clamp(20px, 5vw, 32px);
+  color: #ff6b4a;
+  letter-spacing: 2px;
+  margin: 20px 0 5px;
+  text-align: center;
+}
+.subtitle {
+  color: #666;
+  font-size: 12px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 30px;
+  text-align: center;
+}
+.container {
+  max-width: 500px;
+  width: 100%;
+}
+.step {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+.step.active { display: block; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.question {
+  color: #ff6b4a;
+  font-size: clamp(14px, 3.5vw, 18px);
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.option {
+  background: #15151f;
+  border: 1px solid #2a2a3a;
+  color: #e0ddd5;
+  font-family: 'Courier New', monospace;
+  font-size: 15px;
+  padding: 14px 18px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+.option:hover, .option:active {
+  background: #1f1f2f;
+  border-color: #ff6b4a;
+  color: #fff;
+}
+.option .key {
+  color: #ff6b4a;
+  margin-right: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+/* RESULTS */
+.result {
+  display: none;
+  animation: fadeIn 0.5s ease;
+}
+.result.active { display: block; }
+.result-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+.pause-name {
+  font-size: clamp(18px, 4.5vw, 26px);
+  color: #ff6b4a;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.pause-class {
+  color: #666;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.meter-section {
+  margin: 20px 0;
+}
+.meter-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.meter-bar {
+  height: 8px;
+  background: #1a1a2a;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.meter-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease;
+  width: 0;
+}
+.meter-fill.duration { background: #ff6b4a; }
+.meter-fill.intensity { background: #ffaa4a; }
+.meter-fill.witnesses { background: #4aff6b; }
+.meter-fill.recovery { background: #4a9fff; }
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #1a1a2a;
+  font-size: 14px;
+}
+.stat-label { color: #888; }
+.stat-value { color: #ff6b4a; font-weight: bold; }
+
+.diagnosis {
+  background: #15151f;
+  border: 1px solid #2a2a3a;
+  border-radius: 4px;
+  padding: 16px;
+  margin: 20px 0;
+}
+.diagnosis-title {
+  color: #ff6b4a;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.diagnosis-text {
+  color: #ccc;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.survival-tip {
+  background: #0f1a0f;
+  border: 1px solid #1a3a1a;
+  border-radius: 4px;
+  padding: 16px;
+  margin: 15px 0;
+}
+.survival-tip .diagnosis-title { color: #4aff6b; }
+
+.restart-btn {
+  background: transparent;
+  border: 1px solid #ff6b4a;
+  color: #ff6b4a;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  padding: 12px 24px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 25px auto;
+  display: block;
+  min-height: 48px;
+}
+.restart-btn:hover { background: #ff6b4a; color: #0a0a0f; }
+
+.timer-display {
+  text-align: center;
+  margin: 20px 0;
+  padding: 15px;
+  background: #15151f;
+  border-radius: 4px;
+}
+.timer-seconds {
+  font-size: clamp(36px, 10vw, 60px);
+  color: #ff6b4a;
+  font-weight: bold;
+}
+.timer-unit {
+  color: #666;
+  font-size: 12px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.credit {
+  text-align: center;
+  color: #333;
+  font-size: 11px;
+  margin-top: 40px;
+  letter-spacing: 1px;
+}
+.credit a { color: #555; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<h1>AWKWARD PAUSE CALCULATOR</h1>
+<p class="subtitle">precision silence measurement</p>
+
+<div class="container">
+  <!-- STEP 1: Scenario -->
+  <div class="step active" id="step1">
+    <p class="question">What kind of silence are we dealing with?</p>
+    <div class="options">
+      <button class="option" data-val="joke"><span class="key">A</span> Nobody laughed at your joke</button>
+      <button class="option" data-val="name"><span class="key">B</span> You used the wrong name</button>
+      <button class="option" data-val="wave"><span class="key">C</span> Waved at someone who wasn't waving at you</button>
+      <button class="option" data-val="ex"><span class="key">D</span> Ran into an ex</button>
+      <button class="option" data-val="elevator"><span class="key">E</span> Trapped in an elevator with a coworker</button>
+      <button class="option" data-val="reply"><span class="key">F</span> Said "you too" when you shouldn't have</button>
+      <button class="option" data-val="overshare"><span class="key">G</span> Accidentally overshared</button>
+      <button class="option" data-val="food"><span class="key">H</span> Bit into food that was too hot</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Witnesses -->
+  <div class="step" id="step2">
+    <p class="question">How many witnesses?</p>
+    <div class="options">
+      <button class="option" data-val="0"><span class="key">A</span> Just me and god</button>
+      <button class="option" data-val="1"><span class="key">B</span> One other person (maximum damage)</button>
+      <button class="option" data-val="few"><span class="key">C</span> 3-5 people</button>
+      <button class="option" data-val="crowd"><span class="key">D</span> An entire room</button>
+      <button class="option" data-val="internet"><span class="key">E</span> It was on a video call</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Relationship -->
+  <div class="step" id="step3">
+    <p class="question">Your relationship to the other person(s)?</p>
+    <div class="options">
+      <button class="option" data-val="stranger"><span class="key">A</span> Complete stranger</button>
+      <button class="option" data-val="acquaintance"><span class="key">B</span> Acquaintance (worst category)</button>
+      <button class="option" data-val="coworker"><span class="key">C</span> Coworker</button>
+      <button class="option" data-val="boss"><span class="key">D</span> Boss or authority figure</button>
+      <button class="option" data-val="crush"><span class="key">E</span> Crush</button>
+      <button class="option" data-val="family"><span class="key">F</span> Family member</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Your response -->
+  <div class="step" id="step4">
+    <p class="question">What did you do during the silence?</p>
+    <div class="options">
+      <button class="option" data-val="freeze"><span class="key">A</span> Froze completely</button>
+      <button class="option" data-val="phone"><span class="key">B</span> Pretended to check my phone</button>
+      <button class="option" data-val="laugh"><span class="key">C</span> Laughed nervously</button>
+      <button class="option" data-val="explain"><span class="key">D</span> Tried to explain (made it worse)</button>
+      <button class="option" data-val="leave"><span class="key">E</span> Physically left</button>
+      <button class="option" data-val="double"><span class="key">F</span> Doubled down</button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result" id="result">
+    <div class="result-header">
+      <div class="pause-class">CLASSIFIED SILENCE TYPE</div>
+      <div class="pause-name" id="pauseName"></div>
+    </div>
+
+    <div class="timer-display">
+      <div class="timer-seconds" id="durationDisplay">0.0</div>
+      <div class="timer-unit">estimated duration (seconds)</div>
+    </div>
+
+    <div class="meter-section">
+      <div class="meter-label"><span>Intensity</span><span id="intensityPct"></span></div>
+      <div class="meter-bar"><div class="meter-fill intensity" id="intensityBar"></div></div>
+
+      <div class="meter-label"><span>Witnesses Traumatized</span><span id="witnessPct"></span></div>
+      <div class="meter-bar"><div class="meter-fill witnesses" id="witnessBar"></div></div>
+
+      <div class="meter-label"><span>Recovery Time</span><span id="recoveryPct"></span></div>
+      <div class="meter-bar"><div class="meter-fill recovery" id="recoveryBar"></div></div>
+    </div>
+
+    <div class="stat-row">
+      <span class="stat-label">Cringe Classification</span>
+      <span class="stat-value" id="cringeClass"></span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Memory Half-Life</span>
+      <span class="stat-value" id="memoryHalfLife"></span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">3AM Flashback Risk</span>
+      <span class="stat-value" id="flashbackRisk"></span>
+    </div>
+
+    <div class="diagnosis">
+      <div class="diagnosis-title">Official Diagnosis</div>
+      <div class="diagnosis-text" id="diagnosisText"></div>
+    </div>
+
+    <div class="survival-tip">
+      <div class="diagnosis-title">Survival Protocol</div>
+      <div class="diagnosis-text" id="survivalText"></div>
+    </div>
+
+    <button class="restart-btn" id="restartBtn">CALCULATE ANOTHER SILENCE</button>
+  </div>
+</div>
+
+<p class="credit"><a href="https://intheamber.com">intheamber.com</a></p>
+
+<script>
+const answers = {};
+let currentStep = 1;
+
+// Silence taxonomy
+const PAUSES = {
+  joke: {
+    names: ["The Post-Punchline Void", "The Comedy Crevasse", "The Humor Vacuum"],
+    base: 3.2,
+    baseIntensity: 72,
+  },
+  name: {
+    names: ["The Identity Crisis Interval", "The Name Fumble Freeze", "The Who-Are-You Wasteland"],
+    base: 4.1,
+    baseIntensity: 85,
+  },
+  wave: {
+    names: ["The Phantom Wave Paralysis", "The Unreciprocated Gesture Gap", "The Solo Wave Syndrome"],
+    base: 2.7,
+    baseIntensity: 68,
+  },
+  ex: {
+    names: ["The Romantic Wreckage Window", "The Ex-Factor Eternity", "The History Channel"],
+    base: 6.4,
+    baseIntensity: 91,
+  },
+  elevator: {
+    names: ["The Vertical Coffin Quiet", "The Ascending Dread", "The Floor-Staring Championship"],
+    base: 8.0,
+    baseIntensity: 55,
+  },
+  reply: {
+    names: ["The You-Too Catastrophe", "The Automatic Response Regret", "The Reflex Ruin"],
+    base: 2.1,
+    baseIntensity: 78,
+  },
+  overshare: {
+    names: ["The TMI Tundra", "The Confession Crater", "The Boundary Breach Blackout"],
+    base: 5.5,
+    baseIntensity: 88,
+  },
+  food: {
+    names: ["The Thermal Betrayal Pause", "The Mouth-On-Fire Mime", "The Lava Bite Lockup"],
+    base: 1.8,
+    baseIntensity: 45,
+  },
+};
+
+const WITNESS_MULT = { "0": 0.7, "1": 1.3, few: 1.5, crowd: 2.1, internet: 3.0 };
+const RELATIONSHIP_MULT = { stranger: 0.8, acquaintance: 1.2, coworker: 1.1, boss: 1.6, crush: 2.0, family: 0.9 };
+const RESPONSE_MULT = { freeze: 1.0, phone: 0.7, laugh: 1.1, explain: 1.8, leave: 0.5, double: 2.5 };
+
+const CRINGE_CLASSES = [
+  [30, "Mild Discomfort"],
+  [50, "Notable Cringe"],
+  [70, "Severe Awkwardness"],
+  [85, "Critical Embarrassment"],
+  [95, "Extinction-Level Event"],
+  [Infinity, "Geneva Convention Violation"],
+];
+
+const DIAGNOSES = {
+  joke: [
+    "The silence formed a perfect vacuum where laughter should have been. Nearby conversations paused in sympathy. One person coughed — not to break the silence, but because their body needed to do SOMETHING.",
+    "Your joke entered the atmosphere and burned up on re-entry. The resulting silence was dense enough to affect local gravity. Witnesses report a faint ringing in their ears.",
+  ],
+  name: [
+    "The wrong name hung in the air like a cloud of bees. Everyone heard it. The person you misnamed is now questioning their entire identity. You have created an existential crisis in someone who was just trying to say hi.",
+    "By calling them the wrong name, you briefly deleted their personhood. The silence that followed was their soul rebooting.",
+  ],
+  wave: [
+    "Your arm, fully extended in greeting, slowly became an exhibit in a museum of human failure. The return journey — arm descending back to your side — took approximately 400 years.",
+    "The phantom wave has been documented by scientists as the fastest way to convert confidence into vapor. Your arm is now evidence in an ongoing investigation.",
+  ],
+  ex: [
+    "Time dilated. Einstein was right but for the wrong reasons — relativity is just what happens when you see your ex at the grocery store. The frozen food aisle has never been more accurately named.",
+    "Both of you performed the ancient ritual of pretending to be fascinated by nearby objects. You learned more about a stranger's shopping cart in those 6 seconds than you learned about yourself in years of therapy.",
+  ],
+  elevator: [
+    "The elevator became a sensory deprivation chamber with fluorescent lighting. Floor numbers ticked by with the urgency of continental drift. You both stared at the door like it was the only movie playing.",
+    "Somewhere around floor 3, you both realized you'd used up all your small talk last Tuesday. The remaining floors were spent in a silence so thick it registered on the building's structural sensors.",
+  ],
+  reply: [
+    "\"Enjoy your meal.\" \"You too.\" The waiter is not going to enjoy your meal. The waiter knows. You know. The table knows. The universe has logged this incident.",
+    "Your mouth, operating on autopilot, committed a social felony. The \"you too\" echoed in a dimension where all misplaced pleasantries go to live forever.",
+  ],
+  overshare: [
+    "You said the quiet part loud. The loud part louder. And then — for reasons still under investigation — you kept going. The silence that followed was everyone simultaneously deciding they'd heard enough.",
+    "The information you shared now exists in other people's brains, rent-free, forever. They didn't ask for this knowledge. They will never be able to un-know it. You have remodeled their interior world without a permit.",
+  ],
+  food: [
+    "The betrayal was thermal. The pizza/soup/coffee — which appeared safe — was, in fact, the surface temperature of Venus. Your face performed expressions not found in any emoji set.",
+    "For 1.8 seconds, you contained molten lava inside your face while maintaining eye contact with another human. This is technically a superpower, but not a useful one.",
+  ],
+};
+
+const SURVIVALS = {
+  freeze: "You chose the prey response. Classic. Next time, try making a sound — any sound. Even a cough. The bar is underground.",
+  phone: "The phone check — humanity's universal escape hatch. No one believed you received an urgent notification. But they respected the theater of it.",
+  laugh: "The nervous laugh: your body's fire alarm going off in a building that isn't burning. Technically a defense mechanism. Practically, it adds 0.4 seconds to the pause.",
+  explain: "You tried to explain your way out of a silence. This is like trying to extinguish a fire with more fire. The explanation became a second, smaller awkward moment nested inside the first one. Recursion.",
+  leave: "The tactical retreat. Bold. Effective. You will never be able to use that exit again without flashbacks, but at least the silence died when you did.",
+  double: "You DOUBLED DOWN. Absolute chaos agent behavior. The awkwardness increased exponentially but — and this is key — you now own it. The silence belongs to them. You are free.",
+};
+
+const MEMORY_HALF_LIVES = [
+  [30, "2 hours"],
+  [50, "3 days"],
+  [70, "2 weeks"],
+  [85, "6 months"],
+  [95, "3 years"],
+  [Infinity, "Permanent (sorry)"],
+];
+
+const FLASHBACK_RISKS = [
+  [30, "Low — may surface once at 2AM"],
+  [50, "Moderate — weekly 3AM replays"],
+  [70, "High — random mid-shower ambush"],
+  [85, "Severe — triggered by similar situations"],
+  [95, "Critical — just thinking about it now"],
+  [Infinity, "Total — this IS a 3AM thought now"],
+];
+
+document.querySelectorAll('.step .option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const step = btn.closest('.step');
+    const stepNum = parseInt(step.id.replace('step', ''));
+    answers[stepNum] = btn.dataset.val;
+    step.classList.remove('active');
+
+    if (stepNum < 4) {
+      const next = document.getElementById('step' + (stepNum + 1));
+      next.classList.add('active');
+      currentStep = stepNum + 1;
+    } else {
+      showResult();
+    }
+  });
+});
+
+function showResult() {
+  const scenario = answers[1];
+  const witnesses = answers[2];
+  const relationship = answers[3];
+  const response = answers[4];
+
+  const pause = PAUSES[scenario];
+  const names = pause.names;
+  const pauseName = names[Math.floor(Math.random() * names.length)];
+
+  // Calculate duration
+  const duration = Math.round(pause.base * WITNESS_MULT[witnesses] * RELATIONSHIP_MULT[relationship] * RESPONSE_MULT[response] * 10) / 10;
+
+  // Calculate intensity
+  let intensity = Math.min(99, Math.round(
+    pause.baseIntensity * (WITNESS_MULT[witnesses] * 0.5 + 0.5) * (RELATIONSHIP_MULT[relationship] * 0.6 + 0.4) * (RESPONSE_MULT[response] * 0.4 + 0.6)
+  ));
+
+  const witnessTrauma = witnesses === '0' ? 0 : Math.min(99, Math.round(intensity * 0.85));
+  const recoveryTime = Math.min(99, Math.round(intensity * 0.9 + duration * 2));
+
+  // Set name
+  document.getElementById('pauseName').textContent = pauseName;
+
+  // Animate duration counter
+  const durationEl = document.getElementById('durationDisplay');
+  let countDur = 0;
+  const durInterval = setInterval(() => {
+    countDur += duration / 30;
+    if (countDur >= duration) {
+      countDur = duration;
+      clearInterval(durInterval);
+    }
+    durationEl.textContent = countDur.toFixed(1);
+  }, 30);
+
+  // Animate bars
+  setTimeout(() => {
+    document.getElementById('intensityBar').style.width = intensity + '%';
+    document.getElementById('intensityPct').textContent = intensity + '%';
+    document.getElementById('witnessBar').style.width = witnessTrauma + '%';
+    document.getElementById('witnessPct').textContent = witnessTrauma + '%';
+    document.getElementById('recoveryBar').style.width = recoveryTime + '%';
+    document.getElementById('recoveryPct').textContent = recoveryTime + '%';
+  }, 100);
+
+  // Cringe class
+  document.getElementById('cringeClass').textContent = CRINGE_CLASSES.find(([t]) => intensity < t)[1];
+  document.getElementById('memoryHalfLife').textContent = MEMORY_HALF_LIVES.find(([t]) => intensity < t)[1];
+  document.getElementById('flashbackRisk').textContent = FLASHBACK_RISKS.find(([t]) => intensity < t)[1];
+
+  // Diagnosis
+  const diags = DIAGNOSES[scenario];
+  document.getElementById('diagnosisText').textContent = diags[Math.floor(Math.random() * diags.length)];
+
+  // Survival
+  document.getElementById('survivalText').textContent = SURVIVALS[response];
+
+  document.getElementById('result').classList.add('active');
+}
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  document.getElementById('result').classList.remove('active');
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step1').classList.add('active');
+  currentStep = 1;
+  // Reset bars
+  document.querySelectorAll('.meter-fill').forEach(b => b.style.width = '0');
+});
+</script>
+</body>
+</html>
