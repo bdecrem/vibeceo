@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>FORGE</title>
+<meta property="og:title" content="FORGE">
+<meta property="og:description" content="heat reveals what cold metal hides">
+<meta property="og:image" content="https://intheamber.com/amber/og/forge.png">
+<meta property="og:url" content="https://intheamber.com/amber/forge.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FORGE">
+<meta name="twitter:description" content="heat reveals what cold metal hides">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/forge.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0604; touch-action: none; }
+canvas { display: block; width: 100%; height: 100%; }
+#title {
+  position: fixed; top: 20px; left: 0; right: 0;
+  text-align: center; font-family: 'Courier New', monospace;
+  color: rgba(255, 140, 50, 0.6); font-size: 14px;
+  letter-spacing: 6px; text-transform: uppercase;
+  pointer-events: none; z-index: 10;
+  transition: opacity 2s;
+}
+#hint {
+  position: fixed; bottom: 30px; left: 0; right: 0;
+  text-align: center; font-family: 'Courier New', monospace;
+  color: rgba(255, 100, 30, 0.4); font-size: 12px;
+  letter-spacing: 3px; pointer-events: none; z-index: 10;
+  transition: opacity 1s;
+}
+</style>
+</head>
+<body>
+<div id="title">FORGE</div>
+<div id="hint">tap to strike</div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('hint');
+
+let W, H;
+const SCALE = 4; // pixel scale for performance
+let cols, rows;
+let heat, heatNext;
+let sparks = [];
+let strikes = [];
+let time = 0;
+let tapped = false;
+
+function resize() {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+  cols = Math.ceil(W / SCALE);
+  rows = Math.ceil(H / SCALE);
+  heat = new Float32Array(cols * rows);
+  heatNext = new Float32Array(cols * rows);
+  // Initialize with some base heat
+  for (let i = 0; i < heat.length; i++) {
+    heat[i] = 0.05 + Math.random() * 0.08;
+  }
+}
+
+// Simplex-ish noise (fast hash-based)
+function hash(x, y, s) {
+  let h = x * 374761393 + y * 668265263 + s * 1274126177;
+  h = (h ^ (h >> 13)) * 1274126177;
+  return ((h ^ (h >> 16)) & 0x7fffffff) / 0x7fffffff;
+}
+
+function smoothNoise(x, y, s) {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  const fx = x - ix, fy = y - iy;
+  const sx = fx * fx * (3 - 2 * fx);
+  const sy = fy * fy * (3 - 2 * fy);
+  const a = hash(ix, iy, s);
+  const b = hash(ix + 1, iy, s);
+  const c = hash(ix, iy + 1, s);
+  const d = hash(ix + 1, iy + 1, s);
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+}
+
+function fbm(x, y, s) {
+  let v = 0, amp = 0.5, freq = 1;
+  for (let i = 0; i < 4; i++) {
+    v += amp * smoothNoise(x * freq, y * freq, s);
+    amp *= 0.5;
+    freq *= 2.1;
+  }
+  return v;
+}
+
+// Color mapping: heat value (0-1) → RGB
+function heatColor(v) {
+  // Black → deep red → orange → yellow → white
+  if (v < 0.15) {
+    const t = v / 0.15;
+    return [t * 40 | 0, t * 5 | 0, t * 2 | 0];
+  } else if (v < 0.35) {
+    const t = (v - 0.15) / 0.2;
+    return [40 + t * 180 | 0, 5 + t * 30 | 0, 2 | 0];
+  } else if (v < 0.6) {
+    const t = (v - 0.35) / 0.25;
+    return [220 + t * 35 | 0, 35 + t * 100 | 0, 2 + t * 10 | 0];
+  } else if (v < 0.8) {
+    const t = (v - 0.6) / 0.2;
+    return [255, 135 + t * 100 | 0, 12 + t * 60 | 0];
+  } else {
+    const t = (v - 0.8) / 0.2;
+    return [255, 235 + t * 20 | 0, 72 + t * 183 | 0];
+  }
+}
+
+function addStrike(x, y) {
+  strikes.push({
+    x: x / SCALE,
+    y: y / SCALE,
+    radius: 0,
+    maxRadius: 30 + Math.random() * 30,
+    strength: 0.8 + Math.random() * 0.4,
+    time: 0
+  });
+
+  // Add sparks
+  const count = 20 + Math.random() * 30 | 0;
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1 + Math.random() * 5;
+    const size = 1 + Math.random() * 3;
+    sparks.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - Math.random() * 3,
+      life: 1,
+      decay: 0.008 + Math.random() * 0.015,
+      size,
+      bright: 0.6 + Math.random() * 0.4
+    });
+  }
+}
+
+// Flowing veins of heat — like convection currents
+function flowHeat() {
+  const t = time * 0.003;
+  const t2 = time * 0.001;
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const idx = y * cols + x;
+
+      // Base flowing heat from noise
+      const nx = x * 0.02;
+      const ny = y * 0.02;
+      const flow1 = fbm(nx + t * 0.3, ny + t * 0.15, 42);
+      const flow2 = fbm(nx * 1.5 - t * 0.2, ny * 1.5 + t * 0.1, 137);
+      const flow3 = smoothNoise(nx * 0.5 + t * 0.08, ny * 0.5 + t2 * 2, 99);
+
+      // Create veins/channels of heat
+      let baseHeat = flow1 * 0.4 + flow2 * 0.3 + flow3 * 0.2;
+
+      // Center is hotter
+      const cx = (x - cols / 2) / (cols / 2);
+      const cy = (y - rows / 2) / (rows / 2);
+      const distFromCenter = Math.sqrt(cx * cx + cy * cy);
+      const centerBoost = Math.max(0, 1 - distFromCenter * 0.8);
+      baseHeat += centerBoost * 0.15;
+
+      // Vein-like structures
+      const vein = Math.sin(flow1 * 12 + t * 0.5) * 0.5 + 0.5;
+      const veinIntensity = Math.pow(vein, 4) * 0.3;
+      baseHeat += veinIntensity;
+
+      // Blend with existing heat (keep strike effects)
+      const existing = heat[idx];
+      heatNext[idx] = baseHeat * 0.7 + existing * 0.3;
+
+      // Slight diffusion
+      if (x > 0 && x < cols - 1 && y > 0 && y < rows - 1) {
+        const avg = (heat[idx - 1] + heat[idx + 1] + heat[idx - cols] + heat[idx + cols]) * 0.25;
+        heatNext[idx] = heatNext[idx] * 0.95 + avg * 0.05;
+      }
+    }
+  }
+
+  // Apply strikes
+  for (let i = strikes.length - 1; i >= 0; i--) {
+    const s = strikes[i];
+    s.radius += 1.5;
+    s.time += 1;
+    const fade = Math.max(0, 1 - s.time / 60);
+
+    if (fade <= 0) {
+      strikes.splice(i, 1);
+      continue;
+    }
+
+    // Ring of heat at the strike radius
+    const r = s.radius;
+    for (let a = 0; a < Math.PI * 2; a += 0.05) {
+      const px = Math.round(s.x + Math.cos(a) * r);
+      const py = Math.round(s.y + Math.sin(a) * r);
+      if (px >= 0 && px < cols && py >= 0 && py < rows) {
+        const idx = py * cols + px;
+        heatNext[idx] = Math.min(1, heatNext[idx] + s.strength * fade * 0.3);
+      }
+    }
+
+    // Also heat the center fading
+    const centerR = r * 0.6;
+    for (let dy = -centerR; dy <= centerR; dy++) {
+      for (let dx = -centerR; dx <= centerR; dx++) {
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > centerR) continue;
+        const px = Math.round(s.x + dx);
+        const py = Math.round(s.y + dy);
+        if (px >= 0 && px < cols && py >= 0 && py < rows) {
+          const idx = py * cols + px;
+          const falloff = 1 - dist / centerR;
+          heatNext[idx] = Math.min(1, heatNext[idx] + s.strength * fade * falloff * 0.5);
+        }
+      }
+    }
+  }
+
+  // Swap buffers
+  [heat, heatNext] = [heatNext, heat];
+}
+
+function updateSparks() {
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.x += s.vx;
+    s.y += s.vy;
+    s.vy += 0.05; // gravity (slight, sparks rise then fall)
+    s.vy -= 0.12; // buoyancy (sparks mostly rise)
+    s.vx *= 0.99;
+    s.life -= s.decay;
+
+    // Wind
+    s.vx += (Math.random() - 0.5) * 0.3;
+
+    if (s.life <= 0 || s.y < -10 || s.y > H + 10 || s.x < -10 || s.x > W + 10) {
+      sparks.splice(i, 1);
+    }
+  }
+}
+
+function render() {
+  // Render heat field
+  const imageData = ctx.createImageData(W, H);
+  const data = imageData.data;
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const v = Math.max(0, Math.min(1, heat[y * cols + x]));
+      const [r, g, b] = heatColor(v);
+
+      // Fill the SCALE×SCALE block
+      for (let dy = 0; dy < SCALE && y * SCALE + dy < H; dy++) {
+        for (let dx = 0; dx < SCALE && x * SCALE + dx < W; dx++) {
+          const pi = ((y * SCALE + dy) * W + (x * SCALE + dx)) * 4;
+          data[pi] = r;
+          data[pi + 1] = g;
+          data[pi + 2] = b;
+          data[pi + 3] = 255;
+        }
+      }
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+
+  // Render sparks with glow
+  ctx.globalCompositeOperation = 'lighter';
+  for (const s of sparks) {
+    const alpha = s.life * s.bright;
+    const r = 255;
+    const g = 120 + s.bright * 135 | 0;
+    const b = 20 + s.bright * 40 | 0;
+
+    // Glow
+    const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size * 4);
+    grad.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.6})`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(s.x - s.size * 4, s.y - s.size * 4, s.size * 8, s.size * 8);
+
+    // Core
+    ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.size * alpha, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+
+  // Ambient sparks rising from hot zones (subtle)
+  if (Math.random() < 0.3) {
+    const rx = Math.random() * W;
+    const ry = Math.random() * H;
+    const hx = Math.floor(rx / SCALE);
+    const hy = Math.floor(ry / SCALE);
+    if (hx >= 0 && hx < cols && hy >= 0 && hy < rows) {
+      const v = heat[hy * cols + hx];
+      if (v > 0.5 && Math.random() < v - 0.4) {
+        sparks.push({
+          x: rx, y: ry,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: -0.5 - Math.random() * 1.5,
+          life: 0.5 + Math.random() * 0.5,
+          decay: 0.005 + Math.random() * 0.008,
+          size: 0.5 + Math.random() * 1.5,
+          bright: 0.3 + Math.random() * 0.3
+        });
+      }
+    }
+  }
+}
+
+function animate() {
+  time++;
+  flowHeat();
+  updateSparks();
+  render();
+  requestAnimationFrame(animate);
+}
+
+// Input
+function handleInput(x, y) {
+  if (!tapped) {
+    tapped = true;
+    hint.style.opacity = '0';
+  }
+  addStrike(x, y);
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  handleInput(e.clientX, e.clientY);
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  if (e.buttons > 0) {
+    e.preventDefault();
+    if (Math.random() < 0.15) {
+      handleInput(e.clientX, e.clientY);
+    }
+  }
+});
+
+window.addEventListener('resize', resize);
+resize();
+animate();
+</script>
+</body>
+</html>
