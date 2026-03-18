@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>PLONK</title>
+    <meta property="og:title" content="PLONK">
+    <meta property="og:description" content="gravity wrote this beat">
+    <meta property="og:image" content="https://intheamber.com/amber/og/plonk.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PLONK">
+    <meta name="twitter:description" content="gravity wrote this beat">
+    <meta name="twitter:image" content="https://intheamber.com/amber/og/plonk.png">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#08080d;overflow:hidden;touch-action:none;font-family:'Courier New',monospace;-webkit-user-select:none;user-select:none}
+        canvas{display:block;width:100vw;height:100vh}
+        #start{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;text-align:center}
+        #start h1{color:#f0c040;font-size:42px;letter-spacing:8px;margin-bottom:12px;font-weight:400}
+        #start p{color:#f0c04080;font-size:13px;letter-spacing:2px;margin-bottom:28px}
+        #go{background:none;border:2px solid #f0c040;color:#f0c040;font-family:'Courier New',monospace;font-size:16px;padding:14px 36px;cursor:pointer;letter-spacing:3px;text-transform:uppercase;transition:background .2s}
+        #go:active{background:#f0c04030}
+        #hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);color:#ffffff30;font-size:11px;letter-spacing:2px;font-family:'Courier New',monospace;z-index:10;pointer-events:none;opacity:0;transition:opacity .6s}
+    </style>
+</head>
+<body>
+    <div id="start">
+        <h1>PLONK</h1>
+        <p>gravity writes the beat</p>
+        <button id="go">TAP TO START</button>
+    </div>
+    <div id="hint">tap anywhere to drop</div>
+    <canvas id="c"></canvas>
+    <script type="module">
+        import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+
+        const canvas = document.getElementById('c');
+        const c = canvas.getContext('2d');
+        const startDiv = document.getElementById('start');
+        const hintEl = document.getElementById('hint');
+
+        let W, H, dpr;
+        let pegs = [], balls = [], pegFlash = [];
+        let engine, actx, started = false;
+        let dropZoneH;
+
+        const G = 0.18;
+        const RESTITUTION = 0.6;
+        const PR = 7;   // peg radius (in device px)
+        const BR = 5;   // ball radius
+        const MAX_BALLS = 40;
+        const ROWS = 9;
+
+        const VOICE_MAP  = ['ch','ch','oh','clap','snare','snare','lowtom','kick','kick'];
+        const COLOR_MAP  = ['#5ce0ff','#5ce0ff','#7fff8a','#e080ff','#ffaa44','#ffaa44','#ff5555','#f0c040','#f0c040'];
+        const VEL_MAP    = [0.25, 0.3, 0.45, 0.55, 0.6, 0.65, 0.75, 0.9, 1.0];
+
+        function resize(){
+            dpr = devicePixelRatio;
+            W = canvas.width  = window.innerWidth  * dpr;
+            H = canvas.height = window.innerHeight * dpr;
+            canvas.style.width  = window.innerWidth  + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            dropZoneH = H * 0.1;
+            buildPegs();
+        }
+
+        function buildPegs(){
+            pegs = []; pegFlash = [];
+            const mt = H * 0.14, mb = H * 0.08;
+            const rSpace = (H - mt - mb) / (ROWS + 1);
+            const cSpace = W / 8;
+            for(let r = 0; r < ROWS; r++){
+                const y = mt + rSpace * (r + 1);
+                const cols = r % 2 === 0 ? 7 : 6;
+                const off  = r % 2 === 0 ? 0 : cSpace / 2;
+                for(let col = 0; col < cols; col++){
+                    pegs.push({ x: cSpace + off + col * cSpace, y, row: r });
+                    pegFlash.push(0);
+                }
+            }
+        }
+
+        function spawnBall(clientX){
+            if(balls.length >= MAX_BALLS) balls.shift();
+            balls.push({
+                x: clientX * dpr,
+                y: dropZoneH * 0.5,
+                vx: (Math.random() - 0.5) * 2,
+                vy: 1 + Math.random(),
+                hue: 25 + Math.random() * 40
+            });
+        }
+
+        function update(){
+            for(let i = balls.length - 1; i >= 0; i--){
+                const b = balls[i];
+                b.vy += G;
+                b.x += b.vx;
+                b.y += b.vy;
+
+                // Walls
+                if(b.x < BR){ b.x = BR; b.vx *= -0.7; }
+                if(b.x > W - BR){ b.x = W - BR; b.vx *= -0.7; }
+
+                // Pegs
+                for(let j = 0; j < pegs.length; j++){
+                    const p = pegs[j];
+                    const dx = b.x - p.x, dy = b.y - p.y;
+                    const d2 = dx*dx + dy*dy;
+                    const minD = PR + BR;
+                    if(d2 < minD * minD && d2 > 0){
+                        const d = Math.sqrt(d2);
+                        const nx = dx/d, ny = dy/d;
+                        b.x = p.x + nx * minD;
+                        b.y = p.y + ny * minD;
+                        const dot = b.vx*nx + b.vy*ny;
+                        b.vx = (b.vx - 2*dot*nx) * RESTITUTION + (Math.random()-0.5)*0.6;
+                        b.vy = (b.vy - 2*dot*ny) * RESTITUTION;
+                        // Sound
+                        if(engine && actx){
+                            const v = VEL_MAP[p.row] * (0.6 + Math.random()*0.4);
+                            engine.trigger(VOICE_MAP[p.row], Math.min(v,1), actx.currentTime);
+                        }
+                        pegFlash[j] = 1;
+                    }
+                }
+
+                // Off-screen
+                if(b.y > H + 60) balls.splice(i, 1);
+            }
+
+            for(let i = 0; i < pegFlash.length; i++) pegFlash[i] *= 0.9;
+        }
+
+        function draw(){
+            c.fillStyle = '#08080d';
+            c.fillRect(0, 0, W, H);
+
+            // Drop zone
+            const dzGrad = c.createLinearGradient(0, 0, 0, dropZoneH);
+            dzGrad.addColorStop(0, '#f0c04008');
+            dzGrad.addColorStop(1, '#f0c04000');
+            c.fillStyle = dzGrad;
+            c.fillRect(0, 0, W, dropZoneH);
+
+            // Pegs
+            for(let i = 0; i < pegs.length; i++){
+                const p = pegs[i];
+                const f = pegFlash[i];
+                const col = COLOR_MAP[p.row];
+
+                // Glow
+                if(f > 0.03){
+                    const gr = c.createRadialGradient(p.x, p.y, PR, p.x, p.y, PR + 20*f);
+                    gr.addColorStop(0, col + hex(f*90));
+                    gr.addColorStop(1, col + '00');
+                    c.beginPath();
+                    c.arc(p.x, p.y, PR + 20*f, 0, Math.PI*2);
+                    c.fillStyle = gr;
+                    c.fill();
+                }
+
+                c.beginPath();
+                c.arc(p.x, p.y, PR, 0, Math.PI*2);
+                c.globalAlpha = 0.25 + f*0.75;
+                c.fillStyle = col;
+                c.fill();
+                c.globalAlpha = 1;
+            }
+
+            // Balls
+            for(const b of balls){
+                const col = `hsl(${b.hue},85%,62%)`;
+                // Soft glow
+                const gr = c.createRadialGradient(b.x, b.y, BR*0.5, b.x, b.y, BR + 10);
+                gr.addColorStop(0, `hsla(${b.hue},85%,62%,0.5)`);
+                gr.addColorStop(1, `hsla(${b.hue},85%,62%,0)`);
+                c.beginPath();
+                c.arc(b.x, b.y, BR + 10, 0, Math.PI*2);
+                c.fillStyle = gr;
+                c.fill();
+
+                c.beginPath();
+                c.arc(b.x, b.y, BR, 0, Math.PI*2);
+                c.fillStyle = col;
+                c.fill();
+            }
+
+            // Bottom collector glow
+            const btm = c.createLinearGradient(0, H - 40, 0, H);
+            btm.addColorStop(0, '#f0c04000');
+            btm.addColorStop(1, '#f0c04010');
+            c.fillStyle = btm;
+            c.fillRect(0, H - 40, W, 40);
+        }
+
+        function hex(n){ return Math.max(0,Math.min(255,Math.round(n))).toString(16).padStart(2,'0'); }
+
+        function loop(){
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        // Start
+        document.getElementById('go').addEventListener('click', async () => {
+            actx = new AudioContext({ sampleRate: 44100 });
+            engine = new JB01Engine({ context: actx, bpm: 120 });
+
+            engine.setVoiceParam('kick',   'decay',  0.35);
+            engine.setVoiceParam('kick',   'level',  0.9);
+            engine.setVoiceParam('kick',   'attack', 0.7);
+            engine.setVoiceParam('snare',  'decay',  0.3);
+            engine.setVoiceParam('snare',  'level',  0.65);
+            engine.setVoiceParam('clap',   'decay',  0.25);
+            engine.setVoiceParam('clap',   'level',  0.55);
+            engine.setVoiceParam('ch',     'decay',  0.08);
+            engine.setVoiceParam('ch',     'level',  0.35);
+            engine.setVoiceParam('ch',     'tone',   0.65);
+            engine.setVoiceParam('oh',     'decay',  0.35);
+            engine.setVoiceParam('oh',     'level',  0.4);
+            engine.setVoiceParam('lowtom', 'decay',  0.4);
+            engine.setVoiceParam('lowtom', 'level',  0.7);
+
+            if(actx.state === 'suspended') await actx.resume();
+
+            startDiv.style.display = 'none';
+            hintEl.style.opacity = '1';
+            started = true;
+            setTimeout(() => { hintEl.style.opacity = '0'; }, 3500);
+        });
+
+        // Tap to drop
+        let holdTimer = null;
+        let lastX = 0;
+
+        function dropAt(x){ if(started) spawnBall(x); }
+
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            for(const t of e.changedTouches) dropAt(t.clientX);
+            lastX = e.touches[0].clientX;
+            holdTimer = setInterval(() => dropAt(lastX + (Math.random()-0.5)*20), 100);
+        }, {passive: false});
+
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            lastX = e.touches[0].clientX;
+        }, {passive: false});
+
+        canvas.addEventListener('touchend', () => { clearInterval(holdTimer); });
+        canvas.addEventListener('touchcancel', () => { clearInterval(holdTimer); });
+
+        canvas.addEventListener('mousedown', e => {
+            dropAt(e.clientX);
+            lastX = e.clientX;
+            holdTimer = setInterval(() => dropAt(lastX + (Math.random()-0.5)*20), 100);
+        });
+        canvas.addEventListener('mousemove', e => { if(holdTimer) lastX = e.clientX; });
+        canvas.addEventListener('mouseup', () => { clearInterval(holdTimer); holdTimer = null; });
+        canvas.addEventListener('mouseleave', () => { clearInterval(holdTimer); holdTimer = null; });
+
+        window.addEventListener('resize', resize);
+        resize();
+        loop();
+    </script>
+</body>
+</html>
