@@ -66,7 +66,8 @@ function DecrementalInner({ onRoll }: { onRoll: () => void }) {
         {/* Intro */}
         <p className={`${fc("body")} w-full max-w-3xl text-sm leading-relaxed mb-8 px-1`} style={{ color: t.textMuted, transition: "color 0.4s ease" }}>
           {t.intro}{" "}
-          <a href="https://linkedin.com/in/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: t.textMuted, textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>about me</a>.{" "}
+          previously: firefox 1.0 launch team, tap tap revenge, disney mobile games and{" "}
+          <a href="https://linkedin.com/in/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: t.textMuted, textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>more</a>.{" "}
           <a href="https://twitter.com/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: t.textMuted, textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>twitter</a>.
         </p>
 

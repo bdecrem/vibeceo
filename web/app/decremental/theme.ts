@@ -185,7 +185,7 @@ const citrus: Theme = {
     abandonware: "~",
     retired: "🫗†",
   },
-  intro: `nine months of building with ai. one repo, lots of seeds planted. some bore fruit. some are still in the dirt. all of it is organic, none of it is polished.`,
+  intro: `nine months of building with ai. one repo, lots of unfinished thoughts in various states of completion, none fully productized.`,
   tagline: "squeeze harder.",
 };
 

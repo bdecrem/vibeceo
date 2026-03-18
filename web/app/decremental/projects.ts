@@ -39,9 +39,9 @@ export const projects: Project[] = [
     url: "https://github.com/bdecrem/jambot",
     image: null,
     shortDesc: "cli for music production",
-    fullDesc: "outputs midi, wav, stems. not a \"make me a song\" button. includes web synths.",
+    fullDesc: "claude code for music. outputs midi, wav, stems. not a \"make me a song\" button. includes web synths.",
     status: "wip",
-    order: -1,
+    order: -4.5,
     artifacts: [{ label: "screenshot", url: "/images/jambot-screencap.png" }],
   },
   {
@@ -51,8 +51,8 @@ export const projects: Project[] = [
     image: null,
     shortDesc: "offline coding tui",
     fullDesc: "like claude code but works without internet. runs local qwen models. rust, v0.1.",
-    status: "respinning",
-    order: -3.5,
+    status: "neglected",
+    order: -1.5,
   },
   {
     name: "das kollektiv (und more)",
