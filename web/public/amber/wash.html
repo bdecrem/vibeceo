@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>WASH</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫧</text></svg>">
+<meta property="og:title" content="WASH">
+<meta property="og:description" content="the spin cycle is 128 bpm">
+<meta property="og:image" content="https://intheamber.com/amber/og/wash.png">
+<meta property="og:url" content="https://intheamber.com/amber/wash.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="WASH">
+<meta name="twitter:description" content="the spin cycle is 128 bpm">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/wash.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0f;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#start-btn {
+  position: absolute;
+  z-index: 10;
+  background: #1a1a2e;
+  border: 2px solid #4a9eff;
+  color: #4a9eff;
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  padding: 16px 32px;
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+#start-btn:hover { background: #4a9eff; color: #0a0a0f; }
+#start-btn.hidden { display: none; }
+canvas { display: block; }
+#controls {
+  position: absolute;
+  bottom: 20px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0 16px;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+#controls.visible { opacity: 1; }
+.clothes-btn {
+  font-size: 28px;
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 12px;
+  width: 52px;
+  height: 52px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.clothes-btn:active { transform: scale(0.9); border-color: #4a9eff; }
+#bpm-display {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 14px;
+  color: #4a9eff;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+#bpm-display.visible { opacity: 1; }
+#hint {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 12px;
+  color: #555;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+#hint.visible { opacity: 1; }
+</style>
+</head>
+<body>
+<button id="start-btn">SPIN<br>CYCLE</button>
+<canvas id="c"></canvas>
+<div id="controls">
+  <button class="clothes-btn" data-voice="kick" data-emoji="🧦">🧦</button>
+  <button class="clothes-btn" data-voice="snare" data-emoji="👕">👕</button>
+  <button class="clothes-btn" data-voice="ch" data-emoji="🧤">🧤</button>
+  <button class="clothes-btn" data-voice="clap" data-emoji="🩳">🩳</button>
+  <button class="clothes-btn" data-voice="oh" data-emoji="🧢">🧢</button>
+  <button class="clothes-btn" data-voice="lowtom" data-emoji="🧣">🧣</button>
+</div>
+<div id="bpm-display">128 BPM</div>
+<div id="hint">↕ drag to change speed</div>
+
+<script type="module">
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+
+const canvas = document.getElementById('c');
+const ctx2d = canvas.getContext('2d');
+const startBtn = document.getElementById('start-btn');
+const controls = document.getElementById('controls');
+const bpmDisplay = document.getElementById('bpm-display');
+const hint = document.getElementById('hint');
+
+let W, H, cx, cy, drumRadius;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2;
+  cy = H / 2;
+  drumRadius = Math.min(W, H) * 0.3;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// State
+let audioCtx, engine;
+let running = false;
+let angle = 0; // current rotation angle
+let bpm = 128;
+let items = []; // { angle, voice, emoji, triggerAngle, lastTriggered, flashTime }
+const TRIGGER_ZONE = Math.PI * 0.06; // how close to bottom to trigger
+let bubbles = []; // visual bubbles
+let flashes = []; // trigger flashes
+
+// Drag for BPM
+let dragging = false;
+let dragStartY = 0;
+let dragStartBPM = 0;
+
+canvas.addEventListener('pointerdown', (e) => {
+  if (!running) return;
+  dragging = true;
+  dragStartY = e.clientY;
+  dragStartBPM = bpm;
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  const dy = dragStartY - e.clientY;
+  bpm = Math.round(Math.max(60, Math.min(200, dragStartBPM + dy * 0.5)));
+  bpmDisplay.textContent = bpm + ' BPM';
+});
+canvas.addEventListener('pointerup', () => { dragging = false; });
+canvas.addEventListener('pointercancel', () => { dragging = false; });
+
+// Clothes buttons
+document.querySelectorAll('.clothes-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!running) return;
+    const voice = btn.dataset.voice;
+    const emoji = btn.dataset.emoji;
+    // Place at random angle
+    const a = Math.random() * Math.PI * 2;
+    items.push({
+      angle: a,
+      voice,
+      emoji,
+      lastTriggered: -1,
+      flashTime: 0,
+      size: 24 + Math.random() * 8,
+      wobble: Math.random() * Math.PI * 2,
+    });
+    // Spawn some bubbles
+    for (let i = 0; i < 5; i++) {
+      bubbles.push({
+        x: cx + Math.cos(a + angle) * drumRadius * 0.7,
+        y: cy + Math.sin(a + angle) * drumRadius * 0.7,
+        r: 3 + Math.random() * 6,
+        vx: (Math.random() - 0.5) * 2,
+        vy: -1 - Math.random() * 2,
+        life: 1,
+      });
+    }
+    // Quick trigger sound for feedback
+    engine.trigger(voice, 0.4, audioCtx.currentTime);
+  });
+});
+
+// Start
+startBtn.addEventListener('click', async () => {
+  audioCtx = new AudioContext({ sampleRate: 44100 });
+  engine = new JB01Engine({ context: audioCtx, bpm: 128 });
+
+  // Tune voices
+  engine.setVoiceParam('kick', 'decay', 0.35);
+  engine.setVoiceParam('kick', 'level', 0.9);
+  engine.setVoiceParam('kick', 'attack', 0.7);
+  engine.setVoiceParam('snare', 'decay', 0.35);
+  engine.setVoiceParam('snare', 'level', 0.65);
+  engine.setVoiceParam('ch', 'decay', 0.12);
+  engine.setVoiceParam('ch', 'level', 0.5);
+  engine.setVoiceParam('ch', 'tone', 0.6);
+  engine.setVoiceParam('clap', 'decay', 0.3);
+  engine.setVoiceParam('clap', 'level', 0.6);
+  engine.setVoiceParam('oh', 'decay', 0.25);
+  engine.setVoiceParam('oh', 'level', 0.45);
+  engine.setVoiceParam('lowtom', 'decay', 0.4);
+  engine.setVoiceParam('lowtom', 'level', 0.7);
+  engine.setVoiceParam('lowtom', 'tune', -0.3);
+
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+  running = true;
+  startBtn.classList.add('hidden');
+  controls.classList.add('visible');
+  bpmDisplay.classList.add('visible');
+  hint.classList.add('visible');
+  setTimeout(() => hint.classList.remove('visible'), 4000);
+
+  // Add a few starter items
+  const starters = [
+    { voice: 'kick', emoji: '🧦', angle: 0 },
+    { voice: 'kick', emoji: '🧦', angle: Math.PI },
+    { voice: 'ch', emoji: '🧤', angle: Math.PI / 4 },
+    { voice: 'ch', emoji: '🧤', angle: Math.PI * 3 / 4 },
+    { voice: 'ch', emoji: '🧤', angle: Math.PI * 5 / 4 },
+    { voice: 'ch', emoji: '🧤', angle: Math.PI * 7 / 4 },
+    { voice: 'snare', emoji: '👕', angle: Math.PI / 2 },
+    { voice: 'snare', emoji: '👕', angle: Math.PI * 3 / 2 },
+  ];
+  starters.forEach(s => {
+    items.push({
+      angle: s.angle,
+      voice: s.voice,
+      emoji: s.emoji,
+      lastTriggered: -1,
+      flashTime: 0,
+      size: 26,
+      wobble: Math.random() * Math.PI * 2,
+    });
+  });
+
+  loop();
+});
+
+let lastTime = 0;
+let revolution = 0; // track revolutions for triggering
+
+function loop(t = 0) {
+  const dt = Math.min((t - lastTime) / 1000, 0.05);
+  lastTime = t;
+
+  // Rotation speed: one revolution = one bar (4 beats)
+  // At 128 BPM, one bar = 4 * 60/128 = 1.875 seconds
+  const barDuration = 4 * 60 / bpm;
+  const rotSpeed = (Math.PI * 2) / barDuration;
+  angle += rotSpeed * dt;
+  if (angle > Math.PI * 2) angle -= Math.PI * 2;
+
+  // Clear
+  ctx2d.fillStyle = '#0a0a0f';
+  ctx2d.fillRect(0, 0, W, H);
+
+  // Draw washing machine body
+  drawMachine(dt);
+
+  // Draw items and check triggers
+  drawItems(dt);
+
+  // Draw bubbles
+  drawBubbles(dt);
+
+  // Draw flashes
+  drawFlashes(dt);
+
+  requestAnimationFrame(loop);
+}
+
+function drawMachine(dt) {
+  // Outer ring (machine body)
+  ctx2d.beginPath();
+  ctx2d.arc(cx, cy, drumRadius + 30, 0, Math.PI * 2);
+  ctx2d.strokeStyle = '#1a1a2e';
+  ctx2d.lineWidth = 40;
+  ctx2d.stroke();
+
+  // Metal rim
+  ctx2d.beginPath();
+  ctx2d.arc(cx, cy, drumRadius + 12, 0, Math.PI * 2);
+  ctx2d.strokeStyle = '#2a2a3e';
+  ctx2d.lineWidth = 3;
+  ctx2d.stroke();
+
+  ctx2d.beginPath();
+  ctx2d.arc(cx, cy, drumRadius + 48, 0, Math.PI * 2);
+  ctx2d.strokeStyle = '#2a2a3e';
+  ctx2d.lineWidth = 3;
+  ctx2d.stroke();
+
+  // Glass porthole
+  const gradient = ctx2d.createRadialGradient(cx, cy, drumRadius * 0.3, cx, cy, drumRadius);
+  gradient.addColorStop(0, 'rgba(74, 158, 255, 0.03)');
+  gradient.addColorStop(0.7, 'rgba(74, 158, 255, 0.06)');
+  gradient.addColorStop(1, 'rgba(74, 158, 255, 0.02)');
+  ctx2d.beginPath();
+  ctx2d.arc(cx, cy, drumRadius, 0, Math.PI * 2);
+  ctx2d.fillStyle = gradient;
+  ctx2d.fill();
+
+  // Water line wobble
+  const waterY = cy + drumRadius * 0.3;
+  ctx2d.save();
+  ctx2d.beginPath();
+  ctx2d.arc(cx, cy, drumRadius - 2, 0, Math.PI * 2);
+  ctx2d.clip();
+
+  ctx2d.beginPath();
+  ctx2d.moveTo(cx - drumRadius, waterY);
+  for (let x = cx - drumRadius; x <= cx + drumRadius; x += 4) {
+    const wave = Math.sin((x * 0.02) + lastTime * 0.003 + angle * 3) * 8 +
+                 Math.sin((x * 0.035) + lastTime * 0.005) * 4;
+    ctx2d.lineTo(x, waterY + wave);
+  }
+  ctx2d.lineTo(cx + drumRadius, cy + drumRadius + 50);
+  ctx2d.lineTo(cx - drumRadius, cy + drumRadius + 50);
+  ctx2d.closePath();
+  ctx2d.fillStyle = 'rgba(74, 158, 255, 0.08)';
+  ctx2d.fill();
+  ctx2d.restore();
+
+  // Trigger zone indicator at bottom
+  const tzAngle = Math.PI / 2; // bottom
+  const tzX = cx + Math.cos(tzAngle) * (drumRadius + 55);
+  const tzY = cy + Math.sin(tzAngle) * (drumRadius + 55);
+  ctx2d.beginPath();
+  ctx2d.arc(tzX, tzY, 6, 0, Math.PI * 2);
+  ctx2d.fillStyle = `rgba(255, 100, 100, ${0.5 + Math.sin(lastTime * 0.005) * 0.3})`;
+  ctx2d.fill();
+
+  // Rotating drum lines (subtle)
+  for (let i = 0; i < 12; i++) {
+    const a = angle + (i * Math.PI * 2 / 12);
+    const x1 = cx + Math.cos(a) * drumRadius * 0.15;
+    const y1 = cy + Math.sin(a) * drumRadius * 0.15;
+    const x2 = cx + Math.cos(a) * drumRadius * 0.95;
+    const y2 = cy + Math.sin(a) * drumRadius * 0.95;
+    ctx2d.beginPath();
+    ctx2d.moveTo(x1, y1);
+    ctx2d.lineTo(x2, y2);
+    ctx2d.strokeStyle = 'rgba(74, 158, 255, 0.04)';
+    ctx2d.lineWidth = 1;
+    ctx2d.stroke();
+  }
+}
+
+function drawItems(dt) {
+  const triggerAngle = Math.PI / 2; // bottom
+
+  items.forEach(item => {
+    // Item position rotates with the drum
+    const worldAngle = item.angle + angle;
+    const x = cx + Math.cos(worldAngle) * drumRadius * 0.65;
+    const y = cy + Math.sin(worldAngle) * drumRadius * 0.65;
+
+    // Check if passing trigger zone (bottom)
+    // Normalize the world angle to [0, 2PI]
+    let norm = worldAngle % (Math.PI * 2);
+    if (norm < 0) norm += Math.PI * 2;
+    const dist = Math.abs(norm - triggerAngle);
+    const distWrapped = Math.min(dist, Math.PI * 2 - dist);
+
+    if (distWrapped < TRIGGER_ZONE && lastTime - item.lastTriggered > 150) {
+      // Trigger!
+      const vel = item.voice === 'kick' ? 1.0 : item.voice === 'snare' ? 0.8 : 0.6;
+      engine.trigger(item.voice, vel, audioCtx.currentTime);
+      item.lastTriggered = lastTime;
+      item.flashTime = 1.0;
+
+      // Spawn flash
+      flashes.push({ x, y, r: 10, life: 1, color: getVoiceColor(item.voice) });
+
+      // Spawn bubbles
+      for (let i = 0; i < 3; i++) {
+        bubbles.push({
+          x: x + (Math.random() - 0.5) * 20,
+          y,
+          r: 2 + Math.random() * 4,
+          vx: (Math.random() - 0.5) * 3,
+          vy: -1 - Math.random() * 3,
+          life: 1,
+        });
+      }
+    }
+
+    // Wobble
+    item.wobble += dt * 3;
+    const wobbleX = Math.sin(item.wobble) * 3;
+    const wobbleY = Math.cos(item.wobble * 0.7) * 2;
+
+    // Flash glow
+    if (item.flashTime > 0) {
+      item.flashTime -= dt * 3;
+      ctx2d.save();
+      ctx2d.shadowBlur = 20 * item.flashTime;
+      ctx2d.shadowColor = getVoiceColor(item.voice);
+      ctx2d.restore();
+
+      // Glow circle
+      ctx2d.beginPath();
+      ctx2d.arc(x + wobbleX, y + wobbleY, item.size * 0.8, 0, Math.PI * 2);
+      ctx2d.fillStyle = `rgba(${getVoiceRGB(item.voice)}, ${item.flashTime * 0.3})`;
+      ctx2d.fill();
+    }
+
+    // Draw emoji
+    ctx2d.font = `${item.size}px serif`;
+    ctx2d.textAlign = 'center';
+    ctx2d.textBaseline = 'middle';
+    ctx2d.fillText(item.emoji, x + wobbleX, y + wobbleY);
+  });
+}
+
+function drawBubbles(dt) {
+  bubbles = bubbles.filter(b => {
+    b.x += b.vx * dt * 30;
+    b.y += b.vy * dt * 30;
+    b.life -= dt * 0.8;
+    if (b.life <= 0) return false;
+
+    ctx2d.beginPath();
+    ctx2d.arc(b.x, b.y, b.r * b.life, 0, Math.PI * 2);
+    ctx2d.strokeStyle = `rgba(74, 158, 255, ${b.life * 0.4})`;
+    ctx2d.lineWidth = 1;
+    ctx2d.stroke();
+    return true;
+  });
+}
+
+function drawFlashes(dt) {
+  flashes = flashes.filter(f => {
+    f.life -= dt * 4;
+    f.r += dt * 80;
+    if (f.life <= 0) return false;
+
+    ctx2d.beginPath();
+    ctx2d.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+    ctx2d.strokeStyle = f.color.replace('1)', `${f.life * 0.6})`);
+    ctx2d.lineWidth = 2 * f.life;
+    ctx2d.stroke();
+    return true;
+  });
+}
+
+function getVoiceColor(voice) {
+  const colors = {
+    kick: 'rgba(255, 100, 100, 1)',
+    snare: 'rgba(255, 200, 80, 1)',
+    ch: 'rgba(100, 200, 255, 1)',
+    clap: 'rgba(255, 130, 200, 1)',
+    oh: 'rgba(150, 255, 150, 1)',
+    lowtom: 'rgba(200, 130, 255, 1)',
+  };
+  return colors[voice] || 'rgba(255,255,255,1)';
+}
+
+function getVoiceRGB(voice) {
+  const colors = {
+    kick: '255, 100, 100',
+    snare: '255, 200, 80',
+    ch: '100, 200, 255',
+    clap: '255, 130, 200',
+    oh: '150, 255, 150',
+    lowtom: '200, 130, 255',
+  };
+  return colors[voice] || '255,255,255';
+}
+</script>
+</body>
+</html>
