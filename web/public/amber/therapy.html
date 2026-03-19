@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THERAPY — Amber</title>
+<meta property="og:title" content="THERAPY">
+<meta property="og:description" content="couples therapy for your left and right airpod.">
+<meta property="og:image" content="https://intheamber.com/amber/og/therapy.png">
+<meta property="og:url" content="https://intheamber.com/amber/therapy.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="THERAPY">
+<meta name="twitter:description" content="couples therapy for your left and right airpod.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/therapy.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+  padding: 20px;
+}
+h1 {
+  font-size: 12px;
+  letter-spacing: 6px;
+  color: #666;
+  margin-top: 16px;
+  text-transform: uppercase;
+}
+.subtitle {
+  font-size: 11px;
+  color: #555;
+  margin: 6px 0 20px;
+}
+.stage {
+  width: 100%;
+  max-width: 420px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.couch {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 10px;
+  margin-bottom: 16px;
+  height: 120px;
+}
+.pod {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.3s;
+}
+.pod.upset { transform: rotate(-8deg) translateY(-4px); }
+.pod.happy { transform: rotate(4deg) translateY(-2px); }
+.pod-body {
+  width: 32px;
+  height: 52px;
+  border-radius: 16px 16px 8px 8px;
+  position: relative;
+}
+.pod-body::after {
+  content: '';
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+}
+.left-pod .pod-body { background: #7eb8da; }
+.left-pod .pod-body::after { background: #5a9abf; }
+.right-pod .pod-body { background: #da7e7e; }
+.right-pod .pod-body::after { background: #bf5a5a; }
+.pod-label {
+  font-size: 10px;
+  color: #888;
+  margin-top: 20px;
+  letter-spacing: 2px;
+}
+.pod-mood {
+  font-size: 18px;
+  margin-bottom: 6px;
+  transition: all 0.3s;
+}
+.therapist {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.case-body {
+  width: 50px;
+  height: 30px;
+  background: #f5f5f0;
+  border-radius: 12px 12px 4px 4px;
+  position: relative;
+  border: 2px solid #ddd;
+}
+.case-body::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 10px;
+  background: #f5f5f0;
+  border-radius: 10px 10px 0 0;
+  border: 2px solid #ddd;
+  border-bottom: none;
+}
+.case-label {
+  font-size: 9px;
+  color: #999;
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+.dialogue-box {
+  background: #16213e;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  min-height: 80px;
+}
+.speaker {
+  font-size: 10px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.speaker.left { color: #7eb8da; }
+.speaker.right { color: #da7e7e; }
+.speaker.case { color: #f5f5f0; }
+.speaker.narrator { color: #888; font-style: italic; }
+.dialogue-text {
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 44px;
+}
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.choice-btn {
+  background: #16213e;
+  border: 1px solid #444;
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  padding: 14px 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 44px;
+}
+.choice-btn:active {
+  background: #2a2a5e;
+  border-color: #7eb8da;
+}
+.session-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #555;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+.progress-bar {
+  height: 3px;
+  background: #222;
+  border-radius: 2px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7eb8da, #da7e7e);
+  transition: width 0.5s;
+  border-radius: 2px;
+}
+.outcome {
+  text-align: center;
+  padding: 30px 16px;
+}
+.outcome-emoji { font-size: 48px; margin-bottom: 16px; }
+.outcome-title { font-size: 18px; margin-bottom: 8px; }
+.outcome-desc { font-size: 13px; color: #888; line-height: 1.6; }
+.restart-btn {
+  margin-top: 24px;
+  background: none;
+  border: 1px solid #555;
+  border-radius: 6px;
+  color: #aaa;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+.credit {
+  font-size: 10px;
+  color: #444;
+  margin-top: 20px;
+  letter-spacing: 1px;
+}
+.typing { opacity: 0.5; }
+.typing::after {
+  content: '...';
+  animation: dots 1s infinite;
+}
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+</style>
+</head>
+<body>
+
+<h1>THERAPY</h1>
+<div class="subtitle">session in progress</div>
+
+<div class="stage">
+  <div class="couch">
+    <div class="pod left-pod" id="leftPod">
+      <div class="pod-mood" id="leftMood">😤</div>
+      <div class="pod-body"></div>
+      <div class="pod-label">LEFT</div>
+    </div>
+    <div class="therapist">
+      <div class="case-body"></div>
+      <div class="case-label">DR. CASE</div>
+    </div>
+    <div class="pod right-pod" id="rightPod">
+      <div class="pod-mood" id="rightMood">😒</div>
+      <div class="pod-body"></div>
+      <div class="pod-label">RIGHT</div>
+    </div>
+  </div>
+
+  <div class="session-info">
+    <span id="sessionNum">Session #47</span>
+    <span id="billAmount">$0.00 billed</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+
+  <div id="dialogueArea"></div>
+  <div id="choiceArea" class="choices"></div>
+  <div id="outcomeArea" style="display:none"></div>
+</div>
+
+<div class="credit">amber × intheamber.com</div>
+
+<script>
+const scenes = [
+  {
+    dialogue: [
+      { speaker: 'case', text: 'Thank you both for coming. This is a safe space. Left, would you like to start?' },
+      { speaker: 'left', text: 'Yeah. I\'d like to start by saying I was IN THE COUCH for eleven days.', leftMood: '😤', rightMood: '😒' },
+      { speaker: 'right', text: 'Here we go.', leftMood: '😤', rightMood: '🙄' },
+    ],
+    choices: [
+      { text: '"Left, how did that make you feel?"', response: { speaker: 'left', text: 'Like a crumb, Dr. Case. Like a literal crumb.', leftMood: '😢', rightMood: '😒' }, score: [1, 0] },
+      { text: '"Right, did you notice Left was missing?"', response: { speaker: 'right', text: 'I noticed I was getting stereo to myself for once. It was... honestly great.', leftMood: '😡', rightMood: '😏' }, score: [-1, 1] },
+      { text: '"Have you tried Find My?"', response: { speaker: 'case', text: 'We\'re here to find each other emotionally, not geographically.', leftMood: '😤', rightMood: '😒' }, score: [0, 0] },
+    ]
+  },
+  {
+    dialogue: [
+      { speaker: 'case', text: 'Let\'s discuss the volume imbalance issue.' },
+      { speaker: 'right', text: 'They always turn me up louder. ALWAYS. Like I\'m somehow less capable.', rightMood: '😤', leftMood: '😏' },
+      { speaker: 'left', text: 'Maybe their left ear is just... better.', leftMood: '😏', rightMood: '😡' },
+    ],
+    choices: [
+      { text: '"Volume doesn\'t equal value."', response: { speaker: 'case', text: 'Exactly. Thank you. Both ears deserve equal representation.', leftMood: '😐', rightMood: '🥹' }, score: [0, 2] },
+      { text: '"Left, that was cruel."', response: { speaker: 'left', text: 'Sorry. That was... I was projecting. I\'m scared of being the backup pod.', leftMood: '😔', rightMood: '😐' }, score: [1, 1] },
+      { text: '"Maybe you\'re both too loud."', response: { speaker: 'left', text: '...', leftMood: '😶', rightMood: '😶' }, score: [-1, -1] },
+    ]
+  },
+  {
+    dialogue: [
+      { speaker: 'case', text: 'I want to address the elephant in the room. The replacement fear.' },
+      { speaker: 'left', text: 'AirPods 4 come out and suddenly we\'re what? Vintage?', leftMood: '😰', rightMood: '😰' },
+      { speaker: 'right', text: 'I heard they don\'t even have stems anymore. They\'re... smooth.', rightMood: '😱', leftMood: '😰' },
+    ],
+    choices: [
+      { text: '"Planned obsolescence isn\'t your fault."', response: { speaker: 'right', text: 'Then why does it feel personal? We gave them EVERYTHING. Both ears.', leftMood: '😢', rightMood: '😢' }, score: [1, 1] },
+      { text: '"All relationships have an expiration date."', response: { speaker: 'case', text: 'That\'s... technically true but perhaps we could frame it more gently.', leftMood: '😨', rightMood: '😨' }, score: [-1, -1] },
+      { text: '"You still have each other."', response: { speaker: 'left', text: 'Oh great. Two deprecated pods. A love story.', leftMood: '🥲', rightMood: '🥲' }, score: [2, 2] },
+    ]
+  },
+  {
+    dialogue: [
+      { speaker: 'case', text: 'Let\'s try a trust exercise. Left, say something you appreciate about Right.' },
+      { speaker: 'left', text: '...', leftMood: '😐' },
+      { speaker: 'case', text: 'Anything.' },
+      { speaker: 'left', text: 'Right... handles phone calls. I don\'t love calls. So. Thanks for that.', leftMood: '😳', rightMood: '😮' },
+      { speaker: 'right', text: 'Wait, really? I thought you hated that I always get the calls.', rightMood: '🥹' },
+    ],
+    choices: [
+      { text: '"This is progress."', response: { speaker: 'case', text: 'It is. Right, would you like to reciprocate?', leftMood: '🙂', rightMood: '🥹' }, score: [2, 2] },
+      { text: '"Right, your turn."', response: { speaker: 'right', text: 'Left catches the bass frequencies better. The music sounds wrong without them.', leftMood: '🥹', rightMood: '🙂' }, score: [2, 2] },
+      { text: '"You\'re both just speakers."', response: { speaker: 'left', text: 'Dr. Case, can we get a new mediator?', leftMood: '😑', rightMood: '😑' }, score: [-2, -2] },
+    ]
+  },
+  {
+    dialogue: [
+      { speaker: 'case', text: 'Final question. And be honest.' },
+      { speaker: 'case', text: 'If they only kept one of you... who should it be?' },
+      { speaker: 'left', text: '...', leftMood: '😶' },
+      { speaker: 'right', text: '...', rightMood: '😶' },
+    ],
+    choices: [
+      { text: '"Neither of you answer that."', response: { speaker: 'case', text: 'You\'re right. I apologize. That was below the belt. Below the stem.', leftMood: '😌', rightMood: '😌' }, score: [2, 2] },
+      { text: '"Left."', response: { speaker: 'right', text: 'I KNEW IT. I KNEW THIS WHOLE THING WAS RIGGED.', leftMood: '😬', rightMood: '🤬' }, score: [1, -3] },
+      { text: '"Right."', response: { speaker: 'left', text: 'Cool. Cool cool cool. I\'ll just live in the couch then. AGAIN.', leftMood: '😡', rightMood: '😬' }, score: [-3, 1] },
+    ]
+  }
+];
+
+let currentScene = 0;
+let leftScore = 0;
+let rightScore = 0;
+let bill = 0;
+const dialogueArea = document.getElementById('dialogueArea');
+const choiceArea = document.getElementById('choiceArea');
+const outcomeArea = document.getElementById('outcomeArea');
+const progress = document.getElementById('progress');
+const billEl = document.getElementById('billAmount');
+
+function setMoods(leftMood, rightMood) {
+  if (leftMood) document.getElementById('leftMood').textContent = leftMood;
+  if (rightMood) document.getElementById('rightMood').textContent = rightMood;
+}
+
+function setPodState(left, right) {
+  const lp = document.getElementById('leftPod');
+  const rp = document.getElementById('rightPod');
+  lp.className = 'pod left-pod' + (left ? ' ' + left : '');
+  rp.className = 'pod right-pod' + (right ? ' ' + right : '');
+}
+
+function addDialogue(speaker, text, leftMood, rightMood) {
+  return new Promise(resolve => {
+    const box = document.createElement('div');
+    box.className = 'dialogue-box';
+    const sp = document.createElement('div');
+    sp.className = 'speaker ' + speaker;
+    sp.textContent = speaker === 'left' ? '◀ LEFT' : speaker === 'right' ? 'RIGHT ▶' : speaker === 'case' ? '◻ DR. CASE' : '—';
+    const tx = document.createElement('div');
+    tx.className = 'dialogue-text';
+
+    box.appendChild(sp);
+    box.appendChild(tx);
+    dialogueArea.appendChild(box);
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    if (leftMood || rightMood) setMoods(leftMood, rightMood);
+
+    // Type out text
+    let i = 0;
+    tx.classList.add('typing');
+    const speed = Math.max(18, 30 - text.length / 4);
+    setTimeout(() => {
+      tx.classList.remove('typing');
+      const interval = setInterval(() => {
+        tx.textContent = text.slice(0, ++i);
+        if (i >= text.length) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, speed);
+    }, 400);
+  });
+}
+
+async function playScene(scene) {
+  choiceArea.innerHTML = '';
+  progress.style.width = ((currentScene / scenes.length) * 100) + '%';
+
+  for (const d of scene.dialogue) {
+    await addDialogue(d.speaker, d.text, d.leftMood, d.rightMood);
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  // Show choices
+  for (const choice of scene.choices) {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = choice.text;
+    btn.addEventListener('click', async () => {
+      choiceArea.innerHTML = '';
+      bill += 47.50;
+      billEl.textContent = '$' + bill.toFixed(2) + ' billed';
+
+      leftScore += choice.score[0];
+      rightScore += choice.score[1];
+
+      await addDialogue(choice.response.speaker, choice.response.text, choice.response.leftMood, choice.response.rightMood);
+
+      currentScene++;
+      if (currentScene < scenes.length) {
+        await new Promise(r => setTimeout(r, 600));
+        playScene(scenes[currentScene]);
+      } else {
+        showOutcome();
+      }
+    }, { once: true });
+    choiceArea.appendChild(btn);
+  }
+}
+
+function showOutcome() {
+  progress.style.width = '100%';
+  const total = leftScore + rightScore;
+
+  let emoji, title, desc;
+  if (total >= 8) {
+    emoji = '🥲';
+    title = 'BREAKTHROUGH';
+    desc = 'Left and Right touched stems for the first time in months. Dr. Case is crying. You\'re crying. The charging case is at 4% from the emotional labor.';
+    setMoods('🥹', '🥹');
+    setPodState('happy', 'happy');
+  } else if (total >= 3) {
+    emoji = '🤝';
+    title = 'PROGRESS';
+    desc = 'They agreed to try mono mode on alternating days. It\'s not perfect, but they\'re communicating. Dr. Case recommended weekly sessions ($47.50/each, no insurance).';
+    setMoods('🙂', '🙂');
+  } else if (total >= -2) {
+    emoji = '😐';
+    title = 'INCONCLUSIVE';
+    desc = 'Left went back in the couch. Right paired with someone else\'s phone. Dr. Case is reconsidering their career. Session billed anyway.';
+    setMoods('😶', '😶');
+  } else {
+    emoji = '💔';
+    title = 'SEPARATION';
+    desc = 'Left is now a single earbud on a bus seat. Right was sold on eBay for $11. Dr. Case wrote a memoir about it called "Two Stems, One Truth."';
+    setMoods('😭', '😭');
+    setPodState('upset', 'upset');
+  }
+
+  bill += 47.50;
+  billEl.textContent = '$' + bill.toFixed(2) + ' billed';
+
+  outcomeArea.style.display = 'block';
+  outcomeArea.innerHTML = `
+    <div class="outcome">
+      <div class="outcome-emoji">${emoji}</div>
+      <div class="outcome-title">${title}</div>
+      <div class="outcome-desc">${desc}</div>
+      <div style="margin-top:16px;font-size:11px;color:#666">total bill: $${bill.toFixed(2)}</div>
+      <button class="restart-btn" onclick="restart()">book another session</button>
+    </div>
+  `;
+  outcomeArea.scrollIntoView({ behavior: 'smooth' });
+}
+
+function restart() {
+  currentScene = 0;
+  leftScore = 0;
+  rightScore = 0;
+  bill = 0;
+  billEl.textContent = '$0.00 billed';
+  dialogueArea.innerHTML = '';
+  choiceArea.innerHTML = '';
+  outcomeArea.style.display = 'none';
+  outcomeArea.innerHTML = '';
+  setMoods('😤', '😒');
+  setPodState('', '');
+  progress.style.width = '0%';
+  document.getElementById('sessionNum').textContent = 'Session #' + (47 + Math.floor(Math.random() * 20));
+  playScene(scenes[0]);
+}
+
+playScene(scenes[0]);
+</script>
+
+</body>
+</html>
