@@ -32,20 +32,16 @@
   #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
   #play-btn.playing { opacity: 0; pointer-events: none; }
   #credits {
-    position: fixed; bottom: 18px; left: 0; right: 0;
-    text-align: center;
-    font-size: 8px; letter-spacing: 4px;
-    color: rgba(255,255,255,0.06); z-index: 10;
+    position: fixed; bottom: 18px; left: 0; right: 0; text-align: center;
+    font-size: 8px; letter-spacing: 4px; color: rgba(255,255,255,0.06); z-index: 10;
   }
   #title {
     position: fixed; top: 14px; left: 18px;
-    font-size: 7px; letter-spacing: 3px;
-    color: rgba(255,255,255,0.05); z-index: 10;
+    font-size: 7px; letter-spacing: 3px; color: rgba(255,255,255,0.05); z-index: 10;
   }
 </style>
 </head>
 <body>
-
 <canvas id="c"></canvas>
 <div id="title">DAS KOLLEKTIV #012</div>
 <div id="overlay"><button id="play-btn">▶</button></div>
@@ -60,233 +56,174 @@ const STEP_DUR = 60 / BPM / 4;
 const BARS = 80;
 const STEPS = BARS * 16;
 
-// ── CANVAS ──
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 let W, H, cx, cy;
-function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-  cx = W / 2; cy = H / 2;
-}
-resize();
-window.addEventListener('resize', resize);
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; cx = W/2; cy = H/2; }
+resize(); addEventListener('resize', resize);
 
-let kickFlash = 0;
-let rimFlash = 0;
-
-function render() {
-  requestAnimationFrame(render);
-  kickFlash *= 0.90;
-  rimFlash *= 0.88;
-
-  // Near-black fade — very slow trails
+let kickF = 0, rimF = 0, pingF = 0;
+function draw() {
+  requestAnimationFrame(draw);
+  kickF *= 0.90; rimF *= 0.88; pingF *= 0.85;
   ctx.fillStyle = 'rgba(5,5,5,0.03)';
   ctx.fillRect(0, 0, W, H);
-
-  // Kick: single dim pulse at center
-  if (kickFlash > 0.01) {
-    const a = kickFlash * 0.04;
-    ctx.fillStyle = `rgba(160,160,160,${a})`;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
-    ctx.fill();
+  if (kickF > 0.01) {
+    ctx.fillStyle = `rgba(160,160,160,${kickF * 0.04})`;
+    ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI*2); ctx.fill();
   }
-
-  // Rimshot: sharp line
-  if (rimFlash > 0.01) {
-    const a = rimFlash * 0.08;
-    ctx.strokeStyle = `rgba(200,200,200,${a})`;
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    const y = cy + (Math.random() - 0.5) * 4;
-    ctx.moveTo(cx - 30, y);
-    ctx.lineTo(cx + 30, y);
-    ctx.stroke();
+  if (rimF > 0.01) {
+    ctx.strokeStyle = `rgba(200,200,200,${rimF * 0.08})`;
+    ctx.lineWidth = 0.5; ctx.beginPath();
+    const y = cy + (Math.random()-0.5)*4;
+    ctx.moveTo(cx-30, y); ctx.lineTo(cx+30, y); ctx.stroke();
+  }
+  if (pingF > 0.01) {
+    ctx.fillStyle = `rgba(220,220,230,${pingF * 0.06})`;
+    ctx.beginPath(); ctx.arc(cx + (Math.random()-0.5)*60, cy + (Math.random()-0.5)*60, 1, 0, Math.PI*2); ctx.fill();
   }
 }
-render();
+draw();
 
-// ── HELPERS ──
-function makePat(allV, opts) {
+function mp(allV, opts) {
   const pat = {};
   for (const v of allV) {
     pat[v] = Array.from({ length: 16 }, (_, i) => {
-      if (v === 'kick' && opts.kick && opts.kick.includes(i))
-        return { velocity: 0.9, accent: false };
-      if (v === 'rimshot' && opts.rim && opts.rim.includes(i))
-        return { velocity: 0.50, accent: false };
-      if (v === 'ch' && opts.ch && opts.ch.includes(i))
-        return { velocity: opts.chVel || 0.35, accent: false };
+      if (v === 'kick' && opts.kick?.includes(i)) return { velocity: 0.9, accent: false };
+      if (v === 'rimshot' && opts.rim?.includes(i)) return { velocity: 0.50, accent: false };
+      if (v === 'ch' && opts.ch?.includes(i)) return { velocity: opts.chVel || 0.35, accent: false };
       return { velocity: 0, accent: false };
     });
   }
   return pat;
 }
 
-// ── START ──
+function sp(steps) {
+  return Array.from({ length: 16 }, (_, i) => ({
+    note: 'E3', gate: steps.includes(i), slide: false, accent: (i === steps[0])
+  }));
+}
+
 async function start() {
   const playBtn = document.getElementById('play-btn');
   playBtn.textContent = '...';
-
   try {
-    // ── RENDER JT90 DRUMS ──
-    const drumEngine = new JT90Engine({ bpm: BPM });
-    await drumEngine.loadSamples('https://kochi.to/jt90/samples');
-    drumEngine._ensureVoices();
-    drumEngine.setVoiceParameter('kick', 'decay', 0.18);
-    drumEngine.setVoiceParameter('kick', 'tune', 0);
-    drumEngine.setVoiceParameter('kick', 'level', 0.9);
-    drumEngine.setVoiceParameter('rimshot', 'level', 0.50);
-
+    const SR = 44100;
+    // ── JT90 ──
+    const de = new JT90Engine({ bpm: BPM });
+    await de.loadSamples('https://kochi.to/jt90/samples');
+    de._ensureVoices();
+    de.setVoiceParameter('kick', 'decay', 0.18);
+    de.setVoiceParameter('kick', 'tune', 0);
+    de.setVoiceParameter('kick', 'level', 0.9);
+    de.setVoiceParameter('rimshot', 'level', 0.50);
+    de.setVoiceParameter('ch', 'level', 0.45);
+    de.setVoiceParameter('ch', 'tone', 0.3);
     const allV = ['kick','snare','clap','ch','oh','ride','rimshot','lowtom','midtom','hitom','crash'];
 
-    const drumSections = [
-      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12] }) },
-      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [3] }) },
-      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [7] }) },
-      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [3, 11] }) },
-      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [3], ch: [2,6,10,14], chVel: 0.15 }) },
-      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [3, 7], ch: [2,6,10,14], chVel: 0.25 }) },
-      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [3, 9], ch: [2,6,10,14], chVel: 0.25 }) },
-      { bars: 8, pat: makePat(allV, { rim: [3, 9], ch: [2,6,10,14], chVel: 0.20 }) },
-      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [3] }) },
-      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12] }) },
+    const drumSecs = [
+      { bars: 8, pat: mp(allV, { kick: [0,4,8,12] }) },
+      { bars: 8, pat: mp(allV, { kick: [0,4,8,12], rim: [3] }) },
+      { bars: 8, pat: mp(allV, { kick: [0,4,8,12], rim: [7] }) },
+      { bars: 8, pat: mp(allV, { kick: [0,4,8,12], rim: [3,11] }) },
+      { bars: 8, pat: mp(allV, { kick: [0,4,8,12], rim: [3], ch: [2,6,10,14], chVel: 0.15 }) },
+      { bars: 8, pat: mp(allV, { kick: [0,4,8,12], rim: [3,7], ch: [2,6,10,14], chVel: 0.25 }) },
+      { bars: 8, pat: mp(allV, { kick: [0,4,8,12], rim: [3,9], ch: [2,6,10,14], chVel: 0.25 }) },
+      { bars: 8, pat: mp(allV, { rim: [3,9], ch: [2,6,10,14], chVel: 0.20 }) },
+      { bars: 8, pat: mp(allV, { kick: [0,4,8,12], rim: [3] }) },
+      { bars: 8, pat: mp(allV, { kick: [0,4,8,12] }) },
     ];
+    const dBufs = [];
+    for (const s of drumSecs) { de.setPattern(s.pat); dBufs.push((await de.renderPattern({ bars: s.bars, bpm: BPM })).getChannelData(0)); }
+    const dTotal = dBufs.reduce((a,b) => a+b.length, 0);
+    const dData = new Float32Array(dTotal);
+    let dOff = 0; for (const b of dBufs) { dData.set(b, dOff); dOff += b.length; }
 
-    const drumBuffers = [];
-    for (const sec of drumSections) {
-      drumEngine.setPattern(sec.pat);
-      const buf = await drumEngine.renderPattern({ bars: sec.bars, bpm: BPM });
-      drumBuffers.push(buf.getChannelData(0));
-    }
-    const drumTotal = drumBuffers.reduce((s, b) => s + b.length, 0);
-    const drumData = new Float32Array(drumTotal);
-    let dOff = 0;
-    for (const b of drumBuffers) { drumData.set(b, dOff); dOff += b.length; }
+    // ── JT10 ──
+    const se = new JT10Engine({ sampleRate: SR });
+    se.setBpm(BPM);
+    se.setParameter('sawLevel', 0.5); se.setParameter('pulseLevel', 0.5);
+    se.setParameter('pulseWidth', 0.5); se.setParameter('subLevel', 0.3);
+    se.setParameter('subMode', 0); se.setParameter('cutoff', 0.5);
+    se.setParameter('resonance', 0.3); se.setParameter('envMod', 0.5);
+    se.setParameter('keyTrack', 0.5);
+    se.setParameter('attack', 0.005); se.setParameter('decay', 0.05);
+    se.setParameter('sustain', 0.0); se.setParameter('release', 0.03);
+    se.setParameter('glideTime', 0.0); se.masterVolume = 0.8;
 
-    // ── RENDER JT10 BASS ──
-    const SR = 44100; // assume
-    const synth = new JT10Engine({ sampleRate: SR });
-    synth.setBpm(BPM);
-    synth.setParameter('sawLevel', 0.5);
-    synth.setParameter('pulseLevel', 0.5);
-    synth.setParameter('pulseWidth', 0.5);
-    synth.setParameter('subLevel', 0.3);
-    synth.setParameter('subMode', 0);
-    synth.setParameter('cutoff', 0.5);
-    synth.setParameter('resonance', 0.3);
-    synth.setParameter('envMod', 0.5);
-    synth.setParameter('keyTrack', 0.5);
-    synth.setParameter('attack', 0.01);
-    synth.setParameter('decay', 0.15);
-    synth.setParameter('sustain', 0.2);
-    synth.setParameter('release', 0.4);
-    synth.setParameter('glideTime', 0.0);
-    synth.masterVolume = 0.8;
-
-    const bassPat = Array.from({ length: 16 }, (_, i) => ({
-      note: 'E1', gate: (i === 0 || i === 8), slide: false, accent: false
-    }));
-    const bassPat5 = Array.from({ length: 16 }, (_, i) => ({
-      note: 'B1', gate: (i === 0 || i === 8), slide: false, accent: false
-    }));
-    const bassPatSparse = Array.from({ length: 16 }, (_, i) => ({
-      note: 'E1', gate: (i === 0), slide: false, accent: false
-    }));
-
-    const bassSections = [
+    const topSecs = [
       { bars: 8, pat: null },
-      { bars: 16, pat: bassPat },
-      { bars: 8, pat: bassPat },
-      { bars: 8, pat: bassPat },
-      { bars: 8, pat: bassPat5 },
-      { bars: 8, pat: bassPat },
-      { bars: 8, pat: bassPatSparse },
-      { bars: 8, pat: bassPat },
-      { bars: 8, pat: bassPatSparse },
+      { bars: 8, pat: null },
+      { bars: 8, pat: sp([0, 10]) },
+      { bars: 8, pat: sp([0, 6, 10]) },
+      { bars: 8, pat: sp([2, 7, 12]) },
+      { bars: 8, pat: sp([0, 3, 6, 10, 13]) },
+      { bars: 8, pat: sp([5, 11]) },
+      { bars: 8, pat: sp([0]) },
+      { bars: 8, pat: sp([2, 8, 14]) },
+      { bars: 8, pat: sp([6]) },
     ];
-
-    const bassBuffers = [];
-    for (const sec of bassSections) {
-      if (!sec.pat) {
-        bassBuffers.push(new Float32Array(Math.ceil(sec.bars * 16 * STEP_DUR * SR)));
-        continue;
-      }
-      synth.setPattern(sec.pat);
-      const buf = await synth.renderPattern({ bars: sec.bars, sampleRate: SR });
-      bassBuffers.push(buf.getChannelData(0));
+    const sBufs = [];
+    for (const s of topSecs) {
+      if (!s.pat) { sBufs.push(new Float32Array(Math.ceil(s.bars*16*STEP_DUR*SR))); continue; }
+      se.setPattern(s.pat); sBufs.push((await se.renderPattern({ bars: s.bars, sampleRate: SR })).getChannelData(0));
     }
-    const bassTotal = bassBuffers.reduce((s, b) => s + b.length, 0);
-    const bassData = new Float32Array(bassTotal);
-    let bOff = 0;
-    for (const b of bassBuffers) { bassData.set(b, bOff); bOff += b.length; }
+    const sTotal = sBufs.reduce((a,b) => a+b.length, 0);
+    const sData = new Float32Array(sTotal);
+    let sOff = 0; for (const b of sBufs) { sData.set(b, sOff); sOff += b.length; }
 
     // ── PLAYBACK ──
-    const audioCtx = new AudioContext();
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-    const outSR = audioCtx.sampleRate;
+    const ac = new AudioContext();
+    if (ac.state === 'suspended') await ac.resume();
 
-    // Drums
-    const dBuf = audioCtx.createBuffer(1, drumData.length, SR);
-    dBuf.getChannelData(0).set(drumData);
-    const dSrc = audioCtx.createBufferSource(); dSrc.buffer = dBuf;
-    const dGain = audioCtx.createGain(); dGain.gain.value = 0.8;
-    dSrc.connect(dGain); dGain.connect(audioCtx.destination);
+    const db = ac.createBuffer(1, dData.length, SR);
+    db.getChannelData(0).set(dData);
+    const ds = ac.createBufferSource(); ds.buffer = db;
+    const dg = ac.createGain(); dg.gain.value = 0.75;
+    ds.connect(dg); dg.connect(ac.destination);
 
-    // Bass through 300Hz LP
-    const bBuf = audioCtx.createBuffer(1, bassData.length, SR);
-    bBuf.getChannelData(0).set(bassData);
-    const bSrc = audioCtx.createBufferSource(); bSrc.buffer = bBuf;
-    const bLP = audioCtx.createBiquadFilter();
-    bLP.type = 'lowpass'; bLP.frequency.value = 300; bLP.Q.value = 0.7;
-    const bGain = audioCtx.createGain(); bGain.gain.value = 0.35;
-    bSrc.connect(bLP); bLP.connect(bGain); bGain.connect(audioCtx.destination);
+    const sb = ac.createBuffer(1, sData.length, SR);
+    sb.getChannelData(0).set(sData);
+    const ss = ac.createBufferSource(); ss.buffer = sb;
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 600; lp.Q.value = 1.0;
+    const sg = ac.createGain(); sg.gain.value = 0.45;
+    ss.connect(lp); lp.connect(sg); sg.connect(ac.destination);
 
-    // Fade last 4 bars
-    const fadeStart = audioCtx.currentTime + (BARS - 4) * 16 * STEP_DUR;
-    const fadeEnd = audioCtx.currentTime + BARS * 16 * STEP_DUR;
-    dGain.gain.setValueAtTime(0.8, fadeStart);
-    dGain.gain.linearRampToValueAtTime(0, fadeEnd);
-    bGain.gain.setValueAtTime(0.35, fadeStart);
-    bGain.gain.linearRampToValueAtTime(0, fadeEnd);
+    const fadeS = ac.currentTime + (BARS-4)*16*STEP_DUR;
+    const fadeE = ac.currentTime + BARS*16*STEP_DUR;
+    dg.gain.setValueAtTime(0.75, fadeS); dg.gain.linearRampToValueAtTime(0, fadeE);
+    sg.gain.setValueAtTime(0.45, fadeS); sg.gain.linearRampToValueAtTime(0, fadeE);
 
-    dSrc.start(0); bSrc.start(0);
+    ds.start(0); ss.start(0);
     playBtn.classList.add('playing');
 
-    // ── VISUAL TIMER ──
-    // Track what's active at each bar for the rimshot visual
-    const rimSteps = [
-      null, null, null, null, null, null, null, null,         // 1-8
-      [3], [3], [3], [3], [3], [3], [3], [3],                 // 9-16
-      [7], [7], [7], [7], [7], [7], [7], [7],                 // 17-24
-      [3,11],[3,11],[3,11],[3,11],[3,11],[3,11],[3,11],[3,11], // 25-32
-      [3],[3],[3],[3],[3],[3],[3],[3],                           // 33-40
-      [3,7],[3,7],[3,7],[3,7],[3,7],[3,7],[3,7],[3,7],         // 41-48
-      [3,9],[3,9],[3,9],[3,9],[3,9],[3,9],[3,9],[3,9],         // 49-56
-      [3,9],[3,9],[3,9],[3,9],[3,9],[3,9],[3,9],[3,9],         // 57-64
-      [3],[3],[3],[3],[3],[3],[3],[3],                           // 65-72
-      null, null, null, null, null, null, null, null,           // 73-80
+    // ── VISUALS ──
+    const topSteps = [
+      null, null,
+      [0,10], [0,6,10], [2,7,12], [0,3,6,10,13],
+      [5,11], [0], [2,8,14], [6]
     ];
-    const kickBars = bar => !(bar >= 57 && bar < 65);
+    const rimSteps = [
+      null, [3], [7], [3,11], [3], [3,7], [3,9], [3,9], [3], null
+    ];
+    const kickOn = i => !(i >= 7 && i < 8); // section index 7 = no kick
 
     let step = 0;
     const timer = setInterval(() => {
       const bar = Math.floor(step / 16);
       if (bar >= BARS) { clearInterval(timer); return; }
       const sib = step % 16;
+      const sec = Math.floor(bar / 8);
 
-      if (kickBars(bar) && [0,4,8,12].includes(sib)) kickFlash = 1;
-      const rs = rimSteps[bar];
-      if (rs && rs.includes(sib)) rimFlash = 1;
+      if (kickOn(sec) && [0,4,8,12].includes(sib)) kickF = 1;
+      const rs = rimSteps[sec];
+      if (rs && rs.includes(sib)) rimF = 1;
+      const ts = topSteps[sec];
+      if (ts && ts.includes(sib)) pingF = 1;
 
       step++;
     }, STEP_DUR * 1000);
-
-  } catch (err) {
-    console.error(err);
-    playBtn.textContent = '▶';
-  }
+  } catch (err) { console.error(err); playBtn.textContent = '▶'; }
 }
 
 document.getElementById('play-btn').addEventListener('click', () => start());
