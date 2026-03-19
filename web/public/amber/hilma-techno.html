@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>HILMA TECHNO</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="HILMA TECHNO">
+<meta property="og:description" content="cosmic flowers at 4am">
+<meta property="og:image" content="https://intheamber.com/amber/og/hilma-techno.png">
+<meta property="og:url" content="https://intheamber.com/amber/hilma-techno.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HILMA TECHNO">
+<meta name="twitter:description" content="cosmic flowers at 4am">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/hilma-techno.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    overflow: hidden;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  canvas { display: block; position: fixed; top: 0; left: 0; }
+  #play-btn {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font: 600 18px -apple-system, system-ui, sans-serif;
+    color: #39ff14;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid #39ff1466;
+    padding: 16px 40px;
+    border-radius: 30px;
+    cursor: pointer;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    z-index: 10;
+    transition: all 0.3s;
+  }
+  #play-btn:hover { background: rgba(57,255,20,0.15); }
+  #play-btn.hidden { opacity: 0; pointer-events: none; }
+  #info {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    font: 11px 'Courier New', monospace;
+    color: #39ff1488;
+    z-index: 10;
+  }
+  #decay-display {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    font: 13px 'Courier New', monospace;
+    color: #39ff14;
+    z-index: 10;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<button id="play-btn">▶ PLAY</button>
+<div id="info">JT10 — default patch — decay only</div>
+<div id="decay-display"></div>
+
+<script type="module">
+import { JT10Engine } from '/jt10/dist/machines/jt10/engine.js';
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const playBtn = document.getElementById('play-btn');
+const decayDisplay = document.getElementById('decay-display');
+
+let W, H;
+let audioCtx, bass, bassNode;
+let playing = false;
+let step = 0;
+let nextStepTime = 0;
+const BPM = 128;
+const STEP_TIME = 60 / BPM / 4; // 16th notes
+
+// The sequence — just notes and decay values
+// Decay is the ONLY parameter we change
+const SEQUENCE = [
+  { note: 'C2',  decay: 0.15 },
+  { note: null,  decay: null },
+  { note: 'C2',  decay: 0.08 },
+  { note: 'Eb2', decay: 0.25 },
+  { note: null,  decay: null },
+  { note: 'C2',  decay: 0.12 },
+  { note: null,  decay: null },
+  { note: 'G1',  decay: 0.35 },
+  { note: 'C2',  decay: 0.15 },
+  { note: null,  decay: null },
+  { note: 'Eb2', decay: 0.06 },
+  { note: 'C2',  decay: 0.20 },
+  { note: 'Bb1', decay: 0.40 },
+  { note: null,  decay: null },
+  { note: 'C2',  decay: 0.10 },
+  { note: 'G1',  decay: 0.55 },
+];
+
+// Visualization state
+let rings = [];
+let currentDecay = 0.3;
+let currentNote = null;
+let pulseIntensity = 0;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+function initRings() {
+  rings = [];
+  const cx = W / 2, cy = H / 2;
+  const maxR = Math.min(W, H) * 0.45;
+  for (let i = 0; i < 7; i++) {
+    rings.push({
+      radius: maxR * (0.15 + i * 0.13),
+      baseRadius: maxR * (0.15 + i * 0.13),
+      angle: Math.random() * Math.PI * 2,
+      speed: 0.002 + Math.random() * 0.003,
+      hue: 100 + i * 15, // acid greens to teals
+      width: 1.5 + Math.random() * 2,
+      segments: 3 + Math.floor(Math.random() * 5),
+      gapRatio: 0.15 + Math.random() * 0.25,
+    });
+  }
+}
+
+async function start() {
+  audioCtx = new AudioContext({ sampleRate: 44100 });
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+  bass = new JT10Engine({ context: audioCtx, bpm: BPM });
+  bass._ensureVoice();
+  // DEFAULT PATCH — touch nothing except decay
+
+  bassNode = audioCtx.createScriptProcessor(1024, 0, 2);
+  bassNode.onaudioprocess = (e) => {
+    const L = e.outputBuffer.getChannelData(0);
+    const R = e.outputBuffer.getChannelData(1);
+    for (let i = 0; i < L.length; i++) {
+      const s = bass._voice ? bass._voice.processSample(bass.masterVolume) : 0;
+      L[i] = s;
+      R[i] = s;
+    }
+  };
+  bassNode.connect(audioCtx.destination);
+
+  playing = true;
+  step = 0;
+  nextStepTime = audioCtx.currentTime + 0.1;
+  playBtn.classList.add('hidden');
+  initRings();
+  scheduleLoop();
+}
+
+function scheduleLoop() {
+  if (!playing) return;
+
+  while (nextStepTime < audioCtx.currentTime + 0.1) {
+    const s = SEQUENCE[step % SEQUENCE.length];
+    
+    if (s.note !== null) {
+      // Change ONLY the decay
+      bass.setParameter('decay', s.decay);
+      currentDecay = s.decay;
+      currentNote = s.note;
+      pulseIntensity = 1;
+
+      bass._voice.triggerNote(s.note, 0.85, false);
+      
+      decayDisplay.textContent = `decay: ${s.decay.toFixed(2)}\n${s.note}`;
+    }
+
+    step++;
+    nextStepTime += STEP_TIME;
+  }
+
+  setTimeout(scheduleLoop, 25);
+}
+
+function draw() {
+  ctx.fillStyle = 'rgba(10, 10, 10, 0.12)';
+  ctx.fillRect(0, 0, W, H);
+
+  const cx = W / 2, cy = H / 2;
+  const t = performance.now() * 0.001;
+
+  // Pulse decay
+  pulseIntensity *= 0.92;
+
+  // Draw concentric rings — Hilma af Klint style but techno
+  for (let i = 0; i < rings.length; i++) {
+    const ring = rings[i];
+    ring.angle += ring.speed;
+
+    // Rings breathe with the decay value
+    const breathe = 1 + pulseIntensity * currentDecay * 0.3;
+    const r = ring.baseRadius * breathe;
+
+    const alpha = 0.3 + pulseIntensity * 0.5;
+    const hue = ring.hue + pulseIntensity * 40;
+
+    ctx.strokeStyle = `hsla(${hue}, 100%, ${50 + pulseIntensity * 20}%, ${alpha})`;
+    ctx.lineWidth = ring.width + pulseIntensity * 2;
+    ctx.shadowBlur = pulseIntensity * 15;
+    ctx.shadowColor = `hsla(${hue}, 100%, 50%, 0.5)`;
+
+    // Draw segmented arcs — like Hilma's divided circles
+    const segAngle = (Math.PI * 2) / ring.segments;
+    const gap = segAngle * ring.gapRatio;
+
+    for (let s = 0; s < ring.segments; s++) {
+      const startA = ring.angle + s * segAngle + gap / 2;
+      const endA = startA + segAngle - gap;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startA, endA);
+      ctx.stroke();
+    }
+  }
+
+  ctx.shadowBlur = 0;
+
+  // Central glow on notes
+  if (pulseIntensity > 0.1) {
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80 + pulseIntensity * 60);
+    grad.addColorStop(0, `rgba(57, 255, 20, ${pulseIntensity * 0.15})`);
+    grad.addColorStop(0.5, `rgba(57, 255, 20, ${pulseIntensity * 0.05})`);
+    grad.addColorStop(1, 'rgba(57, 255, 20, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Spiral tendrils — organic forms connecting the rings
+  ctx.strokeStyle = `rgba(57, 255, 20, ${0.06 + pulseIntensity * 0.08})`;
+  ctx.lineWidth = 0.8;
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    const spiralOffset = i * (Math.PI * 2 / 3) + t * 0.1;
+    for (let a = 0; a < Math.PI * 6; a += 0.05) {
+      const sr = 30 + a * 18 + Math.sin(a * 2 + t) * 10;
+      const sx = cx + Math.cos(a + spiralOffset) * sr;
+      const sy = cy + Math.sin(a + spiralOffset) * sr;
+      if (a === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+  }
+
+  requestAnimationFrame(draw);
+}
+
+playBtn.addEventListener('click', start);
+window.addEventListener('resize', () => { resize(); initRings(); });
+resize();
+initRings();
+draw();
+</script>
+</body>
+</html>
