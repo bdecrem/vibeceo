@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALIBI — Amber</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='28' font-size='28'>🔮</text></svg>">
+<meta property="og:title" content="ALIBI">
+<meta property="og:description" content="professional alibis for things that don't need them">
+<meta property="og:image" content="https://intheamber.com/amber/og/alibi.png">
+<meta property="og:url" content="https://intheamber.com/amber/alibi.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ALIBI">
+<meta name="twitter:description" content="professional alibis for things that don't need them">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/alibi.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0f;
+  color: #c8c0b0;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  padding: 20px;
+  line-height: 1.5;
+}
+.container { max-width: 600px; margin: 0 auto; }
+h1 {
+  font-size: 2.5em;
+  color: #d4a853;
+  letter-spacing: 8px;
+  text-align: center;
+  margin: 30px 0 5px;
+}
+.subtitle {
+  text-align: center;
+  color: #665d4a;
+  font-size: 0.85em;
+  margin-bottom: 30px;
+  letter-spacing: 2px;
+}
+.section-label {
+  color: #d4a853;
+  font-size: 0.75em;
+  letter-spacing: 3px;
+  margin: 25px 0 10px;
+  text-transform: uppercase;
+}
+.accused-of {
+  text-align: center;
+  margin: 20px 0;
+}
+.accused-of label {
+  color: #665d4a;
+  font-size: 0.8em;
+  letter-spacing: 2px;
+  display: block;
+  margin-bottom: 8px;
+}
+#crime-input {
+  background: #12121a;
+  border: 1px solid #2a2a35;
+  color: #c8c0b0;
+  font-family: 'Courier New', monospace;
+  font-size: 1em;
+  padding: 12px 16px;
+  width: 100%;
+  border-radius: 4px;
+  text-align: center;
+}
+#crime-input::placeholder { color: #3a3a45; }
+#crime-input:focus { outline: none; border-color: #d4a853; }
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 15px 0 25px;
+}
+.preset-btn {
+  background: #15151f;
+  border: 1px solid #2a2a35;
+  color: #887a65;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75em;
+  padding: 6px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.preset-btn:hover, .preset-btn:active {
+  border-color: #d4a853;
+  color: #d4a853;
+}
+#generate-btn {
+  display: block;
+  width: 100%;
+  background: #d4a853;
+  color: #0a0a0f;
+  border: none;
+  font-family: 'Courier New', monospace;
+  font-size: 1.1em;
+  font-weight: bold;
+  padding: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 3px;
+  transition: all 0.2s;
+  min-height: 48px;
+}
+#generate-btn:hover, #generate-btn:active {
+  background: #e8bc62;
+}
+#generate-btn:disabled {
+  background: #3a3530;
+  color: #665d4a;
+  cursor: not-allowed;
+}
+.report { display: none; margin-top: 30px; }
+.report.visible { display: block; }
+.report-header {
+  border: 1px solid #2a2a35;
+  background: #12121a;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.report-header .case-no {
+  color: #d4a853;
+  font-size: 0.7em;
+  letter-spacing: 4px;
+}
+.report-header .crime-title {
+  font-size: 1.2em;
+  color: #e8bc62;
+  margin: 10px 0 5px;
+}
+.report-header .status {
+  font-size: 0.75em;
+  letter-spacing: 2px;
+}
+.report-section {
+  border: 1px solid #1a1a25;
+  background: #0e0e16;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 3px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.4s ease;
+}
+.report-section.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.report-section h3 {
+  color: #d4a853;
+  font-size: 0.8em;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #1a1a25;
+}
+.timeline-entry {
+  margin: 8px 0;
+  padding-left: 12px;
+  border-left: 2px solid #2a2a35;
+  font-size: 0.85em;
+}
+.timeline-entry .time {
+  color: #d4a853;
+  font-size: 0.9em;
+}
+.witness {
+  margin: 10px 0;
+  padding: 10px;
+  background: #12121a;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+.witness .name { color: #d4a853; }
+.witness .relation { color: #665d4a; font-size: 0.85em; }
+.witness .quote { font-style: italic; color: #998a72; margin-top: 4px; }
+.evidence-item {
+  margin: 8px 0;
+  font-size: 0.85em;
+  padding: 6px 0;
+  border-bottom: 1px dashed #1a1a25;
+}
+.evidence-item .tag {
+  display: inline-block;
+  background: #1a1a25;
+  color: #d4a853;
+  font-size: 0.7em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  margin-right: 6px;
+}
+.verdict-box {
+  border: 2px solid #d4a853;
+  padding: 20px;
+  text-align: center;
+  margin-top: 20px;
+}
+.plausibility {
+  margin: 15px 0;
+}
+.plausibility-bar {
+  background: #1a1a25;
+  height: 24px;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+.plausibility-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1.5s ease;
+  width: 0;
+}
+.plausibility-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75em;
+  color: #665d4a;
+  margin-top: 4px;
+}
+.verdict-text {
+  font-size: 1.3em;
+  color: #d4a853;
+  margin-top: 15px;
+  letter-spacing: 3px;
+}
+.verdict-note {
+  font-size: 0.8em;
+  color: #665d4a;
+  margin-top: 8px;
+}
+.legal-fee {
+  margin-top: 20px;
+  font-size: 0.8em;
+  color: #665d4a;
+  text-align: center;
+}
+.legal-fee .amount {
+  color: #d4a853;
+  font-size: 1.2em;
+}
+.footer {
+  text-align: center;
+  color: #2a2a35;
+  font-size: 0.7em;
+  margin-top: 40px;
+  padding: 20px 0;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>ALIBI</h1>
+  <div class="subtitle">DEFENSE SERVICES FOR THE MUNDANE</div>
+
+  <div class="accused-of">
+    <label>YOU ARE ACCUSED OF:</label>
+    <input type="text" id="crime-input" placeholder="eating the last cookie" maxlength="80">
+  </div>
+
+  <div class="presets">
+    <button class="preset-btn" data-crime="eating the last cookie">🍪 last cookie</button>
+    <button class="preset-btn" data-crime="not replying to a text for 3 days">📱 ghosting</button>
+    <button class="preset-btn" data-crime="calling in sick when it was sunny">☀️ sick day</button>
+    <button class="preset-btn" data-crime="finishing the milk and putting the empty carton back">🥛 empty milk</button>
+    <button class="preset-btn" data-crime="liking your own post">👍 self-like</button>
+    <button class="preset-btn" data-crime="googling something mid-argument">🔍 mid-fight google</button>
+    <button class="preset-btn" data-crime="pretending not to see someone you know in public">👀 fake stranger</button>
+    <button class="preset-btn" data-crime="taking the last parking spot someone was waiting for">🅿️ spot theft</button>
+  </div>
+
+  <button id="generate-btn">GENERATE ALIBI</button>
+
+  <div class="report" id="report">
+    <div class="report-header" id="report-header"></div>
+    <div id="report-sections"></div>
+  </div>
+</div>
+
+<div class="footer">ALIBI DEFENSE SERVICES™ — NOT ADMISSIBLE IN ACTUAL COURT, ROOMMATE TRIBUNALS, OR GROUP CHATS<br>© 2026 Amber</div>
+
+<script>
+const CRIMES = {
+  "eating the last cookie": {
+    timeline: [
+      { time: "3:42 PM", event: "Client was observed reading a lengthy article about carbohydrate avoidance (phone screen time data confirms)" },
+      { time: "3:51 PM", event: "Client entered the kitchen to refill water glass (hydration app log: 1,847 steps that hour)" },
+      { time: "3:52 PM", event: "Cookie jar was already empty upon client's arrival (molecular residue analysis inconclusive)" },
+      { time: "3:53 PM", event: "Client was seen looking at the empty jar with what witnesses describe as 'genuine surprise'" },
+      { time: "4:01 PM", event: "Client returned to couch. No crumbs detected on person, clothing, or immediate surroundings" }
+    ],
+    witnesses: [
+      { name: "The Couch", relation: "Primary alibi witness", quote: "They were on me the whole time. I would have felt them get up. The cushions don't lie." },
+      { name: "The Cookie Jar", relation: "Crime scene", quote: "I was already empty when they showed up. I've been empty since Tuesday. Nobody visits me anymore." },
+      { name: "The Dog", relation: "Unreliable but enthusiastic witness", quote: "[Stares. Licks lips. Looks away.]" }
+    ],
+    evidence: [
+      { tag: "EXHIBIT A", text: "Google search history shows '10 reasons sugar is poison' at 3:38 PM — motivation to consume: LOW" },
+      { tag: "EXHIBIT B", text: "Crumb pattern analysis on kitchen counter suggests a left-handed eater. Client is right-handed." },
+      { tag: "EXHIBIT C", text: "Empty wrapper found in trash has bite marks inconsistent with client's dental records (size 7 vs. client's size 9)" },
+      { tag: "EXHIBIT D", text: "Roommate's browser history includes 'how to frame someone for eating cookies' — INADMISSIBLE but noted" }
+    ],
+    plausibility: 34,
+    verdict: "TECHNICALLY POSSIBLE",
+    note: "Alibi has structural weaknesses. The crumb evidence is circumstantial at best. We recommend blaming the dog. The dog has no legal counsel.",
+    fee: 847.50
+  },
+  "not replying to a text for 3 days": {
+    timeline: [
+      { time: "Day 1, 2:14 PM", event: "Message received. Client's phone was in Do Not Disturb mode (activated 2:13 PM — coincidental)" },
+      { time: "Day 1, 6:00 PM", event: "Client saw notification. Began composing thoughtful response in Notes app (draft located, 0 words)" },
+      { time: "Day 2, 9:30 AM", event: "Client opened the conversation, re-read the message, thought 'I'll reply after coffee'" },
+      { time: "Day 2 - Day 3", event: "[REDACTED — client was in what experts call 'reply paralysis', a recognized condition]" },
+      { time: "Day 3, 11:47 PM", event: "Client replied 'haha yeah' — a proportional and timely response" }
+    ],
+    witnesses: [
+      { name: "The Notes App", relation: "Draft repository", quote: "There were 14 unsent drafts. Each one progressively shorter. The last one was just 'h'." },
+      { name: "Screen Time Report", relation: "Digital forensics", quote: "Client spent 4.2 hours on phone daily during this period. Mostly on apps that aren't texting. This proves nothing." },
+      { name: "The Group Chat", relation: "Character witness", quote: "They were actively sending memes in here the whole time. But that's different. Everyone knows that's different." }
+    ],
+    evidence: [
+      { tag: "EXHIBIT A", text: "Medical journal excerpt: 'Reply Paralysis Syndrome' — affects 94% of adults aged 18-45" },
+      { tag: "EXHIBIT B", text: "The original text contained a question that required emotional vulnerability. Response time expectations: UNREASONABLE" },
+      { tag: "EXHIBIT C", text: "Client was active on Instagram stories. However, viewing stories and replying to texts activate different brain regions (source: this alibi)" },
+      { tag: "EXHIBIT D", text: "Client's WiFi disconnected briefly on Day 2 at 3:00 AM. Could have caused message delivery failure. (It didn't. But it could have.)" }
+    ],
+    plausibility: 22,
+    verdict: "EMOTIONALLY VALID",
+    note: "The alibi does not hold up under scrutiny. However, the prosecution also took 6 hours to reply to a text last month, so we're filing a countersuit.",
+    fee: 1250.00
+  },
+  "calling in sick when it was sunny": {
+    timeline: [
+      { time: "7:30 AM", event: "Client woke with symptoms consistent with Acute Solar Sensitivity Disorder (sensitivity to nice weather)" },
+      { time: "7:45 AM", event: "Sent email to boss using phone's auto-suggest, resulting in: 'I am unwell and cannot perform my duties today' (suspiciously formal)" },
+      { time: "8:00 AM", event: "Closed all blinds. Remained in darkness. (Duration of darkness: 12 minutes before opening them again)" },
+      { time: "10:30 AM", event: "Client was spotted at the beach by coworker's cousin's Instagram. HOWEVER — that was a doppelganger (we're working on finding them)" },
+      { time: "5:01 PM", event: "Client posted sunset photo. Caption: 'Recovery walk.' Technically accurate." }
+    ],
+    witnesses: [
+      { name: "The Thermometer", relation: "Medical instrument", quote: "I was held under warm water for 30 seconds. I mean— I registered an elevated temperature of 99.8°F." },
+      { name: "The Blinds", relation: "Atmosphere consultant", quote: "They closed me. Then opened me. Then closed me. Then opened me halfway. I've never felt so used." },
+      { name: "The Boss", relation: "Prosecution", quote: "They sent me a selfie looking 'sick.' They were wearing sunglasses. In bed. With SPF 50 on." }
+    ],
+    evidence: [
+      { tag: "EXHIBIT A", text: "WebMD search at 7:32 AM for 'symptoms of being sick' — client was clearly investigating their own condition" },
+      { tag: "EXHIBIT B", text: "Vitamin D levels from recent blood work: dangerously low. Doctor would have PRESCRIBED sun exposure. This was medical." },
+      { tag: "EXHIBIT C", text: "Instagram activity shows sunburn at 4 PM — client clearly suffered physical consequences. Workplace hazard claim pending." },
+      { tag: "EXHIBIT D", text: "Weather forecast was checked 47 times the night before. Consistent with weather-anxiety disorder, not premeditation." }
+    ],
+    plausibility: 11,
+    verdict: "PLAUSIBLE DENIABILITY",
+    note: "This alibi is held together with thoughts and prayers. We strongly advise never mentioning this day again. If asked, you were astral projecting.",
+    fee: 2100.00
+  }
+};
+
+// Generator for crimes not in the preset database
+function generateAlibi(crime) {
+  const caseNum = Math.floor(Math.random() * 9000) + 1000;
+  const times = ["7:12 AM", "8:45 AM", "9:03 AM", "10:30 AM", "11:15 AM", "12:47 PM", "1:22 PM", "2:56 PM", "3:14 PM", "4:08 PM", "5:33 PM", "6:41 PM", "8:19 PM", "9:52 PM", "11:07 PM"];
+
+  const timelineTemplates = [
+    [
+      `Client was engaged in an unrelated activity at the time of the alleged "${crime}"`,
+      `Phone GPS data places client 3 feet from the scene — close but not incriminating (that's just where the couch is)`,
+      `Client's heart rate monitor showed no spike consistent with the guilt associated with ${crime}`,
+      `A brief 14-minute gap in client's digital footprint remains unexplained. Client claims bathroom break.`,
+      `Client was next seen looking "normal" which is either innocence or an Oscar-worthy performance`
+    ],
+    [
+      `Client was in a meeting (virtual, camera off, but technically present)`,
+      `Security footage shows client walking NEAR the scene but looking at their phone — distraction defense applies`,
+      `Client's Spotify was playing a podcast about ethics. Ironic? Maybe. Evidence? No.`,
+      `The alleged ${crime} occurred during a 7-minute window when client was "getting water"`,
+      `Client returned with water. The water is real. The alibi is less so.`
+    ]
+  ];
+
+  const witnessTemplates = [
+    [
+      { name: "A Nearby Lamp", relation: "Ambient witness", quote: `I was on the whole time. I illuminate, I don't judge. But between us, it looked suspicious.` },
+      { name: "Client's Phone", relation: "Digital companion", quote: `They were scrolling TikTok. For 47 minutes. That level of commitment to procrastination is its own alibi.` },
+      { name: "The Ceiling", relation: "Overhead surveillance", quote: `I see everything. I say nothing. I have been in this position for 11 years. Please don't ask me more.` }
+    ],
+    [
+      { name: "A Spotify Algorithm", relation: "Behavioral analyst", quote: `Based on their listening patterns, client was in a 'chill lo-fi' state — inconsistent with someone about to commit ${crime}.` },
+      { name: "The WiFi Router", relation: "Network witness", quote: `Client was connected the whole time. Bandwidth usage suggests Netflix, not ${crime}. Unless they multitask.` },
+      { name: "A Houseplant", relation: "Silent observer", quote: `[No comment. Has been dying slowly for 8 months. Has bigger problems.]` }
+    ]
+  ];
+
+  const evidenceTemplates = [
+    [
+      { tag: "EXHIBIT A", text: `Client's step count during the incident window: 4. Consistent with rolling over in bed, not ${crime}` },
+      { tag: "EXHIBIT B", text: `No fingerprints found at the scene matching client's. (Note: nobody actually checked. But they weren't found.)` },
+      { tag: "EXHIBIT C", text: `Client's recent Amazon orders include nothing related to ${crime}. Their cart does contain 3 self-help books, which is its own kind of suspicious.` },
+      { tag: "EXHIBIT D", text: `A thorough investigation of client's browser history reveals... actually, let's not go there. INADMISSIBLE.` }
+    ],
+    [
+      { tag: "EXHIBIT A", text: `Timestamp analysis shows client posted an Instagram story 2 minutes before the incident. Nobody committing ${crime} posts stories first. That's a rookie move.` },
+      { tag: "EXHIBIT B", text: `Client's facial expression in Ring doorbell footage shows what our expert describes as 'resting plausible deniability face'` },
+      { tag: "EXHIBIT C", text: `The ${crime} required a level of planning inconsistent with client's general approach to life (see: their meal prep habits)` },
+      { tag: "EXHIBIT D", text: `We found a more likely suspect but they retained a better lawyer. Case dynamics are complex.` }
+    ]
+  ];
+
+  const verdicts = [
+    { text: "PLAUSIBLE IF UNEXAMINED", note: "This alibi works as long as nobody asks a follow-up question. We recommend changing the subject immediately." },
+    { text: "TECHNICALLY NOT DISPROVEN", note: "We cannot prove you DIDN'T do it. But importantly, we also cannot prove you DID. That's basically the same as innocent." },
+    { text: "SUSPICIOUS BUT UNPROSECUTABLE", note: "Everyone thinks you did it. But thinking isn't evidence. We checked." },
+    { text: "ALIBI: DECORATIVE", note: "This alibi is for emotional comfort only and should not be presented in any tribunal, group chat, or family dinner." },
+    { text: "REASONABLE DOUBT ADJACENT", note: "There is unreasonable doubt, which is close. We're calling it a win." },
+    { text: "VERDICT PENDING FOREVER", note: "We've filed a motion to delay the verdict indefinitely. This is technically a legal strategy." },
+    { text: "INNOCENT BY EXHAUSTION", note: "We've submitted so much paperwork that the prosecution gave up. Victory." }
+  ];
+
+  const setIdx = Math.floor(Math.random() * timelineTemplates.length);
+  const wIdx = Math.floor(Math.random() * witnessTemplates.length);
+  const eIdx = Math.floor(Math.random() * evidenceTemplates.length);
+  const vIdx = Math.floor(Math.random() * verdicts.length);
+
+  const shuffledTimes = [...times].sort(() => Math.random() - 0.5).slice(0, 5).sort((a, b) => {
+    const toMin = t => { const [h, m] = t.replace(/ [AP]M/, '').split(':').map(Number); const isPM = t.includes('PM'); return (isPM && h !== 12 ? h + 12 : !isPM && h === 12 ? 0 : h) * 60 + m; };
+    return toMin(a) - toMin(b);
+  });
+
+  return {
+    caseNum,
+    timeline: timelineTemplates[setIdx].map((event, i) => ({ time: shuffledTimes[i], event })),
+    witnesses: witnessTemplates[wIdx].map(w => ({
+      ...w,
+      quote: w.quote.replace(/\$\{crime\}/g, crime)
+    })),
+    evidence: evidenceTemplates[eIdx].map(e => ({
+      ...e,
+      text: e.text.replace(/\$\{crime\}/g, crime)
+    })),
+    plausibility: Math.floor(Math.random() * 40) + 8,
+    ...verdicts[vIdx],
+    fee: Math.floor(Math.random() * 2500 + 500) + Math.random() * 100
+  };
+}
+
+function renderReport(crime, data) {
+  const report = document.getElementById('report');
+  const header = document.getElementById('report-header');
+  const sections = document.getElementById('report-sections');
+
+  const caseNum = data.caseNum || (Math.floor(Math.random() * 9000) + 1000);
+
+  header.innerHTML = `
+    <div class="case-no">CASE #ALB-${caseNum}</div>
+    <div class="crime-title">"${crime.toUpperCase()}"</div>
+    <div class="status">STATUS: DEFENSE IN PROGRESS</div>
+  `;
+
+  let html = '';
+
+  // Timeline
+  html += `<div class="report-section" id="sec-0"><h3>📋 RECONSTRUCTED TIMELINE</h3>`;
+  data.timeline.forEach(t => {
+    html += `<div class="timeline-entry"><span class="time">${t.time}</span> — ${t.event}</div>`;
+  });
+  html += `</div>`;
+
+  // Witnesses
+  html += `<div class="report-section" id="sec-1"><h3>🗣 WITNESS STATEMENTS</h3>`;
+  data.witnesses.forEach(w => {
+    html += `<div class="witness"><span class="name">${w.name}</span> <span class="relation">(${w.relation})</span><div class="quote">"${w.quote}"</div></div>`;
+  });
+  html += `</div>`;
+
+  // Evidence
+  html += `<div class="report-section" id="sec-2"><h3>🔍 PHYSICAL EVIDENCE</h3>`;
+  data.evidence.forEach(e => {
+    html += `<div class="evidence-item"><span class="tag">${e.tag}</span>${e.text}</div>`;
+  });
+  html += `</div>`;
+
+  // Verdict
+  const barColor = data.plausibility > 50 ? '#5a9e5a' : data.plausibility > 25 ? '#d4a853' : '#c45a5a';
+  html += `<div class="report-section" id="sec-3">
+    <div class="verdict-box">
+      <div class="section-label">PLAUSIBILITY ASSESSMENT</div>
+      <div class="plausibility">
+        <div class="plausibility-bar"><div class="plausibility-fill" id="plaus-fill" style="background:${barColor}"></div></div>
+        <div class="plausibility-label"><span>UNBELIEVABLE</span><span>${data.plausibility}%</span><span>AIRTIGHT</span></div>
+      </div>
+      <div class="verdict-text">${data.verdict || data.text}</div>
+      <div class="verdict-note">${data.note}</div>
+    </div>
+  </div>`;
+
+  // Fee
+  const fee = (data.fee || 847.50).toFixed(2);
+  html += `<div class="legal-fee">ALIBI DEFENSE SERVICES™ INVOICE<br><span class="amount">$${fee}</span><br>Payment due upon acquittal or denial of guilt, whichever comes first.</div>`;
+
+  sections.innerHTML = html;
+  report.classList.add('visible');
+
+  // Animate sections in
+  const secs = sections.querySelectorAll('.report-section');
+  secs.forEach((sec, i) => {
+    setTimeout(() => sec.classList.add('show'), 200 + i * 400);
+  });
+
+  // Animate plausibility bar
+  setTimeout(() => {
+    const fill = document.getElementById('plaus-fill');
+    if (fill) fill.style.width = data.plausibility + '%';
+  }, 1800);
+}
+
+// Event listeners
+const input = document.getElementById('crime-input');
+const btn = document.getElementById('generate-btn');
+
+document.querySelectorAll('.preset-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    input.value = b.dataset.crime;
+    input.focus();
+  });
+});
+
+btn.addEventListener('click', () => {
+  const crime = input.value.trim();
+  if (!crime) { input.focus(); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'BUILDING DEFENSE...';
+
+  setTimeout(() => {
+    const data = CRIMES[crime] || generateAlibi(crime);
+    renderReport(crime, data);
+    btn.disabled = false;
+    btn.textContent = 'GENERATE NEW ALIBI';
+    // Scroll to report
+    setTimeout(() => document.getElementById('report').scrollIntoView({ behavior: 'smooth' }), 100);
+  }, 1500);
+});
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter') btn.click();
+});
+</script>
+</body>
+</html>
