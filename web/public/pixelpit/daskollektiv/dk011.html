@@ -115,13 +115,18 @@ render();
 // ── STAB PATTERN HELPERS ──
 function makePat(note, steps) {
   return Array.from({ length: 16 }, (_, i) => ({
-    note, gate: steps.includes(i), slide: false, accent: (i === 0)
+    note, gate: steps.includes(i), slide: false, accent: false
   }));
 }
-function makePat2(noteA, noteB, steps) {
-  return Array.from({ length: 16 }, (_, i) => ({
-    note: (i < 8) ? noteA : noteB,
-    gate: steps.includes(i), slide: false, accent: (i === 0)
+function makeSparse(...noteSteps) {
+  return Array.from({ length: 16 }, (_, i) => {
+    const match = noteSteps.find(([n, s]) => s === i);
+    return { note: match ? match[0] : 'E2', gate: !!match, slide: false, accent: false };
+  });
+}
+function makeEveryOther(note) {
+  return Array.from({ length: 32 }, (_, i) => ({
+    note, gate: (i === 0), slide: false, accent: false
   }));
 }
 
@@ -155,14 +160,14 @@ async function start() {
 
     const stabSections = [
       { bars: 8, pat: null },
-      { bars: 8, pat: makePat('E2', [0, 8]) },
-      { bars: 8, pat: makePat2('E2', 'B2', [0, 8]) },
-      { bars: 8, pat: makePat('B2', [0, 8]) },
-      { bars: 8, pat: makePat2('G2', 'E2', [0, 8]) },
-      { bars: 8, pat: makePat('E2', [0, 4, 8, 12]) },
-      { bars: 8, pat: makePat2('B2', 'G2', [0, 4, 8, 12]) },
-      { bars: 8, pat: makePat('E2', [0, 8]) },
       { bars: 8, pat: makePat('E2', [0]) },
+      { bars: 8, pat: makePat('E2', [6]) },
+      { bars: 8, pat: makePat('B2', [0]) },
+      { bars: 8, pat: makeSparse(['E2', 0], ['G2', 10]) },
+      { bars: 8, pat: makePat('B2', [4]) },
+      { bars: 8, pat: makeSparse(['E2', 0], ['B2', 12]) },
+      { bars: 8, pat: makePat('G2', [8]) },
+      { bars: 8, pat: makeEveryOther('E2') },
     ];
 
     const stabBuffers = [];
