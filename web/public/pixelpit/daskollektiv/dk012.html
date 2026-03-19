@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Das Kollektiv #012</title>
+<meta property="og:title" content="Das Kollektiv #012">
+<meta property="og:description" content="Clinical minimal. 128 BPM. Bone dry. Concrete.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050505; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.3);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.06); z-index: 10;
+  }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.05); z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="title">DAS KOLLEKTIV #012</div>
+<div id="overlay"><button id="play-btn">▶</button></div>
+<div id="credits">DAS KOLLEKTIV · HALLMAN · CLINICAL MINIMAL</div>
+
+<script type="module">
+import { JT10Engine } from 'https://kochi.to/jt10/dist/machines/jt10/engine.js';
+import { JT90Engine } from 'https://kochi.to/jt90/dist/machines/jt90/engine.js';
+
+const BPM = 128;
+const STEP_DUR = 60 / BPM / 4;
+const BARS = 80;
+const STEPS = BARS * 16;
+
+// ── CANVAS ──
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+let kickFlash = 0;
+let rimFlash = 0;
+
+function render() {
+  requestAnimationFrame(render);
+  kickFlash *= 0.90;
+  rimFlash *= 0.88;
+
+  // Near-black fade — very slow trails
+  ctx.fillStyle = 'rgba(5,5,5,0.03)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Kick: single dim pulse at center
+  if (kickFlash > 0.01) {
+    const a = kickFlash * 0.04;
+    ctx.fillStyle = `rgba(160,160,160,${a})`;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Rimshot: sharp line
+  if (rimFlash > 0.01) {
+    const a = rimFlash * 0.08;
+    ctx.strokeStyle = `rgba(200,200,200,${a})`;
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    const y = cy + (Math.random() - 0.5) * 4;
+    ctx.moveTo(cx - 30, y);
+    ctx.lineTo(cx + 30, y);
+    ctx.stroke();
+  }
+}
+render();
+
+// ── HELPERS ──
+function makePat(allV, opts) {
+  const pat = {};
+  for (const v of allV) {
+    pat[v] = Array.from({ length: 16 }, (_, i) => {
+      if (v === 'kick' && opts.kick && opts.kick.includes(i))
+        return { velocity: 0.9, accent: false };
+      if (v === 'rimshot' && opts.rim && opts.rim.includes(i))
+        return { velocity: 0.50, accent: false };
+      if (v === 'ch' && opts.ch && opts.ch.includes(i))
+        return { velocity: opts.chVel || 0.35, accent: false };
+      return { velocity: 0, accent: false };
+    });
+  }
+  return pat;
+}
+
+// ── START ──
+async function start() {
+  const playBtn = document.getElementById('play-btn');
+  playBtn.textContent = '...';
+
+  try {
+    // ── RENDER JT90 DRUMS ──
+    const drumEngine = new JT90Engine({ bpm: BPM });
+    await drumEngine.loadSamples('https://kochi.to/jt90/samples');
+    drumEngine._ensureVoices();
+    drumEngine.setVoiceParameter('kick', 'decay', 0.18);
+    drumEngine.setVoiceParameter('kick', 'tune', 0);
+    drumEngine.setVoiceParameter('kick', 'level', 0.9);
+    drumEngine.setVoiceParameter('rimshot', 'level', 0.50);
+
+    const allV = ['kick','snare','clap','ch','oh','ride','rimshot','lowtom','midtom','hitom','crash'];
+
+    const drumSections = [
+      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12] }) },
+      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [3] }) },
+      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [7] }) },
+      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [3, 11] }) },
+      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [3], ch: [2,6,10,14], chVel: 0.15 }) },
+      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [3, 7], ch: [2,6,10,14], chVel: 0.25 }) },
+      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [3, 9], ch: [2,6,10,14], chVel: 0.25 }) },
+      { bars: 8, pat: makePat(allV, { rim: [3, 9], ch: [2,6,10,14], chVel: 0.20 }) },
+      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12], rim: [3] }) },
+      { bars: 8, pat: makePat(allV, { kick: [0,4,8,12] }) },
+    ];
+
+    const drumBuffers = [];
+    for (const sec of drumSections) {
+      drumEngine.setPattern(sec.pat);
+      const buf = await drumEngine.renderPattern({ bars: sec.bars, bpm: BPM });
+      drumBuffers.push(buf.getChannelData(0));
+    }
+    const drumTotal = drumBuffers.reduce((s, b) => s + b.length, 0);
+    const drumData = new Float32Array(drumTotal);
+    let dOff = 0;
+    for (const b of drumBuffers) { drumData.set(b, dOff); dOff += b.length; }
+
+    // ── RENDER JT10 BASS ──
+    const SR = 44100; // assume
+    const synth = new JT10Engine({ sampleRate: SR });
+    synth.setBpm(BPM);
+    synth.setParameter('sawLevel', 0.5);
+    synth.setParameter('pulseLevel', 0.5);
+    synth.setParameter('pulseWidth', 0.5);
+    synth.setParameter('subLevel', 0.3);
+    synth.setParameter('subMode', 0);
+    synth.setParameter('cutoff', 0.5);
+    synth.setParameter('resonance', 0.3);
+    synth.setParameter('envMod', 0.5);
+    synth.setParameter('keyTrack', 0.5);
+    synth.setParameter('attack', 0.01);
+    synth.setParameter('decay', 0.15);
+    synth.setParameter('sustain', 0.2);
+    synth.setParameter('release', 0.4);
+    synth.setParameter('glideTime', 0.0);
+    synth.masterVolume = 0.8;
+
+    const bassPat = Array.from({ length: 16 }, (_, i) => ({
+      note: 'E1', gate: (i === 0 || i === 8), slide: false, accent: false
+    }));
+    const bassPat5 = Array.from({ length: 16 }, (_, i) => ({
+      note: 'B1', gate: (i === 0 || i === 8), slide: false, accent: false
+    }));
+    const bassPatSparse = Array.from({ length: 16 }, (_, i) => ({
+      note: 'E1', gate: (i === 0), slide: false, accent: false
+    }));
+
+    const bassSections = [
+      { bars: 8, pat: null },
+      { bars: 16, pat: bassPat },
+      { bars: 8, pat: bassPat },
+      { bars: 8, pat: bassPat },
+      { bars: 8, pat: bassPat5 },
+      { bars: 8, pat: bassPat },
+      { bars: 8, pat: bassPatSparse },
+      { bars: 8, pat: bassPat },
+      { bars: 8, pat: bassPatSparse },
+    ];
+
+    const bassBuffers = [];
+    for (const sec of bassSections) {
+      if (!sec.pat) {
+        bassBuffers.push(new Float32Array(Math.ceil(sec.bars * 16 * STEP_DUR * SR)));
+        continue;
+      }
+      synth.setPattern(sec.pat);
+      const buf = await synth.renderPattern({ bars: sec.bars, sampleRate: SR });
+      bassBuffers.push(buf.getChannelData(0));
+    }
+    const bassTotal = bassBuffers.reduce((s, b) => s + b.length, 0);
+    const bassData = new Float32Array(bassTotal);
+    let bOff = 0;
+    for (const b of bassBuffers) { bassData.set(b, bOff); bOff += b.length; }
+
+    // ── PLAYBACK ──
+    const audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    const outSR = audioCtx.sampleRate;
+
+    // Drums
+    const dBuf = audioCtx.createBuffer(1, drumData.length, SR);
+    dBuf.getChannelData(0).set(drumData);
+    const dSrc = audioCtx.createBufferSource(); dSrc.buffer = dBuf;
+    const dGain = audioCtx.createGain(); dGain.gain.value = 0.8;
+    dSrc.connect(dGain); dGain.connect(audioCtx.destination);
+
+    // Bass through 300Hz LP
+    const bBuf = audioCtx.createBuffer(1, bassData.length, SR);
+    bBuf.getChannelData(0).set(bassData);
+    const bSrc = audioCtx.createBufferSource(); bSrc.buffer = bBuf;
+    const bLP = audioCtx.createBiquadFilter();
+    bLP.type = 'lowpass'; bLP.frequency.value = 300; bLP.Q.value = 0.7;
+    const bGain = audioCtx.createGain(); bGain.gain.value = 0.35;
+    bSrc.connect(bLP); bLP.connect(bGain); bGain.connect(audioCtx.destination);
+
+    // Fade last 4 bars
+    const fadeStart = audioCtx.currentTime + (BARS - 4) * 16 * STEP_DUR;
+    const fadeEnd = audioCtx.currentTime + BARS * 16 * STEP_DUR;
+    dGain.gain.setValueAtTime(0.8, fadeStart);
+    dGain.gain.linearRampToValueAtTime(0, fadeEnd);
+    bGain.gain.setValueAtTime(0.35, fadeStart);
+    bGain.gain.linearRampToValueAtTime(0, fadeEnd);
+
+    dSrc.start(0); bSrc.start(0);
+    playBtn.classList.add('playing');
+
+    // ── VISUAL TIMER ──
+    // Track what's active at each bar for the rimshot visual
+    const rimSteps = [
+      null, null, null, null, null, null, null, null,         // 1-8
+      [3], [3], [3], [3], [3], [3], [3], [3],                 // 9-16
+      [7], [7], [7], [7], [7], [7], [7], [7],                 // 17-24
+      [3,11],[3,11],[3,11],[3,11],[3,11],[3,11],[3,11],[3,11], // 25-32
+      [3],[3],[3],[3],[3],[3],[3],[3],                           // 33-40
+      [3,7],[3,7],[3,7],[3,7],[3,7],[3,7],[3,7],[3,7],         // 41-48
+      [3,9],[3,9],[3,9],[3,9],[3,9],[3,9],[3,9],[3,9],         // 49-56
+      [3,9],[3,9],[3,9],[3,9],[3,9],[3,9],[3,9],[3,9],         // 57-64
+      [3],[3],[3],[3],[3],[3],[3],[3],                           // 65-72
+      null, null, null, null, null, null, null, null,           // 73-80
+    ];
+    const kickBars = bar => !(bar >= 57 && bar < 65);
+
+    let step = 0;
+    const timer = setInterval(() => {
+      const bar = Math.floor(step / 16);
+      if (bar >= BARS) { clearInterval(timer); return; }
+      const sib = step % 16;
+
+      if (kickBars(bar) && [0,4,8,12].includes(sib)) kickFlash = 1;
+      const rs = rimSteps[bar];
+      if (rs && rs.includes(sib)) rimFlash = 1;
+
+      step++;
+    }, STEP_DUR * 1000);
+
+  } catch (err) {
+    console.error(err);
+    playBtn.textContent = '▶';
+  }
+}
+
+document.getElementById('play-btn').addEventListener('click', () => start());
+</script>
+</body>
+</html>
