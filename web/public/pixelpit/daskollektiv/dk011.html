@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Das Kollektiv #011</title>
+<meta property="og:title" content="Das Kollektiv #011">
+<meta property="og:description" content="Dub techno. E minor. 118 BPM. Less is more.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050505; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.3);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.06); z-index: 10;
+  }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.05); z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="title">DAS KOLLEKTIV #011</div>
+<div id="overlay"><button id="play-btn">▶</button></div>
+<div id="credits">DAS KOLLEKTIV · HALLMAN · DUB TECHNO</div>
+
+<script type="module">
+import { JT10Engine } from 'https://kochi.to/jt10/dist/machines/jt10/engine.js';
+import { JB01Engine } from 'https://kochi.to/jb01/dist/machines/jb01/engine.js';
+
+const BPM = 118;
+const STEP_DUR = 60 / BPM / 4;
+const BARS = 72;
+const STEPS = BARS * 16;
+
+// ── CANVAS ──
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Fog particles
+const particles = [];
+class FogParticle {
+  constructor(x, y, r, a, life) {
+    this.x = x; this.y = y; this.r = r; this.a = a; this.life = life;
+    this.born = performance.now();
+    this.vx = (Math.random() - 0.5) * 0.2;
+    this.vy = (Math.random() - 0.5) * 0.15;
+  }
+  update() {
+    const age = (performance.now() - this.born) / 1000;
+    if (age > this.life) return false;
+    this.x += this.vx; this.y += this.vy;
+    this.a *= 0.998;
+    return true;
+  }
+  draw() {
+    if (this.a < 0.002) return;
+    const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r);
+    g.addColorStop(0, `rgba(180,180,190,${this.a})`);
+    g.addColorStop(1, 'rgba(180,180,190,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+let vizAlpha = 0;
+function render() {
+  requestAnimationFrame(render);
+  ctx.fillStyle = 'rgba(5,5,5,0.008)';
+  ctx.fillRect(0, 0, W, H);
+  for (let i = particles.length - 1; i >= 0; i--) {
+    if (particles[i].update()) particles[i].draw();
+    else particles.splice(i, 1);
+  }
+}
+render();
+
+// ── STAB PATTERN HELPERS ──
+function makePat(note, steps) {
+  return Array.from({ length: 16 }, (_, i) => ({
+    note, gate: steps.includes(i), slide: false, accent: (i === 0)
+  }));
+}
+function makePat2(noteA, noteB, steps) {
+  return Array.from({ length: 16 }, (_, i) => ({
+    note: (i < 8) ? noteA : noteB,
+    gate: steps.includes(i), slide: false, accent: (i === 0)
+  }));
+}
+
+// ── START ──
+async function start() {
+  const playBtn = document.getElementById('play-btn');
+  playBtn.textContent = '...';
+
+  try {
+    const audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    // ── RENDER JT10 STAB TO BUFFER ──
+    const stab = new JT10Engine({ sampleRate: audioCtx.sampleRate });
+    stab.setBpm(BPM);
+    stab.setParameter('sawLevel', 0.5);
+    stab.setParameter('pulseLevel', 0.5);
+    stab.setParameter('pulseWidth', 0.5);
+    stab.setParameter('subLevel', 0.3);
+    stab.setParameter('subMode', 0);
+    stab.setParameter('cutoff', 0.5);
+    stab.setParameter('resonance', 0.3);
+    stab.setParameter('envMod', 0.5);
+    stab.setParameter('keyTrack', 0.5);
+    stab.setParameter('attack', 0.01);
+    stab.setParameter('decay', 0.3);
+    stab.setParameter('sustain', 0.7);
+    stab.setParameter('release', 0.3);
+    stab.setParameter('glideTime', 0.05);
+    stab.masterVolume = 0.8;
+
+    const stabSections = [
+      { bars: 8, pat: null },
+      { bars: 8, pat: makePat('E2', [0, 8]) },
+      { bars: 8, pat: makePat2('E2', 'B2', [0, 8]) },
+      { bars: 8, pat: makePat('B2', [0, 8]) },
+      { bars: 8, pat: makePat2('G2', 'E2', [0, 8]) },
+      { bars: 8, pat: makePat('E2', [0, 4, 8, 12]) },
+      { bars: 8, pat: makePat2('B2', 'G2', [0, 4, 8, 12]) },
+      { bars: 8, pat: makePat('E2', [0, 8]) },
+      { bars: 8, pat: makePat('E2', [0]) },
+    ];
+
+    const stabBuffers = [];
+    const SR = audioCtx.sampleRate;
+    for (const sec of stabSections) {
+      if (!sec.pat) {
+        stabBuffers.push(new Float32Array(Math.ceil(sec.bars * 16 * STEP_DUR * SR)));
+        continue;
+      }
+      stab.setPattern(sec.pat);
+      const buf = await stab.renderPattern({ bars: sec.bars, sampleRate: SR });
+      stabBuffers.push(buf.getChannelData(0));
+    }
+    const totalLen = stabBuffers.reduce((s, b) => s + b.length, 0);
+    const stabData = new Float32Array(totalLen);
+    let off = 0;
+    for (const b of stabBuffers) { stabData.set(b, off); off += b.length; }
+
+    // ── LIVE AUDIO GRAPH ──
+    // Reverb
+    const irLen = SR * 5;
+    const ir = audioCtx.createBuffer(2, irLen, SR);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch);
+      for (let i = 0; i < irLen; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLen, 1.6);
+    }
+    const conv = audioCtx.createConvolver(); conv.buffer = ir;
+    const revHP = audioCtx.createBiquadFilter(); revHP.type = 'highpass'; revHP.frequency.value = 150;
+    conv.connect(revHP);
+    const revWet = audioCtx.createGain(); revWet.gain.value = 0.30;
+    revHP.connect(revWet); revWet.connect(audioCtx.destination);
+
+    // Delay
+    const delL = audioCtx.createDelay(2); delL.delayTime.value = STEP_DUR * 3;
+    const delR = audioCtx.createDelay(2); delR.delayTime.value = STEP_DUR * 4;
+    const fbL = audioCtx.createGain(); fbL.gain.value = 0.80;
+    const fbR = audioCtx.createGain(); fbR.gain.value = 0.78;
+    const dlpL = audioCtx.createBiquadFilter(); dlpL.type = 'lowpass'; dlpL.frequency.value = 1800;
+    const dlpR = audioCtx.createBiquadFilter(); dlpR.type = 'lowpass'; dlpR.frequency.value = 1800;
+    delL.connect(dlpL); dlpL.connect(fbL); fbL.connect(delR);
+    delR.connect(dlpR); dlpR.connect(fbR); fbR.connect(delL);
+    const merger = audioCtx.createChannelMerger(2);
+    delL.connect(merger, 0, 0); delR.connect(merger, 0, 1);
+    const delWet = audioCtx.createGain(); delWet.gain.value = 0.55;
+    merger.connect(delWet); delWet.connect(audioCtx.destination);
+    merger.connect(conv);
+
+    // JB01
+    const drums = new JB01Engine({ context: audioCtx });
+    drums.setVoiceParam('kick', 'decay', 0.30);
+    drums.setVoiceParam('kick', 'tune', -0.3);
+    drums.setVoiceParam('kick', 'level', 0.50);
+    drums.setVoiceParam('kick', 'attack', 0.4);
+    drums.setVoiceParam('ch', 'decay', 0.08);
+    drums.setVoiceParam('ch', 'level', 0.22);
+    drums.setVoiceParam('ch', 'tone', 0.5);
+    const dGain = audioCtx.createGain(); dGain.gain.value = 0.65;
+    drums.connectOutput(dGain); dGain.connect(audioCtx.destination);
+
+    // Stab buffer → external LP → delay + reverb
+    const stabBuf = audioCtx.createBuffer(1, stabData.length, SR);
+    stabBuf.getChannelData(0).set(stabData);
+    const sSrc = audioCtx.createBufferSource(); sSrc.buffer = stabBuf;
+    const stabFilter = audioCtx.createBiquadFilter();
+    stabFilter.type = 'lowpass'; stabFilter.frequency.value = 800; stabFilter.Q.value = 1.0;
+    sSrc.connect(stabFilter);
+    const sDry = audioCtx.createGain(); sDry.gain.value = 0.15;
+    const sDel = audioCtx.createGain(); sDel.gain.value = 0.7;
+    const sRev = audioCtx.createGain(); sRev.gain.value = 0.25;
+    stabFilter.connect(sDry); sDry.connect(audioCtx.destination);
+    stabFilter.connect(sDel); sDel.connect(delL); sDel.connect(delR);
+    stabFilter.connect(sRev); sRev.connect(conv);
+    sSrc.start(0);
+
+    playBtn.classList.add('playing');
+
+    // ── STEP TIMER ──
+    let step = 0;
+    const stepMs = STEP_DUR * 1000;
+    const startTime = audioCtx.currentTime;
+
+    const timer = setInterval(() => {
+      const bar = Math.floor(step / 16);
+      if (bar >= BARS) { clearInterval(timer); return; }
+      const sib = step % 16;
+      const t = startTime + step * STEP_DUR;
+
+      // Kick
+      const kickOn = (bar < 57 || bar >= 65);
+      if (kickOn && [0,4,8,12].includes(sib)) {
+        drums.trigger('kick', 0.82 + Math.random() * 0.06);
+      }
+
+      // CH
+      if (bar >= 4 && [2,6,10,14].includes(sib)) {
+        drums.trigger('ch', 0.5 + Math.random() * 0.1);
+      }
+
+      // Stab filter modulation
+      if (sib === 0) {
+        let freq;
+        if (bar < 8) freq = 800;
+        else if (bar < 24) freq = 800;
+        else if (bar < 40) freq = 1000;
+        else if (bar < 48) freq = 1200;
+        else if (bar < 56) freq = 1000;
+        else freq = 700;
+        const lfo = Math.sin((bar / 72) * Math.PI * 6) * 100;
+        stabFilter.frequency.linearRampToValueAtTime(
+          Math.max(400, Math.min(1400, freq + lfo)), t + STEP_DUR * 8);
+      }
+
+      // Delay filter modulation
+      if (sib === 0) {
+        let df;
+        if (bar < 16) df = 1400;
+        else if (bar < 32) df = 1600;
+        else if (bar < 48) df = 2000;
+        else if (bar < 60) df = 1600;
+        else df = 1200;
+        const lfo2 = Math.sin((bar / 72) * Math.PI * 4) * 200;
+        const f = Math.max(800, Math.min(2400, df + lfo2));
+        dlpL.frequency.linearRampToValueAtTime(f, t + STEP_DUR * 8);
+        dlpR.frequency.linearRampToValueAtTime(f, t + STEP_DUR * 8);
+      }
+
+      // Visuals
+      vizAlpha = bar < 8 ? bar / 8 : bar > 68 ? Math.max(0, (72 - bar) / 4) : 1;
+
+      // Kick pulse
+      if (kickOn && [0,4,8,12].includes(sib)) {
+        particles.push(new FogParticle(
+          cx + (Math.random()-0.5)*40, cy + (Math.random()-0.5)*40,
+          20 + Math.random()*15, 0.03 * vizAlpha, 6
+        ));
+      }
+
+      // Stab fog — bigger clouds during stab sections
+      if (bar >= 8 && [0,4,8,12].includes(sib)) {
+        const count = bar >= 40 && bar < 56 ? 3 : 1;
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = 60 + Math.random() * 120;
+          particles.push(new FogParticle(
+            cx + Math.cos(angle) * dist,
+            cy + Math.sin(angle) * dist,
+            30 + Math.random() * 40, 0.015 * vizAlpha, 8
+          ));
+        }
+      }
+
+      step++;
+    }, stepMs);
+
+  } catch (err) {
+    console.error(err);
+    playBtn.textContent = '▶';
+  }
+}
+
+document.getElementById('play-btn').addEventListener('click', () => start());
+</script>
+</body>
+</html>
