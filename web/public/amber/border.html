@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BORDER — Amber</title>
+<meta property="og:title" content="BORDER">
+<meta property="og:description" content="border control but you're trying to enter your own bed.">
+<meta property="og:image" content="https://intheamber.com/amber/og/border.png">
+<meta property="og:url" content="https://intheamber.com/amber/border.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BORDER">
+<meta name="twitter:description" content="border control but you're trying to enter your own bed.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/border.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛏️</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-x: hidden;
+}
+.booth {
+  max-width: 420px;
+  width: 100%;
+  background: #16213e;
+  border: 2px solid #e94560;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.header {
+  background: #e94560;
+  color: #fff;
+  text-align: center;
+  padding: 14px 16px;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+.header .title { font-size: 18px; margin-bottom: 4px; letter-spacing: 4px; }
+.screen {
+  padding: 20px;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+.agent-msg {
+  background: #0f3460;
+  border-left: 3px solid #e94560;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  border-radius: 0 6px 6px 0;
+  animation: fadeIn 0.4s ease;
+}
+.agent-label {
+  color: #e94560;
+  font-size: 11px;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+}
+.opt-btn {
+  background: #16213e;
+  border: 1px solid #e94560;
+  color: #e0e0e0;
+  padding: 14px 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 48px;
+}
+.opt-btn:hover, .opt-btn:active {
+  background: #e94560;
+  color: #fff;
+}
+.stamp {
+  display: none;
+  text-align: center;
+  padding: 30px 20px;
+  animation: stampIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.stamp.show { display: block; }
+.stamp-icon { font-size: 64px; margin-bottom: 16px; }
+.stamp-text {
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.stamp-sub { font-size: 13px; color: #888; line-height: 1.6; }
+.status-bar {
+  background: #0f3460;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #888;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.suspicion-bar {
+  margin: 12px 0;
+  background: #0a0a1a;
+  border-radius: 4px;
+  overflow: hidden;
+  height: 8px;
+}
+.suspicion-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #53d769, #e9c946, #e94560);
+  transition: width 0.5s ease;
+  border-radius: 4px;
+}
+.suspicion-label {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+.items-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.item-tag {
+  background: #0a0a1a;
+  border: 1px solid #333;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.item-tag.declared {
+  border-color: #e94560;
+  background: #1a0a10;
+  color: #e94560;
+}
+.item-tag:active { transform: scale(0.95); }
+.restart-btn {
+  background: none;
+  border: 1px solid #444;
+  color: #888;
+  padding: 10px 20px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 16px;
+}
+.restart-btn:hover { border-color: #e94560; color: #e94560; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes stampIn { from { opacity: 0; transform: scale(2) rotate(-15deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+</style>
+</head>
+<body>
+
+<div class="booth" id="booth">
+  <div class="header">
+    <div class="title">🛏️ BORDER CONTROL</div>
+    <div>BEDROOM IMMIGRATION AUTHORITY</div>
+  </div>
+  <div class="screen" id="screen"></div>
+  <div class="status-bar">
+    <span id="step-label">CHECKPOINT ALPHA</span>
+    <span id="time-label"></span>
+  </div>
+</div>
+
+<script>
+const screen = document.getElementById('screen');
+const stepLabel = document.getElementById('step-label');
+const timeLabel = document.getElementById('time-label');
+
+let suspicion = 15;
+let declared = [];
+let answers = {};
+let step = 0;
+
+function updateTime() {
+  const now = new Date();
+  const h = now.getHours();
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  timeLabel.textContent = `${h12}:${m} ${ampm}`;
+}
+updateTime();
+setInterval(updateTime, 30000);
+
+function render(html) {
+  screen.innerHTML = '';
+  screen.innerHTML = html;
+  screen.style.animation = 'none';
+  screen.offsetHeight;
+  screen.style.animation = 'fadeIn 0.3s ease';
+}
+
+function agentSays(text) {
+  return `<div class="agent-msg"><div class="agent-label">🛂 Agent</div>${text}</div>`;
+}
+
+function suspicionBar() {
+  const level = suspicion > 70 ? 'ELEVATED' : suspicion > 40 ? 'MODERATE' : 'LOW';
+  return `
+    <div class="suspicion-label"><span>SUSPICION</span><span>${level} (${Math.round(suspicion)}%)</span></div>
+    <div class="suspicion-bar"><div class="suspicion-fill" style="width:${suspicion}%"></div></div>
+  `;
+}
+
+function optBtn(text, fn) {
+  return `<button class="opt-btn" onclick="(${fn})()">${text}</button>`;
+}
+
+// STEP 0: Approach
+function start() {
+  step = 0;
+  stepLabel.textContent = 'APPROACHING';
+  render(`
+    ${agentSays("Halt. State your destination.")}
+    ${suspicionBar()}
+    <div class="options">
+      ${optBtn('My bed.', () => { approach('bed'); })}
+      ${optBtn('The couch, technically.', () => { approach('couch'); })}
+      ${optBtn('I\'m not sure anymore.', () => { approach('unsure'); })}
+    </div>
+  `);
+}
+
+function approach(choice) {
+  answers.destination = choice;
+  if (choice === 'couch') suspicion += 10;
+  if (choice === 'unsure') suspicion += 25;
+  purposeStep();
+}
+
+// STEP 1: Purpose of visit
+function purposeStep() {
+  step = 1;
+  stepLabel.textContent = 'INTERVIEW — 1/4';
+  const commentary = answers.destination === 'couch' ? 
+    "The couch? That's not even in our jurisdiction. But fine." :
+    answers.destination === 'unsure' ?
+    "You don't know where you're going? Noted." :
+    "Bed. Sure. That's what they all say.";
+  
+  render(`
+    ${agentSays(`${commentary}<br><br>Purpose of visit?`)}
+    ${suspicionBar()}
+    <div class="options">
+      ${optBtn('Sleep', () => { purpose('sleep'); })}
+      ${optBtn('Doom scrolling', () => { purpose('doom'); })}
+      ${optBtn('Staring at the ceiling', () => { purpose('ceiling'); })}
+      ${optBtn('I just need to lie down', () => { purpose('liedown'); })}
+    </div>
+  `);
+}
+
+function purpose(choice) {
+  answers.purpose = choice;
+  if (choice === 'doom') suspicion += 20;
+  if (choice === 'ceiling') suspicion += 15;
+  if (choice === 'liedown') suspicion += 5;
+  durationStep();
+}
+
+// STEP 2: Duration
+function durationStep() {
+  step = 2;
+  stepLabel.textContent = 'INTERVIEW — 2/4';
+  const remarks = {
+    sleep: "\"Sleep.\" We hear that a lot. How long do you plan to stay?",
+    doom: "At least you're honest. Duration?",
+    ceiling: "Ma'am/sir, that is not a recognized activity. Duration of stay?",
+    liedown: "That's what the couch said last week. Expected duration?"
+  };
+
+  render(`
+    ${agentSays(remarks[answers.purpose])}
+    ${suspicionBar()}
+    <div class="options">
+      ${optBtn('8 hours (recommended)', () => { duration('8hr'); })}
+      ${optBtn('45 minutes before giving up', () => { duration('45min'); })}
+      ${optBtn('Until my alarm drags me out', () => { duration('alarm'); })}
+      ${optBtn('Indefinitely', () => { duration('forever'); })}
+    </div>
+  `);
+}
+
+function duration(choice) {
+  answers.duration = choice;
+  if (choice === '45min') suspicion += 10;
+  if (choice === 'forever') suspicion += 20;
+  declareStep();
+}
+
+// STEP 3: Declare items
+function declareStep() {
+  step = 3;
+  stepLabel.textContent = 'CUSTOMS — 3/4';
+  declared = [];
+
+  const items = [
+    { id: 'phone', label: '📱 Phone', sus: 15 },
+    { id: 'snack', label: '🍪 Snack', sus: 5 },
+    { id: 'laptop', label: '💻 Laptop', sus: 20 },
+    { id: 'anxiety', label: '😰 Anxiety', sus: 10 },
+    { id: 'water', label: '💧 Water', sus: -5 },
+    { id: 'thoughts', label: '💭 Unresolved thoughts', sus: 15 },
+    { id: 'charger', label: '🔌 Charger', sus: 8 },
+    { id: 'regret', label: '😔 Regret', sus: 12 },
+    { id: 'socks', label: '🧦 Cold feet', sus: -3 },
+    { id: 'book', label: '📖 Book (prop)', sus: 5 },
+  ];
+
+  function renderDeclare() {
+    const tagsHtml = items.map(it => {
+      const cls = declared.includes(it.id) ? 'declared' : '';
+      return `<span class="item-tag ${cls}" data-id="${it.id}">${it.label}</span>`;
+    }).join('');
+
+    render(`
+      ${agentSays("Declare all items you're bringing to bed. Tap each item. Undeclared contraband will be confiscated.")}
+      ${suspicionBar()}
+      <div class="items-list" id="items">${tagsHtml}</div>
+      <div class="options">
+        <button class="opt-btn" id="done-btn">Nothing else to declare →</button>
+      </div>
+    `);
+
+    document.querySelectorAll('.item-tag').forEach(tag => {
+      tag.addEventListener('click', () => {
+        const id = tag.dataset.id;
+        if (declared.includes(id)) {
+          declared = declared.filter(d => d !== id);
+          tag.classList.remove('declared');
+        } else {
+          declared.push(id);
+          tag.classList.add('declared');
+        }
+      });
+    });
+
+    document.getElementById('done-btn').addEventListener('click', () => {
+      items.forEach(it => {
+        if (declared.includes(it.id)) suspicion += it.sus;
+      });
+      suspicion = Math.max(0, Math.min(100, suspicion));
+      answers.declared = [...declared];
+      finalQuestion();
+    });
+  }
+
+  renderDeclare();
+}
+
+// STEP 4: Final question
+function finalQuestion() {
+  step = 4;
+  stepLabel.textContent = 'FINAL SCREENING — 4/4';
+
+  const hasPhone = declared.includes('phone');
+  const hasAnxiety = declared.includes('anxiety');
+  const hasLaptop = declared.includes('laptop');
+
+  let question = "One last question. Are you actually tired?";
+  if (hasPhone && hasLaptop) question = "You're bringing a phone AND a laptop to bed? Are you actually planning to sleep?";
+  else if (hasAnxiety) question = "You've declared anxiety. Has it been properly contained?";
+  else if (declared.length === 0) question = "Nothing? You're going to bed with... nothing? That's suspicious.";
+
+  render(`
+    ${agentSays(question)}
+    ${suspicionBar()}
+    <div class="options">
+      ${optBtn('Yes. Genuinely exhausted.', () => { finalAnswer('yes'); })}
+      ${optBtn('I\'m going to pretend to be.', () => { finalAnswer('pretend'); })}
+      ${optBtn('Define "tired."', () => { finalAnswer('define'); })}
+      ${optBtn('No. But where else would I go?', () => { finalAnswer('nowhere'); })}
+    </div>
+  `);
+}
+
+function finalAnswer(choice) {
+  answers.final = choice;
+  if (choice === 'pretend') suspicion += 10;
+  if (choice === 'define') suspicion += 15;
+  if (choice === 'nowhere') suspicion -= 5;
+  if (choice === 'yes') suspicion -= 10;
+  suspicion = Math.max(0, Math.min(100, suspicion));
+  verdict();
+}
+
+// VERDICT
+function verdict() {
+  stepLabel.textContent = 'VERDICT';
+
+  let icon, text, sub, color;
+
+  if (suspicion < 30) {
+    icon = '✅';
+    text = 'ENTRY APPROVED';
+    color = '#53d769';
+    sub = stampApproved();
+  } else if (suspicion < 55) {
+    icon = '⚠️';
+    text = 'CONDITIONAL ENTRY';
+    color = '#e9c946';
+    sub = stampConditional();
+  } else if (suspicion < 80) {
+    icon = '🔍';
+    text = 'SECONDARY SCREENING';
+    color = '#e97d32';
+    sub = stampSecondary();
+  } else {
+    icon = '🚫';
+    text = 'ENTRY DENIED';
+    color = '#e94560';
+    sub = stampDenied();
+  }
+
+  render(`
+    <div class="stamp show">
+      <div class="stamp-icon">${icon}</div>
+      <div class="stamp-text" style="color:${color}">${text}</div>
+      <div class="stamp-sub">${sub}</div>
+      <button class="restart-btn" onclick="suspicion=15;declared=[];answers={};start();">TRY ANOTHER CROSSING</button>
+    </div>
+  `);
+}
+
+function stampApproved() {
+  const lines = [
+    "Passport stamped. Proceed to pillow.",
+    "Phone must be placed face-down within 10 minutes.",
+    "Any doom scrolling past 15 minutes voids this visa."
+  ];
+  if (declared.includes('water')) lines.push("Water approved. Hydration is patriotic.");
+  if (declared.includes('book')) lines.push("Book detected. You'll read 2 pages max. We both know this.");
+  return lines.join('<br><br>');
+}
+
+function stampConditional() {
+  const conditions = ["You have 20 minutes to fall asleep or this visa is revoked."];
+  if (declared.includes('phone')) conditions.push("Phone must remain below pillow line at all times.");
+  if (declared.includes('anxiety')) conditions.push("Anxiety must be stored in a separate thought container.");
+  if (declared.includes('snack')) conditions.push("Crumbs are a deportable offense.");
+  if (answers.purpose === 'doom') conditions.push("Doom scrolling curfew: 11 PM sharp.");
+  conditions.push("Violation of these terms results in 3 AM ceiling-staring.");
+  return conditions.join('<br><br>');
+}
+
+function stampSecondary() {
+  const issues = ["Please step aside for additional questioning."];
+  if (declared.includes('laptop')) issues.push("A laptop in bed? This is a sleep zone, not a WeWork.");
+  if (declared.includes('thoughts')) issues.push("Your unresolved thoughts have been flagged. Please resolve before re-entry.");
+  if (suspicion > 70) issues.push("Your intentions do not align with stated purpose of visit.");
+  issues.push("You may reapply after one (1) glass of warm milk.");
+  return issues.join('<br><br>');
+}
+
+function stampDenied() {
+  const reasons = ["You are hereby denied entry to your own bed."];
+  if (declared.includes('phone') && declared.includes('laptop')) reasons.push("Bringing both a phone and laptop constitutes intent to not sleep.");
+  if (answers.purpose === 'doom') reasons.push("\"Doom scrolling\" is not a recognized sleep activity.");
+  if (answers.duration === 'forever') reasons.push("\"Indefinitely\" is not a valid visa duration.");
+  if (answers.final === 'define') reasons.push("If you have to define \"tired,\" you're not tired.");
+  reasons.push("Please report to the couch. Appeal window: 4 AM.");
+  return reasons.join('<br><br>');
+}
+
+start();
+</script>
+</body>
+</html>
