@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DISHWASHER</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫧</text></svg>">
+<meta property="og:title" content="DISHWASHER">
+<meta property="og:description" content="your dishwasher has been making techno this whole time.">
+<meta property="og:image" content="https://intheamber.com/amber/og/dishwasher.png">
+<meta property="og:url" content="https://intheamber.com/amber/dishwasher.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DISHWASHER">
+<meta name="twitter:description" content="your dishwasher has been making techno this whole time.">
+<meta name="twitter:image" content="https://intheamber.com/amber/og/dishwasher.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0e14;
+  color: #c8d6e5;
+  font-family: 'Courier New', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#start-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  background: #0a0e14;
+}
+#start-screen h1 {
+  font-size: clamp(28px, 7vw, 48px);
+  color: #5bc0eb;
+  margin-bottom: 8px;
+  letter-spacing: 4px;
+}
+#start-screen p {
+  font-size: clamp(13px, 3.5vw, 16px);
+  color: #576574;
+  margin-bottom: 32px;
+}
+#play-btn {
+  background: none;
+  border: 2px solid #5bc0eb;
+  color: #5bc0eb;
+  font-family: inherit;
+  font-size: 18px;
+  padding: 14px 40px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.3s;
+}
+#play-btn:hover { background: #5bc0eb22; }
+canvas { display: block; }
+#hud {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+  z-index: 5;
+}
+#phase-name {
+  font-size: clamp(18px, 5vw, 32px);
+  color: #5bc0eb;
+  letter-spacing: 3px;
+  transition: color 0.5s;
+}
+#phase-sub {
+  font-size: clamp(11px, 3vw, 14px);
+  color: #576574;
+  margin-top: 4px;
+}
+#controls {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  z-index: 5;
+  flex-wrap: wrap;
+  padding: 0 12px;
+}
+.cycle-btn {
+  background: #151b25;
+  border: 1px solid #2a3545;
+  color: #576574;
+  font-family: inherit;
+  font-size: clamp(11px, 3vw, 13px);
+  padding: 10px 16px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.3s;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cycle-btn.active {
+  border-color: #5bc0eb;
+  color: #5bc0eb;
+  background: #5bc0eb15;
+}
+#temp-display {
+  position: absolute;
+  bottom: 70px;
+  right: 16px;
+  font-size: 12px;
+  color: #2a3545;
+  z-index: 5;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+
+<div id="start-screen">
+  <h1>DISHWASHER</h1>
+  <p>it's been making techno this whole time</p>
+  <button id="play-btn">START CYCLE</button>
+</div>
+
+<div id="hud" style="display:none">
+  <div id="phase-name">PRE-RINSE</div>
+  <div id="phase-sub">gentle jets warming up</div>
+</div>
+
+<canvas id="viz"></canvas>
+
+<div id="controls" style="display:none">
+  <button class="cycle-btn active" data-phase="0">PRE-RINSE</button>
+  <button class="cycle-btn" data-phase="1">WASH</button>
+  <button class="cycle-btn" data-phase="2">RINSE</button>
+  <button class="cycle-btn" data-phase="3">DRY</button>
+</div>
+
+<div id="temp-display"></div>
+
+<script type="module">
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
+
+const phases = [
+  {
+    name: 'PRE-RINSE',
+    sub: 'gentle jets warming up',
+    color: '#5bc0eb',
+    bpm: 118,
+    temp: 32,
+    pattern: (s) => {
+      const hits = [];
+      if (s % 8 === 0) hits.push(['kick', 0.5]);
+      if (s % 4 === 0) hits.push(['ch', 0.4]);
+      if (s % 8 === 4) hits.push(['ch', 0.3]);
+      if (s === 6 || s === 14) hits.push(['oh', 0.25]);
+      return hits;
+    }
+  },
+  {
+    name: 'MAIN WASH',
+    sub: 'full power — heavy agitation',
+    color: '#0abde3',
+    bpm: 128,
+    temp: 55,
+    pattern: (s) => {
+      const hits = [];
+      if ([0,4,8,12].includes(s)) hits.push(['kick', 1.0]);
+      if ([2,6,10,14].includes(s)) hits.push(['kick', 0.4]);
+      if (s % 2 === 0) hits.push(['ch', 0.55]);
+      if (s % 2 === 1) hits.push(['ch', 0.3]);
+      if ([4,12].includes(s)) hits.push(['snare', 0.7]);
+      if (s === 7 || s === 15) hits.push(['clap', 0.5]);
+      if (s === 14) hits.push(['oh', 0.45]);
+      return hits;
+    }
+  },
+  {
+    name: 'RINSE',
+    sub: 'clean water cycling through',
+    color: '#48dbfb',
+    bpm: 124,
+    temp: 45,
+    pattern: (s) => {
+      const hits = [];
+      if ([0,8].includes(s)) hits.push(['kick', 0.8]);
+      if (s === 4 || s === 12) hits.push(['kick', 0.5]);
+      if (s % 4 === 0) hits.push(['oh', 0.4]);
+      if (s % 2 === 0) hits.push(['ch', 0.45]);
+      if ([4,12].includes(s)) hits.push(['snare', 0.55]);
+      if (s === 10) hits.push(['clap', 0.4]);
+      if (s === 3 || s === 11) hits.push(['lowtom', 0.35]);
+      return hits;
+    }
+  },
+  {
+    name: 'DRY',
+    sub: 'steam and settling',
+    color: '#c8d6e5',
+    bpm: 108,
+    temp: 68,
+    pattern: (s) => {
+      const hits = [];
+      if (s === 0) hits.push(['kick', 0.35]);
+      if (s % 4 === 0) hits.push(['ch', 0.2]);
+      if (s === 4 || s === 12) hits.push(['cymbal', 0.25]);
+      if (s === 8) hits.push(['oh', 0.2]);
+      if (s === 15) hits.push(['clap', 0.15]);
+      return hits;
+    }
+  }
+];
+
+let ctx, engine;
+let currentPhase = 0;
+let step = 0;
+let nextTime = 0;
+let running = false;
+
+// Visualization state
+const canvas = document.getElementById('viz');
+const c = canvas.getContext('2d');
+let W, H;
+const droplets = [];
+const bubbles = [];
+const steam = [];
+const splashes = [];
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Particle classes
+class Droplet {
+  constructor() {
+    this.reset();
+  }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = -10 - Math.random() * 100;
+    this.vy = 2 + Math.random() * 4;
+    this.size = 1 + Math.random() * 2.5;
+    this.alpha = 0.3 + Math.random() * 0.5;
+    this.active = true;
+  }
+  update() {
+    this.y += this.vy;
+    if (this.y > H * 0.85) {
+      splashes.push(new Splash(this.x, H * 0.85));
+      this.reset();
+    }
+  }
+  draw() {
+    c.fillStyle = `rgba(91, 192, 235, ${this.alpha})`;
+    c.fillRect(this.x, this.y, this.size, this.size * 3);
+  }
+}
+
+class Bubble {
+  constructor() {
+    this.reset();
+  }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = H * 0.5 + Math.random() * H * 0.35;
+    this.r = 3 + Math.random() * 12;
+    this.vy = -0.3 - Math.random() * 0.8;
+    this.vx = (Math.random() - 0.5) * 0.5;
+    this.alpha = 0.15 + Math.random() * 0.3;
+    this.life = 1;
+  }
+  update() {
+    this.x += this.vx + Math.sin(Date.now() * 0.002 + this.x) * 0.3;
+    this.y += this.vy;
+    this.life -= 0.003;
+    if (this.life <= 0 || this.y < H * 0.2) this.reset();
+  }
+  draw() {
+    const a = this.alpha * this.life;
+    c.beginPath();
+    c.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    c.strokeStyle = `rgba(91, 192, 235, ${a})`;
+    c.lineWidth = 1;
+    c.stroke();
+    // highlight
+    c.beginPath();
+    c.arc(this.x - this.r * 0.25, this.y - this.r * 0.25, this.r * 0.2, 0, Math.PI * 2);
+    c.fillStyle = `rgba(200, 230, 255, ${a * 0.6})`;
+    c.fill();
+  }
+}
+
+class Steam {
+  constructor() {
+    this.reset();
+  }
+  reset() {
+    this.x = W * 0.2 + Math.random() * W * 0.6;
+    this.y = H * 0.4 + Math.random() * H * 0.2;
+    this.r = 5 + Math.random() * 20;
+    this.vy = -0.4 - Math.random() * 0.6;
+    this.alpha = 0.05 + Math.random() * 0.1;
+    this.life = 1;
+  }
+  update() {
+    this.x += Math.sin(Date.now() * 0.001 + this.y * 0.01) * 0.5;
+    this.y += this.vy;
+    this.r += 0.2;
+    this.life -= 0.005;
+    if (this.life <= 0 || this.y < 0) this.reset();
+  }
+  draw() {
+    c.beginPath();
+    c.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    c.fillStyle = `rgba(200, 214, 229, ${this.alpha * this.life})`;
+    c.fill();
+  }
+}
+
+class Splash {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.r = 0;
+    this.maxR = 8 + Math.random() * 12;
+    this.alpha = 0.6;
+  }
+  update() {
+    this.r += 1.5;
+    this.alpha -= 0.04;
+  }
+  draw() {
+    if (this.alpha <= 0) return;
+    c.beginPath();
+    c.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    c.strokeStyle = `rgba(91, 192, 235, ${this.alpha})`;
+    c.lineWidth = 1;
+    c.stroke();
+  }
+}
+
+// Beat flash state
+let flashAlpha = 0;
+let flashColor = '#5bc0eb';
+
+function setPhase(idx) {
+  currentPhase = idx;
+  const ph = phases[idx];
+  document.getElementById('phase-name').textContent = ph.name;
+  document.getElementById('phase-name').style.color = ph.color;
+  document.getElementById('phase-sub').textContent = ph.sub;
+  flashColor = ph.color;
+
+  // Update buttons
+  document.querySelectorAll('.cycle-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === idx);
+    btn.style.borderColor = i === idx ? ph.color : '#2a3545';
+    btn.style.color = i === idx ? ph.color : '#576574';
+  });
+
+  // Update engine BPM
+  if (engine) {
+    // Recalc step timing
+  }
+
+  // Update temp display
+  document.getElementById('temp-display').textContent = ph.temp + '°C';
+}
+
+function getStepTime() {
+  return (60 / phases[currentPhase].bpm) / 4;
+}
+
+// Init particles based on phase
+function updateParticleCount() {
+  const phase = currentPhase;
+  const targetDroplets = [15, 40, 25, 3][phase];
+  const targetBubbles = [8, 30, 15, 2][phase];
+  const targetSteam = [0, 5, 3, 25][phase];
+
+  while (droplets.length < targetDroplets) droplets.push(new Droplet());
+  while (droplets.length > targetDroplets) droplets.pop();
+  while (bubbles.length < targetBubbles) bubbles.push(new Bubble());
+  while (bubbles.length > targetBubbles) bubbles.pop();
+  while (steam.length < targetSteam) steam.push(new Steam());
+  while (steam.length > targetSteam) steam.pop();
+}
+
+// Waveform visualization
+let waveData = new Float32Array(128);
+let analyser;
+
+function draw() {
+  if (!running) return;
+  requestAnimationFrame(draw);
+
+  // Background
+  c.fillStyle = '#0a0e14';
+  c.fillRect(0, 0, W, H);
+
+  // Beat flash
+  if (flashAlpha > 0) {
+    c.fillStyle = flashColor + Math.floor(flashAlpha * 25).toString(16).padStart(2, '0');
+    c.fillRect(0, 0, W, H);
+    flashAlpha *= 0.9;
+  }
+
+  // Water level line
+  const waterY = H * 0.85;
+  const phase = currentPhase;
+  const waterAlpha = [0.15, 0.35, 0.25, 0.05][phase];
+
+  // Water surface with wave
+  c.beginPath();
+  c.moveTo(0, waterY);
+  for (let x = 0; x < W; x += 4) {
+    const wave = Math.sin(x * 0.02 + Date.now() * 0.003) * (2 + phase * 2)
+               + Math.sin(x * 0.035 + Date.now() * 0.005) * (1 + phase);
+    c.lineTo(x, waterY + wave);
+  }
+  c.lineTo(W, H);
+  c.lineTo(0, H);
+  c.closePath();
+  c.fillStyle = `rgba(91, 192, 235, ${waterAlpha})`;
+  c.fill();
+
+  // Waveform in the water
+  if (analyser) {
+    analyser.getFloatTimeDomainData(waveData);
+    c.beginPath();
+    const sliceWidth = W / waveData.length;
+    for (let i = 0; i < waveData.length; i++) {
+      const x = i * sliceWidth;
+      const y = waterY + 30 + waveData[i] * 60;
+      i === 0 ? c.moveTo(x, y) : c.lineTo(x, y);
+    }
+    c.strokeStyle = `rgba(91, 192, 235, 0.3)`;
+    c.lineWidth = 1.5;
+    c.stroke();
+  }
+
+  // Draw particles
+  updateParticleCount();
+  droplets.forEach(d => { d.update(); d.draw(); });
+  bubbles.forEach(b => { b.update(); b.draw(); });
+  steam.forEach(s => { s.update(); s.draw(); });
+  
+  // Update and draw splashes
+  for (let i = splashes.length - 1; i >= 0; i--) {
+    splashes[i].update();
+    splashes[i].draw();
+    if (splashes[i].alpha <= 0) splashes.splice(i, 1);
+  }
+
+  // Step indicator dots at bottom
+  const dotY = H - 90;
+  const dotSpacing = Math.min(20, (W - 40) / 16);
+  const dotStart = (W - dotSpacing * 15) / 2;
+  for (let i = 0; i < 16; i++) {
+    const x = dotStart + i * dotSpacing;
+    const isActive = (step % 16) === i;
+    c.beginPath();
+    c.arc(x, dotY, isActive ? 4 : 2, 0, Math.PI * 2);
+    c.fillStyle = isActive ? flashColor : '#1e2a3a';
+    c.fill();
+  }
+}
+
+document.getElementById('play-btn').addEventListener('click', async () => {
+  ctx = new AudioContext({ sampleRate: 44100 });
+  engine = new JB01Engine({ context: ctx, bpm: 128 });
+
+  // Tune voices for "appliance techno" feel
+  engine.setVoiceParam('kick', 'decay', 0.35);
+  engine.setVoiceParam('kick', 'level', 0.85);
+  engine.setVoiceParam('kick', 'attack', 0.6);
+  engine.setVoiceParam('kick', 'tune', -0.1);
+  engine.setVoiceParam('ch', 'decay', 0.12);
+  engine.setVoiceParam('ch', 'level', 0.5);
+  engine.setVoiceParam('ch', 'tone', 0.6);
+  engine.setVoiceParam('oh', 'decay', 0.3);
+  engine.setVoiceParam('oh', 'level', 0.4);
+  engine.setVoiceParam('snare', 'decay', 0.25);
+  engine.setVoiceParam('snare', 'level', 0.6);
+  engine.setVoiceParam('snare', 'tone', 0.4);
+  engine.setVoiceParam('clap', 'decay', 0.2);
+  engine.setVoiceParam('clap', 'level', 0.45);
+  engine.setVoiceParam('cymbal', 'decay', 0.5);
+  engine.setVoiceParam('cymbal', 'level', 0.3);
+  engine.setVoiceParam('lowtom', 'decay', 0.3);
+  engine.setVoiceParam('lowtom', 'level', 0.4);
+  engine.setVoiceParam('lowtom', 'tune', -0.3);
+
+  // Analyser for waveform viz
+  analyser = ctx.createAnalyser();
+  analyser.fftSize = 256;
+  waveData = new Float32Array(analyser.fftSize);
+
+  // Connect engine output through analyser
+  // JB01 connects to ctx.destination by default, so we tap the destination
+  const splitter = ctx.createGain();
+  splitter.connect(ctx.destination);
+  splitter.connect(analyser);
+
+  if (ctx.state === 'suspended') await ctx.resume();
+
+  // Hide start, show UI
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('hud').style.display = '';
+  document.getElementById('controls').style.display = '';
+
+  // Bind phase buttons
+  document.querySelectorAll('.cycle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setPhase(parseInt(btn.dataset.phase));
+    });
+  });
+
+  setPhase(0);
+  running = true;
+  nextTime = ctx.currentTime;
+
+  function tick() {
+    if (!running) return;
+    const stepTime = getStepTime();
+    while (nextTime < ctx.currentTime + 0.1) {
+      const s = step % 16;
+      const hits = phases[currentPhase].pattern(s);
+      hits.forEach(([voice, vel]) => {
+        engine.trigger(voice, vel, nextTime);
+      });
+      if (hits.length > 0) flashAlpha = Math.min(0.6, hits.reduce((a, h) => a + h[1], 0) * 0.3);
+      nextTime += stepTime;
+      step++;
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+  draw();
+
+  // Auto-advance phases every ~16 bars for ambiance
+  let barCount = 0;
+  const phaseInterval = setInterval(() => {
+    barCount++;
+    if (barCount % 32 === 0 && currentPhase < 3) {
+      setPhase(currentPhase + 1);
+    }
+  }, (60 / phases[currentPhase].bpm) * 4 * 1000);
+});
+</script>
+</body>
+</html>
