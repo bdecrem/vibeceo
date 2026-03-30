@@ -59,23 +59,23 @@ export async function startSmsBot(): Promise<void> {
 
   if (isAutomationEnabled()) {
     console.log("✅ Subscription automation enabled – registering daily jobs.");
-    registerAiDailyJob(twilioClient); // AI Daily: broadcast + generates combined AI Research Daily report at 7:00am PT
+    // registerAiDailyJob(twilioClient); // AI Daily: broadcast + generates combined AI Research Daily report at 7:00am PT — DISABLED 2026-03-30
     registerCryptoDailyJob(twilioClient);
-    registerMedicalDailyJob(twilioClient);
-    registerPeerReviewJob(twilioClient);
+    // registerMedicalDailyJob(twilioClient); // DISABLED 2026-03-30
+    // registerPeerReviewJob(twilioClient); // DISABLED 2026-03-30
     // registerArxivDailyJob(twilioClient); // DISABLED - arxiv-research agent retired
-    registerArxivGraphCollectionJob(); // arXiv: collect papers & generate report at 3am PT
-    registerArxivGraphBroadcastJob(twilioClient); // arXiv: broadcast report to subscribers at 7:30am PT
+    // registerArxivGraphCollectionJob(); // arXiv: collect papers & generate report at 3am PT — DISABLED 2026-03-30
+    // registerArxivGraphBroadcastJob(twilioClient); // arXiv: broadcast report to subscribers at 7:30am PT — DISABLED 2026-03-30
     // registerAIRDailyJob(twilioClient); // AIR (AI Research) - personalized research reports
-    registerRecruitingJob(twilioClient); // RECRUIT - NEW channel-based recruiting with daily candidate collection
+    // registerRecruitingJob(twilioClient); // RECRUIT - NEW channel-based recruiting with daily candidate collection — DISABLED 2026-03-30
     // registerTokenTankDailyJob(twilioClient); // TT - Token Tank daily updates at 8am PT
-    registerTokenshotsDailyJob(twilioClient); // TOKENSHOTS - Daily AI research podcast at 6:30am PT
-    registerRivalAlertDailyJob(); // RIVALALERT - Competitor monitoring at 7am PT (i1/Forge)
-    registerAmberAwarenessJobs(twilioClient); // AMBER - Environment awareness at 7:30am and 6pm PT
+    // registerTokenshotsDailyJob(twilioClient); // TOKENSHOTS - Daily AI research podcast at 6:30am PT — DISABLED 2026-03-30
+    // registerRivalAlertDailyJob(); // RIVALALERT - Competitor monitoring at 7am PT (i1/Forge) — DISABLED 2026-03-30
+    // registerAmberAwarenessJobs(twilioClient); // AMBER - Environment awareness at 7:30am and 6pm PT — DISABLED 2026-03-30
     // registerAITwitterDailyJob(twilioClient); // DISABLED - hitting Twitter API cap
     // registerAmberSocialJobs(); // AMBER SOCIAL - DISABLED: moved to OpenClaw cron jobs
-    registerAmberMoodJobs(); // AMBER MOOD - Daily mood at midnight, weather pulse hourly
-    registerTraderJob(); // TRADER - Commodity ETF trading every 15min during market hours (9:30am-4pm ET)
+    // registerAmberMoodJobs(); // AMBER MOOD - Daily mood at midnight, weather pulse hourly — DISABLED 2026-03-30
+    // registerTraderJob(); // TRADER - Commodity ETF trading every 15min during market hours (9:30am-4pm ET) — DISABLED 2026-03-30
   } else {
     console.log(
       "⚠️ Subscription automation disabled – daily broadcasts will not run on this instance."
