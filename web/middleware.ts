@@ -230,6 +230,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // Token Tank at /token-tank
+    if (pathname.startsWith('/token-tank')) {
+      return NextResponse.next()
+    }
+
     // Home Whisperer at /whisperer
     if (pathname.startsWith('/whisperer')) {
       return NextResponse.next()
