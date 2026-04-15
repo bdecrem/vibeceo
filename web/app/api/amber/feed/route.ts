@@ -69,14 +69,16 @@ function deriveOgImageUrl(url: string): string {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 50);
+    // For drawer (?all=true) allow bigger pages so the full archive can load.
+    const showAll = searchParams.get("all") === "true";
+    const maxLimit = showAll ? 500 : 50;
+    const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), maxLimit);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
-    const showAll = searchParams.get("all") === "true"; // For drawer: show all creations
 
-    // Fetch creations
-    const { data: creations, error: creationsError } = await supabase
+    // Fetch creations + the real DB total (for the drawer count display).
+    const { data: creations, error: creationsError, count: totalCount } = await supabase
       .from("amber_state")
-      .select("id, content, metadata, created_at")
+      .select("id, content, metadata, created_at", { count: "exact" })
       .eq("type", "creation")
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -161,10 +163,13 @@ export async function GET(request: NextRequest) {
     // Filter out items with no valid URL (they'd just reload the homepage)
     const validItems = feedItems.filter(item => item.url && item.url.includes('/amber/'));
 
+    // `total` = actual DB row count for `type = creation` (before URL validity filter).
+    // For the drawer UI we need the real total, not the current page's length.
     return NextResponse.json({
       items: validItems,
-      total: validItems.length,
-      hasMore: validItems.length === limit,
+      total: typeof totalCount === "number" ? totalCount : validItems.length,
+      returned: validItems.length,
+      hasMore: (offset + (creations?.length || 0)) < (totalCount ?? 0),
     });
   } catch (err) {
     console.error("Error fetching feed:", err);

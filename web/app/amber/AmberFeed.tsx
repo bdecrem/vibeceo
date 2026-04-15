@@ -184,6 +184,7 @@ export default function AmberFeed({
   const [drawerItems, setDrawerItems] = useState<FeedItem[]>([]);
   const [drawerImages, setDrawerImages] = useState<ImageArtifact[]>([]);
   const [drawerHasMore, setDrawerHasMore] = useState(false);
+  const [drawerTotal, setDrawerTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -231,6 +232,7 @@ export default function AmberFeed({
         .then(([feedData, imagesData]) => {
           setDrawerItems(feedData.items || []);
           setDrawerHasMore(feedData.hasMore || false);
+          setDrawerTotal(feedData.total || (feedData.items || []).length);
           setDrawerImages(imagesData.images || []);
           setDrawerLoading(false);
         })
@@ -1296,7 +1298,7 @@ export default function AmberFeed({
                     <span className="drawer-view-all-icon">🗄️</span>
                     <span>Open Full Drawer</span>
                     <span className="drawer-view-all-count">
-                      {drawerItems.length > 50 ? '50+' : drawerItems.length} creations · {drawerImages.length} images
+                      {drawerTotal || drawerItems.length} creations · {drawerImages.length} images
                     </span>
                   </a>
                 </>

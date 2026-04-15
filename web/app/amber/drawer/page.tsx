@@ -19,34 +19,37 @@ export default function DrawerPage() {
   const [creations, setCreations] = useState<FeedItem[]>([]);
   const [images, setImages] = useState<ImageArtifact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hasMore, setHasMore] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/amber/feed?all=true&limit=50').then(res => res.json()),
-      fetch('/api/amber/images').then(res => res.json()),
-    ])
-      .then(([feedData, imagesData]) => {
-        setCreations(feedData.items || []);
-        setHasMore(feedData.hasMore || false);
+    // Pull EVERYTHING — auto-paginate through the feed until nothing's left.
+    async function loadAll() {
+      try {
+        const imagesData = await fetch('/api/amber/images').then(r => r.json());
         setImages(imagesData.images || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
 
-  const loadMore = () => {
-    setLoadingMore(true);
-    fetch(`/api/amber/feed?all=true&limit=50&offset=${creations.length}`)
-      .then(res => res.json())
-      .then(data => {
-        setCreations(prev => [...prev, ...(data.items || [])]);
-        setHasMore(data.hasMore || false);
-        setLoadingMore(false);
-      })
-      .catch(() => setLoadingMore(false));
-  };
+        const all: FeedItem[] = [];
+        let offset = 0;
+        const pageSize = 500; // API caps ?all=true at 500; loop anyway in case the cap changes
+        let serverTotal = 0;
+        while (true) {
+          const feedData = await fetch(`/api/amber/feed?all=true&limit=${pageSize}&offset=${offset}`).then(r => r.json());
+          const items: FeedItem[] = feedData.items || [];
+          serverTotal = feedData.total || serverTotal;
+          all.push(...items);
+          if (!feedData.hasMore || items.length === 0) break;
+          offset += items.length;
+        }
+        setCreations(all);
+        setTotal(serverTotal || all.length);
+      } catch {
+        // silent: leave loading state
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAll();
+  }, []);
 
   const formatDate = (isoString: string): string => {
     const date = new Date(isoString);
@@ -338,7 +341,7 @@ export default function DrawerPage() {
         <div className="drawer-content">
           <div className="creations-column">
             <div className="column-title">
-              Creations ({creations.length}{hasMore ? '+' : ''})
+              Creations ({total || creations.length})
             </div>
             <div className="creations-list">
               {creations.map((item) => (
@@ -354,15 +357,6 @@ export default function DrawerPage() {
                 </a>
               ))}
             </div>
-            {hasMore && (
-              <button
-                className="load-more"
-                onClick={loadMore}
-                disabled={loadingMore}
-              >
-                {loadingMore ? 'Loading...' : 'Load more creations'}
-              </button>
-            )}
           </div>
 
           <div className="images-column">
