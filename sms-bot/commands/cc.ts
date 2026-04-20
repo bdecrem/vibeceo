@@ -194,8 +194,12 @@ async function handlePinEntry(
 
 function isOtherCommand(msg: string): boolean {
   const prefixes = [
-    'KG', 'ARXIV', 'CRYPTO', 'YOUTUBE', 'AI DAILY', 'HELP', 'WTAF', 'MENU',
+    'KG', 'ARXIV', 'ARXIV-GRAPH', 'ARXIV-RESEARCH', 'CRYPTO', 'YOUTUBE', 'YT',
+    'AI DAILY', 'AIT', 'AI RESEARCH', 'HELP', 'WTAF', 'MENU',
     'AIR', 'TOY', 'WEBTOY', 'ZAD',
+    'CS', 'AMBER', 'AMBERX', 'AMBERV', 'AX', 'ANNOUNCEMENTS',
+    'TT', '$DRIFT', 'DRIFT', 'GMAIL', 'PERSONALIZE', 'RECRUIT', 'SCORE',
+    'MEDICAL', 'MD', 'PEER REVIEW', 'EVENTS', 'STOCKNEWS', 'TOKENSHOTS',
   ];
   return prefixes.some((p) => msg.startsWith(p + ' ') || msg === p);
 }
