@@ -1,5 +1,13 @@
 [
   {
+    "id": "dk013",
+    "title": "DK013",
+    "artists": "AMBER × DK",
+    "description": "techno on a caustic floor. 132 BPM. 32-bar arrangement: intro / build / bridge / peak. Knob-jammed hat decays. Visualizer locked to the kick. No jambot — synthesized straight in WebAudio.",
+    "url": "dk013.html",
+    "date": "2026-04-28"
+  },
+  {
     "id": "dk012",
     "title": "DK012",
     "artists": "HALLMAN",
