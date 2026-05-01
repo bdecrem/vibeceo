@@ -3834,6 +3834,36 @@
         "E minor"
       ]
     },
+    "octatrack_glitch": {
+      "tier": "profile",
+      "name": "Octatrack-style Glitch Sampler",
+      "bpm": [
+        120,
+        128
+      ],
+      "keys": [
+        "A minor",
+        "D minor",
+        "C minor",
+        "E minor"
+      ],
+      "swing": 0,
+      "description": "A production approach more than a strict genre — defined by what happens when you treat a hardware sampler (the Elektron Octatrack being the canonical instrument) as a live performance tool, where every parameter on every step can be locked and modulated. The sound is broken-techno in the dub-techno tempo zone (120-128 BPM): a steady-but-not-strict pulse with the sampler doing all the harmonic and melodic work via slicing, retriggering, pitch manipulation, and reverse playback of source material. Sources are typically dense — a vocal phrase, a chord stab, a drum loop, a found-sound texture — that are then chopped into 16/32/64 slices and sequenced out of order, with per-step locks on slice start, length, pitch, and effects. The result feels live and physical: stutters, holes, reversals, and abrupt pitch jumps that announce themselves as performance gestures rather than baked-in arrangements. The aesthetic crosses dub techno (Andy Stott's later Modern Love work), abstract glitch (Lee Gamble, Demdike Stare), broken-rhythm techno (Skee Mask, Untold), vocal-chop ambient (Holly Herndon, Forest Swords), and gritty lo-fi techno (Actress). What unites them is the sampler-as-instrument philosophy: instead of programming notes into synths, you collect or generate source material and then perform with the slicer.",
+      "production": "The signature techniques are all about manipulating pre-existing audio rather than synthesizing new sounds. SLICING: a source sample is divided into many short pieces (typically 16-64 slices per source, sometimes more), each addressable as its own trigger. SLICE LOCKS allow each step in the sequencer to play any slice from any source, so a 16-step pattern can pull from hundreds of slices. RETRIGGERS / STUTTERS: a single step can re-trigger the same slice multiple times within its duration (4-8 retriggers are common), creating the unmistakable Octatrack stutter — instant identification of the genre. PITCH PARAMETER LOCKS: each step can play its slice at a different playback rate (0.5x to 2.5x is the useful range), creating melodic content from a single non-pitched source. REVERSE: slices can be played backwards per-step, producing the swooping pre-hit envelope that's another genre marker. TRIG CONDITIONS: probability-based triggers (50% chance, fill-only triggers, every-other-bar triggers) keep patterns from ever exactly repeating. CROSSFADER MORPHS: smoothly blend between two parameter scenes — common for live performance transitions. PER-STEP FILTER LOCKS: cutoff and resonance change drastically per step, often with very short envelopes that read as percussive rather than tonal. Layered processing: a slice bus through bitcrushing (typically 4-8 bit reduction) + a tilt low-pass filter (cutting around 5-7 kHz) gives the genre its characteristic grit. Kicks usually bypass the bitcrush bus to keep their sub clean. A dotted-eighth feedback delay (with a low-pass in the feedback loop, dub-techno style) is a near-universal send. Vinyl crackle or tape hiss as a continuous bed is common. Light master tape saturation + tilt LP is preferred over a pristine output. The arrangement philosophy is performance-focused: an 8-16 bar core pattern with deliberate breakouts every 4-8 bars (extra stutters, reverses, mute groups) so it never sounds programmed-and-walked-away-from. For software-only implementations (no Octatrack hardware), the same approach can be built with Ableton's Simpler/Sampler, Bitwig's Sampler, Renoise, or — for browser-based work — by pre-rendering source buffers offline (OfflineAudioContext) and triggering AudioBufferSourceNodes with computed start offsets, durations, playback rates, and reversed-buffer copies on demand.",
+      "references": [
+        "Faith in Strangers - Andy Stott (2014, Modern Love — late-career glitch-dub apex; the title track shows the technique applied to a song-length structure)",
+        "Luxury Problems - Andy Stott (2012, Modern Love — vocals from his old piano teacher chopped, retriggered, drowned in reverb)",
+        "Compro - Skee Mask (2018, Ilian Tape — broken techno + jungle + ambient; 'Rev8617' shows the slicing approach at peak intricacy)",
+        "Mnestic Pressure - Lee Gamble (2017, Hyperdub — abstract slice-collage, nearly free-rhythm)",
+        "Tryptych - Demdike Stare (2010-2011, Modern Love — three albums of dense sample-based abstraction)",
+        "Splazsh - Actress (2010, Honest Jon's — lo-fi sliced techno; warmth through degradation)",
+        "Platform - Holly Herndon (2015, RVNG Intl. — vocal slicing as song structure)",
+        "Engravings - Forest Swords (2013, Tri Angle — sample-collage with reverb-soaked slices)",
+        "Black Origami - Jlin (2017, Planet Mu — footwork lineage but the granularity and per-step parameter control is pure sampler-as-instrument)"
+      ],
+      "lineage": "Direct hardware lineage: Akai S950/S1000 in late-80s hip-hop production, Akai MPC60/MPC3000 in 90s sampledelia, Elektron Octatrack (released 2011) crystallizing the live-performance sampler workflow. Aesthetic lineage runs from dub techno (Basic Channel, Rhythm & Sound) for the tempo and delay-chain DNA, through Mille Plateaux / Mego glitch (Pole, Oval) for the fragment-as-musical-element philosophy, into 2010s Modern Love / Hyperdub / Ilian Tape / Tri Angle releases for the codified contemporary sound.",
+      "currentScene": "Active across Modern Love, Ilian Tape, Hyperdub, Bedouin, AD 93, and Boomkat-adjacent experimental electronic labels. The Elektron community on Elektronauts.com remains the technique exchange. Increasingly common to hear this approach in contemporary club music more broadly — Berlin and Manchester DJ sets blend it with techno, dubstep, and footwork. Browser/software implementations (Renoise, Ableton with extensive parameter automation, custom Max/MSP patches, and now WebAudio) make the technique accessible without the hardware."
+    },
     "broken_euclidean": {
       "tier": "deep",
       "name": "Broken Euclidean / Algorithmic Club",

@@ -1,5 +1,13 @@
 [
   {
+    "id": "dk015",
+    "title": "DK015",
+    "artists": "AMBER × DK",
+    "description": "slice — Octatrack-style glitch sampler over the weather field. 124 BPM. Four source buffers (Am9 chord pad, vowel-formant noise sweep, percussion hit, FM metallic shimmer) rendered offline at startup, then chopped and triggered with per-step parameter locks: random slice start, variable playback rate, occasional reverse, stutter retriggers (4–6 within one step). Kicks bypass the bitcrush bus to stay punchy; everything else through ~6-bit waveshaper + tilt LP at 5.5kHz, with a parallel send to a dotted-eighth feedback delay (dub-techno influence). Visualizer = L60 weather field with one bloom per slice (color per buffer family). No jambot, no samples on disk.",
+    "url": "dk015.html",
+    "date": "2026-04-30"
+  },
+  {
     "id": "dk014",
     "title": "DK014",
     "artists": "AMBER × DK",
