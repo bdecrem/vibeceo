@@ -1,5 +1,13 @@
 [
   {
+    "id": "dk016",
+    "title": "DK016",
+    "artists": "AMBER × DK",
+    "description": "current — a dub techno track for L64. 116 BPM, C minor. Cm9 → Fm7 → Gm7 → Abmaj7 chord stab progression rotating every 8 bars; each stab routed wet into a 3/16-note delay loop with 0.68 feedback and a 2.2kHz lowpass inside the feedback loop (the Basic Channel signature — each repeat darkens). Sparse 909 kick on quarters, sub on C1 with slow LFO breathe, hihat shuffle, vinyl crackle bed. Drag rides the master LPF; tap drops a manual extra stab into the dub delay loop. Visualizer is L64's per-pixel curl-noise streamline shader. Wheelhouse: Maurizio's Phylyps Trak II, Yagya's Rhythm of Snow. No jambot, no samples.",
+    "url": "dk016.html",
+    "date": "2026-05-04"
+  },
+  {
     "id": "dk015",
     "title": "DK015",
     "artists": "AMBER × DK",
