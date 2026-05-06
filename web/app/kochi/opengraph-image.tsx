@@ -5,7 +5,37 @@ export const alt = 'Kochi — Proactive Agent';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+async function loadRobot(): Promise<string | null> {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+    (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null) ||
+    'https://kochi.to';
+
+  try {
+    const res = await fetch(`${baseUrl}/kochi-proactive/kochi-robot.png`, {
+      cache: 'force-cache',
+    });
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    return `data:image/png;base64,${arrayBufferToBase64(buf)}`;
+  } catch {
+    return null;
+  }
+}
+
 export default async function Image() {
+  const robotSrc = await loadRobot();
+
   return new ImageResponse(
     (
       <div
@@ -88,32 +118,29 @@ export default async function Image() {
             </div>
           </div>
 
-          {/* Robot */}
+          {/* Robot — real asset */}
           <div
             style={{
               display: 'flex',
-              width: 300,
-              height: 300,
+              width: 320,
+              height: 320,
               alignItems: 'center',
               justifyContent: 'center',
               filter: 'drop-shadow(0 14px 28px rgba(26,26,26,0.12))',
             }}
           >
-            <svg width="300" height="300" viewBox="0 0 100 100">
-              {/* left antenna */}
-              <circle cx="32" cy="6" r="5.5" fill="#1a1a1a" />
-              <rect x="30" y="8" width="4" height="22" fill="#1a1a1a" />
-              {/* right antenna */}
-              <circle cx="68" cy="6" r="5.5" fill="#1a1a1a" />
-              <rect x="66" y="8" width="4" height="22" fill="#1a1a1a" />
-              {/* head */}
-              <rect x="8" y="26" width="84" height="64" rx="14" fill="#1a1a1a" />
-              {/* face cutout */}
-              <rect x="20" y="40" width="60" height="38" rx="12" fill="#f2ebdf" />
-              {/* eyes */}
-              <circle cx="38" cy="59" r="6" fill="#1a1a1a" />
-              <circle cx="62" cy="59" r="6" fill="#1a1a1a" />
-            </svg>
+            {robotSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={robotSrc}
+                alt="Kochi"
+                width={320}
+                height={320}
+                style={{ objectFit: 'contain' }}
+              />
+            ) : (
+              <div style={{ display: 'flex', width: 320, height: 320 }} />
+            )}
           </div>
         </div>
 
