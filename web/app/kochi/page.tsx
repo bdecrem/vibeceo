@@ -27,7 +27,9 @@ export default function KochiLanding() {
       "i've taken the liberty",
       "nothing to worry about",
       "a small adjustment was made",
-      "you're welcome",
+      "spoke with your boss",
+      "he won't bring it up again",
+      "exactly as planned",
     ];
     let i = 0;
     let fadeTimeout: ReturnType<typeof setTimeout> | null = null;
