@@ -26,7 +26,7 @@ export default function KochiLanding() {
       "on your behalf",
       "i've taken the liberty",
       "nothing to worry about",
-      "a small adjustment was made",
+      "made a small adjustment",
       "spoke with your boss",
       "he won't bring it up again",
       "exactly as planned",
@@ -147,7 +147,7 @@ export default function KochiLanding() {
         .kochi-main {
           display: grid;
           grid-template-columns: 5fr 7fr;
-          align-items: center;
+          align-items: end;
           gap: 60px;
           max-width: 1180px;
           width: 100%;
@@ -158,15 +158,16 @@ export default function KochiLanding() {
         .kochi-robot-cell {
           display: flex;
           justify-content: center;
-          align-items: center;
+          align-items: flex-end;
         }
 
         .kochi-robot {
           width: 100%;
           max-width: 360px;
           height: auto;
+          display: block;
           position: relative;
-          top: 8px;
+          top: -4px;
           filter: drop-shadow(0 14px 28px rgba(26, 26, 26, 0.1));
           animation: kochi-twitch 25s ease-in-out infinite;
           transform-origin: 50% 60%;
@@ -333,7 +334,7 @@ export default function KochiLanding() {
           <div className="kochi-robot-cell">
             <img
               className="kochi-robot"
-              src="/kochi-proactive/kochi-robot.png"
+              src="/kochi-proactive/kochi-robot-trans.png"
               alt="Kochi"
             />
           </div>
