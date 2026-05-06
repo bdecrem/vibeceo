@@ -163,12 +163,13 @@ export default function KochiLanding() {
 
         .kochi-robot {
           width: 100%;
-          max-width: 556px;
+          max-width: 360px;
           height: auto;
+          position: relative;
+          top: 8px;
           filter: drop-shadow(0 14px 28px rgba(26, 26, 26, 0.1));
           animation: kochi-twitch 25s ease-in-out infinite;
           transform-origin: 50% 60%;
-          margin-bottom: -16.4%;
         }
 
         @keyframes kochi-twitch {
@@ -296,7 +297,7 @@ export default function KochiLanding() {
             order: 2;
           }
           .kochi-robot {
-            max-width: 340px;
+            max-width: 220px;
           }
           .kochi-h1 {
             font-size: 56px;
@@ -332,7 +333,7 @@ export default function KochiLanding() {
           <div className="kochi-robot-cell">
             <img
               className="kochi-robot"
-              src="/kochi-proactive/kochi-robot-nocrop.png"
+              src="/kochi-proactive/kochi-robot.png"
               alt="Kochi"
             />
           </div>
