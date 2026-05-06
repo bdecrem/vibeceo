@@ -1,40 +1,22 @@
 import { ImageResponse } from 'next/og';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
-export const runtime = 'edge';
 export const alt = 'Kochi — Proactive Agent';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-async function loadRobot(): Promise<string | null> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-    (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null) ||
-    'https://kochi.to';
-
+function loadRobot(): string | null {
   try {
-    const res = await fetch(`${baseUrl}/kochi-proactive/kochi-robot.png`, {
-      cache: 'force-cache',
-    });
-    if (!res.ok) return null;
-    const buf = await res.arrayBuffer();
-    return `data:image/png;base64,${arrayBufferToBase64(buf)}`;
+    const p = join(process.cwd(), 'public', 'kochi-proactive', 'kochi-robot.png');
+    return `data:image/png;base64,${readFileSync(p).toString('base64')}`;
   } catch {
     return null;
   }
 }
 
 export default async function Image() {
-  const robotSrc = await loadRobot();
+  const robotSrc = loadRobot();
 
   return new ImageResponse(
     (
@@ -130,10 +112,9 @@ export default async function Image() {
             }}
           >
             {robotSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
+              // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
               <img
                 src={robotSrc}
-                alt="Kochi"
                 width={320}
                 height={320}
                 style={{ objectFit: 'contain' }}
