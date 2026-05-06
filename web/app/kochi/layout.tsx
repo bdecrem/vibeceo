@@ -6,21 +6,21 @@ export const viewport: Viewport = {
   maximumScale: 5,
   userScalable: true,
   viewportFit: 'cover',
-  themeColor: '#1a2a1a',
+  themeColor: '#F2EBDF',
 };
 
 export const metadata: Metadata = {
-  title: "Kochi.to",
-  description: "AI delivered daily",
+  title: "Kochi — Proactive Agent",
+  description: "The AI agent that never rests. An OpenClaw chat client for iOS.",
   openGraph: {
-    title: "Kochi.to",
-    description: "AI delivered daily",
+    title: "Kochi — Proactive Agent",
+    description: "The AI agent that never rests.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kochi.to",
-    description: "AI delivered daily",
+    title: "Kochi — Proactive Agent",
+    description: "The AI agent that never rests.",
   },
 };
 
