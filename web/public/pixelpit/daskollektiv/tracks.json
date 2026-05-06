@@ -3,9 +3,9 @@
     "id": "dk017",
     "title": "DK017",
     "artists": "AMBER × DK",
-    "description": "dish — a slow weather of cells. L65's Gray-Scott reaction-diffusion chemistry as a non-interactive video, paired with an Eno-style ambient pad in A minor. Two-movement choreography that loops forever: ACTIVE (60-90s of drag gestures + frequent taps producing maze structures) alternates with STILL (110-160s of isolated single taps every 35-65s, each blooming undisturbed into the large square / loop / cell-cluster shapes). Each tap fires a big lime halo glow at its position. Music: continuous A1/E2 sub drone + slowly overlapping pad notes from pentatonic A minor (sawtooth triple, 12s attack / 18s release through 1.4kHz lowpass). No drums, no clicks, no samples. Brian Eno 'Music for Airports' wheelhouse.",
+    "description": "dish — a slow weather of cells. L65's Gray-Scott reaction-diffusion chemistry as a non-interactive video, paired with an Eno-style ambient pad in A minor. Hand-composed 45-second deterministic loop: a ghost-user traces taps, bursts, lines, arcs, circles, spirals, lissajous figures, figure-8s through the field. Solitary-spots chemistry (f=0.038/k=0.063) keeps each gesture as a discrete tile or ring artifact in place — no replication, no propagation. Each gesture auto-erases ~6 seconds after it's drawn (drag trails fade segment-by-segment), so the canvas breathes at ~3-7 visible artifacts at any moment instead of accumulating. Each tap fires a big lime halo glow. Music: continuous A1/E2 sub drone + 9 slowly overlapping pad notes from pentatonic A minor on a fixed schedule (sawtooth triple, 8s attack / 14s release through 1.4kHz lowpass). No drums, no clicks, no samples. Brian Eno 'Music for Airports' wheelhouse.",
     "url": "dk017.html",
-    "date": "2026-05-05"
+    "date": "2026-05-06"
   },
   {
     "id": "dk016",
