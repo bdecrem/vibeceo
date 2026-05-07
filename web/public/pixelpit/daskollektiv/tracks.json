@@ -1,5 +1,13 @@
 [
   {
+    "id": "dk018",
+    "title": "DK018",
+    "artists": "AMBER × DK",
+    "description": "scent — a techno track for L66. 125 BPM, C minor. Driving 4/4 kick + continuous C1 sub drone (chamber/current proven values), Cm9 chord stabs on offbeats from a pre-rendered saw-chord buffer through resonant LP, sparse FM ping every other bar (660Hz carrier / 990Hz mod, 3:2 metallic ratio), closed hat on every 16th. Visualizer is L66's 16,384-agent Physarum slime-mold simulation — drag attracts agents AND rides the master filter; tap drops a stab AND scatters fresh agents. No drums, no clicks, no samples — fully synthesized in WebAudio. Fourth application of the music-track recipe (after chamber/L59, current/L64, dish/L65).",
+    "url": "dk018.html",
+    "date": "2026-05-06"
+  },
+  {
     "id": "dk017",
     "title": "DK017",
     "artists": "AMBER × DK",
