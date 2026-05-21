@@ -115,7 +115,7 @@ export default function CoachesPage() {
                 ],
                 socialLink: {
                   text: "Shop at Alexir!",
-                  href: "https://www.alexirwellness.com"
+                  href: "https://advisorsfoundry.ai"
                 },
                 xLink: {
                   text: "Alex on IG",
