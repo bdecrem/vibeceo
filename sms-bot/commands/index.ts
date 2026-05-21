@@ -15,6 +15,7 @@ import { audioTestCommandHandler } from "./audio-test.js";
 // import { arxivCommandHandler } from "./arxiv.js"; // DISABLED - arxiv-research agent retired
 import { cryptoCommandHandler } from "./crypto.js";
 import { driftCommandHandler } from "./drift.js";
+import { f2CommandHandler } from "./f2.js";
 import { gmailCommandHandler } from "./gmail.js";
 // import { kgCommandHandler } from "./kg.js"; // DISABLED - neo4j shut down
 import { medicalDailyCommandHandler } from "./medical-daily.js";
@@ -43,6 +44,7 @@ export const commandHandlers: CommandHandler[] = [
   // arxivCommandHandler, // DISABLED - arxiv-research agent retired
   cryptoCommandHandler,
   driftCommandHandler, // $DRIFT - Drift trading agent alerts
+  f2CommandHandler, // F2 - text a URL, store + fetch + chat about it
   gmailCommandHandler, // GMAIL - Gmail integration for personalization
   // kgCommandHandler, // DISABLED - neo4j shut down
   medicalDailyCommandHandler,
