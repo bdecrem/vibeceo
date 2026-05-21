@@ -1,5 +1,5 @@
 # Use Node.js base image with Python 3.11 support
-FROM node:20-bookworm
+FROM node:22-bookworm
 
 # Install Python 3.11 and pip (claude-agent-sdk requires Python 3.10+)
 RUN apt-get update && apt-get install -y \
