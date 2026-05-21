@@ -109,10 +109,12 @@ export async function startSmsBot(): Promise<void> {
   // Setup Email webhooks
   setupEmailWebhooks(server);
 
-  // Health check endpoint
-  server.get("/health", (req, res) => {
+  // Health check endpoint (Railway hits /api/health; keep /health for compat)
+  const healthHandler = (_req: express.Request, res: express.Response) => {
     res.status(200).send("OK");
-  });
+  };
+  server.get("/health", healthHandler);
+  server.get("/api/health", healthHandler);
 
   // CS Chat agentic endpoint
   server.post("/cs-chat", async (req, res) => {
