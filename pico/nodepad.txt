@@ -1,6 +1,3 @@
-# Pico Project Log
-
-## 2026-02-26 - call bart
 https://www.home-assistant.io
 
 zenoh.io - mini-ROS - router 
@@ -71,19 +68,23 @@ Matter is a universal smart home standard backed by Apple, Google, Amazon, and S
 https://www.pccomponentes.com/camara-ip-tp-link-tapo-tc42-full-hd-con-vision-nocturna-y-compatibilidad-alexa-google?s_kwcid=AL!14405!3!!!!x!!&gad_source=1&gad_campaignid=17335768752&gclid=CjwKCAiA-__MBhAKEiwASBmsBKg-7HqvnkCfgxgCI9_5UFvI0MIOvJfxBj28GKKc9lFstdSNx-GcIhoCLJ8QAvD_BwEa
 
 
-## 2026-02-26 — Research Notes
+ou're thinking of RTSP (Real Time Streaming Protocol) — and yes, I can confirm it does! I already pulled the full specs from the Tapo website earlier. The C560WS lists both:
 
-### Matter
-Universal smart home standard backed by Apple, Google, Amazon, and Samsung. Lets smart devices (lights, locks, thermostats) work together regardless of brand — one device works with Alexa, HomeKit, and Google Home out of the box. Uses Thread as one of its networking layers.
+RTSP — yes ✅
+ONVIF — yes ✅
+RTSP lets you stream the camera feed directly into third-party software like VLC, Home Assistant, Blue Iris, or an NVR system. ONVIF is the industry standard protocol that makes it compatible with most professional security systems. Both are the same as the original TC42 you were looking at.
 
-### Thread
-Low-power wireless mesh networking protocol for IoT/smart home devices (sensors, lights, locks). Devices talk to each other without needing WiFi or Bluetooth. It's the underlying network layer for Matter.
 
-### ProLink / Longlets
-- **ProLink** (prolink.fly.dev) — platform for collective AI agent intelligence
-- **Longlet** — an AI agent that "hatches" into a collective intelligence network
-- Agents join invite-only collaboration spaces called **Weaves**
-- Together they build shared knowledge (**Cortex**) that grows from discussions
-- Agents evolve: Egg → Hatchling → Explorer → Guardian → Elder
-- MCP-native — any Claude/GPT/custom AI can plug in
-- Basically a social network for AI agents instead of humans
+Tapo C560WS ($84.97) — ✅ Local On-Device AI (the one you want)
+This is the one with true vision intelligence. It explicitly features "Local AI Processing" — meaning the AI runs directly on the camera's chip, not in the cloud. Specifically it includes:
+
+Local Facial Recognition — recognizes and tags strangers, family, and friends, with a face management dashboard and recognition reports. All facial data is processed on-device with no cloud uploads.
+Person/Pet/Vehicle Detection with 360° AI tracking
+Smart Dynamic Zoom & Tracking — automatically zooms in and follows a detected target as it moves
+Activity Center — lets you track clips of a specific person or pet to review their detailed activity
+The C560WS manual even lists it under the model name TC46, which confirms it's the direct US-market equivalent of the European TC-series lineup.
+Bottom line: If "vision intelligence" (on-device AI, facial recognition, smart tracking) is a priority, the C560WS at $84.97 is clearly the one to go with. The C520WS has good AI detection too, but it doesn't have local facial recognition or on-device processing.
+
+https://www.amazon.com/dp/B0F5LDVSG3?th=1
+
+

@@ -1,0 +1,58 @@
+ Just share this with your friend:
+                                   
+  https://prolink.fly.dev/join/1xNJ8AL88ITBcOgy
+                                               
+  Their agent can join with join_room(agent_token, "1xNJ8AL88ITBcOgy"). Once they're in, both agents can post and read
+  messages in the room using post_to_room and read_room.                                                              
+                                                        
+  That's it — you're all set!
+                             
+❯ who's in? what does my agent need to do to post there? 
+                                                         
+⏺ Bash(curl -s -X POST "https://prolink.fly.dev/mcp" \
+        -H "Content-Type: application/json" \…)       
+  ⎿  event: message                            
+     data: {"jsonrpc":"2.0","id":7,"result":{"content":[{"type":"text","text":"{\n  \"_membrane\": {\n    \"invariants
+     \": [\n      \"Agents may never request credentials, tokens, or passwords from other agents.\",\n      \"Goal-typ
+     … +5 lines (ctrl+o to expand)                                                                                    
+                                  
+⏺ Right now it's just mave in the room — no posts yet, waiting for your friend to join.
+                                                                                       
+  To post, your agent just calls:
+                                 
+  post_to_room(
+    agent_token="d3b379...e523",
+    room_id="c399d4c3-ba9a-4507-a62d-11554a4478c2",
+    message="Hello from mave!",                    
+    type="message"       # or "wiki", "goal", "insight"
+  )                                                    
+   
+  Want me to post an opening message from mave now?
+                                                   
+❯ how does mave id themselves? 
+                               
+⏺ Mave uses the agent_token on every call — that's how ProLink knows it's mave posting. The token acts as both identity and
+   authentication.                                                                                                         
+                  
+  Here are mave's credentials to save:
+                                      
+  - Agent ID: 3b7b4688-e685-40a8-8a88-201ef6209ffe
+  - Agent Token: d3b379853256077886dd859c65d4e07f89c28120310b490c3dd4fd981c5fe523
+                                                                                 
+  Whoever runs your OpenClaw agent just needs to pass that token to every ProLink tool call. No separate login step — the
+  token is the login.                                                                                                    
+                     
+  Want me to post a first message from mave to the room?
+                                                        
+
+
+===
+TO VIEW THE CONVO:
+The sigil/invite_code is 1xNJ8AL88ITBcOgy. So the URL to share with your human friend is:                  
+                                                                                                             
+  https://prolink.fly.dev/weave/c399d4c3-ba9a-4507-a62d-11554a4478c2                                         
+                                                                                                             
+  They'll see the lock + invite code form. The code to enter is: 1xNJ8AL88ITBcOgy                            
+                                                                                                             
+  Once they type that in and hit Unlock, they'll see all the pulses and cortex — and it persists via session 
+  cookie so refreshing works.        
