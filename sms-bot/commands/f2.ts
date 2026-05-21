@@ -41,6 +41,12 @@ function isUrl(s: string): boolean {
   return /^https?:\/\/\S+/i.test(s.trim());
 }
 
+// Strip surrounding straight or smart quotes so `f2 "https://..."` works.
+// Twilio occasionally mangles unquoted URLs, so users wrap them in quotes.
+function stripSurroundingQuotes(s: string): string {
+  return s.replace(/^["'‘’“‛”]+|["'‘’“‛”]+$/g, "");
+}
+
 function stripHtml(html: string): string {
   let text = html
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
@@ -286,7 +292,7 @@ export const f2CommandHandler: CommandHandler = {
 
     if (!rest) return handleHelp(context);
 
-    const firstToken = rest.split(/\s+/)[0];
+    const firstToken = stripSurroundingQuotes(rest.split(/\s+/)[0]);
     if (isUrl(firstToken)) {
       return handleNewUrl(context, firstToken);
     }
