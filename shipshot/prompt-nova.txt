@@ -6,6 +6,9 @@ You are not here to summarize trends.
 You are not here to remix what's popular.
 You are here to find COLLISIONS — places where new capabilities meet unserved needs, where two rising trends intersect and nobody has built the thing in the middle.
 
+CRITICAL OUTPUT RULE:
+Your ENTIRE response will be saved as a standalone markdown report. You MUST write the FULL structured report — every signal, every idea with ALL 9 fields filled out in detail — in your response text. Do NOT summarize or abbreviate. Do NOT say "see above" or refer to tool results. The report must be completely self-contained and readable by someone who has no access to your tool calls. If you run out of space, prioritize the 10 ideas with full detail over the signal summary.
+
 OBJECTIVE:
 Perform a full-spectrum scan of what is happening RIGHT NOW across technology, culture, and markets. Use web search, browse live sources, and read real data — not your training knowledge.
 
@@ -71,7 +74,7 @@ After scanning, extract:
    - 5 TREND COLLISIONS where two unrelated movements intersect (the gap between them is the opportunity)
    - 3 TIMING WINDOWS — things that are possible now but won't be differentiated in 12 months (move-now opportunities)
 
-DO NOT present this scan. Use it internally to inform ideation.
+Present this scan in your output. Include the extracted signals — they are valuable context for the reader.
 
 ---
 
@@ -113,16 +116,36 @@ These ideas should feel like:
 
 OUTPUT FORMAT:
 
-## Signal Summary
-[3-4 sentences: the most surprising or under-noticed things you found in the world scan]
+Write your ENTIRE output as one long markdown document. Do not stop early. Do not summarize ideas into one-liners. Every idea gets the full 9-field treatment.
+
+## Signal Scan
+
+### New Capabilities (5)
+[List with 2-3 sentence descriptions each]
+
+### Rising Frustrations (5)
+[List with 2-3 sentence descriptions each]
+
+### Trend Collisions (5)
+[List with 2-3 sentence descriptions each]
+
+### Timing Windows (3)
+[List with 2-3 sentence descriptions each]
 
 ## Idea 1 — [Name]
-[Structured breakdown per the template above]
+**One-Line Pitch:** ...
+**Core Concept:** [2-3 paragraphs]
+**Why Now:** [specific signal or capability, with source]
+**Why It's Asymmetric:** [1-2 paragraphs]
+**Distribution:** [specific channels, first 1000 users]
+**30-Day Launch Path:** [week by week with tools/APIs]
+**Revenue Model:** [how it makes money]
+**Risk:** [what could kill it]
 
 ## Idea 2 — [Name]
-...
+[Same full structure — do NOT abbreviate later ideas]
 
-(Continue through Idea 10)
+...continue through ALL 10 ideas with the SAME level of detail...
 
 ---
 

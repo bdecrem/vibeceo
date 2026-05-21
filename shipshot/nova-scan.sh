@@ -6,26 +6,56 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROMPT_FILE="$SCRIPT_DIR/prompt-nova.txt"
 CHANNEL_ID="1472651712677286039"
 OUTPUT_FILE="$SCRIPT_DIR/nova-scan-$(date +%Y%m%d).md"
+POST_DISCORD=true
 
-# Get Drift's Discord token from openclaw config
-DRIFT_TOKEN=$(python3 -c "
+# Parse flags
+for arg in "$@"; do
+  case $arg in
+    --no-discord) POST_DISCORD=false ;;
+  esac
+done
+
+# Get Drift's Discord token from openclaw config (skip if not posting)
+DRIFT_TOKEN=""
+if [ "$POST_DISCORD" = true ]; then
+  DRIFT_TOKEN=$(python3 -c "
 import json
 with open('$HOME/.openclaw/openclaw.json') as f:
     c = json.load(f)
 print(c['channels']['discord']['accounts']['drift']['token'])
 ")
+fi
 
 echo "🔍 Running Nova ideation scan via Claude Code..."
 echo "   Output: $OUTPUT_FILE"
 
 # Run Claude Code with the raw prompt — no SOUL, no agents, just the prompt
+# --max-turns: enough room for web searches + full report output
+# --output-format text: plain text output (no JSON wrapping)
 claude --print --dangerously-skip-permissions \
+  --max-turns 30 \
+  --output-format text \
   "$(cat "$PROMPT_FILE")" \
   > "$OUTPUT_FILE" 2>/dev/null
 
-echo "✅ Scan complete. Posting to #shipshot..."
+# Validate output — should be substantial (full report is 300+ lines)
+LINE_COUNT=$(wc -l < "$OUTPUT_FILE")
+if [ "$LINE_COUNT" -lt 50 ]; then
+  echo "⚠️  Warning: Output is only $LINE_COUNT lines — report may be truncated"
+  echo "   Check $OUTPUT_FILE"
+fi
+
+echo "✅ Scan complete: $OUTPUT_FILE ($LINE_COUNT lines)"
+
+if [ "$POST_DISCORD" = false ]; then
+  echo "🎯 Nova scan complete (Discord posting skipped — use without --no-discord to post)"
+  exit 0
+fi
+
+echo "📡 Posting to #shipshot..."
 
 # Discord has a 2000 char limit per message — split into chunks
+export DRIFT_TOKEN CHANNEL_ID OUTPUT_FILE
 python3 << 'PYEOF'
 import requests, sys, os, time
 
