@@ -156,3 +156,9 @@ sms-bot/ENV.sat
 pixelpit/tools/qr.html
 pixelpit/coder-daemon/node_modules/
 pixelpit/designer-daemon/node_modules/
+
+# Jambot audio test artifacts at repo root
+/*.wav
+
+# BFG repo-cleaner output
+..bfg-report/
