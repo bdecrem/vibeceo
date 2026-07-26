@@ -140,11 +140,14 @@ class SynthVoice {
       }
 
       // Trigger envelopes with accent
+      // Filter envelope always triggers at 1.0 — accent depth is applied in
+      // processSample as an octave boost (keeps the envelope in [0,1] so the
+      // cutoff mapping stays bounded; velocities >1 used to slam the filter
+      // to the 18kHz clamp on every accent = shriek).
       const ampVel = accent ? 1.0 : 0.7;
-      const filterVel = accent ? 1.5 : 1.0;  // Accent opens filter more
 
       this.ampEnv.trigger(ampVel);
-      this.filterEnv.trigger(filterVel);
+      this.filterEnv.trigger(1.0);
 
       this.accentActive = accent;
       // 303-style: accent boosts resonance for that squelch!
@@ -217,19 +220,26 @@ class SynthVoice {
       if (this.accentResonanceBoost < 0.5) this.accentResonanceBoost = 0;
     }
 
-    // Filter modulation - 303 has aggressive envelope modulation
+    // Filter modulation — exponential (octave-based) like the real 303.
+    // The envelope opens the filter UP TO ~4.5 octaves above base cutoff
+    // (scaled by envMod), accent adds a little more. Hard-capped in the
+    // musical band: the old additive mapping (base + env*10000Hz, 2x on
+    // accent) pinned the cutoff at the 18kHz clamp on every note onset,
+    // which parked the resonant peak at 8-16kHz = the shrillness bug.
     const baseCutoff = normalizedToHz(params.cutoff);
     const envAmount = params.envMod;
-    // Accent boosts envelope effect AND cutoff (2x for harder acid)
-    const accentCutoffBoost = this.accentActive ? 2.0 : 1.0;
-    const modCutoff = clamp(baseCutoff + envAmount * filterEnvValue * 10000 * accentCutoffBoost, 20, 18000);
+    const accentOctaveBoost = this.accentActive ? 1.25 : 1.0;
+    const octaves = envAmount * 4.5 * filterEnvValue * accentOctaveBoost;
+    const modCutoff = clamp(baseCutoff * Math.pow(2, octaves), 20, 5500);
 
-    // 303-style: accent boosts resonance multiplicatively
+    // 303-style: accent boosts resonance multiplicatively.
+    // (The old envResCap hack that cut resonance while the envelope was
+    // active is gone — squelch should live DURING the sweep. High-frequency
+    // screech is now prevented by the octave cap above and by the ladder's
+    // frequency-dependent damping.)
     const baseResonance = params.resonance * 100;
     const accentMult = 1.0 + (this.accentResonanceBoost / 100);
-    // Scale resonance down when envelope is active — prevents screech during sweeps
-    const envResCap = 1.0 - params.envMod * 0.6;
-    const modResonance = clamp(baseResonance * accentMult * envResCap, 0, 100);
+    const modResonance = clamp(baseResonance * accentMult, 0, 100);
 
     // Update filter with modulated cutoff and resonance
     this.filter.setParameters(modCutoff, modResonance);

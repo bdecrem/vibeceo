@@ -116,10 +116,13 @@ export class MoogLadderFilter {
 
     // Resonance curve: 303-style - never self-oscillates, goes into overdrive instead
     // Real 303 is 18dB/oct with mismatched caps that prevent true oscillation
-    // Gentler curve (x^0.5) with lower max (1.3) to stay below self-oscillation
     const resNorm = this._resonance / 100;
     const resCurved = Math.pow(resNorm, 0.5);  // Square root - very gentle
-    this.r = resCurved * 3.5;  // Max 3.5 — near self-oscillation for acid squelch
+    // Frequency-dependent damping: an analog ladder loses feedback gain as cutoff
+    // approaches Nyquist. Without this the digital loop keeps full resonance at
+    // 8-16kHz and screams. Full squelch below ~3kHz, tapering above.
+    const damping = Math.max(1.0 - 0.65 * fcClamped * fcClamped, 0.3);
+    this.r = resCurved * 3.3 * damping;  // near self-oscillation for acid squelch, tamed up top
 
     // Gain compensation: mild below 50% resonance, none above
     // Lets the resonance peak come through at high settings
