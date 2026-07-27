@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Das Kollektiv #019</title>
+<meta property="og:title" content="Das Kollektiv #019">
+<meta property="og:description" content="HALLMAN × DK — tribal techno triptych. Three Mills-school tribal tracks mixed continuous: interceptor (145, siren siege) → congregation (138, bell anthem) → red clay (134, clave ritual). All jambot synthesis. Visualizer morphs through three movements: radar siege, orbital bells, woven lattice.">
+<meta property="og:image" content="https://daskollektiv.rip/dk019-og.png">
+<meta property="og:url" content="https://daskollektiv.rip/dk019.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Das Kollektiv #019">
+<meta name="twitter:description" content="HALLMAN × DK — tribal techno triptych. 145/138/134. Jambot.">
+<meta name="twitter:image" content="https://daskollektiv.rip/dk019-og.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050505; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.3);
+    font-size: 18px; cursor: pointer; pointer-events: auto;
+    transition: all 0.4s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+  #credits {
+    position: fixed; bottom: 18px; left: 0; right: 0; text-align: center;
+    font-size: 8px; letter-spacing: 4px; color: rgba(255,255,255,0.06); z-index: 10;
+    pointer-events: none;
+  }
+  #title {
+    position: fixed; top: 14px; left: 18px;
+    font-size: 7px; letter-spacing: 3px; color: rgba(255,255,255,0.05); z-index: 10;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="title">DAS KOLLEKTIV #019</div>
+<div id="overlay"><button id="play-btn">▶</button></div>
+<div id="credits">HALLMAN × DK · JAMBOT · TRIBAL TECHNO · 145/138/134</div>
+
+<script>
+// ============================================================
+// DK019 — tribal techno triptych
+// interceptor (0 - 290s) -> congregation (290 - 550s) -> red clay (550s - end)
+// One visual organism, three movements, morphing — never hard-cut.
+// ============================================================
+
+const T1 = 290.3;          // transition center: interceptor -> congregation
+const T2 = 550.2;          // transition center: congregation -> red clay
+const MORPH = 14;          // seconds of visual crossfade around each center
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+let W, H, CX, CY, R0;
+function resize() {
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  CX = W / 2; CY = H / 2; R0 = Math.min(W, H);
+}
+resize();
+window.addEventListener('resize', resize);
+ctx.fillStyle = '#050505';
+ctx.fillRect(0, 0, W, H);
+
+// --- audio ---
+const audio = new Audio('dk019.m4a');
+audio.preload = 'auto';
+window.__dk = { audio, debug: () => ({ v: 5, rings: rings.length, bells: bells.length, debris: debris.length, w: weights(audio.currentTime || 0), kickPulse, sweepA, env: { ...env }, avgKick: avg.kick, hasAnalyser: !!analyser }) };
+let ac = null, analyser = null, freq = null;
+const btn = document.getElementById('play-btn');
+btn.addEventListener('click', async () => {
+  if (!ac) {
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    const src = ac.createMediaElementSource(audio);
+    analyser = ac.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.smoothingTimeConstant = 0.45;
+    freq = new Uint8Array(analyser.frequencyBinCount);
+    src.connect(analyser); analyser.connect(ac.destination);
+  }
+  await ac.resume();
+  await audio.play();
+  btn.classList.add('playing');
+});
+audio.addEventListener('ended', () => btn.classList.remove('playing'));
+
+// band energy 0-1: bin width = 44100/2048 = 21.5 Hz
+function band(lo, hi) {
+  if (!freq) return 0;
+  const b0 = Math.max(1, Math.floor(lo / 21.53)), b1 = Math.min(1023, Math.ceil(hi / 21.53));
+  let s = 0;
+  for (let i = b0; i <= b1; i++) s += freq[i];
+  return s / ((b1 - b0 + 1) * 255);
+}
+
+// envelope followers + transient pulses
+const env = { kick: 0, low: 0, mid: 0, high: 0 };
+const avg = { kick: 0, mid: 0 };
+let kickPulse = 0, bellPulse = 0, lastBell = 0, lastKick = 0, lastLow = 0;
+let kickHit = false, bellHit = false, lowHit = false;   // true only on the frame a transient lands
+const avgLow = { v: 0 };
+
+// smoothstep weight of each movement
+function smooth(x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
+function weights(t) {
+  const a = smooth((t - (T1 - MORPH / 2)) / MORPH);   // 0 before T1, 1 after
+  const b = smooth((t - (T2 - MORPH / 2)) / MORPH);
+  return [1 - a, a * (1 - b), b];
+}
+
+// ============================================================
+// Movement 1 — INTERCEPTOR: radar siege
+// ============================================================
+let sweepA = 0;
+const rings = [];      // kick shockwaves {r, v, life, sides}
+const debris = [];     // rumble specks {x, y, vx, vy, life}
+
+function drawInterceptor(w, t, dt) {
+  if (w < 0.01) { rings.length = 0; debris.length = 0; return; }
+  const arms = 1 + Math.min(2, Math.floor(t / 110));          // sweep splits over time
+  sweepA += dt * (0.55 + env.mid * 2.6) * (1 + t / 600);
+  // sweep arms
+  for (let a = 0; a < arms; a++) {
+    const ang = sweepA + a * (Math.PI * 2 / arms);
+    const len = R0 * (0.42 + 0.1 * Math.sin(t * 0.13 + a));
+    const tipX = CX + Math.cos(ang) * len, tipY = CY + Math.sin(ang) * len;
+    const grad = ctx.createLinearGradient(CX, CY, tipX, tipY);
+    grad.addColorStop(0, `rgba(255,255,255,0)`);
+    grad.addColorStop(1, `rgba(255,255,255,${Math.min(0.85, (0.45 + env.mid * 0.9)) * w}`.concat(')'));
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(CX, CY);
+    ctx.lineTo(tipX, tipY);
+    ctx.stroke();
+    // bright tip
+    ctx.fillStyle = `rgba(255,255,255,${0.7 * w})`;
+    ctx.fillRect(tipX - 1, tipY - 1, 2, 2);
+    // interference arc at sweep tip when siren is loud
+    if (env.mid > 0.32) {
+      ctx.strokeStyle = `rgba(255,255,255,${0.16 * w * env.mid})`;
+      ctx.beginPath();
+      ctx.arc(CX, CY, len * (0.6 + 0.35 * Math.sin(t * 0.7)), ang - 0.5, ang + 0.5);
+      ctx.stroke();
+    }
+  }
+  // kick shockwave rings (octagons) — one per kick, expand off-screen
+  if (kickHit) rings.push({ r: R0 * 0.03, v: R0 * 0.14, life: 1, sides: 8 });
+  for (let i = rings.length - 1; i >= 0; i--) {
+    const g = rings[i];
+    g.r += g.v * dt; g.life -= dt * 0.4;
+    if (g.life <= 0) { rings.splice(i, 1); continue; }
+    ctx.strokeStyle = `rgba(255,255,255,${0.55 * g.life * w})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let s = 0; s <= g.sides; s++) {
+      const a2 = sweepA * 0.1 + s * Math.PI * 2 / g.sides;
+      const px = CX + Math.cos(a2) * g.r, py = CY + Math.sin(a2) * g.r;
+      s === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+  // rumble debris drifting inward, scattered depth (not an edge halo)
+  const want = Math.floor(env.low * 10 * w);
+  for (let i = 0; i < want && debris.length < 160; i++) {
+    const edge = Math.random() * Math.PI * 2;
+    const d = R0 * (0.15 + Math.random() * 0.75);
+    debris.push({ x: CX + Math.cos(edge) * d, y: CY + Math.sin(edge) * d,
+      vx: -Math.cos(edge) * (20 + Math.random() * 50), vy: -Math.sin(edge) * (20 + Math.random() * 50), life: 1 });
+  }
+  ctx.fillStyle = '#fff';
+  for (let i = debris.length - 1; i >= 0; i--) {
+    const p = debris[i];
+    p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 0.8;
+    if (p.life <= 0) { debris.splice(i, 1); continue; }
+    ctx.globalAlpha = p.life * 0.35 * w;
+    ctx.fillRect(p.x, p.y, 1.3, 1.3);
+  }
+  ctx.globalAlpha = 1;
+  // kick center flash
+  if (kickPulse > 0.5) {
+    ctx.fillStyle = `rgba(255,255,255,${0.5 * kickPulse * w})`;
+    ctx.fillRect(CX - 2, CY - 2, 4, 4);
+  }
+}
+
+// ============================================================
+// Movement 2 — CONGREGATION: orbital bells
+// ============================================================
+const orbiters = [];
+for (let i = 0; i < 190; i++) {
+  orbiters.push({
+    baseR: 0.06 + Math.pow(Math.random(), 1.6) * 0.36,   // fraction of R0
+    a: Math.random() * Math.PI * 2,
+    speed: (0.10 + Math.random() * 0.22) * (Math.random() < 0.5 ? 1 : -1),
+    ecc: 0, phase: Math.random() * Math.PI * 2,
+  });
+}
+const bells = [];  // ringing circle sets {x, y, r, life}
+let orbitSqueeze = 1;
+
+function drawCongregation(w, t, dt) {
+  if (w < 0.01) { bells.length = 0; return; }
+  const m2t = Math.max(0, t - (T1 - MORPH / 2));           // time inside movement 2
+  // wandering congregation center (slow lissajous)
+  const wx = CX + Math.sin(m2t * 0.043) * W * 0.16 + Math.sin(m2t * 0.011) * W * 0.07;
+  const wy = CY + Math.cos(m2t * 0.031) * H * 0.14;
+  orbitSqueeze += ((kickPulse > 0.5 ? 0.955 : 1) - orbitSqueeze) * 0.25;
+  const ell = Math.min(0.5, m2t / 400);                    // orbits grow elliptical over the movement
+  ctx.fillStyle = '#fff';
+  for (const o of orbiters) {
+    o.a += o.speed * dt * (1 + env.mid * 0.8);
+    o.ecc += (ell - o.ecc) * 0.002;
+    const r = o.baseR * R0 * orbitSqueezeSafe();
+    const px = wx + Math.cos(o.a) * r * (1 + o.ecc * Math.sin(o.phase));
+    const py = wy + Math.sin(o.a) * r * (1 - o.ecc * 0.6);
+    const lum = 0.22 + 0.5 * env.mid + 0.25 * kickPulse;
+    ctx.globalAlpha = Math.min(0.75, lum) * w;
+    const sz = 1 + (o.baseR < 0.12 ? 0.8 : 0);
+    ctx.fillRect(px, py, sz, sz);
+  }
+  function orbitSqueezeSafe() { return orbitSqueeze; }
+  // bell strikes -> ringing concentric circles at a random orbiter
+  if (bellHit && bells.length < 24) {
+    const o = orbiters[(Math.random() * orbiters.length) | 0];
+    const r = o.baseR * R0;
+    bells.push({ x: wx + Math.cos(o.a) * r, y: wy + Math.sin(o.a) * r, r: 4, life: 1 });
+  }
+  for (let i = bells.length - 1; i >= 0; i--) {
+    const b = bells[i];
+    b.r += dt * 34; b.life -= dt * 0.30;
+    if (b.life <= 0) { bells.splice(i, 1); continue; }
+    for (let k = 0; k < 3; k++) {
+      const rr = b.r - k * 7;
+      if (rr <= 0) continue;
+      ctx.globalAlpha = b.life * (0.24 - k * 0.06) * w;
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(b.x, b.y, rr, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ============================================================
+// Movement 3 — RED CLAY: woven lattice
+// ============================================================
+const COLS = 16;
+let weftShift = 0, latN = 0, scrollAcc = 0;
+// persistent weave layer — stamps land at a fixed bottom row and the whole
+// layer scrolls upward (ping-pong shift), so each column becomes a scrolling
+// piano-roll of its rhythm: discrete tiles, real gaps, aging as it climbs
+let lat = document.createElement('canvas'), lat2 = document.createElement('canvas');
+let lctx = lat.getContext('2d'), lctx2 = lat2.getContext('2d');
+function resizeLat() {
+  for (const [c, cc] of [[lat, lctx], [lat2, lctx2]]) {
+    c.width = W * DPR; c.height = H * DPR;
+    cc.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+}
+resizeLat();
+window.addEventListener('resize', resizeLat);
+
+function drawRedClay(w, t, dt) {
+  if (w < 0.01) { if (latN !== -1) { lctx.clearRect(0, 0, W, H); lctx2.clearRect(0, 0, W, H); latN = -1; } return; }
+  if (latN === -1) latN = 0;
+  const m3t = Math.max(0, t - (T2 - MORPH / 2));
+  const colW = W / COLS;
+  const rowH = Math.max(16, H * 0.04);
+  if (Math.floor(m3t / 37) % 2 === 1) weftShift += dt * 1.5; // slow weft drift phase
+  // scroll the weave upward by whole pixels (ping-pong shift keeps it clean)
+  scrollAcc += dt * (16 + env.low * 10);
+  const shift = Math.floor(scrollAcc);
+  if (shift >= 1) {
+    scrollAcc -= shift;
+    lctx2.clearRect(0, 0, W, H);
+    lctx2.drawImage(lat, 0, -shift, W, H);
+    [lat, lat2] = [lat2, lat]; [lctx, lctx2] = [lctx2, lctx];
+  }
+  // tom stamps: each low transient drops a tile at the fixed bottom row of its
+  // step column; the scroll carries it up — the column becomes its rhythm's trace
+  const step = Math.floor((t * 134 / 60) * 4) % COLS;        // 16th-step clock at 134
+  if (lowHit) {
+    lctx.fillStyle = `rgba(255,255,255,${0.30 + env.low * 0.35})`;
+    const x = step * colW + (weftShift % colW) * 0.4;
+    lctx.fillRect(x + colW * 0.12, H * 0.88, colW * 0.76, rowH * 0.55);
+  }
+  // weave aging: pulsed fade so tiles dim as they climb
+  if ((latN = (latN + 1) & 7) === 0) {
+    lctx.globalCompositeOperation = 'destination-out';
+    lctx.fillStyle = 'rgba(0,0,0,0.02)';
+    lctx.fillRect(0, 0, W, H);
+    lctx.globalCompositeOperation = 'source-over';
+  }
+  ctx.globalAlpha = w;
+  ctx.drawImage(lat, 0, 0, W, H);
+  ctx.globalAlpha = 1;
+  // lattice guides — faint verticals, breathing with kick
+  ctx.strokeStyle = `rgba(255,255,255,${(0.07 + kickPulse * 0.07) * w})`;
+  ctx.lineWidth = 1;
+  for (let c2 = 0; c2 <= COLS; c2++) {
+    const x = c2 * colW + (weftShift % colW) * 0.4;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  // hat dust along the live column
+  const dustN = Math.floor(env.high * 26 * w);
+  ctx.fillStyle = '#fff';
+  for (let i = 0; i < dustN; i++) {
+    ctx.globalAlpha = 0.30 * w * Math.random();
+    ctx.fillRect(step * colW + Math.random() * colW, Math.random() * H, 1, 1);
+  }
+  ctx.globalAlpha = 1;
+  // kick tick marks on the left edge
+  if (kickPulse > 0.5) {
+    ctx.globalAlpha = 0.30 * w;
+    ctx.fillRect(6, (t * 30) % H, 10, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ============================================================
+// main loop
+// ============================================================
+let last = performance.now(), frameN = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const t = audio.currentTime || 0;
+  const [w1, w2, w3] = weights(t);
+
+  if (analyser && !audio.paused) {
+    analyser.getByteFrequencyData(freq);
+    env.kick = band(40, 110); env.low = band(120, 450);
+    env.mid = band(700, 2800); env.high = band(5000, 12000);
+    avg.kick += (env.kick - avg.kick) * 0.02;
+    avg.mid += (env.mid - avg.mid) * 0.02;
+    kickHit = env.kick > Math.max(avg.kick * 1.12, 0.15) && now - lastKick > 200;
+    if (kickHit) { kickPulse = 1; lastKick = now; } else kickPulse *= 0.82;
+    bellHit = env.mid > Math.max(avg.mid * 1.2, 0.14) && now - lastBell > 220;
+    if (bellHit) { bellPulse = 1; lastBell = now; } else bellPulse *= 0.8;
+    avgLow.v += (env.low - avgLow.v) * 0.03;
+    lowHit = env.low > Math.max(avgLow.v * 1.1, 0.12) && now - lastLow > 150;
+    if (lowHit) lastLow = now;
+  } else {
+    kickPulse *= 0.95; bellPulse *= 0.95;
+  }
+
+  // trail fade — persistence morphs per movement (lattice keeps marks longest)
+  const fade = 0.10 * w1 + 0.05 * w2 + 0.03 * w3;
+  ctx.fillStyle = `rgba(5,5,5,${fade})`;
+  ctx.fillRect(0, 0, W, H);
+  // ghost scrub: alpha-fade rounding leaves pixels within ~1/fade levels of the
+  // background stuck forever; a periodic 1-level 'difference' pass guarantees
+  // full decay. Every 4th frame only, so faint accumulating textures survive.
+  if ((frameN = (frameN + 1) & 3) === 0) {
+    ctx.globalCompositeOperation = 'difference';
+    ctx.fillStyle = 'rgb(1,1,1)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  drawInterceptor(w1, t, dt);
+  drawCongregation(w2, t, dt);
+  drawRedClay(w3, t, dt);
+
+  // idle attract mode before play: faint slow sweep so the page isn't dead
+  if (!analyser || audio.paused) {
+    sweepA += dt * 0.15;
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.beginPath(); ctx.moveTo(CX, CY);
+    ctx.lineTo(CX + Math.cos(sweepA) * R0 * 0.3, CY + Math.sin(sweepA) * R0 * 0.3);
+    ctx.stroke();
+  }
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
