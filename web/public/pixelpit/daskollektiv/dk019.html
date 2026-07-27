@@ -91,6 +91,10 @@ ctx.fillRect(0, 0, W, H);
 // routing entirely.
 const audio = new Audio('dk019.m4a');
 audio.preload = 'auto';
+// iOS: claim the playback audio session so sound ignores the ring/silent
+// switch (Safari runs page audio in the ambient session by default — the
+// same fix every working DK/Amber page uses; see hilma 0bda703)
+try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
 const DKDATA = JSON.parse(document.getElementById('dkdata').textContent);
 const FPS = DKDATA.fps;
 function b64bytes(s) { const bin = atob(s); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
@@ -99,9 +103,13 @@ const NFRAMES = EK.length;
 const KICKSET = new Set(DKDATA.kicks), BELLSET = new Set(DKDATA.bells), LOWSET = new Set(DKDATA.lows);
 const btn = document.getElementById('play-btn');
 btn.addEventListener('click', async () => {
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
   await audio.play();
-  btn.classList.add('playing');
 });
+// button state follows the element, so iOS interruptions (calls, screen lock)
+// bring the play button back instead of stranding a hidden control
+audio.addEventListener('play', () => btn.classList.add('playing'));
+audio.addEventListener('pause', () => btn.classList.remove('playing'));
 audio.addEventListener('ended', () => btn.classList.remove('playing'));
 window.__dk = { audio, debug: () => ({ v: 11, rings: rings.length, bells: bells.length, debris: debris.length, w: weights(audio.currentTime || 0), kickPulse, sweepA, env: { ...env } }) };
 
