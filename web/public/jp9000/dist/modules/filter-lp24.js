@@ -68,6 +68,15 @@ export class FilterLP24Module extends Module {
       this.filter.process(output);
     }
 
+    // Resonance gain compensation — Lowpass24Filter adds up to ~+19dB of
+    // uncompensated resonance gain, which hard-clips renders at normal
+    // settings (including the shipped 'basic' preset).
+    const res = this.params.resonance.value / 100;
+    if (res > 0) {
+      const comp = 1 / (1 + Math.pow(res, 1.5) * 8);
+      for (let i = 0; i < bufferSize; i++) output[i] *= comp;
+    }
+
     this.outputs.audio.buffer = output;
   }
 }

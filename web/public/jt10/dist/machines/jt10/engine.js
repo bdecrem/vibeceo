@@ -262,19 +262,21 @@ class SynthVoice {
       baseCutoff *= Math.pow(2, trackAmount * params.keyTrack);
     }
 
-    // Envelope modulation
-    const envMod = params.envMod * filterEnvValue * 8000;
+    // Envelope modulation — exponential octave mapping (same fix as jt30/jb202):
+    // the old additive base+env*8000 form parked the resonant peak up high.
+    const octaves = params.envMod * 4.5 * filterEnvValue;
 
-    // LFO modulation
+    // LFO modulation (additive Hz, musical for vibrato-style sweeps)
     let lfoMod = 0;
     if (params.lfoToFilter > 0) {
       lfoMod = lfoValue * params.lfoToFilter * 4000;
     }
 
-    const modCutoff = clamp(baseCutoff + envMod + lfoMod, 20, 16000);
-    // Scale resonance down when envelope is active — prevents screech during sweeps
-    const envResCap = 1.0 - params.envMod * 0.55;
-    const cappedResonance = clamp(params.resonance * 100 * envResCap, 0, 100);
+    const modCutoff = clamp(baseCutoff * Math.pow(2, octaves) + lfoMod, 20, 12000);
+    // Resonance damping follows the ACTUAL cutoff, not the envMod knob —
+    // the old envResCap left static high-cutoff + high-res free to whistle.
+    const resDamp = Math.max(1 - Math.pow(modCutoff / 12000, 2) * 0.8, 0.35);
+    const cappedResonance = clamp(params.resonance * 100 * resDamp, 0, 100);
     this.filter.setParameters(modCutoff, cappedResonance);
 
     // Filter

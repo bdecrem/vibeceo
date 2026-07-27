@@ -42,19 +42,87 @@ var require_emoji_regex = __commonJS({
 });
 
 // kit-loader.js
-function getAvailableKits() {
-  return [];
-}
-function loadKit(kitId) {
-  return null;
+import { readFileSync, readdirSync, existsSync, mkdirSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import { homedir } from "os";
+function getKitPaths() {
+  return { bundled: BUNDLED_DIR, user: USER_DIR };
 }
 function ensureUserKitsDir() {
+  if (!existsSync(USER_DIR)) {
+    mkdirSync(USER_DIR, { recursive: true });
+  }
 }
-function getKitPaths() {
-  return { system: "", user: "" };
+function scanKitDir(dir, source) {
+  if (!existsSync(dir)) return [];
+  const kits = [];
+  try {
+    const entries = readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const kitJsonPath = join(dir, entry.name, "kit.json");
+      if (!existsSync(kitJsonPath)) continue;
+      try {
+        const meta = JSON.parse(readFileSync(kitJsonPath, "utf-8"));
+        kits.push({
+          id: entry.name,
+          name: meta.name || entry.name,
+          path: join(dir, entry.name),
+          source
+        });
+      } catch {
+      }
+    }
+  } catch {
+  }
+  return kits;
 }
+function getAvailableKits() {
+  const bundled = scanKitDir(BUNDLED_DIR, "bundled");
+  const user = scanKitDir(USER_DIR, "user");
+  const byId = /* @__PURE__ */ new Map();
+  for (const kit of bundled) byId.set(kit.id, kit);
+  for (const kit of user) byId.set(kit.id, kit);
+  return Array.from(byId.values());
+}
+function loadKit(kitId) {
+  const kits = getAvailableKits();
+  const kitInfo = kits.find((k) => k.id === kitId);
+  if (!kitInfo) {
+    const available = kits.map((k) => k.id).join(", ");
+    throw new Error(`Unknown kit: ${kitId}. Available: ${available || "none"}`);
+  }
+  const metaPath = join(kitInfo.path, "kit.json");
+  const meta = JSON.parse(readFileSync(metaPath, "utf-8"));
+  const slots = meta.slots.map((slot) => {
+    const wavPath = join(kitInfo.path, "samples", `${slot.id}.wav`);
+    let buffer = null;
+    if (existsSync(wavPath)) {
+      buffer = new Uint8Array(readFileSync(wavPath));
+    } else {
+      console.warn(`Kit ${kitId}: missing sample ${slot.id}.wav`);
+    }
+    return {
+      id: slot.id,
+      name: slot.name,
+      short: slot.short,
+      buffer
+    };
+  });
+  return {
+    id: kitInfo.id,
+    name: meta.name,
+    slots
+  };
+}
+var __filename, __dirname, BUNDLED_DIR, USER_DIR;
 var init_kit_loader = __esm({
   "kit-loader.js"() {
+    __filename = fileURLToPath(import.meta.url);
+    __dirname = dirname(__filename);
+    BUNDLED_DIR = join(__dirname, "samples");
+    USER_DIR = join(homedir(), "Documents", "Jambot", "kits");
   }
 });
 
@@ -68,6 +136,32 @@ var init_params = __esm({
         this.automation = /* @__PURE__ */ new Map();
       }
       /**
+       * Resolve a dot-path to { node, paramPath } by trying progressively
+       * longer prefixes as node IDs. Supports both simple IDs ('jb01') and
+       * multi-segment IDs ('fx.jb01.ch.delay1').
+       *
+       * For path 'fx.jb01.ch.delay1.feedback', tries:
+       *   'fx' → 'fx.jb01' → 'fx.jb01.ch' → 'fx.jb01.ch.delay1' ✓
+       *
+       * @param {string} path - Full dot-separated path
+       * @returns {{ node: Node, nodeId: string, paramPath: string } | null}
+       */
+      _resolveNode(path) {
+        const segments = path.split(".");
+        for (let i = 1; i <= segments.length; i++) {
+          const candidateId = segments.slice(0, i).join(".");
+          const node = this.nodes.get(candidateId);
+          if (node) {
+            return {
+              node,
+              nodeId: candidateId,
+              paramPath: segments.slice(i).join(".")
+            };
+          }
+        }
+        return null;
+      }
+      /**
        * Register a node (instrument, effect, mixer section)
        * @param {string} id - Node identifier (e.g., 'drums', 'bass', 'mixer')
        * @param {Node} node - Node instance implementing getParam/setParam
@@ -75,6 +169,9 @@ var init_params = __esm({
       register(id, node) {
         if (this.nodes.has(id)) {
           console.warn(`ParamSystem: Node "${id}" is being re-registered`);
+        }
+        if (typeof node.validateInterface === "function") {
+          node.validateInterface();
         }
         this.nodes.set(id, node);
       }
@@ -96,13 +193,12 @@ var init_params = __esm({
        * @returns {*} Parameter value, or undefined if not found
        */
       get(path) {
-        const [nodeId, ...rest] = path.split(".");
-        const node = this.nodes.get(nodeId);
-        if (!node) {
-          console.warn(`ParamSystem: Unknown node "${nodeId}"`);
+        const resolved = this._resolveNode(path);
+        if (!resolved) {
+          console.warn(`ParamSystem: No node found for path "${path}"`);
           return void 0;
         }
-        return node.getParam(rest.join("."));
+        return resolved.node.getParam(resolved.paramPath);
       }
       /**
        * Set a parameter value by path
@@ -111,13 +207,12 @@ var init_params = __esm({
        * @returns {boolean} True if successful
        */
       set(path, value) {
-        const [nodeId, ...rest] = path.split(".");
-        const node = this.nodes.get(nodeId);
-        if (!node) {
-          console.warn(`ParamSystem: Unknown node "${nodeId}"`);
+        const resolved = this._resolveNode(path);
+        if (!resolved) {
+          console.warn(`ParamSystem: No node found for path "${path}"`);
           return false;
         }
-        return node.setParam(rest.join("."), value);
+        return resolved.node.setParam(resolved.paramPath, value);
       }
       /**
        * Get parameter descriptors for a node (for agent introspection)
@@ -144,6 +239,17 @@ var init_params = __esm({
         return result;
       }
       /**
+       * Get a single parameter descriptor by full path
+       * Same split logic as get()/set() — one code path for everything.
+       * @param {string} path - Full dot-path (e.g., 'jb202.filterCutoff', 'jb01.kick.decay')
+       * @returns {Object|null} Descriptor or null
+       */
+      getDescriptor(path) {
+        const resolved = this._resolveNode(path);
+        if (!resolved) return null;
+        return resolved.node.getDescriptor(resolved.paramPath) || null;
+      }
+      /**
        * List all registered node IDs
        * @returns {string[]}
        */
@@ -156,9 +262,9 @@ var init_params = __esm({
        * @param {Array} values - Array of values (one per step)
        */
       automate(path, values) {
-        const [nodeId] = path.split(".");
-        if (!this.nodes.has(nodeId)) {
-          console.warn(`ParamSystem: Cannot automate unknown node "${nodeId}"`);
+        const resolved = this._resolveNode(path);
+        if (!resolved) {
+          console.warn(`ParamSystem: Cannot automate unknown path "${path}"`);
           return false;
         }
         this.automation.set(path, values);
@@ -418,7 +524,7 @@ var init_clock = __esm({
 });
 
 // core/node.js
-var Node, InstrumentNode;
+var Node, InstrumentNode, EffectNode;
 var init_node = __esm({
   "core/node.js"() {
     Node = class {
@@ -467,6 +573,16 @@ var init_node = __esm({
         return { ...this._descriptors };
       }
       /**
+       * Get a single parameter descriptor by subpath
+       * Used by ParamSystem.getDescriptor() for unit conversion lookups.
+       * Override in single-voice instruments that normalize paths.
+       * @param {string} path - Parameter subpath (e.g., 'bass.filterCutoff' or 'kick.decay')
+       * @returns {Object|undefined} Descriptor or undefined
+       */
+      getDescriptor(path) {
+        return this._descriptors[path] || void 0;
+      }
+      /**
        * Register a parameter descriptor
        * @param {string} path - Parameter path
        * @param {Object} descriptor - { min, max, default, unit, description }
@@ -509,8 +625,55 @@ var init_node = __esm({
     InstrumentNode = class extends Node {
       constructor(id, config = {}) {
         super(id, config);
+        this._level = 0;
         this._pattern = null;
         this._voices = [];
+      }
+      /**
+       * Get node output level as linear gain multiplier
+       * Converts from dB to linear gain
+       * @returns {number} Linear gain (1.0 = unity, 2.0 = +6dB)
+       */
+      getOutputGain() {
+        return Math.pow(10, this._level / 20);
+      }
+      /**
+       * Set node output level in dB
+       * @param {number} dB - Level in dB (-60 to +6)
+       */
+      setLevel(dB) {
+        this._level = Math.max(-60, Math.min(6, dB));
+      }
+      /**
+       * Get node output level in dB
+       * @returns {number}
+       */
+      getLevel() {
+        return this._level;
+      }
+      /**
+       * Get a parameter value — intercepts 'level' to return dB
+       * @param {string} path
+       * @returns {*}
+       */
+      getParam(path) {
+        if (path === "level") {
+          return this.getLevel();
+        }
+        return super.getParam(path);
+      }
+      /**
+       * Set a parameter value — intercepts 'level' to route to setLevel()
+       * @param {string} path
+       * @param {*} value
+       * @returns {boolean}
+       */
+      setParam(path, value) {
+        if (path === "level") {
+          this.setLevel(value);
+          return true;
+        }
+        return super.setParam(path, value);
       }
       /**
        * Get list of voices (e.g., ['kick', 'snare', 'ch', ...])
@@ -553,6 +716,34 @@ var init_node = __esm({
         throw new Error("InstrumentNode.trigger() must be implemented by subclass");
       }
       /**
+       * Validate that this node implements the required InstrumentNode interface.
+       * Called at registration time to catch drift early instead of at render time.
+       *
+       * Required: getParam, setParam, getPattern, setPattern, renderPattern,
+       *           getDescriptor, getPatternLength, getOutputGain
+       * Optional: renderVoices, resizePattern, getVoices, hasVoice
+       *
+       * @throws {Error} If required methods are missing
+       */
+      validateInterface() {
+        const required = [
+          "getParam",
+          "setParam",
+          "getPattern",
+          "setPattern",
+          "renderPattern",
+          "getDescriptor",
+          "getPatternLength",
+          "getOutputGain"
+        ];
+        const missing = required.filter((name) => typeof this[name] !== "function");
+        if (missing.length > 0) {
+          throw new Error(
+            `InstrumentNode "${this.id}": missing required methods: ${missing.join(", ")}`
+          );
+        }
+      }
+      /**
        * Serialize instrument state including pattern
        * @returns {Object}
        */
@@ -573,6 +764,67 @@ var init_node = __esm({
         }
       }
     };
+    EffectNode = class extends Node {
+      constructor(id, config = {}) {
+        super(id, config);
+        this._inputNode = null;
+        this._outputNode = null;
+      }
+      /**
+       * Get all params as an object for render
+       * @returns {Object}
+       */
+      getParams() {
+        const result = {};
+        for (const path of Object.keys(this._descriptors)) {
+          result[path] = this._params[path];
+        }
+        return result;
+      }
+      /**
+       * Validate that this node implements the required EffectNode interface.
+       * Called at registration time to catch drift early.
+       *
+       * Required: getParam, setParam, getParameterDescriptors, getParams
+       *
+       * @throws {Error} If required methods are missing
+       */
+      validateInterface() {
+        const required = ["getParam", "setParam", "getParameterDescriptors", "getParams"];
+        const missing = required.filter((name) => typeof this[name] !== "function");
+        if (missing.length > 0) {
+          throw new Error(
+            `EffectNode "${this.id}": missing required methods: ${missing.join(", ")}`
+          );
+        }
+      }
+      /**
+       * Connect effect to audio graph
+       * Override in subclasses
+       * @param {AudioNode} input - Input audio node
+       * @param {AudioNode} output - Output audio node
+       */
+      connect(input, output) {
+        this._inputNode = input;
+        this._outputNode = output;
+      }
+      /**
+       * Disconnect from audio graph
+       */
+      disconnect() {
+        this._inputNode = null;
+        this._outputNode = null;
+      }
+      /**
+       * Process audio (for offline rendering)
+       * Override in subclasses that need custom processing
+       * @param {Float32Array} inputBuffer
+       * @param {Float32Array} outputBuffer
+       */
+      process(inputBuffer, outputBuffer) {
+        outputBuffer.set(inputBuffer);
+      }
+    };
   }
 });
 
@@ -582,6 +834,7 @@ __export(converters_exports, {
   JB01_PARAMS: () => JB01_PARAMS,
   JB200_PARAMS: () => JB200_PARAMS,
   JB202_PARAMS: () => JB202_PARAMS,
+  JBS_PARAMS: () => JBS_PARAMS,
   JT10_PARAMS: () => JT10_PARAMS,
   JT30_PARAMS: () => JT30_PARAMS,
   JT90_PARAMS: () => JT90_PARAMS,
@@ -595,13 +848,14 @@ __export(converters_exports, {
   toEngine: () => toEngine,
   validate: () => validate2
 });
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { readFileSync as readFileSync2 } from "fs";
+import { fileURLToPath as fileURLToPath2 } from "url";
+import { dirname as dirname2, join as join2 } from "path";
 function getParamDef(synth, voice, param) {
   const synthParams = SYNTH_PARAMS[synth.toLowerCase()];
   if (!synthParams) return null;
-  const voiceKey = synth.toLowerCase() === "sampler" ? "slot" : voice;
+  const synthLower = synth.toLowerCase();
+  const voiceKey = synthLower === "jbs" || synthLower === "sampler" ? "slot" : voice;
   const voiceParams = synthParams[voiceKey];
   if (!voiceParams) return null;
   return voiceParams[param] || null;
@@ -711,7 +965,8 @@ function convertTweaks(synth, voice, tweaks) {
 function describeParams(synth, voice) {
   const synthParams = SYNTH_PARAMS[synth.toLowerCase()];
   if (!synthParams) return "";
-  const voiceKey = synth.toLowerCase() === "sampler" ? "slot" : voice;
+  const synthLow = synth.toLowerCase();
+  const voiceKey = synthLow === "jbs" || synthLow === "sampler" ? "slot" : voice;
   const voiceParams = synthParams[voiceKey];
   if (!voiceParams) return "";
   const parts = [];
@@ -748,14 +1003,14 @@ function validate2(value, paramDef) {
   }
   return { valid: true };
 }
-var __filename, __dirname, loadParams, JB200_PARAMS, JB202_PARAMS, JB01_PARAMS, JT30_PARAMS, JT10_PARAMS, JT90_PARAMS, SAMPLER_PARAMS, SYNTH_PARAMS;
+var __filename2, __dirname2, loadParams, JB200_PARAMS, JB202_PARAMS, JB01_PARAMS, JT30_PARAMS, JT10_PARAMS, JT90_PARAMS, SAMPLER_PARAMS, JBS_PARAMS, SYNTH_PARAMS;
 var init_converters = __esm({
   "params/converters.js"() {
-    __filename = fileURLToPath(import.meta.url);
-    __dirname = dirname(__filename);
+    __filename2 = fileURLToPath2(import.meta.url);
+    __dirname2 = dirname2(__filename2);
     loadParams = (filename) => {
-      const path = join(__dirname, filename);
-      return JSON.parse(readFileSync(path, "utf-8"));
+      const path = join2(__dirname2, filename);
+      return JSON.parse(readFileSync2(path, "utf-8"));
     };
     JB200_PARAMS = loadParams("jb200-params.json");
     JB202_PARAMS = loadParams("jb202-params.json");
@@ -764,6 +1019,7 @@ var init_converters = __esm({
     JT10_PARAMS = loadParams("jt10-params.json");
     JT90_PARAMS = loadParams("jt90-params.json");
     SAMPLER_PARAMS = loadParams("sampler-params.json");
+    JBS_PARAMS = loadParams("jbs-params.json");
     SYNTH_PARAMS = {
       jb200: JB200_PARAMS,
       jb202: JB202_PARAMS,
@@ -771,7 +1027,9 @@ var init_converters = __esm({
       jt30: JT30_PARAMS,
       jt10: JT10_PARAMS,
       jt90: JT90_PARAMS,
+      jbs: JBS_PARAMS,
       sampler: SAMPLER_PARAMS
+      // legacy alias
     };
   }
 });
@@ -874,25 +1132,25 @@ var init_sample_voice = __esm({
   }
 });
 
-// instruments/sampler-node.js
+// instruments/jbs-node.js
 import { OfflineAudioContext as OfflineAudioContext2 } from "node-web-audio-api";
-var SLOTS, SamplerNode;
-var init_sampler_node = __esm({
-  "instruments/sampler-node.js"() {
+var SLOTS, JBSNode;
+var init_jbs_node = __esm({
+  "instruments/jbs-node.js"() {
     init_node();
     init_converters();
     init_sample_voice();
     SLOTS = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10"];
-    SamplerNode = class extends InstrumentNode {
+    JBSNode = class extends InstrumentNode {
       /**
        * @param {Object} config - Configuration
        * @param {Object} config.kit - Loaded kit with sample buffers
        */
       constructor(config = {}) {
-        super("sampler", config);
+        super("jbs", config);
         this._voices = SLOTS;
         this._kit = config.kit || null;
-        this._level = -6;
+        this.setLevel(-6);
         this._pattern = {};
         for (const slot of SLOTS) {
           this._pattern[slot] = [];
@@ -904,7 +1162,7 @@ var init_sampler_node = __esm({
        */
       _registerParams() {
         this.registerParam("level", { min: -60, max: 6, default: -6, unit: "dB", hint: "node output level" });
-        const slotDef = SAMPLER_PARAMS.slot;
+        const slotDef = JBS_PARAMS.slot;
         if (!slotDef) return;
         for (const slot of SLOTS) {
           for (const [paramName, paramDef] of Object.entries(slotDef)) {
@@ -923,7 +1181,7 @@ var init_sampler_node = __esm({
        * @returns {*}
        */
       getParam(path) {
-        if (path === "level") return this._level;
+        if (path === "level") return super.getParam(path);
         if (path === "kit") {
           return this._kit?.id || null;
         }
@@ -937,8 +1195,7 @@ var init_sampler_node = __esm({
        */
       setParam(path, value) {
         if (path === "level") {
-          this._level = Math.max(-60, Math.min(6, value));
-          return true;
+          return super.setParam(path, value);
         }
         if (path === "kit") {
           return true;
@@ -980,7 +1237,7 @@ var init_sampler_node = __esm({
        */
       getSlotEngineParams(slot) {
         const result = {};
-        const slotDef = SAMPLER_PARAMS.slot;
+        const slotDef = JBS_PARAMS.slot;
         for (const [paramName, paramDef] of Object.entries(slotDef)) {
           const path = `${slot}.${paramName}`;
           const value = this._params[path];
@@ -989,14 +1246,6 @@ var init_sampler_node = __esm({
           }
         }
         return result;
-      }
-      /**
-       * Get node output level as linear gain multiplier
-       * Used by render loop to apply node-level gain
-       * @returns {number} Linear gain (1.0 = unity, 2.0 = +6dB)
-       */
-      getOutputGain() {
-        return Math.pow(10, this._level / 20);
       }
       /**
        * Set the kit (with loaded sample buffers)
@@ -1021,13 +1270,13 @@ var init_sampler_node = __esm({
        */
       trigger(slot, time, velocity, options = {}) {
         if (!this._kit) {
-          console.warn("SamplerNode: No kit loaded");
+          console.warn("JBSNode: No kit loaded");
           return;
         }
         const slotIndex = parseInt(slot.slice(1)) - 1;
         const kitSlot = this._kit.slots?.[slotIndex];
         if (!kitSlot?.buffer) {
-          console.warn(`SamplerNode: No sample in ${slot}`);
+          console.warn(`JBSNode: No sample in ${slot}`);
           return;
         }
         const params = this.getSlotEngineParams(slot);
@@ -1075,6 +1324,7 @@ var init_sampler_node = __esm({
           pattern = this._pattern,
           params = null
         } = options;
+        const patternLength = pattern.s1?.length || 16;
         const hasHits = SLOTS.some(
           (slot) => pattern[slot]?.some((step) => step?.velocity > 0)
         );
@@ -1116,7 +1366,7 @@ var init_sampler_node = __esm({
         const swingAmount = swing;
         const maxSwingDelay = stepDuration * 0.5;
         for (let i = 0; i < totalSteps; i++) {
-          const step = i % 16;
+          const step = i % patternLength;
           let time = i * stepDuration;
           if (step % 2 === 1) {
             time += swingAmount * maxSwingDelay;
@@ -1159,7 +1409,7 @@ var init_sampler_node = __esm({
           }
         }
         const sparseParams = {};
-        const slotDef = SAMPLER_PARAMS.slot;
+        const slotDef = JBS_PARAMS.slot;
         for (const [path, value] of Object.entries(this._params)) {
           const [slot, paramName] = path.split(".");
           const paramDef = slotDef?.[paramName];
@@ -1172,7 +1422,7 @@ var init_sampler_node = __esm({
         return {
           id: this.id,
           kitId: this._kit?.id || null,
-          level: this._level !== -6 ? this._level : void 0,
+          level: this.getLevel() !== -6 ? this.getLevel() : void 0,
           pattern: Object.keys(sparsePattern).length > 0 ? sparsePattern : void 0,
           patternLength: this.getPatternLength(),
           params: Object.keys(sparseParams).length > 0 ? sparseParams : void 0
@@ -1184,7 +1434,7 @@ var init_sampler_node = __esm({
        * @param {Object} data
        */
       deserialize(data) {
-        if (data.level !== void 0) this._level = data.level;
+        if (data.level !== void 0) this.setLevel(data.level);
         if (data.pattern) {
           const length = data.patternLength || 16;
           const firstSlot = Object.values(data.pattern)[0];
@@ -1296,6 +1546,9 @@ var init_base = __esm({
 });
 
 // ../web/public/jb202/dist/dsp/oscillators/sawtooth.js
+function createSawtooth(sampleRate = 44100) {
+  return new SawtoothOscillator(sampleRate);
+}
 var SawtoothOscillator;
 var init_sawtooth = __esm({
   "../web/public/jb202/dist/dsp/oscillators/sawtooth.js"() {
@@ -1328,6 +1581,9 @@ var init_sawtooth = __esm({
 });
 
 // ../web/public/jb202/dist/dsp/oscillators/square.js
+function createSquare(sampleRate = 44100, pulseWidth = 0.5) {
+  return new SquareOscillator(sampleRate, pulseWidth);
+}
 var SquareOscillator;
 var init_square = __esm({
   "../web/public/jb202/dist/dsp/oscillators/square.js"() {
@@ -1367,6 +1623,9 @@ var init_square = __esm({
 });
 
 // ../web/public/jb202/dist/dsp/oscillators/triangle.js
+function createTriangle(sampleRate = 44100) {
+  return new TriangleOscillator(sampleRate);
+}
 var TriangleOscillator;
 var init_triangle = __esm({
   "../web/public/jb202/dist/dsp/oscillators/triangle.js"() {
@@ -1391,6 +1650,9 @@ var init_triangle = __esm({
 });
 
 // ../web/public/jb202/dist/dsp/oscillators/pulse.js
+function createPulse(sampleRate = 44100) {
+  return new PulseOscillator(sampleRate);
+}
 var PulseOscillator;
 var init_pulse = __esm({
   "../web/public/jb202/dist/dsp/oscillators/pulse.js"() {
@@ -1441,7 +1703,45 @@ var init_pulse = __esm({
   }
 });
 
+// ../web/public/jb202/dist/dsp/oscillators/sine.js
+function createSine(sampleRate = 44100) {
+  return new SineOscillator(sampleRate);
+}
+var SineOscillator;
+var init_sine = __esm({
+  "../web/public/jb202/dist/dsp/oscillators/sine.js"() {
+    "use strict";
+    init_base();
+    init_math();
+    SineOscillator = class extends Oscillator {
+      constructor(sampleRate = 44100) {
+        super(sampleRate);
+      }
+      _generateSample() {
+        return Math.sin(this.phase * TWO_PI);
+      }
+    };
+  }
+});
+
 // ../web/public/jb202/dist/dsp/oscillators/index.js
+var oscillators_exports = {};
+__export(oscillators_exports, {
+  Oscillator: () => Oscillator,
+  PulseOscillator: () => PulseOscillator,
+  SawtoothOscillator: () => SawtoothOscillator,
+  SineOscillator: () => SineOscillator,
+  SquareOscillator: () => SquareOscillator,
+  TriangleOscillator: () => TriangleOscillator,
+  WAVEFORMS: () => WAVEFORMS,
+  createOscillator: () => createOscillator,
+  createOscillatorSync: () => createOscillatorSync,
+  createPulse: () => createPulse,
+  createSawtooth: () => createSawtooth,
+  createSine: () => createSine,
+  createSquare: () => createSquare,
+  createTriangle: () => createTriangle
+});
 function createOscillatorSync(type, sampleRate = 44100) {
   switch (type) {
     case "sawtooth":
@@ -1455,10 +1755,14 @@ function createOscillatorSync(type, sampleRate = 44100) {
     case "triangle":
     case "tri":
       return new TriangleOscillator(sampleRate);
+    case "sine":
+    case "sin":
+      return new SineOscillator(sampleRate);
     default:
       throw new Error(`Unknown oscillator type: ${type}`);
   }
 }
+var WAVEFORMS, createOscillator;
 var init_oscillators = __esm({
   "../web/public/jb202/dist/dsp/oscillators/index.js"() {
     "use strict";
@@ -1467,10 +1771,20 @@ var init_oscillators = __esm({
     init_square();
     init_triangle();
     init_pulse();
+    init_sine();
     init_sawtooth();
     init_square();
     init_triangle();
     init_pulse();
+    init_sine();
+    WAVEFORMS = {
+      SAWTOOTH: "sawtooth",
+      SQUARE: "square",
+      TRIANGLE: "triangle",
+      PULSE: "pulse",
+      SINE: "sine"
+    };
+    createOscillator = createOscillatorSync;
   }
 });
 
@@ -1737,8 +2051,9 @@ var init_moog_ladder = __esm({
         this.k = this.p * 2 - 1;
         const resNorm = this._resonance / 100;
         const resCurved = Math.pow(resNorm, 0.5);
-        this.r = resCurved * 1.8;
-        this._gainCompensation = 1 / (1 + resCurved * 0.5);
+        const damping = Math.max(1 - 4.5 * fcClamped * fcClamped, 0.3);
+        this.r = resCurved * 3.3 * damping;
+        this._gainCompensation = resCurved < 0.5 ? 1 / (1 + resCurved * 0.3) : 1;
       }
       /**
        * Process a single sample through the ladder filter
@@ -1755,8 +2070,6 @@ var init_moog_ladder = __esm({
         this.y2 = this.y1 * this.p + this.oldy1 * this.p - this.k * this.y2;
         this.y3 = this.y2 * this.p + this.oldy2 * this.p - this.k * this.y3;
         this.y4 = this.y3 * this.p + this.oldy3 * this.p - this.k * this.y4;
-        this.y2 = this._softClip(this.y2);
-        this.y4 = this._softClip(this.y4);
         this.oldx = x;
         this.oldy1 = this.y1;
         this.oldy2 = this.y2;
@@ -2128,8 +2441,21 @@ var init_effects = __esm({
 });
 
 // ../web/public/jb202/dist/dsp/utils/note.js
+var note_exports = {};
+__export(note_exports, {
+  detune: () => detune,
+  freqToMidi: () => freqToMidi,
+  midiToFreq: () => midiToFreq,
+  midiToNote: () => midiToNote,
+  noteToFreq: () => noteToFreq,
+  noteToMidi: () => noteToMidi,
+  transpose: () => transpose
+});
 function midiToFreq(midi) {
   return A4_FREQ * Math.pow(2, (midi - A4_MIDI) / 12);
+}
+function freqToMidi(freq) {
+  return A4_MIDI + 12 * Math.log2(freq / A4_FREQ);
 }
 function noteToMidi(noteName) {
   if (typeof noteName === "number") return noteName;
@@ -2406,7 +2732,7 @@ var init_engine = __esm({
       updateOscillators(params) {
         const osc1Type = this.osc1.constructor.name.toLowerCase().replace("oscillator", "");
         const osc2Type = this.osc2.constructor.name.toLowerCase().replace("oscillator", "");
-        const waveformMap = { sawtooth: "sawtooth", square: "square", triangle: "triangle" };
+        const waveformMap = { sawtooth: "sawtooth", square: "square", triangle: "triangle", sine: "sine" };
         if (waveformMap[osc1Type] !== params.osc1Waveform) {
           this.osc1 = createOscillatorSync(params.osc1Waveform, this.sampleRate);
         }
@@ -2425,7 +2751,8 @@ var init_engine = __esm({
         this.osc2.reset();
         this.filter.reset();
         this.ampEnv.trigger(accent ? 1 : 0.8);
-        this.filterEnv.trigger(accent ? 1.5 : 1);
+        this.filterEnv.trigger(1);
+        this.accentActive = accent;
         this.gateOpen = true;
       }
       /**
@@ -2493,12 +2820,20 @@ var init_engine = __esm({
         const filterEnvValue = this.filterEnv.processSample();
         const baseCutoff = normalizedToHz(params.filterCutoff);
         const envAmount = (params.filterEnvAmount - 0.5) * 2;
-        const modCutoff = clamp(baseCutoff + envAmount * filterEnvValue * 8e3, 20, 16e3);
+        const accentOctaveBoost = this.accentActive ? 1.25 : 1;
+        const octaves = envAmount * 4.5 * filterEnvValue * accentOctaveBoost;
+        const modCutoff = clamp(baseCutoff * Math.pow(2, octaves), 20, 5500);
         this.filter.setCutoff(modCutoff);
         sample = this.filter.processSample(sample);
         sample *= ampValue;
         sample = this.drive.processSample(sample);
         sample *= params.level * masterVolume;
+        const abs = sample < 0 ? -sample : sample;
+        if (abs > 0.8) {
+          const sign = sample < 0 ? -1 : 1;
+          const excess = abs - 0.8;
+          sample = sign * (0.8 + 0.2 * fastTanh(excess / 0.2));
+        }
         return sample;
       }
     };
@@ -2516,7 +2851,7 @@ var init_engine = __esm({
         this.context = options.context ?? null;
         this._scriptNode = null;
         this._isRealTimePlaying = false;
-        this._pendingRelease = null;
+        this._releaseSampleCountdown = -1;
       }
       _ensureVoice() {
         const sr = this.context?.sampleRate ?? this.sampleRate;
@@ -2586,11 +2921,8 @@ var init_engine = __esm({
       stopSequencer() {
         this.sequencer.stop();
         this._isRealTimePlaying = false;
+        this._releaseSampleCountdown = -1;
         if (this._voice) this._voice.releaseNote();
-        if (this._pendingRelease) {
-          clearTimeout(this._pendingRelease);
-          this._pendingRelease = null;
-        }
         if (this._scriptNode) {
           setTimeout(() => {
             if (this._scriptNode && !this._isRealTimePlaying) {
@@ -2606,18 +2938,12 @@ var init_engine = __esm({
       _handleSequencerStep(step, stepData, nextStepData) {
         if (!this._voice) return;
         this._voice.processStepEvent(stepData, nextStepData);
-        if (this._pendingRelease) {
-          clearTimeout(this._pendingRelease);
-          this._pendingRelease = null;
-        }
         if (this._voice.shouldReleaseAfterStep(stepData, nextStepData)) {
+          const sampleRate = this.context?.sampleRate ?? this.sampleRate;
           const stepDuration = 60 / this.sequencer.getBpm() / 4;
-          this._pendingRelease = setTimeout(() => {
-            if (this._voice?.gateOpen) {
-              this._voice.releaseNote();
-            }
-            this._pendingRelease = null;
-          }, stepDuration * 0.9 * 1e3);
+          this._releaseSampleCountdown = Math.floor(stepDuration * 0.9 * sampleRate);
+        } else {
+          this._releaseSampleCountdown = -1;
         }
       }
       _processAudio(event) {
@@ -2625,6 +2951,16 @@ var init_engine = __esm({
         const outputL = event.outputBuffer.getChannelData(0);
         const outputR = event.outputBuffer.getChannelData(1);
         for (let i = 0; i < outputL.length; i++) {
+          if (this._releaseSampleCountdown >= 0) {
+            if (this._releaseSampleCountdown === 0) {
+              if (this._voice.gateOpen) {
+                this._voice.releaseNote();
+              }
+              this._releaseSampleCountdown = -1;
+            } else {
+              this._releaseSampleCountdown--;
+            }
+          }
           const sample = this._voice.processSample(this.masterVolume);
           outputL[i] = sample;
           outputR[i] = sample;
@@ -2654,10 +2990,11 @@ var init_engine = __esm({
           stepDuration = null,
           sampleRate = this.sampleRate,
           pattern = null,
-          params = null
+          params = null,
+          automation = null
         } = options;
         const renderPattern = pattern ?? this.sequencer.getPattern();
-        const renderParams = params ? { ...this.params, ...params } : this.params;
+        const renderParams = params ? { ...this.params, ...params } : { ...this.params };
         const steps = renderPattern.length;
         const stepsPerBar = 16;
         const totalSteps = bars * stepsPerBar;
@@ -2671,6 +3008,19 @@ var init_engine = __esm({
           const stepData = renderPattern[patternStep];
           const nextPatternStep = (patternStep + 1) % steps;
           const nextStepData = renderPattern[nextPatternStep];
+          if (automation) {
+            let paramsChanged = false;
+            for (const [paramId, values] of Object.entries(automation)) {
+              const val = values[patternStep % values.length];
+              if (val !== null && val !== void 0) {
+                renderParams[paramId] = val;
+                paramsChanged = true;
+              }
+            }
+            if (paramsChanged) {
+              voice.updateParams(renderParams);
+            }
+          }
           voice.processStepEvent(stepData, nextStepData);
           const stepSamples = Math.floor(stepDur * sampleRate);
           const shouldRelease = voice.shouldReleaseAfterStep(stepData, nextStepData);
@@ -2692,10 +3042,10 @@ var init_engine = __esm({
         };
       }
       async renderTestTone(options = {}) {
-        const { note = "A4", duration = 1, sampleRate = this.sampleRate } = options;
+        const { note = "A4", duration = 1, sampleRate = this.sampleRate, waveform = "sawtooth" } = options;
         const totalSamples = Math.ceil(duration * sampleRate);
         const output = new Float32Array(totalSamples);
-        const osc = new SawtoothOscillator(sampleRate);
+        const osc = createOscillatorSync(waveform, sampleRate);
         osc.setFrequency(midiToFreq(noteToMidi(note)));
         for (let i = 0; i < totalSamples; i++) {
           output[i] = osc._generateSample() * 0.5;
@@ -2752,11 +3102,14 @@ var init_jb202_node = __esm({
       /**
        * Register all parameters from the JSON definition
        * Stores values in ENGINE UNITS (0-1) internally for compatibility with render loop
+       * Node-level 'level' param is stored in dB and handled by base InstrumentNode
        */
       _registerParams() {
+        this.registerParam("level", { min: -60, max: 6, default: 0, unit: "dB", hint: "node output level" });
         const bassDef = JB202_PARAMS.bass;
         if (!bassDef) return;
         for (const [paramName, paramDef] of Object.entries(bassDef)) {
+          if (paramName === "level") continue;
           const path = `bass.${paramName}`;
           this.registerParam(path, {
             ...paramDef,
@@ -2769,11 +3122,23 @@ var init_jb202_node = __esm({
         }
       }
       /**
+       * Get a single parameter descriptor, normalizing shorthand paths
+       * e.g., 'filterCutoff' → looks up 'bass.filterCutoff'
+       */
+      getDescriptor(path) {
+        if (path === "level") return super.getDescriptor(path);
+        const normalizedPath = path.startsWith("bass.") ? path : `bass.${path}`;
+        return this._descriptors[normalizedPath] || super.getDescriptor(path);
+      }
+      /**
        * Get a parameter value in producer-friendly units
        * @param {string} path - e.g., 'bass.filterCutoff' or 'filterCutoff' (shorthand)
        * @returns {*}
        */
       getParam(path) {
+        if (path === "level") {
+          return super.getParam(path);
+        }
         const normalizedPath = path.startsWith("bass.") ? path : `bass.${path}`;
         return this._params[normalizedPath];
       }
@@ -2785,10 +3150,13 @@ var init_jb202_node = __esm({
        * @returns {boolean}
        */
       setParam(path, value) {
+        if (path === "level") {
+          return super.setParam(path, value);
+        }
         const normalizedPath = path.startsWith("bass.") ? path : `bass.${path}`;
         if (normalizedPath === "bass.mute" || path === "mute") {
           if (value) {
-            this._params["bass.level"] = 0;
+            this.setLevel(-60);
           }
           return true;
         }
@@ -2822,15 +3190,6 @@ var init_jb202_node = __esm({
           }
         }
         return result;
-      }
-      /**
-       * Get node output level as linear gain multiplier
-       * Level is stored in engine units (0-1 where 0.5 = 0dB = unity, 1.0 = +6dB)
-       * @returns {number} Linear gain (1.0 = unity, 2.0 = +6dB)
-       */
-      getOutputGain() {
-        const levelEngine = this._params["bass.level"] ?? 1;
-        return levelEngine;
       }
       /**
        * Get the current pattern
@@ -2909,7 +3268,8 @@ var init_jb202_node = __esm({
           stepDuration,
           sampleRate = 44100,
           pattern = this._pattern,
-          params = null
+          params = null,
+          automation = null
         } = options;
         if (!pattern?.some((s) => s.gate)) {
           return null;
@@ -2921,12 +3281,35 @@ var init_jb202_node = __esm({
           engine.setParameter(key, value);
         });
         engine.setPattern(pattern);
+        const rawAutomation = automation || this._getAutomationForRender();
+        let engineAutomation = void 0;
+        if (rawAutomation && Object.keys(rawAutomation).length > 0) {
+          engineAutomation = {};
+          for (const [path, values] of Object.entries(rawAutomation)) {
+            const paramName = path.startsWith("bass.") ? path.slice(5) : path;
+            const paramDef = JB202_PARAMS.bass?.[paramName];
+            if (paramDef && Array.isArray(values)) {
+              engineAutomation[paramName] = values.map(
+                (v) => v !== null && v !== void 0 ? toEngine(v, paramDef) : null
+              );
+            }
+          }
+        }
         const buffer = await engine.renderPattern({
           bars,
           stepDuration,
-          sampleRate
+          sampleRate,
+          automation: engineAutomation
         });
         return buffer;
+      }
+      /**
+       * Get automation data for rendering (from ParamSystem via session)
+       * Returns automation in producer units with node-relative paths
+       * @returns {Object|null}
+       */
+      _getAutomationForRender() {
+        return this._renderAutomation || null;
       }
     };
   }
@@ -3838,8 +4221,6 @@ var init_hitom = __esm({
       trigger(time, velocity) {
         const level = Math.max(0, Math.min(1, velocity * this.level));
         const baseFreq = 180 * Math.pow(2, this.tune / 1200);
-        const pitchMod = 0.6;
-        const pitchEnvTime = 0.05;
         const masterGain = this.context.createGain();
         masterGain.gain.value = level * 0.7;
         masterGain.connect(this.output);
@@ -3847,9 +4228,7 @@ var init_hitom = __esm({
           const osc = this.context.createOscillator();
           osc.type = "sine";
           const targetFreq = baseFreq * ratio;
-          const startFreq = targetFreq * (1 + pitchMod);
-          osc.frequency.setValueAtTime(startFreq, time);
-          osc.frequency.exponentialRampToValueAtTime(targetFreq, time + pitchEnvTime);
+          osc.frequency.setValueAtTime(targetFreq, time);
           const waveshaper = this.context.createWaveShaper();
           waveshaper.curve = this.createSoftClipCurve();
           waveshaper.oversample = "2x";
@@ -4149,7 +4528,8 @@ var init_engine3 = __esm({
             stepDuration,
             bars,
             stepsPerBar,
-            swing
+            swing,
+            automation: options.automation
           });
         }, {
           sampleRate: options.sampleRate,
@@ -4184,7 +4564,7 @@ var init_engine3 = __esm({
       /**
        * Schedule pattern in an offline context
        */
-      schedulePatternInContext({ context, pattern, stepDuration, bars, stepsPerBar, swing }) {
+      schedulePatternInContext({ context, pattern, stepDuration, bars, stepsPerBar, swing, automation }) {
         const voices = this.createVoiceMap(context);
         const compressor = context.createDynamicsCompressor();
         const masterGain = context.createGain();
@@ -4197,7 +4577,22 @@ var init_engine3 = __esm({
         let currentTime = 0;
         const totalSteps = bars * stepsPerBar;
         const openHat = voices.get("oh");
+        const patternLength = pattern.kick?.length || pattern.snare?.length || 16;
         for (let step = 0; step < totalSteps; step++) {
+          if (automation) {
+            const patternIdx = step % patternLength;
+            for (const [path, values] of Object.entries(automation)) {
+              const dotIdx = path.indexOf(".");
+              if (dotIdx === -1) continue;
+              const voiceId = path.slice(0, dotIdx);
+              const paramId = path.slice(dotIdx + 1);
+              const val = values[patternIdx % values.length];
+              if (val !== null && val !== void 0) {
+                const voice = voices.get(voiceId);
+                if (voice) voice.setParameter(paramId, val);
+              }
+            }
+          }
           const events = this.collectEventsForStep(pattern, step);
           const hasCH = events.some((e) => e.voice === "ch");
           if (hasCH && openHat) {
@@ -4269,7 +4664,7 @@ var init_jb01_node = __esm({
       constructor(config = {}) {
         super("jb01", config);
         this._voices = VOICES2;
-        this._level = -6;
+        this.setLevel(-6);
         this._pattern = createEmptyPattern2();
         this._registerParams();
       }
@@ -4307,7 +4702,7 @@ var init_jb01_node = __esm({
        */
       getParam(path) {
         if (path === "level") {
-          return this.getLevel();
+          return super.getParam(path);
         }
         return this._params[path];
       }
@@ -4320,8 +4715,7 @@ var init_jb01_node = __esm({
        */
       setParam(path, value) {
         if (path === "level") {
-          this.setLevel(value);
-          return true;
+          return super.setParam(path, value);
         }
         const parts = path.split(".");
         if (parts.length === 2 && parts[1] === "mute") {
@@ -4372,28 +4766,6 @@ var init_jb01_node = __esm({
           }
         }
         return result;
-      }
-      /**
-       * Get node output level as linear gain multiplier
-       * Converts from dB to linear gain
-       * @returns {number}
-       */
-      getOutputGain() {
-        return Math.pow(10, this._level / 20);
-      }
-      /**
-       * Set node output level in dB
-       * @param {number} dB - Level in dB (-60 to +6)
-       */
-      setLevel(dB) {
-        this._level = Math.max(-60, Math.min(6, dB));
-      }
-      /**
-       * Get node output level in dB
-       * @returns {number}
-       */
-      getLevel() {
-        return this._level;
       }
       /**
        * Get the current pattern
@@ -4476,7 +4848,8 @@ var init_jb01_node = __esm({
           swing = 0,
           sampleRate = 44100,
           pattern = this._pattern,
-          params = null
+          params = null,
+          automation = null
         } = options;
         const hasHits = VOICES2.some(
           (voice) => pattern[voice]?.some((step) => step?.velocity > 0)
@@ -4495,13 +4868,36 @@ var init_jb01_node = __esm({
             }
           }
         }
+        const rawAutomation = automation || this._getAutomationForRender();
+        let engineAutomation = void 0;
+        if (rawAutomation && Object.keys(rawAutomation).length > 0) {
+          engineAutomation = {};
+          for (const [path, values] of Object.entries(rawAutomation)) {
+            const [voice, param] = path.split(".");
+            const paramDef = JB01_PARAMS[voice]?.[param];
+            if (paramDef && Array.isArray(values)) {
+              engineAutomation[path] = values.map(
+                (v) => v !== null && v !== void 0 ? toEngine(v, paramDef) : null
+              );
+            }
+          }
+        }
         const buffer = await engine.renderPattern(pattern, {
           bars,
           stepDuration,
           swing,
-          sampleRate
+          sampleRate,
+          automation: engineAutomation
         });
         return buffer;
+      }
+      /**
+       * Get automation data for rendering (from ParamSystem via session)
+       * Returns automation in producer units with node-relative paths
+       * @returns {Object|null}
+       */
+      _getAutomationForRender() {
+        return this._renderAutomation || null;
       }
       /**
        * Render each voice to a separate buffer (for per-voice effects)
@@ -5111,13 +5507,15 @@ var init_engine4 = __esm({
           const trackAmount = (this.currentNote - 60) / 12;
           baseCutoff *= Math.pow(2, trackAmount * params.keyTrack);
         }
-        const envMod = params.envMod * filterEnvValue * 8e3;
+        const octaves = params.envMod * 4.5 * filterEnvValue;
         let lfoMod = 0;
         if (params.lfoToFilter > 0) {
           lfoMod = lfoValue * params.lfoToFilter * 4e3;
         }
-        const modCutoff = clamp(baseCutoff + envMod + lfoMod, 20, 16e3);
-        this.filter.setCutoff(modCutoff);
+        const modCutoff = clamp(baseCutoff * Math.pow(2, octaves) + lfoMod, 20, 12e3);
+        const resDamp = Math.max(1 - Math.pow(modCutoff / 12e3, 2) * 0.8, 0.35);
+        const cappedResonance = clamp(params.resonance * 100 * resDamp, 0, 100);
+        this.filter.setParameters(modCutoff, cappedResonance);
         sample = this.filter.processSample(sample);
         sample *= ampValue;
         sample = this.drive.processSample(sample);
@@ -5374,16 +5772,6 @@ var init_engine4 = __esm({
 // instruments/jt10-node.js
 import { OfflineAudioContext as OfflineAudioContext5 } from "node-web-audio-api";
 import { createRequire } from "module";
-function toEngine2(value, paramDef) {
-  if (paramDef.unit === "choice") {
-    return value;
-  }
-  if (paramDef.unit === "0-100") {
-    return value / 100;
-  }
-  const range = paramDef.max - paramDef.min;
-  return (value - paramDef.min) / range;
-}
 function createEmptyPattern4(steps = 16) {
   return Array(steps).fill(null).map(() => ({
     note: "C3",
@@ -5396,6 +5784,7 @@ var require2, JT10_PARAMS2, VOICES3, JT10Node;
 var init_jt10_node = __esm({
   "instruments/jt10-node.js"() {
     init_node();
+    init_converters();
     require2 = createRequire(import.meta.url);
     JT10_PARAMS2 = require2("../params/jt10-params.json");
     VOICES3 = ["lead"];
@@ -5410,24 +5799,38 @@ var init_jt10_node = __esm({
        * Register all parameters from the JSON definition
        */
       _registerParams() {
+        this.registerParam("level", { min: -60, max: 6, default: 0, unit: "dB", hint: "node output level" });
         const leadDef = JT10_PARAMS2.lead;
         if (!leadDef) return;
         for (const [paramName, paramDef] of Object.entries(leadDef)) {
+          if (paramName === "level") continue;
           const path = `lead.${paramName}`;
           this.registerParam(path, {
             ...paramDef,
             voice: "lead",
             param: paramName
           });
-          if (paramDef.default !== void 0) {
-            this._params[path] = toEngine2(paramDef.default, paramDef);
+          if (paramDef.default === null) {
+            this._params[path] = null;
+          } else if (paramDef.default !== void 0) {
+            this._params[path] = paramDef.unit === "choice" ? paramDef.default : toEngine(paramDef.default, paramDef);
           }
         }
+      }
+      /**
+       * Get a single parameter descriptor, normalizing shorthand paths
+       * e.g., 'cutoff' → looks up 'lead.cutoff'
+       */
+      getDescriptor(path) {
+        if (path === "level") return super.getDescriptor(path);
+        const normalizedPath = path.startsWith("lead.") ? path : `lead.${path}`;
+        return this._descriptors[normalizedPath] || super.getDescriptor(path);
       }
       /**
        * Get a parameter value
        */
       getParam(path) {
+        if (path === "level") return super.getParam(path);
         const normalizedPath = path.startsWith("lead.") ? path : `lead.${path}`;
         return this._params[normalizedPath];
       }
@@ -5435,10 +5838,11 @@ var init_jt10_node = __esm({
        * Set a parameter value
        */
       setParam(path, value) {
+        if (path === "level") return super.setParam(path, value);
         const normalizedPath = path.startsWith("lead.") ? path : `lead.${path}`;
         if (normalizedPath === "lead.mute" || path === "mute") {
           if (value) {
-            this._params["lead.level"] = 0;
+            this.setLevel(-60);
           }
           return true;
         }
@@ -5467,13 +5871,6 @@ var init_jt10_node = __esm({
           }
         }
         return result;
-      }
-      /**
-       * Get node output level
-       */
-      getOutputGain() {
-        const levelEngine = this._params["lead.level"] ?? 0.8;
-        return levelEngine;
       }
       /**
        * Get the current pattern
@@ -5534,9 +5931,13 @@ var init_jt10_node = __esm({
           const paramName = path.replace("lead.", "");
           const paramDef = leadDef?.[paramName];
           if (paramDef) {
-            const defaultEngine = toEngine2(paramDef.default, paramDef);
-            if (typeof value === "string" ? value !== paramDef.default : Math.abs(value - defaultEngine) > 1e-3) {
-              sparseParams[path] = value;
+            if (paramDef.default === null) {
+              if (value !== null) sparseParams[path] = value;
+            } else {
+              const defaultEngine = toEngine(paramDef.default, paramDef);
+              if (typeof value === "string" ? value !== paramDef.default : Math.abs(value - defaultEngine) > 1e-3) {
+                sparseParams[path] = value;
+              }
             }
           }
         }
@@ -5780,12 +6181,12 @@ var init_engine5 = __esm({
       }
       updateParams(params) {
         this.params = params;
-        const decayTime = params.decay * 100;
+        const decayTime = params.decay * 100 * 1.3;
         this.filterEnv.setParameters(
           0,
           // Attack: instant
           decayTime,
-          // Decay: variable
+          // Decay: variable (extended for 303 tail)
           0,
           // Sustain: 0 (full decay)
           5
@@ -5798,8 +6199,8 @@ var init_engine5 = __esm({
           // Decay: short
           80,
           // Sustain: 80%
-          10
-          // Release: short
+          3
+          // Release: ~5ms — 303's clicky gate
         );
         const baseCutoff = normalizedToHz(params.cutoff);
         const resonance = params.resonance * 100;
@@ -5825,16 +6226,25 @@ var init_engine5 = __esm({
         if (slide && this.gateOpen) {
           this.targetFreq = freq;
           this.slideProgress = 0;
+          this.filterEnv.trigger(accent ? 0.7 : 0.4);
+          this.accentActive = accent;
+          if (accent) this.accentResonanceBoost = 35;
         } else {
           this.currentFreq = freq;
           this.targetFreq = freq;
           this.slideProgress = 1;
           this.osc.reset();
           this.filter.reset();
+          if (accent) {
+            const extendedDecay = this.params.decay * 100 * 1.3 * 1.5;
+            this.filterEnv.setParameters(0, extendedDecay, 0, 5);
+          } else {
+            const normalDecay = this.params.decay * 100 * 1.3;
+            this.filterEnv.setParameters(0, normalDecay, 0, 5);
+          }
           const ampVel = accent ? 1 : 0.7;
-          const filterVel = accent ? 1.5 : 1;
           this.ampEnv.trigger(ampVel);
-          this.filterEnv.trigger(filterVel);
+          this.filterEnv.trigger(1);
           this.accentActive = accent;
           this.accentResonanceBoost = accent ? 35 : 0;
         }
@@ -5879,21 +6289,28 @@ var init_engine5 = __esm({
         let sample = this.osc._generateSample();
         this.osc._advancePhase();
         const ampValue = this.ampEnv.processSample();
-        const filterEnvValue = this.filterEnv.processSample();
+        const rawFilterEnv = this.filterEnv.processSample();
+        const filterEnvValue = rawFilterEnv * rawFilterEnv;
         if (this.accentResonanceBoost > 0) {
           this.accentResonanceBoost *= 0.9995;
           if (this.accentResonanceBoost < 0.5) this.accentResonanceBoost = 0;
         }
         const baseCutoff = normalizedToHz(params.cutoff);
         const envAmount = params.envMod;
-        const accentCutoffBoost = this.accentActive ? 1.4 : 1;
-        const modCutoff = clamp(baseCutoff + envAmount * filterEnvValue * 1e4 * accentCutoffBoost, 20, 18e3);
+        const accentOctaveBoost = this.accentActive ? 1.25 : 1;
+        const octaves = envAmount * 4.5 * filterEnvValue * accentOctaveBoost;
+        const modCutoff = clamp(baseCutoff * Math.pow(2, octaves), 20, 5500);
         const baseResonance = params.resonance * 100;
         const accentMult = 1 + this.accentResonanceBoost / 100;
-        const modResonance = clamp(baseResonance * accentMult, 0, 85);
+        const modResonance = clamp(baseResonance * accentMult, 0, 100);
         this.filter.setParameters(modCutoff, modResonance);
         sample = this.filter.processSample(sample);
         sample *= ampValue;
+        if (this.accentActive) {
+          this.drive.setAmount(40);
+        } else {
+          this.drive.setAmount(20);
+        }
         sample = this.drive.processSample(sample);
         sample *= params.level * masterVolume;
         return sample;
@@ -6060,10 +6477,11 @@ var init_engine5 = __esm({
           stepDuration = null,
           sampleRate = this.sampleRate,
           pattern = null,
-          params = null
+          params = null,
+          automation = null
         } = options;
         const renderPattern = pattern ?? this.sequencer.getPattern();
-        const renderParams = params ? { ...this.params, ...params } : this.params;
+        const renderParams = params ? { ...this.params, ...params } : { ...this.params };
         const steps = renderPattern.length;
         const stepsPerBar = 16;
         const totalSteps = bars * stepsPerBar;
@@ -6077,6 +6495,19 @@ var init_engine5 = __esm({
           const stepData = renderPattern[patternStep];
           const nextPatternStep = (patternStep + 1) % steps;
           const nextStepData = renderPattern[nextPatternStep];
+          if (automation) {
+            let paramsChanged = false;
+            for (const [paramId, values] of Object.entries(automation)) {
+              const val = values[patternStep % values.length];
+              if (val !== null && val !== void 0) {
+                renderParams[paramId] = val;
+                paramsChanged = true;
+              }
+            }
+            if (paramsChanged) {
+              voice.updateParams(renderParams);
+            }
+          }
           voice.processStepEvent(stepData, nextStepData);
           const stepSamples = Math.floor(stepDur * sampleRate);
           const shouldRelease = voice.shouldReleaseAfterStep(stepData, nextStepData);
@@ -6092,8 +6523,9 @@ var init_engine5 = __esm({
           sampleRate,
           length: totalSamples,
           duration: totalSteps * stepDur,
-          numberOfChannels: 1,
-          getChannelData: (channel) => channel === 0 ? output : null,
+          numberOfChannels: 2,
+          getChannelData: (channel) => output,
+          // Mono duplicated to both channels
           _data: output
         };
       }
@@ -6102,7 +6534,7 @@ var init_engine5 = __esm({
       }
       // === WAV Export ===
       async audioBufferToBlob(buffer) {
-        const numChannels = 1;
+        const numChannels = buffer.numberOfChannels || 2;
         const sampleRate = buffer.sampleRate;
         const data = buffer._data ?? buffer.getChannelData(0);
         const length = data.length;
@@ -6156,16 +6588,6 @@ var init_engine5 = __esm({
 // instruments/jt30-node.js
 import { OfflineAudioContext as OfflineAudioContext6 } from "node-web-audio-api";
 import { createRequire as createRequire2 } from "module";
-function toEngine3(value, paramDef) {
-  if (paramDef.unit === "choice") {
-    return value;
-  }
-  if (paramDef.unit === "0-100") {
-    return value / 100;
-  }
-  const range = paramDef.max - paramDef.min;
-  return (value - paramDef.min) / range;
-}
 function createEmptyPattern6(steps = 16) {
   return Array(steps).fill(null).map(() => ({
     note: "C2",
@@ -6178,6 +6600,7 @@ var require3, JT30_PARAMS2, VOICES4, JT30Node;
 var init_jt30_node = __esm({
   "instruments/jt30-node.js"() {
     init_node();
+    init_converters();
     require3 = createRequire2(import.meta.url);
     JT30_PARAMS2 = require3("../params/jt30-params.json");
     VOICES4 = ["bass"];
@@ -6192,9 +6615,11 @@ var init_jt30_node = __esm({
        * Register all parameters from the JSON definition
        */
       _registerParams() {
+        this.registerParam("level", { min: -60, max: 6, default: 0, unit: "dB", hint: "node output level" });
         const bassDef = JT30_PARAMS2.bass;
         if (!bassDef) return;
         for (const [paramName, paramDef] of Object.entries(bassDef)) {
+          if (paramName === "level") continue;
           const path = `bass.${paramName}`;
           this.registerParam(path, {
             ...paramDef,
@@ -6202,14 +6627,24 @@ var init_jt30_node = __esm({
             param: paramName
           });
           if (paramDef.default !== void 0) {
-            this._params[path] = toEngine3(paramDef.default, paramDef);
+            this._params[path] = toEngine(paramDef.default, paramDef);
           }
         }
+      }
+      /**
+       * Get a single parameter descriptor, normalizing shorthand paths
+       * e.g., 'cutoff' → looks up 'bass.cutoff'
+       */
+      getDescriptor(path) {
+        if (path === "level") return super.getDescriptor(path);
+        const normalizedPath = path.startsWith("bass.") ? path : `bass.${path}`;
+        return this._descriptors[normalizedPath] || super.getDescriptor(path);
       }
       /**
        * Get a parameter value
        */
       getParam(path) {
+        if (path === "level") return super.getParam(path);
         const normalizedPath = path.startsWith("bass.") ? path : `bass.${path}`;
         return this._params[normalizedPath];
       }
@@ -6217,10 +6652,11 @@ var init_jt30_node = __esm({
        * Set a parameter value (stores ENGINE UNITS, 0-1 normalized)
        */
       setParam(path, value) {
+        if (path === "level") return super.setParam(path, value);
         const normalizedPath = path.startsWith("bass.") ? path : `bass.${path}`;
         if (normalizedPath === "bass.mute" || path === "mute") {
           if (value) {
-            this._params["bass.level"] = 0;
+            this.setLevel(-60);
           }
           return true;
         }
@@ -6249,13 +6685,6 @@ var init_jt30_node = __esm({
           }
         }
         return result;
-      }
-      /**
-       * Get node output level
-       */
-      getOutputGain() {
-        const levelEngine = this._params["bass.level"] ?? 1;
-        return levelEngine;
       }
       /**
        * Get the current pattern
@@ -6316,7 +6745,7 @@ var init_jt30_node = __esm({
           const paramName = path.replace("bass.", "");
           const paramDef = bassDef?.[paramName];
           if (paramDef) {
-            const defaultEngine = toEngine3(paramDef.default, paramDef);
+            const defaultEngine = toEngine(paramDef.default, paramDef);
             if (typeof value === "string" ? value !== paramDef.default : Math.abs(value - defaultEngine) > 1e-3) {
               sparseParams[path] = value;
             }
@@ -6361,13 +6790,21 @@ var init_jt30_node = __esm({
       /**
        * Render the pattern to an audio buffer using custom DSP
        */
+      /**
+       * Get automation data for rendering (from ParamSystem via session)
+       * Returns automation in producer units with node-relative paths
+       */
+      _getAutomationForRender() {
+        return this._renderAutomation || null;
+      }
       async renderPattern(options) {
         const {
           bars,
           stepDuration,
           sampleRate = 44100,
           pattern = this._pattern,
-          params = null
+          params = null,
+          automation = null
         } = options;
         if (!pattern?.some((s) => s.gate)) {
           return null;
@@ -6380,14 +6817,208 @@ var init_jt30_node = __esm({
           engine.setParameter(key, value);
         });
         engine.setPattern(pattern);
+        const rawAutomation = automation || this._getAutomationForRender();
+        let engineAutomation = void 0;
+        if (rawAutomation && Object.keys(rawAutomation).length > 0) {
+          engineAutomation = {};
+          for (const [path, values] of Object.entries(rawAutomation)) {
+            const paramName = path.startsWith("bass.") ? path.slice(5) : path;
+            const paramDef = JT30_PARAMS2.bass?.[paramName];
+            if (paramDef && Array.isArray(values)) {
+              engineAutomation[paramName] = values.map(
+                (v) => v !== null && v !== void 0 ? toEngine(v, paramDef) : null
+              );
+            }
+          }
+        }
         const buffer = await engine.renderPattern({
           bars,
           stepDuration,
-          sampleRate
+          sampleRate,
+          automation: engineAutomation
         });
         return buffer;
       }
     };
+  }
+});
+
+// ../web/public/jt90/dist/machines/jt90/voices/sample-voice.js
+var sample_voice_exports = {};
+__export(sample_voice_exports, {
+  SampleVoice: () => SampleVoice2,
+  decodeWav: () => decodeWav,
+  default: () => sample_voice_default
+});
+function decodeWav(arrayBuffer) {
+  const view = new DataView(arrayBuffer);
+  const riff = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
+  if (riff !== "RIFF") throw new Error("Not a WAV file");
+  const wave = String.fromCharCode(view.getUint8(8), view.getUint8(9), view.getUint8(10), view.getUint8(11));
+  if (wave !== "WAVE") throw new Error("Not a WAV file");
+  let offset = 12;
+  let fmtFound = false;
+  let numChannels = 1;
+  let sampleRate = 44100;
+  let bitsPerSample = 16;
+  while (offset < view.byteLength - 8) {
+    const chunkId = String.fromCharCode(
+      view.getUint8(offset),
+      view.getUint8(offset + 1),
+      view.getUint8(offset + 2),
+      view.getUint8(offset + 3)
+    );
+    const chunkSize = view.getUint32(offset + 4, true);
+    if (chunkId === "fmt ") {
+      numChannels = view.getUint16(offset + 10, true);
+      sampleRate = view.getUint32(offset + 12, true);
+      bitsPerSample = view.getUint16(offset + 22, true);
+      fmtFound = true;
+    }
+    if (chunkId === "data") {
+      if (!fmtFound) throw new Error("WAV: data chunk before fmt chunk");
+      const dataOffset = offset + 8;
+      const bytesPerSample = bitsPerSample / 8;
+      const numSamples = Math.floor(chunkSize / (bytesPerSample * numChannels));
+      const samples = new Float32Array(numSamples);
+      for (let i = 0; i < numSamples; i++) {
+        const bytePos = dataOffset + i * bytesPerSample * numChannels;
+        if (bitsPerSample === 16) {
+          samples[i] = view.getInt16(bytePos, true) / 32768;
+        } else if (bitsPerSample === 24) {
+          const b0 = view.getUint8(bytePos);
+          const b1 = view.getUint8(bytePos + 1);
+          const b2 = view.getUint8(bytePos + 2);
+          const val = (b2 << 24 | b1 << 16 | b0 << 8) >> 8;
+          samples[i] = val / 8388608;
+        }
+      }
+      let peak = 0;
+      for (let i = 0; i < numSamples; i++) {
+        const abs = samples[i] < 0 ? -samples[i] : samples[i];
+        if (abs > peak) peak = abs;
+      }
+      if (peak > 0 && peak < 0.99) {
+        const gain = 1 / peak;
+        for (let i = 0; i < numSamples; i++) {
+          samples[i] *= gain;
+        }
+      }
+      return { sampleRate, samples };
+    }
+    offset += 8 + chunkSize;
+    if (chunkSize % 2 !== 0) offset++;
+  }
+  throw new Error("WAV: no data chunk found");
+}
+var SampleVoice2, sample_voice_default;
+var init_sample_voice2 = __esm({
+  "../web/public/jt90/dist/machines/jt90/voices/sample-voice.js"() {
+    "use strict";
+    init_math();
+    SampleVoice2 = class {
+      /**
+       * @param {number} sampleRate - Engine sample rate
+       * @param {Float32Array} sampleData - Decoded sample data (-1 to +1)
+       * @param {object} config
+       * @param {number} config.sampleSampleRate - Original sample rate of the WAV
+       * @param {number} config.minDecay - Minimum decay time in seconds
+       * @param {number} config.maxDecay - Maximum decay time in seconds
+       * @param {boolean} config.hasChoke - Whether this voice supports choke
+       * @param {boolean} config.hasTone - Whether this voice has a tone (LP filter) param
+       */
+      constructor(sampleRate, sampleData, config = {}) {
+        this.sampleRate = sampleRate;
+        this.sampleData = sampleData;
+        this.sampleSampleRate = config.sampleSampleRate || 44100;
+        this.minDecay = config.minDecay || 0.05;
+        this.maxDecay = config.maxDecay || 1;
+        this.hasChoke = config.hasChoke || false;
+        this.hasTone = config.hasTone || false;
+        this.tune = 0;
+        this.decay = 0.5;
+        this.tone = 0.5;
+        this.level = 1;
+        this.position = 0;
+        this.playbackRate = 1;
+        this.active = false;
+        this.velocity = 1;
+        this.envelope = 0;
+        this._decayRate = 0;
+        this.choking = false;
+        this._chokeRate = 0;
+        this.lpState = 0;
+      }
+      trigger(velocity = 1) {
+        this.position = 0;
+        this.active = true;
+        this.choking = false;
+        this.velocity = velocity * this.level;
+        this.envelope = 1;
+        this.lpState = 0;
+        const rateRatio = this.sampleSampleRate / this.sampleRate;
+        this.playbackRate = Math.pow(2, this.tune / 1200) * rateRatio;
+        if (this.decay >= 1) {
+          this._decayRate = 1;
+        } else {
+          const decayTime = this.minDecay + this.decay * (this.maxDecay - this.minDecay);
+          this._decayRate = Math.exp(-1 / (decayTime * this.sampleRate));
+        }
+        this._chokeRate = Math.exp(-1 / (5e-3 * this.sampleRate));
+      }
+      choke() {
+        if (this.active) {
+          this.choking = true;
+        }
+      }
+      processSample() {
+        if (!this.active) return 0;
+        const pos = this.position;
+        const index = pos | 0;
+        const frac = pos - index;
+        const data = this.sampleData;
+        if (index >= data.length - 1) {
+          this.active = false;
+          return 0;
+        }
+        let sample = data[index] + (data[index + 1] - data[index]) * frac;
+        this.position += this.playbackRate;
+        this.envelope *= this._decayRate;
+        if (this.choking) {
+          this.envelope *= this._chokeRate;
+        }
+        sample *= this.envelope * this.velocity;
+        if (this.hasTone) {
+          const lpCoeff = 0.05 + this.tone * 0.95;
+          this.lpState += lpCoeff * (sample - this.lpState);
+          sample = this.lpState;
+        }
+        if (this.envelope < 1e-3) {
+          this.active = false;
+        }
+        return sample;
+      }
+      setParameter(id, value) {
+        switch (id) {
+          case "tune":
+            this.tune = clamp(value, -1200, 1200);
+            break;
+          case "decay":
+            this.decay = clamp(value, 0, 1);
+            break;
+          case "tone":
+            this.tone = clamp(value, 0, 1);
+            break;
+          case "level":
+            this.level = clamp(value, 0, 1);
+            break;
+        }
+      }
+      isActive() {
+        return this.active;
+      }
+    };
+    sample_voice_default = SampleVoice2;
   }
 });
 
@@ -6412,13 +7043,27 @@ var init_kick2 = __esm({
         this.level = 1;
         this.phase = 0;
         this.frequency = 55;
-        this.targetFrequency = 55;
-        this.envelope = 0;
-        this.pitchEnvelope = 0;
+        this.baseFreq = 55;
+        this.startFreq = 200;
         this.active = false;
         this.sampleCount = 0;
-        this.clickPhase = 0;
-        this.clickEnvelope = 0;
+        this.envFast = 0;
+        this.envSlow = 0;
+        this.pitchEnv = 0;
+        this.clickEnv = 0;
+        this.clickBpfX1 = 0;
+        this.clickBpfX2 = 0;
+        this.clickBpfY1 = 0;
+        this.clickBpfY2 = 0;
+        const w0 = 2 * Math.PI * 5e3 / sampleRate;
+        const sinW0 = Math.sin(w0);
+        const cosW0 = Math.cos(w0);
+        const alpha = sinW0 / (2 * 3);
+        const a0 = 1 + alpha;
+        this.bpfB0 = alpha / a0;
+        this.bpfB2 = -alpha / a0;
+        this.bpfA1 = -2 * cosW0 / a0;
+        this.bpfA2 = (1 - alpha) / a0;
         this.noise = new Noise(54321);
         this.noiseFilter = 0;
       }
@@ -6427,15 +7072,21 @@ var init_kick2 = __esm({
        */
       trigger(velocity = 1) {
         this.phase = 0;
-        this.clickPhase = 0;
         this.sampleCount = 0;
         this.active = true;
-        this.envelope = velocity * this.level;
-        this.clickEnvelope = velocity * this.level * this.attack;
-        this.pitchEnvelope = 1;
+        const vel = velocity * this.level;
+        this.envFast = vel;
+        this.envSlow = vel;
+        this.pitchEnv = 1;
         const tuneMultiplier = Math.pow(2, this.tune / 1200);
-        this.targetFrequency = 55 * tuneMultiplier;
-        this.frequency = this.targetFrequency * (1 + this.sweep * 2);
+        this.baseFreq = 55 * tuneMultiplier;
+        this.startFreq = this.baseFreq + 95 + this.sweep * 250;
+        this.frequency = this.startFreq;
+        this.clickEnv = vel * this.attack;
+        this.clickBpfX1 = 0;
+        this.clickBpfX2 = 0;
+        this.clickBpfY1 = 0;
+        this.clickBpfY2 = 0;
         this.noise.reset();
         this.noiseFilter = 0;
       }
@@ -6445,29 +7096,37 @@ var init_kick2 = __esm({
       processSample() {
         if (!this.active) return 0;
         this.sampleCount++;
-        const sweepTime = 0.03 + (1 - this.attack) * 0.07;
-        const pitchDecay = 1 - Math.exp(-4.6 / (sweepTime * this.sampleRate));
-        this.pitchEnvelope *= 1 - pitchDecay;
-        this.frequency = this.targetFrequency + (this.frequency - this.targetFrequency) * (1 - pitchDecay);
-        const phaseIncrement = this.frequency / this.sampleRate;
-        this.phase += phaseIncrement;
+        const dt = 1 / this.sampleRate;
+        const pitchTC = 3e-3 + this.sweep * 7e-3;
+        this.pitchEnv *= Math.exp(-dt / pitchTC);
+        this.frequency = this.baseFreq + (this.startFreq - this.baseFreq) * this.pitchEnv;
+        this.phase += this.frequency / this.sampleRate;
         if (this.phase >= 1) this.phase -= 1;
         let sample = triangleToSine(this.phase);
-        const decayTime = 0.15 + this.decay * 0.85;
-        const ampDecay = 1 - Math.exp(-4.6 / (decayTime * this.sampleRate));
-        this.envelope *= 1 - ampDecay;
-        sample *= this.envelope;
-        if (this.attack > 0.1 && this.sampleCount < this.sampleRate * 0.01) {
-          const clickTime = this.sampleCount / this.sampleRate;
-          const clickDecay = Math.exp(-clickTime * 500);
-          let click = (this.sampleCount < 8 ? 1 : 0) * clickDecay;
+        const fastTC = 0.05 + this.decay * 0.05;
+        const slowTC = 0.2 + this.decay * 0.6;
+        this.envFast *= Math.exp(-dt / fastTC);
+        this.envSlow *= Math.exp(-dt / slowTC);
+        const amp = 0.7 * this.envFast + 0.3 * this.envSlow;
+        sample *= amp;
+        if (this.attack > 0.05 && this.sampleCount < this.sampleRate * 0.01) {
+          const clickDecay = Math.exp(-this.sampleCount * dt / 3e-3);
+          const impulse = this.sampleCount <= 2 ? 1 : 0;
+          const bpfOut = this.bpfB0 * impulse + this.bpfB2 * this.clickBpfX2 - this.bpfA1 * this.clickBpfY1 - this.bpfA2 * this.clickBpfY2;
+          this.clickBpfX2 = this.clickBpfX1;
+          this.clickBpfX1 = impulse;
+          this.clickBpfY2 = this.clickBpfY1;
+          this.clickBpfY1 = bpfOut;
           const noiseSample = this.noise.nextSample();
           this.noiseFilter += 0.3 * (noiseSample - this.noiseFilter);
-          click += this.noiseFilter * Math.exp(-clickTime * 300) * 0.5;
-          sample += click * this.clickEnvelope;
+          sample += (bpfOut + this.noiseFilter * 0.5) * clickDecay * this.clickEnv;
         }
         sample = fastTanh(sample * 1.5) / fastTanh(1.5);
-        if (this.envelope < 1e-4 && this.sampleCount > this.sampleRate * 0.1) {
+        if (sample !== sample) {
+          this.active = false;
+          return 0;
+        }
+        if (amp < 1e-3 && this.sampleCount > this.sampleRate * 0.1 || this.sampleCount > this.sampleRate * 2) {
           this.active = false;
         }
         return sample;
@@ -6610,6 +7269,10 @@ var init_snare2 = __esm({
 });
 
 // ../web/public/jt90/dist/machines/jt90/voices/clap.js
+function bitcrush(sample, bits) {
+  const steps = Math.pow(2, bits);
+  return Math.round(sample * steps) / steps;
+}
 var ClapVoice2;
 var init_clap2 = __esm({
   "../web/public/jt90/dist/machines/jt90/voices/clap.js"() {
@@ -6619,61 +7282,67 @@ var init_clap2 = __esm({
     ClapVoice2 = class {
       constructor(sampleRate = 44100) {
         this.sampleRate = sampleRate;
-        this.tone = 0.5;
-        this.decay = 0.5;
+        this.tone = 0.13;
+        this.decay = 0.03;
         this.level = 1;
         this.noise = new Noise(11111);
-        this.bpFilter1 = 0;
-        this.bpFilter2 = 0;
-        this.burstIndex = 0;
-        this.burstEnvelopes = [0, 0, 0, 0];
-        this.tailEnvelope = 0;
+        this.svfBand = 0;
+        this.svfLow = 0;
+        this.hpState = 0;
         this.active = false;
         this.sampleCount = 0;
+        this.velocity = 1;
       }
       trigger(velocity = 1) {
         this.sampleCount = 0;
-        this.burstIndex = 0;
         this.active = true;
-        const v = velocity * this.level;
-        this.burstEnvelopes = [v, 0, 0, 0];
-        this.tailEnvelope = v * 0.7;
+        this.velocity = velocity * this.level;
         this.noise.reset();
-        this.bpFilter1 = 0;
-        this.bpFilter2 = 0;
+        this.svfBand = 0;
+        this.svfLow = 0;
+        this.hpState = 0;
       }
       processSample() {
         if (!this.active) return 0;
         const time = this.sampleCount / this.sampleRate;
         this.sampleCount++;
-        let noiseSample = this.noise.nextSample();
-        const centerFreq = 800 + this.tone * 1200;
-        const cutoff = centerFreq / this.sampleRate * 2;
-        this.bpFilter1 += cutoff * (noiseSample - this.bpFilter1);
-        this.bpFilter2 += cutoff * (this.bpFilter1 - this.bpFilter2);
-        const filtered = this.bpFilter1 - this.bpFilter2 * 0.8;
-        const burstInterval = 5e-3;
-        const burstDuration = 3e-3;
-        for (let i = 0; i < 4; i++) {
-          const burstStart = i * burstInterval;
-          if (time >= burstStart && time < burstStart + 1e-3 && this.burstEnvelopes[i] === 0) {
-            this.burstEnvelopes[i] = this.level * (1 - i * 0.15);
+        const burstOn = 0.015;
+        const burstGap = 0.01;
+        const burstCycle = burstOn + burstGap;
+        const burstCount = 4;
+        const burstEnd = burstCycle * burstCount;
+        let burstEnv = 0;
+        if (time < burstEnd) {
+          const posInCycle = time % burstCycle;
+          if (posInCycle < burstOn) {
+            const progress = posInCycle / burstOn;
+            burstEnv = Math.exp(-progress * 4);
           }
+          const burstIndex = Math.floor(time / burstCycle);
+          burstEnv *= 1 - burstIndex * 0.1;
         }
-        let burstSum = 0;
-        for (let i = 0; i < 4; i++) {
-          if (this.burstEnvelopes[i] > 0) {
-            const burstDecay = 1 - Math.exp(-4.6 / (burstDuration * this.sampleRate));
-            this.burstEnvelopes[i] *= 1 - burstDecay;
-            burstSum += this.burstEnvelopes[i];
-          }
+        const tailDecayTime = 0.08 + this.decay * 0.4;
+        let tailEnv = 0;
+        if (time >= burstEnd * 0.6) {
+          const tailAge = time - burstEnd * 0.6;
+          tailEnv = 0.45 * Math.exp(-tailAge / tailDecayTime);
         }
-        const tailTime = 0.1 + this.decay * 0.4;
-        const tailDecay = 1 - Math.exp(-4.6 / (tailTime * this.sampleRate));
-        this.tailEnvelope *= 1 - tailDecay;
-        let sample = filtered * (burstSum * 0.6 + this.tailEnvelope * 0.4);
+        const envelope = this.velocity * (burstEnv + tailEnv);
+        let raw = this.noise.nextSample();
+        raw = bitcrush(raw, 12);
+        const centerFreq = 1e3 + this.tone * 500;
+        const f = 2 * Math.sin(Math.PI * centerFreq / this.sampleRate);
+        const q = 0.7;
+        this.svfLow += f * this.svfBand;
+        const high = raw - this.svfLow - q * this.svfBand;
+        this.svfBand += f * high;
+        let sample = this.svfBand;
+        const hpCut = 200 / this.sampleRate;
+        this.hpState += hpCut * (sample - this.hpState);
+        sample = sample - this.hpState;
+        sample *= envelope;
         sample = fastTanh(sample * 1.5) / fastTanh(1.5);
-        if (this.tailEnvelope < 1e-4 && burstSum < 1e-4) {
+        if (envelope < 1e-4 && time > burstEnd) {
           this.active = false;
         }
         return sample;
@@ -6685,121 +7354,6 @@ var init_clap2 = __esm({
             break;
           case "decay":
             this.decay = clamp(value, 0, 1);
-            break;
-          case "level":
-            this.level = clamp(value, 0, 1);
-            break;
-        }
-      }
-      isActive() {
-        return this.active;
-      }
-    };
-  }
-});
-
-// ../web/public/jt90/dist/machines/jt90/voices/hihat.js
-var HIHAT_FREQUENCIES2, HiHatVoice2;
-var init_hihat2 = __esm({
-  "../web/public/jt90/dist/machines/jt90/voices/hihat.js"() {
-    "use strict";
-    init_math();
-    init_generators();
-    HIHAT_FREQUENCIES2 = [
-      263,
-      // Fundamental frequencies create
-      400,
-      // metallic, bell-like tones
-      421,
-      474,
-      587,
-      845
-    ];
-    HiHatVoice2 = class {
-      constructor(sampleRate = 44100, type = "closed") {
-        this.sampleRate = sampleRate;
-        this.type = type;
-        this.tune = 0;
-        this.decay = type === "closed" ? 0.3 : 0.7;
-        this.tone = 0.5;
-        this.level = 1;
-        this.phases = [0, 0, 0, 0, 0, 0];
-        this.frequencies = [...HIHAT_FREQUENCIES2];
-        this.noise = new Noise(33333);
-        this.hpFilter = 0;
-        this.lpFilter = 0;
-        this.envelope = 0;
-        this.active = false;
-        this.sampleCount = 0;
-        this.onChoke = null;
-      }
-      trigger(velocity = 1) {
-        this.phases = [0, 0, 0, 0, 0, 0];
-        this.sampleCount = 0;
-        this.active = true;
-        this.envelope = velocity * this.level;
-        const tuneMultiplier = Math.pow(2, this.tune / 1200);
-        this.frequencies = HIHAT_FREQUENCIES2.map((f) => f * tuneMultiplier);
-        this.noise.reset();
-        this.hpFilter = 0;
-        this.lpFilter = 0;
-      }
-      /**
-       * Choke the hi-hat (used when closed hat cuts open hat)
-       */
-      choke() {
-        if (this.active) {
-          this.choking = true;
-        }
-      }
-      processSample() {
-        if (!this.active) return 0;
-        this.sampleCount++;
-        if (this.choking) {
-          this.envelope *= 0.95;
-          if (this.envelope < 1e-3) {
-            this.active = false;
-            this.choking = false;
-            return 0;
-          }
-        }
-        let metallic = 0;
-        for (let i = 0; i < 6; i++) {
-          this.phases[i] += this.frequencies[i] / this.sampleRate;
-          if (this.phases[i] >= 1) this.phases[i] -= 1;
-          const square = this.phases[i] < 0.5 ? 1 : -1;
-          metallic += square / 6;
-        }
-        let noiseSample = this.noise.nextSample();
-        const hpCutoff = 0.3;
-        this.hpFilter += hpCutoff * (noiseSample - this.hpFilter);
-        noiseSample = noiseSample - this.hpFilter;
-        const lpCutoff = 0.2 + this.tone * 0.3;
-        this.lpFilter += lpCutoff * (noiseSample - this.lpFilter);
-        noiseSample = this.lpFilter;
-        const metallicMix = 0.3 + this.tone * 0.4;
-        const noiseMix = 0.7 - this.tone * 0.4;
-        let sample = metallic * metallicMix + noiseSample * noiseMix;
-        const decayTime = this.type === "closed" ? 0.02 + this.decay * 0.08 : 0.1 + this.decay * 0.9;
-        const decayRate = 1 - Math.exp(-4.6 / (decayTime * this.sampleRate));
-        this.envelope *= 1 - decayRate;
-        sample *= this.envelope;
-        sample = fastTanh(sample * 2) / fastTanh(2);
-        if (this.envelope < 1e-4) {
-          this.active = false;
-        }
-        return sample;
-      }
-      setParameter(id, value) {
-        switch (id) {
-          case "tune":
-            this.tune = clamp(value, -1200, 1200);
-            break;
-          case "decay":
-            this.decay = clamp(value, 0, 1);
-            break;
-          case "tone":
-            this.tone = clamp(value, 0, 1);
             break;
           case "level":
             this.level = clamp(value, 0, 1);
@@ -6814,32 +7368,39 @@ var init_hihat2 = __esm({
 });
 
 // ../web/public/jt90/dist/machines/jt90/voices/tom.js
-function triangleToSine3(phase) {
-  const tri = phase < 0.5 ? phase * 4 - 1 : 3 - phase * 4;
-  return fastTanh(tri * 1.2) / fastTanh(1.2);
-}
-var TOM_FREQUENCIES, TomVoice;
+var TOM_FREQUENCIES, TOM_DEFAULT_TUNE, TomVoice;
 var init_tom = __esm({
   "../web/public/jt90/dist/machines/jt90/voices/tom.js"() {
     "use strict";
     init_math();
+    init_generators();
     TOM_FREQUENCIES = {
       low: 80,
       mid: 120,
       high: 160
     };
+    TOM_DEFAULT_TUNE = {
+      low: -1200,
+      // -12 semitones
+      mid: -500,
+      // -5 semitones
+      high: -1200
+      // -12 semitones
+    };
     TomVoice = class {
       constructor(sampleRate = 44100, type = "low") {
         this.sampleRate = sampleRate;
         this.type = type;
-        this.tune = 0;
+        this.tune = TOM_DEFAULT_TUNE[type] ?? 0;
         this.decay = 0.5;
         this.level = 1;
         this.phase = 0;
         this.frequency = TOM_FREQUENCIES[type] || 100;
         this.targetFrequency = this.frequency;
         this.envelope = 0;
-        this.pitchEnvelope = 0;
+        this.noise = new Noise(54321 + (type === "low" ? 0 : type === "mid" ? 111 : 222));
+        this.clickEnvelope = 0;
+        this.noiseHP = 0;
         this.active = false;
         this.sampleCount = 0;
       }
@@ -6848,126 +7409,39 @@ var init_tom = __esm({
         this.sampleCount = 0;
         this.active = true;
         this.envelope = velocity * this.level;
-        this.pitchEnvelope = 1;
+        this.clickEnvelope = velocity * this.level;
         const tuneMultiplier = Math.pow(2, this.tune / 1200);
         const baseFreq = TOM_FREQUENCIES[this.type] || 100;
         this.targetFrequency = baseFreq * tuneMultiplier;
-        this.frequency = this.targetFrequency * 1.5;
+        this.frequency = this.targetFrequency * 2.5;
+        this.noise.reset();
+        this.noiseHP = 0;
       }
       processSample() {
         if (!this.active) return 0;
         this.sampleCount++;
-        const pitchDecay = 1 - Math.exp(-4.6 / (0.05 * this.sampleRate));
-        this.frequency = this.targetFrequency + (this.frequency - this.targetFrequency) * (1 - pitchDecay);
+        const pitchDecayTime = 0.015;
+        const pitchDecay = 1 - Math.exp(-4.6 / (pitchDecayTime * this.sampleRate));
+        this.frequency += (this.targetFrequency - this.frequency) * pitchDecay;
         this.phase += this.frequency / this.sampleRate;
         if (this.phase >= 1) this.phase -= 1;
-        let sample = triangleToSine3(this.phase);
+        const tri = this.phase < 0.5 ? this.phase * 4 - 1 : 3 - this.phase * 4;
+        const sine = fastTanh(tri * 1.2) / fastTanh(1.2);
+        let sample = sine * 0.8 + tri * 0.2;
         const decayTime = 0.15 + this.decay * 0.55;
         const ampDecay = 1 - Math.exp(-4.6 / (decayTime * this.sampleRate));
         this.envelope *= 1 - ampDecay;
         sample *= this.envelope;
-        sample = fastTanh(sample * 1.3) / fastTanh(1.3);
-        if (this.envelope < 1e-4) {
-          this.active = false;
-        }
-        return sample;
-      }
-      setParameter(id, value) {
-        switch (id) {
-          case "tune":
-            this.tune = clamp(value, -1200, 1200);
-            break;
-          case "decay":
-            this.decay = clamp(value, 0, 1);
-            break;
-          case "level":
-            this.level = clamp(value, 0, 1);
-            break;
-        }
-      }
-      isActive() {
-        return this.active;
-      }
-    };
-  }
-});
-
-// ../web/public/jt90/dist/machines/jt90/voices/noise.js
-var init_noise3 = __esm({
-  "../web/public/jt90/dist/machines/jt90/voices/noise.js"() {
-    "use strict";
-    init_generators();
-    init_generators();
-  }
-});
-
-// ../web/public/jt90/dist/machines/jt90/voices/cymbal.js
-var CYMBAL_FREQUENCIES2, CymbalVoice2;
-var init_cymbal2 = __esm({
-  "../web/public/jt90/dist/machines/jt90/voices/cymbal.js"() {
-    "use strict";
-    init_math();
-    init_noise3();
-    CYMBAL_FREQUENCIES2 = {
-      crash: [295, 410, 532, 674, 821, 996, 1178, 1367],
-      ride: [319, 456, 581, 728, 863, 1023, 1192, 1411]
-    };
-    CymbalVoice2 = class {
-      constructor(sampleRate = 44100, type = "crash") {
-        this.sampleRate = sampleRate;
-        this.type = type;
-        this.tune = 0;
-        this.decay = type === "crash" ? 0.7 : 0.5;
-        this.tone = 0.5;
-        this.level = 1;
-        this.phases = new Array(8).fill(0);
-        this.frequencies = [...CYMBAL_FREQUENCIES2[type] || CYMBAL_FREQUENCIES2.crash];
-        this.noise = new Noise(77777);
-        this.hpFilter = 0;
-        this.lpFilter = 0;
-        this.envelope = 0;
-        this.active = false;
-        this.sampleCount = 0;
-      }
-      trigger(velocity = 1) {
-        this.phases = new Array(8).fill(0);
-        this.sampleCount = 0;
-        this.active = true;
-        this.envelope = velocity * this.level;
-        const tuneMultiplier = Math.pow(2, this.tune / 1200);
-        const baseFreqs = CYMBAL_FREQUENCIES2[this.type] || CYMBAL_FREQUENCIES2.crash;
-        this.frequencies = baseFreqs.map((f) => f * tuneMultiplier);
-        this.noise.reset();
-        this.hpFilter = 0;
-        this.lpFilter = 0;
-      }
-      processSample() {
-        if (!this.active) return 0;
-        this.sampleCount++;
-        let metallic = 0;
-        for (let i = 0; i < 8; i++) {
-          this.phases[i] += this.frequencies[i] / this.sampleRate;
-          if (this.phases[i] >= 1) this.phases[i] -= 1;
-          const duty = 0.3 + i % 3 * 0.1;
-          const pulse = this.phases[i] < duty ? 1 : -1;
-          metallic += pulse / 8;
-        }
+        const clickDecayTime = 8e-3;
+        const clickDecay = 1 - Math.exp(-4.6 / (clickDecayTime * this.sampleRate));
+        this.clickEnvelope *= 1 - clickDecay;
         let noiseSample = this.noise.nextSample();
-        const hpCutoff = 0.2;
-        this.hpFilter += hpCutoff * (noiseSample - this.hpFilter);
-        noiseSample = noiseSample - this.hpFilter;
-        const lpCutoff = 0.1 + this.tone * 0.2;
-        this.lpFilter += lpCutoff * (noiseSample - this.lpFilter);
-        noiseSample = this.lpFilter;
-        const metallicMix = 0.4 + this.tone * 0.3;
-        const noiseMix = 0.6 - this.tone * 0.3;
-        let sample = metallic * metallicMix + noiseSample * noiseMix;
-        const decayTime = this.type === "crash" ? 0.5 + this.decay * 2.5 : 0.3 + this.decay * 1.2;
-        const decayRate = 1 - Math.exp(-4.6 / (decayTime * this.sampleRate));
-        this.envelope *= 1 - decayRate;
-        sample *= this.envelope;
-        sample = fastTanh(sample * 1.5) / fastTanh(1.5);
-        if (this.envelope < 1e-4) {
+        const hpCut = 500 / this.sampleRate;
+        this.noiseHP += hpCut * (noiseSample - this.noiseHP);
+        noiseSample = noiseSample - this.noiseHP;
+        sample += noiseSample * this.clickEnvelope * 0.35;
+        sample = fastTanh(sample * 2) / fastTanh(2);
+        if (this.envelope < 1e-4 && this.clickEnvelope < 1e-4) {
           this.active = false;
         }
         return sample;
@@ -6979,9 +7453,6 @@ var init_cymbal2 = __esm({
             break;
           case "decay":
             this.decay = clamp(value, 0, 1);
-            break;
-          case "tone":
-            this.tone = clamp(value, 0, 1);
             break;
           case "level":
             this.level = clamp(value, 0, 1);
@@ -7001,51 +7472,59 @@ var init_rimshot = __esm({
   "../web/public/jt90/dist/machines/jt90/voices/rimshot.js"() {
     "use strict";
     init_math();
-    init_noise3();
     RimshotVoice = class {
       constructor(sampleRate = 44100) {
         this.sampleRate = sampleRate;
         this.tune = 0;
         this.decay = 0.3;
         this.level = 1;
-        this.phase = 0;
-        this.frequency = 1200;
-        this.noise = new Noise(44444);
-        this.bpFilter = 0;
+        this.baseFreqs = [220, 500, 1e3];
+        this.qFactors = [20, 15, 25];
+        this.resCoeff1 = [0, 0, 0];
+        this.resCoeff2 = [0, 0, 0];
+        this.resPrev1 = [0, 0, 0];
+        this.resPrev2 = [0, 0, 0];
+        this.hpState = 0;
+        this._hpCoeff = 2 * Math.PI * 300 / sampleRate;
         this.envelope = 0;
+        this._decayRate = 0;
         this.active = false;
-        this.sampleCount = 0;
+        this.velocity = 1;
       }
       trigger(velocity = 1) {
-        this.phase = 0;
-        this.sampleCount = 0;
         this.active = true;
-        this.envelope = velocity * this.level;
-        const tuneMultiplier = Math.pow(2, this.tune / 1200);
-        this.frequency = 1200 * tuneMultiplier;
-        this.noise.reset();
-        this.bpFilter = 0;
+        this.velocity = velocity * this.level;
+        this.envelope = 1;
+        this.hpState = 0;
+        const tuneRatio = Math.pow(2, this.tune / 1200);
+        for (let i = 0; i < 3; i++) {
+          const f = this.baseFreqs[i] * tuneRatio;
+          const Q = this.qFactors[i];
+          const w = 2 * Math.PI * f / this.sampleRate;
+          const r = Math.exp(-Math.PI * f / (Q * this.sampleRate));
+          this.resCoeff1[i] = 2 * r * Math.cos(w);
+          this.resCoeff2[i] = r * r;
+          this.resPrev1[i] = Math.sin(w);
+          this.resPrev2[i] = 0;
+        }
+        const decayTime = 0.02 + this.decay * 0.06;
+        this._decayRate = Math.exp(-1 / (decayTime * this.sampleRate));
       }
       processSample() {
         if (!this.active) return 0;
-        this.sampleCount++;
-        const time = this.sampleCount / this.sampleRate;
-        let click = 0;
-        if (time < 2e-3) {
-          this.phase += this.frequency / this.sampleRate;
-          if (this.phase >= 1) this.phase -= 1;
-          click = this.phase < 0.5 ? this.phase * 4 - 1 : 3 - this.phase * 4;
-          click *= Math.exp(-time * 1e3);
+        let sample = 0;
+        for (let i = 0; i < 3; i++) {
+          sample += this.resPrev1[i];
+          const y = this.resCoeff1[i] * this.resPrev1[i] - this.resCoeff2[i] * this.resPrev2[i];
+          this.resPrev2[i] = this.resPrev1[i];
+          this.resPrev1[i] = y;
         }
-        const noiseSample = this.noise.nextSample();
-        const cutoff = 0.3;
-        this.bpFilter += cutoff * (noiseSample - this.bpFilter);
-        const decayTime = 0.01 + this.decay * 0.04;
-        const decayRate = 1 - Math.exp(-4.6 / (decayTime * this.sampleRate));
-        this.envelope *= 1 - decayRate;
-        let sample = (click * 0.6 + this.bpFilter * 0.4) * this.envelope;
         sample = fastTanh(sample * 2) / fastTanh(2);
-        if (this.envelope < 1e-4) {
+        this.envelope *= this._decayRate;
+        sample *= this.envelope * this.velocity;
+        this.hpState += this._hpCoeff * (sample - this.hpState);
+        sample -= this.hpState;
+        if (this.envelope < 1e-3) {
           this.active = false;
         }
         return sample;
@@ -7219,25 +7698,103 @@ var init_sequencer4 = __esm({
   }
 });
 
+// ../web/public/jt90/dist/machines/jt90/param-defs.js
+var VOICE_PARAM_DEFS;
+var init_param_defs = __esm({
+  "../web/public/jt90/dist/machines/jt90/param-defs.js"() {
+    "use strict";
+    VOICE_PARAM_DEFS = {
+      kick: [
+        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: 0, unit: "semitones" },
+        { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.5 },
+        { id: "attack", label: "Attack", min: 0, max: 1, defaultValue: 0.5 },
+        { id: "sweep", label: "Sweep", min: 0, max: 1, defaultValue: 0.5 },
+        { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
+      ],
+      snare: [
+        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: 0, unit: "semitones" },
+        { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.4 },
+        { id: "snappy", label: "Snappy", min: 0, max: 1, defaultValue: 0.5 },
+        { id: "tone", label: "Tone", min: 0, max: 1, defaultValue: 0.5 },
+        { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
+      ],
+      clap: [
+        { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.03 },
+        { id: "tone", label: "Tone", min: 0, max: 1, defaultValue: 0.13 },
+        { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
+      ],
+      rimshot: [
+        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: -7, unit: "semitones" },
+        { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.1 },
+        { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
+      ],
+      ch: [
+        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: 0, unit: "semitones" },
+        { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 1 },
+        { id: "tone", label: "Tone", min: 0, max: 1, defaultValue: 1 },
+        { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
+      ],
+      oh: [
+        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: 0, unit: "semitones" },
+        { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 1 },
+        { id: "tone", label: "Tone", min: 0, max: 1, defaultValue: 1 },
+        { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
+      ],
+      ltom: [
+        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: -12, unit: "semitones" },
+        { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 1 },
+        { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
+      ],
+      mtom: [
+        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: -5, unit: "semitones" },
+        { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.8 },
+        { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
+      ],
+      htom: [
+        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: -12, unit: "semitones" },
+        { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.55 },
+        { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
+      ],
+      crash: [
+        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: 0, unit: "semitones" },
+        { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 1 },
+        { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
+      ],
+      ride: [
+        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: 0, unit: "semitones" },
+        { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 1 },
+        { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
+      ]
+    };
+  }
+});
+
 // ../web/public/jt90/dist/machines/jt90/engine.js
 var engine_exports3 = {};
 __export(engine_exports3, {
   JT90Engine: () => JT90Engine,
   default: () => engine_default3
 });
-var VOICE_IDS2, JT90Engine, engine_default3;
+var toEngineVal, SAMPLE_CONFIGS, VOICE_IDS2, JT90Engine, engine_default3;
 var init_engine6 = __esm({
   "../web/public/jt90/dist/machines/jt90/engine.js"() {
     "use strict";
     init_kick2();
     init_snare2();
     init_clap2();
-    init_hihat2();
     init_tom();
-    init_cymbal2();
     init_rimshot();
+    init_sample_voice2();
     init_sequencer4();
     init_math();
+    init_param_defs();
+    toEngineVal = (v, p) => p.unit === "semitones" ? v * 100 : v;
+    SAMPLE_CONFIGS = {
+      ch: { file: "ch.wav", minDecay: 0.01, maxDecay: 2, hasChoke: false, hasTone: true },
+      oh: { file: "oh.wav", minDecay: 0.05, maxDecay: 5, hasChoke: true, hasTone: true },
+      crash: { file: "crash.wav", minDecay: 0.3, maxDecay: 10, hasChoke: false, hasTone: false },
+      ride: { file: "ride.wav", minDecay: 0.2, maxDecay: 8, hasChoke: false, hasTone: false }
+    };
     VOICE_IDS2 = ["kick", "snare", "clap", "rimshot", "ch", "oh", "ltom", "mtom", "htom", "crash", "ride"];
     JT90Engine = class _JT90Engine {
       constructor(options = {}) {
@@ -7253,6 +7810,8 @@ var init_engine6 = __esm({
         this._scriptNode = null;
         this._isRealTimePlaying = false;
         this._openHatActive = false;
+        this._sampleData = null;
+        this._samplesBasePath = options.samplesPath ?? "../../samples";
       }
       _ensureVoices() {
         const sr = this.context?.sampleRate ?? this.sampleRate;
@@ -7262,16 +7821,95 @@ var init_engine6 = __esm({
             snare: new SnareVoice2(sr),
             clap: new ClapVoice2(sr),
             rimshot: new RimshotVoice(sr),
-            ch: new HiHatVoice2(sr, "closed"),
-            oh: new HiHatVoice2(sr, "open"),
+            ch: this._createSampleVoice("ch", sr),
+            oh: this._createSampleVoice("oh", sr),
             ltom: new TomVoice(sr, "low"),
             mtom: new TomVoice(sr, "mid"),
             htom: new TomVoice(sr, "high"),
-            crash: new CymbalVoice2(sr, "crash"),
-            ride: new CymbalVoice2(sr, "ride")
+            crash: this._createSampleVoice("crash", sr),
+            ride: this._createSampleVoice("ride", sr)
           };
         }
         return this._voices;
+      }
+      /**
+       * Create a SampleVoice for a ROM voice.
+       * Returns a silent stub if samples haven't loaded yet.
+       */
+      _createSampleVoice(voiceId, sampleRate) {
+        const cfg = SAMPLE_CONFIGS[voiceId];
+        const data = this._sampleData?.[voiceId];
+        if (!data) {
+          return {
+            tune: 0,
+            decay: cfg.minDecay,
+            tone: 0.5,
+            level: 1,
+            active: false,
+            trigger() {
+            },
+            choke() {
+            },
+            processSample() {
+              return 0;
+            },
+            setParameter() {
+            },
+            isActive() {
+              return false;
+            }
+          };
+        }
+        return new SampleVoice2(sampleRate, data.samples, {
+          sampleSampleRate: data.sampleRate,
+          minDecay: cfg.minDecay,
+          maxDecay: cfg.maxDecay,
+          hasChoke: cfg.hasChoke,
+          hasTone: cfg.hasTone
+        });
+      }
+      /**
+       * Load WAV samples for ROM voices (CH, OH, crash, ride).
+       * Call this before starting playback. Safe to call multiple times.
+       *
+       * @param {string|Object} basePathOrData - Either a URL/path base string
+       *   (uses fetch) or a pre-decoded data object { ch: { samples, sampleRate }, ... }
+       *   for Node.js callers that load WAVs from disk.
+       */
+      async loadSamples(basePathOrData) {
+        if (this._sampleData) return;
+        if (typeof basePathOrData === "object" && basePathOrData !== null) {
+          this._sampleData = basePathOrData;
+        } else {
+          const base = basePathOrData || this._samplesBasePath;
+          const entries = Object.entries(SAMPLE_CONFIGS);
+          const results = await Promise.all(
+            entries.map(async ([voiceId, cfg]) => {
+              const url = `${base}/${cfg.file}`;
+              const response = await fetch(url);
+              if (!response.ok) throw new Error(`Failed to load sample: ${url}`);
+              const arrayBuffer = await response.arrayBuffer();
+              return [voiceId, decodeWav(arrayBuffer)];
+            })
+          );
+          this._sampleData = {};
+          for (const [voiceId, data] of results) {
+            this._sampleData[voiceId] = data;
+          }
+        }
+        if (this._voices) {
+          const sr = this.context?.sampleRate ?? this.sampleRate;
+          for (const voiceId of Object.keys(SAMPLE_CONFIGS)) {
+            const newVoice = this._createSampleVoice(voiceId, sr);
+            const params = _JT90Engine.VOICE_PARAMS[voiceId];
+            if (params) {
+              for (const p of params) {
+                newVoice.setParameter(p.id, toEngineVal(p.defaultValue, p));
+              }
+            }
+            this._voices[voiceId] = newVoice;
+          }
+        }
       }
       // === Volume and Accent ===
       setVolume(level) {
@@ -7287,70 +7925,8 @@ var init_engine6 = __esm({
         return this._accentLevel ?? 1;
       }
       // === Parameter API ===
-      // Voice parameter descriptors for UI
-      static VOICE_PARAMS = {
-        kick: [
-          { id: "tune", label: "Tune", min: -1200, max: 1200, defaultValue: 0, unit: "cents" },
-          { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "attack", label: "Attack", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "sweep", label: "Sweep", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
-        ],
-        snare: [
-          { id: "tune", label: "Tune", min: -1200, max: 1200, defaultValue: 0, unit: "cents" },
-          { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.4 },
-          { id: "snappy", label: "Snappy", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "tone", label: "Tone", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
-        ],
-        clap: [
-          { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "tone", label: "Tone", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
-        ],
-        rimshot: [
-          { id: "tune", label: "Tune", min: -1200, max: 1200, defaultValue: 0, unit: "cents" },
-          { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.3 },
-          { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
-        ],
-        ch: [
-          { id: "tune", label: "Tune", min: -1200, max: 1200, defaultValue: 0, unit: "cents" },
-          { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.2 },
-          { id: "tone", label: "Tone", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
-        ],
-        oh: [
-          { id: "tune", label: "Tune", min: -1200, max: 1200, defaultValue: 0, unit: "cents" },
-          { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "tone", label: "Tone", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
-        ],
-        ltom: [
-          { id: "tune", label: "Tune", min: -1200, max: 1200, defaultValue: 0, unit: "cents" },
-          { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
-        ],
-        mtom: [
-          { id: "tune", label: "Tune", min: -1200, max: 1200, defaultValue: 0, unit: "cents" },
-          { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
-        ],
-        htom: [
-          { id: "tune", label: "Tune", min: -1200, max: 1200, defaultValue: 0, unit: "cents" },
-          { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.5 },
-          { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
-        ],
-        crash: [
-          { id: "tune", label: "Tune", min: -1200, max: 1200, defaultValue: 0, unit: "cents" },
-          { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.7 },
-          { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
-        ],
-        ride: [
-          { id: "tune", label: "Tune", min: -1200, max: 1200, defaultValue: 0, unit: "cents" },
-          { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.6 },
-          { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
-        ]
-      };
+      // Voice parameter descriptors for UI — sourced from param-defs.js (single source of truth)
+      static VOICE_PARAMS = VOICE_PARAM_DEFS;
       getVoiceParams(voiceId) {
         return _JT90Engine.VOICE_PARAMS[voiceId] ?? [];
       }
@@ -7363,7 +7939,7 @@ var init_engine6 = __esm({
           result[voiceId] = {};
           for (const param of params) {
             const value = this._voices[voiceId]?.[param.id];
-            if (value !== void 0 && value !== param.defaultValue) {
+            if (value !== void 0 && value !== toEngineVal(param.defaultValue, param)) {
               result[voiceId][param.id] = value;
             }
           }
@@ -7514,7 +8090,8 @@ var init_engine6 = __esm({
           bpm = null,
           sampleRate = this.sampleRate,
           pattern = null,
-          swing = null
+          swing = null,
+          automation = null
         } = options;
         const renderBpm = bpm ?? this.sequencer.getBpm();
         const renderPattern = pattern ?? this.sequencer.getPattern();
@@ -7536,13 +8113,13 @@ var init_engine6 = __esm({
           snare: new SnareVoice2(sampleRate),
           clap: new ClapVoice2(sampleRate),
           rimshot: new RimshotVoice(sampleRate),
-          ch: new HiHatVoice2(sampleRate, "closed"),
-          oh: new HiHatVoice2(sampleRate, "open"),
+          ch: this._createSampleVoice("ch", sampleRate),
+          oh: this._createSampleVoice("oh", sampleRate),
           ltom: new TomVoice(sampleRate, "low"),
           mtom: new TomVoice(sampleRate, "mid"),
           htom: new TomVoice(sampleRate, "high"),
-          crash: new CymbalVoice2(sampleRate, "crash"),
-          ride: new CymbalVoice2(sampleRate, "ride")
+          crash: this._createSampleVoice("crash", sampleRate),
+          ride: this._createSampleVoice("ride", sampleRate)
         };
         if (this._voices) {
           for (const voiceId of VOICE_IDS2) {
@@ -7559,6 +8136,19 @@ var init_engine6 = __esm({
         let sampleIndex = 0;
         for (let step = 0; step < totalSteps; step++) {
           const patternStep = step % stepsPerBar;
+          if (automation) {
+            for (const [path, values] of Object.entries(automation)) {
+              const dotIdx = path.indexOf(".");
+              if (dotIdx === -1) continue;
+              const voiceId = path.slice(0, dotIdx);
+              const paramId = path.slice(dotIdx + 1);
+              const val = values[patternStep % values.length];
+              if (val !== null && val !== void 0) {
+                const voice = voices[voiceId];
+                if (voice) voice[paramId] = val;
+              }
+            }
+          }
           const events = this._collectEventsForStep(renderPattern, patternStep);
           events.forEach((event) => {
             const voice = voices[event.voice];
@@ -7687,20 +8277,19 @@ var init_engine6 = __esm({
 
 // instruments/jt90-node.js
 import { OfflineAudioContext as OfflineAudioContext7 } from "node-web-audio-api";
+import { readFileSync as readFileSync3 } from "fs";
+import { fileURLToPath as fileURLToPath3 } from "url";
+import { dirname as dirname3, resolve } from "path";
 import { createRequire as createRequire3 } from "module";
-function toEngine4(value, paramDef) {
-  if (paramDef.unit === "choice") {
-    return value;
+async function loadSamplesFromDisk(engine) {
+  const { decodeWav: decodeWav2 } = await Promise.resolve().then(() => (init_sample_voice2(), sample_voice_exports));
+  const sampleData = {};
+  for (const file of SAMPLE_FILES) {
+    const voiceId = file.replace(".wav", "");
+    const buf = readFileSync3(resolve(SAMPLES_DIR, file));
+    sampleData[voiceId] = decodeWav2(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
   }
-  if (paramDef.unit === "0-100") {
-    return value / 100;
-  }
-  if (paramDef.unit === "cents") {
-    const range2 = paramDef.max - paramDef.min;
-    return (value - paramDef.min) / range2;
-  }
-  const range = paramDef.max - paramDef.min;
-  return (value - paramDef.min) / range;
+  await engine.loadSamples(sampleData);
 }
 function createEmptyPattern8(steps = 16) {
   const pattern = {};
@@ -7712,12 +8301,17 @@ function createEmptyPattern8(steps = 16) {
   }
   return pattern;
 }
-var require4, JT90_PARAMS2, VOICES5, VOICE_TO_ENGINE, JT90Node;
+var require4, JT90_PARAMS2, __filename3, __dirname3, SAMPLES_DIR, SAMPLE_FILES, VOICES5, VOICE_TO_ENGINE, JT90Node;
 var init_jt90_node = __esm({
   "instruments/jt90-node.js"() {
     init_node();
+    init_converters();
     require4 = createRequire3(import.meta.url);
     JT90_PARAMS2 = require4("../params/jt90-params.json");
+    __filename3 = fileURLToPath3(import.meta.url);
+    __dirname3 = dirname3(__filename3);
+    SAMPLES_DIR = resolve(__dirname3, "../../web/public/jt90/samples");
+    SAMPLE_FILES = ["ch.wav", "oh.wav", "crash.wav", "ride.wav"];
     VOICES5 = ["kick", "snare", "clap", "rimshot", "lowtom", "midtom", "hitom", "ch", "oh", "crash", "ride"];
     VOICE_TO_ENGINE = {
       kick: "kick",
@@ -7745,6 +8339,10 @@ var init_jt90_node = __esm({
        * Register all parameters from the JSON definition
        */
       _registerParams() {
+        const nodeDef = JT90_PARAMS2._node;
+        if (nodeDef?.level) {
+          this.registerParam("level", nodeDef.level);
+        }
         for (const voice of VOICES5) {
           const voiceDef = JT90_PARAMS2[voice];
           if (!voiceDef) continue;
@@ -7756,7 +8354,7 @@ var init_jt90_node = __esm({
               param: paramName
             });
             if (paramDef.default !== void 0) {
-              this._params[path] = toEngine4(paramDef.default, paramDef);
+              this._params[path] = toEngine(paramDef.default, paramDef);
             }
           }
         }
@@ -7765,12 +8363,14 @@ var init_jt90_node = __esm({
        * Get a parameter value
        */
       getParam(path) {
+        if (path === "level") return super.getParam(path);
         return this._params[path];
       }
       /**
        * Set a parameter value
        */
       setParam(path, value) {
+        if (path === "level") return super.setParam(path, value);
         if (path.endsWith(".mute")) {
           const voice = path.split(".")[0];
           if (value) {
@@ -7812,12 +8412,6 @@ var init_jt90_node = __esm({
           result[voice] = this.getVoiceParams(voice);
         }
         return result;
-      }
-      /**
-       * Get node output level (master)
-       */
-      getOutputGain() {
-        return 1;
       }
       /**
        * Get swing amount
@@ -7935,7 +8529,7 @@ var init_jt90_node = __esm({
           const [voice, paramName] = path.split(".");
           const paramDef = JT90_PARAMS2[voice]?.[paramName];
           if (paramDef) {
-            const defaultEngine = toEngine4(paramDef.default, paramDef);
+            const defaultEngine = toEngine(paramDef.default, paramDef);
             if (Math.abs(value - defaultEngine) > 1e-3) {
               sparseParams[path] = value;
             }
@@ -7991,9 +8585,11 @@ var init_jt90_node = __esm({
         const {
           bars,
           stepDuration,
+          swing = 0,
           sampleRate = 44100,
           pattern = this._pattern,
-          params = null
+          params = null,
+          automation = null
         } = options;
         const hasActiveSteps = VOICES5.some(
           (voice) => pattern[voice]?.some((s) => s.velocity > 0)
@@ -8004,6 +8600,7 @@ var init_jt90_node = __esm({
         const { JT90Engine: JT90Engine2 } = await Promise.resolve().then(() => (init_engine6(), engine_exports3));
         const context = new OfflineAudioContext7(2, sampleRate, sampleRate);
         const engine = new JT90Engine2({ context });
+        await loadSamplesFromDisk(engine);
         const voiceParams = params || this.getAllVoiceParams();
         Object.entries(voiceParams).forEach(([voiceId, voiceParamSet]) => {
           const engineVoice = VOICE_TO_ENGINE[voiceId] || voiceId;
@@ -8017,13 +8614,92 @@ var init_jt90_node = __esm({
           enginePattern[engineVoice] = trackPattern;
         });
         engine.setPattern(enginePattern);
-        engine.setSwing(this._swing);
+        const rawAutomation = automation || this._getAutomationForRender();
+        let engineAutomation = void 0;
+        if (rawAutomation && Object.keys(rawAutomation).length > 0) {
+          engineAutomation = {};
+          for (const [path, values] of Object.entries(rawAutomation)) {
+            const [voice, param] = path.split(".");
+            const engineVoice = VOICE_TO_ENGINE[voice] || voice;
+            const paramDef = JT90_PARAMS2[voice]?.[param];
+            if (paramDef && Array.isArray(values)) {
+              engineAutomation[`${engineVoice}.${param}`] = values.map(
+                (v) => v !== null && v !== void 0 ? toEngine(v, paramDef) : null
+              );
+            }
+          }
+        }
+        const bpm = stepDuration ? 60 / (stepDuration * 4) : void 0;
         const buffer = await engine.renderPattern({
           bars,
-          stepDuration,
-          sampleRate
+          bpm,
+          swing: swing || this._swing,
+          sampleRate,
+          automation: engineAutomation
         });
         return buffer;
+      }
+      /**
+       * Get automation data for rendering (from ParamSystem via session)
+       * Returns automation in producer units with node-relative paths
+       * @returns {Object|null}
+       */
+      _getAutomationForRender() {
+        return this._renderAutomation || null;
+      }
+      /**
+       * Render each voice to a separate buffer (for per-voice effects)
+       * @param {Object} options - Same as renderPattern options
+       * @returns {Promise<Object>} Map of voice -> AudioBuffer
+       */
+      async renderVoices(options) {
+        const {
+          bars,
+          stepDuration,
+          swing = 0,
+          sampleRate = 44100,
+          pattern = this._pattern,
+          params = null
+        } = options;
+        const { JT90Engine: JT90Engine2 } = await Promise.resolve().then(() => (init_engine6(), engine_exports3));
+        const voiceBuffers = {};
+        for (const voice of VOICES5) {
+          const trackPattern = pattern[voice];
+          const hasHits = trackPattern?.some((s) => s.velocity > 0);
+          if (!hasHits) continue;
+          const soloPattern = {};
+          for (const v of VOICES5) {
+            const engineVoice2 = VOICE_TO_ENGINE[v] || v;
+            if (v === voice) {
+              soloPattern[engineVoice2] = trackPattern;
+            } else {
+              soloPattern[engineVoice2] = Array(trackPattern.length).fill(null).map(() => ({
+                velocity: 0,
+                accent: false
+              }));
+            }
+          }
+          const context = new OfflineAudioContext7(2, sampleRate, sampleRate);
+          const engine = new JT90Engine2({ context });
+          await loadSamplesFromDisk(engine);
+          const engineVoice = VOICE_TO_ENGINE[voice] || voice;
+          const voiceParamSet = params?.[voice] || this.getVoiceParams(voice);
+          Object.entries(voiceParamSet).forEach(([paramName, value]) => {
+            engine.setVoiceParameter(engineVoice, paramName, value);
+          });
+          engine.setPattern(soloPattern);
+          const bpm = stepDuration ? 60 / (stepDuration * 4) : void 0;
+          const buffer = await engine.renderPattern({
+            bars,
+            bpm,
+            swing: swing || this._swing,
+            sampleRate
+          });
+          if (buffer) {
+            voiceBuffers[voice] = buffer;
+          }
+        }
+        return voiceBuffers;
       }
     };
   }
@@ -8405,7 +9081,7 @@ var init_osc_pulse = __esm({
 
 // ../web/public/jp9000/dist/modules/noise.js
 var NoiseModule;
-var init_noise4 = __esm({
+var init_noise3 = __esm({
   "../web/public/jp9000/dist/modules/noise.js"() {
     "use strict";
     init_module();
@@ -8618,6 +9294,11 @@ var init_filter_lp24 = __esm({
         } else {
           output.set(audioIn);
           this.filter.process(output);
+        }
+        const res = this.params.resonance.value / 100;
+        if (res > 0) {
+          const comp = 1 / (1 + Math.pow(res, 1.5) * 8);
+          for (let i = 0; i < bufferSize; i++) output[i] *= comp;
         }
         this.outputs.audio.buffer = output;
       }
@@ -9123,7 +9804,7 @@ var init_modules = __esm({
     init_osc_square();
     init_osc_triangle();
     init_osc_pulse();
-    init_noise4();
+    init_noise3();
     init_string();
     init_filter_lp24();
     init_filter_biquad();
@@ -9137,7 +9818,7 @@ var init_modules = __esm({
     init_osc_square();
     init_osc_triangle();
     init_osc_pulse();
-    init_noise4();
+    init_noise3();
     init_string();
     init_filter_lp24();
     init_filter_biquad();
@@ -9514,13 +10195,7 @@ var init_jp9000_node = __esm({
        * Register node-level parameters
        */
       _registerParams() {
-        this.registerParam("modular.level", {
-          min: -60,
-          max: 6,
-          default: 0,
-          unit: "dB"
-        });
-        this._params["modular.level"] = 0.5;
+        this.registerParam("level", { min: -60, max: 6, default: 0, unit: "dB", hint: "node output level" });
       }
       // ═══════════════════════════════════════════════════════════════════════════
       // MODULE MANAGEMENT
@@ -9613,12 +10288,15 @@ var init_jp9000_node = __esm({
       }
       /**
        * Override setParam to handle both node and module params
-       * @param {string} path - e.g., 'modular.level' or 'osc1.frequency'
+       * @param {string} path - e.g., 'level', 'modular.level', or 'osc1.frequency'
        * @param {*} value
        */
       setParam(path, value) {
-        if (path.startsWith("modular.")) {
+        if (path === "level") {
           return super.setParam(path, value);
+        }
+        if (path === "modular.level") {
+          return super.setParam("level", value);
         }
         const [moduleId, param] = path.split(".");
         if (moduleId && param) {
@@ -9632,8 +10310,11 @@ var init_jp9000_node = __esm({
        * @param {string} path
        */
       getParam(path) {
-        if (path.startsWith("modular.")) {
+        if (path === "level") {
           return super.getParam(path);
+        }
+        if (path === "modular.level") {
+          return super.getParam("level");
         }
         const [moduleId, param] = path.split(".");
         if (moduleId && param) {
@@ -9710,15 +10391,6 @@ var init_jp9000_node = __esm({
       // RENDERING
       // ═══════════════════════════════════════════════════════════════════════════
       /**
-       * Get node output level as linear gain multiplier
-       * @returns {number}
-       */
-      getOutputGain() {
-        const levelEngine = this._params["modular.level"] ?? 0.5;
-        const maxLinear = Math.pow(10, 6 / 20);
-        return levelEngine * maxLinear;
-      }
-      /**
        * Render the pattern to an audio buffer
        * @param {Object} options - Render options
        * @param {number} options.bars - Number of bars to render
@@ -9730,7 +10402,8 @@ var init_jp9000_node = __esm({
         const {
           bars,
           stepDuration,
-          sampleRate = 44100
+          sampleRate = 44100,
+          automation = null
         } = options;
         const pattern = this._pattern;
         if (!pattern?.some((s) => s.gate)) {
@@ -9747,6 +10420,19 @@ var init_jp9000_node = __esm({
           const patternStep = step % pattern.length;
           const stepData = pattern[patternStep];
           const stepStart = step * samplesPerStep;
+          if (automation) {
+            for (const [path, values] of Object.entries(automation)) {
+              const val = values[patternStep % values.length];
+              if (val !== null && val !== void 0) {
+                const dotIdx = path.indexOf(".");
+                if (dotIdx > 0) {
+                  const moduleId = path.substring(0, dotIdx);
+                  const param = path.substring(dotIdx + 1);
+                  this.rack.setParam(moduleId, param, val);
+                }
+              }
+            }
+          }
           if (stepData && stepData.gate) {
             if (stepData.note) {
               const freq = noteToFreq(stepData.note);
@@ -9785,6 +10471,13 @@ var init_jp9000_node = __esm({
           getChannelData: (channel) => channel === 0 ? outputL : outputR
         };
       }
+      /**
+       * Get automation data for render (fallback for some code paths)
+       * @returns {Object|null}
+       */
+      _getAutomationForRender() {
+        return this._renderAutomation || null;
+      }
       // ═══════════════════════════════════════════════════════════════════════════
       // SERIALIZATION
       // ═══════════════════════════════════════════════════════════════════════════
@@ -9803,9 +10496,9 @@ var init_jp9000_node = __esm({
           }
         });
         const sparseParams = {};
-        const levelValue = this._params["modular.level"];
-        if (levelValue !== void 0 && Math.abs(levelValue - 0.5) > 1e-3) {
-          sparseParams["modular.level"] = levelValue;
+        const levelValue = this.getLevel();
+        if (Math.abs(levelValue) > 0.01) {
+          sparseParams["level"] = levelValue;
         }
         return {
           id: this.id,
@@ -9841,6 +10534,18 @@ var init_jp9000_node = __esm({
           }
         }
         if (data.params) {
+          if (data.params["modular.level"] !== void 0) {
+            const engineVal = data.params["modular.level"];
+            const maxLinear = Math.pow(10, 6 / 20);
+            const linearGain = engineVal * maxLinear;
+            const dB = linearGain > 0 ? 20 * Math.log10(linearGain) : -60;
+            this.setLevel(dB);
+            delete data.params["modular.level"];
+          }
+          if (data.params["level"] !== void 0) {
+            this.setLevel(data.params["level"]);
+            delete data.params["level"];
+          }
           Object.assign(this._params, data.params);
         }
         if (data.rack) this.rack = Rack.fromJSON(data.rack);
@@ -9931,7 +10636,337 @@ var init_jp9000_node = __esm({
   }
 });
 
+// effects/delay-node.js
+var DelayNode;
+var init_delay_node = __esm({
+  "effects/delay-node.js"() {
+    init_node();
+    DelayNode = class extends EffectNode {
+      constructor(id = "delay", config = {}) {
+        super(id, config);
+        this.registerParams({
+          mode: { min: 0, max: 1, default: 0, unit: "choice", choices: ["analog", "pingpong"], description: "Delay type (0=analog, 1=pingpong)" },
+          time: { min: 1, max: 2e3, default: 375, unit: "ms", description: "Delay time" },
+          sync: { min: 0, max: 5, default: 0, unit: "choice", choices: ["off", "8th", "dotted8th", "triplet8th", "16th", "quarter"], description: "Tempo sync mode" },
+          feedback: { min: 0, max: 100, default: 50, unit: "0-100", description: "Feedback amount" },
+          mix: { min: 0, max: 100, default: 30, unit: "0-100", description: "Wet/dry balance" },
+          lowcut: { min: 20, max: 500, default: 80, unit: "Hz", description: "Remove mud from feedback" },
+          highcut: { min: 1e3, max: 2e4, default: 8e3, unit: "Hz", description: "Tame harshness" },
+          saturation: { min: 0, max: 100, default: 20, unit: "0-100", description: "Analog warmth (analog mode only)" },
+          spread: { min: 0, max: 100, default: 100, unit: "0-100", description: "Stereo width (pingpong mode only)" }
+        });
+      }
+      /**
+       * Calculate delay time in ms based on sync mode and BPM
+       * @param {number} bpm - Tempo in BPM
+       * @returns {number} Delay time in ms
+       */
+      getSyncedTime(bpm) {
+        const syncMode = this._params.sync ?? 0;
+        const manualTime = this._params.time ?? 375;
+        if (syncMode === 0) {
+          return manualTime;
+        }
+        const beatMs = 60 / bpm * 1e3;
+        switch (syncMode) {
+          case 1:
+            return beatMs / 2;
+          case 2:
+            return beatMs / 2 * 1.5;
+          case 3:
+            return beatMs / 3;
+          case 4:
+            return beatMs / 4;
+          case 5:
+            return beatMs;
+          default:
+            return manualTime;
+        }
+      }
+      /**
+       * Get mode as string
+       * @returns {string} 'analog' or 'pingpong'
+       */
+      getMode() {
+        return this._params.mode === 1 ? "pingpong" : "analog";
+      }
+    };
+  }
+});
+
+// effects/eq-node.js
+var EQ_PRESETS, EQNode;
+var init_eq_node = __esm({
+  "effects/eq-node.js"() {
+    init_node();
+    EQ_PRESETS = {
+      acidBass: {
+        highpass: 30,
+        lowGain: 2,
+        midFreq: 800,
+        midGain: 3,
+        midQ: 2,
+        highGain: -2
+      },
+      crispHats: {
+        highpass: 2e3,
+        lowGain: 0,
+        midFreq: 8e3,
+        midGain: 2,
+        midQ: 1,
+        highGain: 3
+      },
+      warmPad: {
+        highpass: 80,
+        lowGain: 1,
+        midFreq: 3e3,
+        midGain: -2,
+        midQ: 0.5,
+        highGain: -3
+      },
+      punchyKick: {
+        highpass: 30,
+        lowGain: 3,
+        midFreq: 100,
+        midGain: 2,
+        midQ: 3,
+        highGain: -1
+      },
+      cleanSnare: {
+        highpass: 100,
+        lowGain: -1,
+        midFreq: 200,
+        midGain: 2,
+        midQ: 2,
+        highGain: 2
+      },
+      master: {
+        highpass: 30,
+        lowGain: 1,
+        midFreq: 3e3,
+        midGain: 0,
+        midQ: 0.5,
+        highGain: 1
+      }
+    };
+    EQNode = class extends EffectNode {
+      constructor(id = "eq", config = {}) {
+        super(id, config);
+        this._preset = config.preset || null;
+        this.registerParams({
+          highpass: { min: 20, max: 2e3, default: 30, unit: "Hz", description: "Cut below this frequency" },
+          lowGain: { min: -12, max: 12, default: 0, unit: "dB", description: "Low shelf boost/cut" },
+          midFreq: { min: 100, max: 1e4, default: 1e3, unit: "Hz", description: "Mid peak frequency" },
+          midGain: { min: -12, max: 12, default: 0, unit: "dB", description: "Mid peak boost/cut" },
+          midQ: { min: 0.1, max: 10, default: 1, unit: "Q", description: "Mid peak width (higher = narrower)" },
+          highGain: { min: -12, max: 12, default: 0, unit: "dB", description: "High shelf boost/cut" }
+        });
+        if (config.preset && EQ_PRESETS[config.preset]) {
+          this.loadPreset(config.preset);
+        }
+      }
+      /**
+       * Load a preset by name
+       * @param {string} presetName
+       */
+      loadPreset(presetName) {
+        const preset = EQ_PRESETS[presetName];
+        if (!preset) return false;
+        this._preset = presetName;
+        for (const [param, value] of Object.entries(preset)) {
+          this.setParam(param, value);
+        }
+        return true;
+      }
+      /**
+       * Get current preset name
+       * @returns {string|null}
+       */
+      getPreset() {
+        return this._preset;
+      }
+      serialize() {
+        return {
+          ...super.serialize(),
+          preset: this._preset
+        };
+      }
+      deserialize(data) {
+        super.deserialize(data);
+        if (data.preset) {
+          this._preset = data.preset;
+        }
+      }
+    };
+  }
+});
+
+// effects/filter-node.js
+var FILTER_PRESETS, FilterNode;
+var init_filter_node = __esm({
+  "effects/filter-node.js"() {
+    init_node();
+    FILTER_PRESETS = {
+      dubDelay: {
+        mode: "lowpass",
+        cutoff: 800,
+        resonance: 30
+      },
+      telephone: {
+        mode: "bandpass",
+        cutoff: 1500,
+        resonance: 50
+      },
+      lofi: {
+        mode: "lowpass",
+        cutoff: 3e3,
+        resonance: 20
+      },
+      darkRoom: {
+        mode: "lowpass",
+        cutoff: 400,
+        resonance: 40
+      },
+      airFilter: {
+        mode: "highpass",
+        cutoff: 500,
+        resonance: 20
+      },
+      thinOut: {
+        mode: "highpass",
+        cutoff: 1e3,
+        resonance: 10
+      }
+    };
+    FilterNode = class extends EffectNode {
+      constructor(id = "filter", config = {}) {
+        super(id, config);
+        this._preset = config.preset || null;
+        this.registerParams({
+          mode: { unit: "choice", options: ["lowpass", "highpass", "bandpass"], default: "lowpass", description: "Filter type" },
+          cutoff: { min: 20, max: 2e4, default: 2e3, unit: "Hz", description: "Filter frequency" },
+          resonance: { min: 0, max: 100, default: 30, unit: "0-100", description: "Filter Q (0=gentle, 100=screaming)" }
+        });
+        if (config.preset && FILTER_PRESETS[config.preset]) {
+          this.loadPreset(config.preset);
+        }
+      }
+      /**
+       * Load a preset by name
+       * @param {string} presetName
+       */
+      loadPreset(presetName) {
+        const preset = FILTER_PRESETS[presetName];
+        if (!preset) return false;
+        this._preset = presetName;
+        for (const [param, value] of Object.entries(preset)) {
+          this.setParam(param, value);
+        }
+        return true;
+      }
+      /**
+       * Get current preset name
+       * @returns {string|null}
+       */
+      getPreset() {
+        return this._preset;
+      }
+      serialize() {
+        return {
+          ...super.serialize(),
+          preset: this._preset
+        };
+      }
+      deserialize(data) {
+        super.deserialize(data);
+        if (data.preset) {
+          this._preset = data.preset;
+        }
+      }
+    };
+  }
+});
+
+// effects/sidechain-node.js
+var SidechainNode;
+var init_sidechain_node = __esm({
+  "effects/sidechain-node.js"() {
+    init_node();
+    SidechainNode = class extends EffectNode {
+      constructor(id = "sidechain", config = {}) {
+        super(id, config);
+        this.registerParams({
+          trigger: { unit: "choice", options: ["kick", "snare", "clap", "ch", "oh"], default: "kick", description: "Triggering voice" },
+          amount: { min: 0, max: 1, default: 0.5, unit: "0-1", description: "Duck amount (0=none, 1=full)" },
+          attack: { min: 0.1, max: 50, default: 5, unit: "ms", description: "Attack time" },
+          release: { min: 10, max: 500, default: 100, unit: "ms", description: "Release time" },
+          hold: { min: 0, max: 100, default: 20, unit: "ms", description: "Hold at full duck" }
+        });
+        if (config.trigger) this.setParam("trigger", config.trigger);
+        if (config.amount !== void 0) this.setParam("amount", config.amount);
+        if (config.attack !== void 0) this.setParam("attack", config.attack);
+        if (config.release !== void 0) this.setParam("release", config.release);
+        if (config.hold !== void 0) this.setParam("hold", config.hold);
+      }
+    };
+  }
+});
+
+// effects/reverb-node.js
+var ReverbNode;
+var init_reverb_node = __esm({
+  "effects/reverb-node.js"() {
+    init_node();
+    ReverbNode = class extends EffectNode {
+      constructor(id = "reverb", config = {}) {
+        super(id, config);
+        this.registerParams({
+          decay: { min: 0.1, max: 10, default: 2, unit: "seconds", description: "Reverb tail length" },
+          damping: { min: 0, max: 100, default: 50, unit: "0-100", description: "High-frequency rolloff (0=bright, 100=dark)" },
+          predelay: { min: 0, max: 100, default: 10, unit: "ms", description: "Gap before reverb onset" },
+          mix: { min: 0, max: 100, default: 30, unit: "0-100", description: "Wet/dry balance" },
+          width: { min: 0, max: 100, default: 100, unit: "0-100", description: "Stereo spread" },
+          lowcut: { min: 20, max: 500, default: 80, unit: "Hz", description: "Remove mud from wet signal" },
+          highcut: { min: 1e3, max: 2e4, default: 1e4, unit: "Hz", description: "Tame harshness" },
+          size: { min: 0, max: 100, default: 50, unit: "0-100", description: "Room size" }
+        });
+      }
+    };
+  }
+});
+
 // core/session.js
+function serializeEffectChains(effectChains) {
+  if (!effectChains) return {};
+  const result = {};
+  for (const [target, chain] of Object.entries(effectChains)) {
+    result[target] = chain.map((e) => ({
+      id: e.id,
+      type: e.type,
+      params: { ...e.params }
+    }));
+  }
+  return result;
+}
+function reconstructEffectNodes(effectChains, params) {
+  if (!effectChains) return {};
+  const result = {};
+  for (const [target, chain] of Object.entries(effectChains)) {
+    result[target] = chain.map((e) => {
+      const NodeClass = EFFECT_NODE_CLASSES[e.type];
+      if (!NodeClass) {
+        return { id: e.id, type: e.type, params: { ...e.params } };
+      }
+      const node = new NodeClass(e.id);
+      for (const [key, value] of Object.entries(e.params || {})) {
+        node.setParam(key, value);
+      }
+      params.register(`fx.${target}.${e.id}`, node);
+      return { id: e.id, type: e.type, params: { ...e.params }, _node: node };
+    });
+  }
+  return result;
+}
 function createSession(config = {}) {
   const clock = new Clock({
     bpm: config.bpm || 128,
@@ -9941,14 +10976,22 @@ function createSession(config = {}) {
   const params = new ParamSystem();
   const jb01Node = new JB01Node();
   const jb202Node = new JB202Node();
-  const samplerNode = new SamplerNode();
+  const jbsNode = new JBSNode();
   const jt10Node = new JT10Node();
   const jt30Node = new JT30Node();
   const jt90Node = new JT90Node();
   const jp9000Node = new JP9000Node({ sampleRate: config.sampleRate || 44100 });
+  jb01Node.setLevel(config.jb01Level ?? 0);
+  jb202Node.setLevel(config.jb202Level ?? 0);
+  jbsNode.setLevel(config.jbsLevel ?? config.samplerLevel ?? 0);
+  jt10Node.setLevel(config.jt10Level ?? 0);
+  jt30Node.setLevel(config.jt30Level ?? 0);
+  jt90Node.setLevel(config.jt90Level ?? 0);
+  jp9000Node.setLevel(config.jp9000Level ?? 0);
   params.register("jb01", jb01Node);
   params.register("jb202", jb202Node);
-  params.register("sampler", samplerNode);
+  params.register("jbs", jbsNode);
+  params.register("sampler", jbsNode);
   params.register("jt10", jt10Node);
   params.register("jt30", jt30Node);
   params.register("jt90", jt90Node);
@@ -9975,21 +11018,15 @@ function createSession(config = {}) {
     },
     // Bars for render length
     bars: config.bars || 2,
-    // Instrument output levels in dB (-60 to +6, 0 = unity)
-    jb01Level: config.jb01Level ?? 0,
-    jb202Level: config.jb202Level ?? 0,
-    samplerLevel: config.samplerLevel ?? 0,
-    jt10Level: config.jt10Level ?? 0,
-    jt30Level: config.jt30Level ?? 0,
-    jt90Level: config.jt90Level ?? 0,
-    jp9000Level: config.jp9000Level ?? 0,
     // ParamSystem instance
     params,
     // Direct node references
     _nodes: {
       jb01: jb01Node,
       jb202: jb202Node,
-      sampler: samplerNode,
+      jbs: jbsNode,
+      sampler: jbsNode,
+      // legacy alias
       jt10: jt10Node,
       jt30: jt30Node,
       jt90: jt90Node,
@@ -10025,6 +11062,14 @@ function createSession(config = {}) {
      */
     describe(nodeId) {
       return params.describe(nodeId);
+    },
+    /**
+     * Get a single parameter descriptor by full path
+     * @param {string} path - e.g., 'jb202.filterCutoff', 'jb01.kick.decay'
+     * @returns {Object|null}
+     */
+    getDescriptor(path) {
+      return params.getDescriptor(path);
     },
     /**
      * List all registered nodes
@@ -10089,17 +11134,30 @@ function createSession(config = {}) {
     set jb202Pattern(v) {
       jb202Node.setPattern(v);
     },
+    get jbsKit() {
+      return jbsNode.getKit();
+    },
+    set jbsKit(v) {
+      jbsNode.setKit(v);
+    },
+    get jbsPattern() {
+      return jbsNode.getPattern();
+    },
+    set jbsPattern(v) {
+      jbsNode.setPattern(v);
+    },
+    // Legacy aliases (deprecated — use jbs* instead)
     get samplerKit() {
-      return samplerNode.getKit();
+      return jbsNode.getKit();
     },
     set samplerKit(v) {
-      samplerNode.setKit(v);
+      jbsNode.setKit(v);
     },
     get samplerPattern() {
-      return samplerNode.getPattern();
+      return jbsNode.getPattern();
     },
     set samplerPattern(v) {
-      samplerNode.setPattern(v);
+      jbsNode.setPattern(v);
     },
     // JT10 (lead synth)
     get jt10Pattern() {
@@ -10225,30 +11283,37 @@ function createSession(config = {}) {
     set jb202Params(v) {
       this.bassParams = v;
     },
-    get samplerParams() {
+    get jbsParams() {
       return new Proxy({}, {
         get: (_, slot) => {
           const result = {};
           const slotParams = ["level", "tune", "attack", "decay", "filter", "pan"];
           for (const param of slotParams) {
-            result[param] = samplerNode.getParam(`${slot}.${param}`);
+            result[param] = jbsNode.getParam(`${slot}.${param}`);
           }
           return result;
         },
         set: (_, slot, params2) => {
           for (const [param, value] of Object.entries(params2)) {
-            samplerNode.setParam(`${slot}.${param}`, value);
+            jbsNode.setParam(`${slot}.${param}`, value);
           }
           return true;
         }
       });
     },
-    set samplerParams(v) {
+    set jbsParams(v) {
       for (const [slot, params2] of Object.entries(v)) {
         for (const [param, value] of Object.entries(params2)) {
-          samplerNode.setParam(`${slot}.${param}`, value);
+          jbsNode.setParam(`${slot}.${param}`, value);
         }
       }
+    },
+    // Legacy alias (deprecated — use jbsParams instead)
+    get samplerParams() {
+      return this.jbsParams;
+    },
+    set samplerParams(v) {
+      this.jbsParams = v;
     },
     // JT10 params (lead synth - single voice 'lead')
     get jt10Params() {
@@ -10316,16 +11381,27 @@ function createSession(config = {}) {
         }
       }
     },
-    // Mixer (placeholder)
+    // JT90 swing and accent level
+    get jt90Swing() {
+      return jt90Node.getSwing();
+    },
+    set jt90Swing(v) {
+      jt90Node.setSwing(v);
+    },
+    get jt90AccentLevel() {
+      return jt90Node.getAccentLevel();
+    },
+    set jt90AccentLevel(v) {
+      jt90Node.setAccentLevel(v);
+    },
+    // Mixer state
     mixer: {
-      sends: {},
-      voiceRouting: {},
       channelInserts: {},
       masterInserts: [],
       masterVolume: 0.8,
-      // Effect chains for flexible routing (delay, reverb, etc.)
-      // Structure: { 'target': [{ id, type, params }, ...] }
+      // Effect chains: { 'target': [{ id, type, params, _node }, ...] }
       // Targets: 'jb01.ch', 'jb01.kick', 'jb202', 'master'
+      // Each effect is addressable via ParamSystem: fx.{target}.{effectId}
       effectChains: {}
     },
     // Song mode - patterns stored by canonical instrument ID only
@@ -10333,7 +11409,7 @@ function createSession(config = {}) {
       jb01: {},
       jb202: {},
       jp9000: {},
-      sampler: {},
+      jbs: {},
       jt10: {},
       jt30: {},
       jt90: {}
@@ -10342,7 +11418,7 @@ function createSession(config = {}) {
       jb01: "A",
       jb202: "A",
       jp9000: "A",
-      sampler: "A",
+      jbs: "A",
       jt10: "A",
       jt30: "A",
       jt90: "A"
@@ -10354,33 +11430,28 @@ function createSession(config = {}) {
      * @returns {Array<{id: string, node: InstrumentNode}>}
      */
     getCanonicalInstruments() {
-      return ["jb01", "jb202", "sampler", "jt10", "jt30", "jt90"].map((id) => ({ id, node: this._nodes[id] })).filter(({ node }) => node);
-    },
-    /**
-     * Get the output level for an instrument in dB
-     * @param {string} id - Canonical instrument ID
-     * @returns {number} Level in dB
-     */
-    getInstrumentLevel(id) {
-      const key = `${id}Level`;
-      return this[key] ?? 0;
+      return ["jb01", "jb202", "jbs", "jt10", "jt30", "jt90"].map((id) => ({ id, node: this._nodes[id] })).filter(({ node }) => node);
     }
   };
   return session;
 }
 function serializeSession(session) {
+  const mixerData = {
+    ...session.mixer,
+    effectChains: serializeEffectChains(session.mixer.effectChains)
+  };
   return {
     clock: session.clock.serialize(),
     bars: session.bars,
-    jb01Level: session.jb01Level,
-    jb202Level: session.jb202Level,
-    samplerLevel: session.samplerLevel,
-    jt10Level: session.jt10Level,
-    jt30Level: session.jt30Level,
-    jt90Level: session.jt90Level,
-    jp9000Level: session.jp9000Level,
+    jb01Level: session._nodes.jb01.getLevel(),
+    jb202Level: session._nodes.jb202.getLevel(),
+    jbsLevel: session._nodes.jbs.getLevel(),
+    jt10Level: session._nodes.jt10.getLevel(),
+    jt30Level: session._nodes.jt30.getLevel(),
+    jt90Level: session._nodes.jt90.getLevel(),
+    jp9000Level: session._nodes.jp9000.getLevel(),
     params: session.params.serialize(),
-    mixer: session.mixer,
+    mixer: mixerData,
     patterns: session.patterns,
     currentPattern: session.currentPattern,
     arrangement: session.arrangement
@@ -10394,7 +11465,7 @@ function deserializeSession(data) {
     bars: data.bars,
     jb01Level: data.jb01Level ?? data.drumLevel,
     jb202Level: data.jb202Level ?? data.bassLevel,
-    samplerLevel: data.samplerLevel,
+    jbsLevel: data.jbsLevel ?? data.samplerLevel,
     jt10Level: data.jt10Level,
     jt30Level: data.jt30Level,
     jt90Level: data.jt90Level,
@@ -10403,23 +11474,41 @@ function deserializeSession(data) {
   if (data.params) {
     session.params.deserialize(data.params);
   }
-  if (data.mixer) session.mixer = data.mixer;
+  if (data.mixer) {
+    session.mixer = {
+      ...data.mixer,
+      effectChains: reconstructEffectNodes(data.mixer.effectChains, session.params)
+    };
+  }
   if (data.patterns) session.patterns = data.patterns;
   if (data.currentPattern) session.currentPattern = data.currentPattern;
   if (data.arrangement) session.arrangement = data.arrangement;
   return session;
 }
+var EFFECT_NODE_CLASSES;
 var init_session = __esm({
   "core/session.js"() {
     init_params();
     init_clock();
-    init_sampler_node();
+    init_jbs_node();
     init_jb202_node();
     init_jb01_node();
     init_jt10_node();
     init_jt30_node();
     init_jt90_node();
     init_jp9000_node();
+    init_delay_node();
+    init_eq_node();
+    init_filter_node();
+    init_sidechain_node();
+    init_reverb_node();
+    EFFECT_NODE_CLASSES = {
+      delay: DelayNode,
+      eq: EQNode,
+      filter: FilterNode,
+      sidechain: SidechainNode,
+      reverb: ReverbNode
+    };
   }
 });
 
@@ -10715,16 +11804,16 @@ var init_midi = __esm({
 });
 
 // project.js
-import { mkdirSync, writeFileSync as writeFileSync2, readFileSync as readFileSync2, readdirSync, existsSync } from "fs";
-import { join as join2 } from "path";
-import { homedir } from "os";
+import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2, readFileSync as readFileSync4, readdirSync as readdirSync2, existsSync as existsSync2 } from "fs";
+import { join as join3 } from "path";
+import { homedir as homedir2 } from "os";
 import { copyFileSync } from "fs";
 function ensureDirectories() {
-  if (!existsSync(JAMBOT_HOME)) {
-    mkdirSync(JAMBOT_HOME, { recursive: true });
+  if (!existsSync2(JAMBOT_HOME)) {
+    mkdirSync2(JAMBOT_HOME, { recursive: true });
   }
-  if (!existsSync(PROJECTS_DIR)) {
-    mkdirSync(PROJECTS_DIR, { recursive: true });
+  if (!existsSync2(PROJECTS_DIR)) {
+    mkdirSync2(PROJECTS_DIR, { recursive: true });
   }
 }
 function extractProjectName(prompt, bpm) {
@@ -10781,11 +11870,11 @@ function generateProjectFolderName(baseName) {
   ensureDirectories();
   const date = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10).replace(/-/g, "");
   let folderName = `${baseName}-${date}`;
-  let fullPath = join2(PROJECTS_DIR, folderName);
+  let fullPath = join3(PROJECTS_DIR, folderName);
   let counter = 2;
-  while (existsSync(fullPath)) {
+  while (existsSync2(fullPath)) {
     folderName = `${baseName}-${date}-${counter}`;
-    fullPath = join2(PROJECTS_DIR, folderName);
+    fullPath = join3(PROJECTS_DIR, folderName);
     counter++;
   }
   return folderName;
@@ -10793,10 +11882,10 @@ function generateProjectFolderName(baseName) {
 function createProject(name, session, initialPrompt = null) {
   ensureDirectories();
   const folderName = generateProjectFolderName(name);
-  const projectPath = join2(PROJECTS_DIR, folderName);
-  mkdirSync(projectPath, { recursive: true });
-  mkdirSync(join2(projectPath, "_source", "midi"), { recursive: true });
-  mkdirSync(join2(projectPath, "_source", "samples"), { recursive: true });
+  const projectPath = join3(PROJECTS_DIR, folderName);
+  mkdirSync2(projectPath, { recursive: true });
+  mkdirSync2(join3(projectPath, "_source", "midi"), { recursive: true });
+  mkdirSync2(join3(projectPath, "_source", "samples"), { recursive: true });
   const now = (/* @__PURE__ */ new Date()).toISOString();
   const project = {
     name,
@@ -10817,8 +11906,8 @@ function createProject(name, session, initialPrompt = null) {
   return project;
 }
 function saveProject(project) {
-  const projectPath = join2(PROJECTS_DIR, project.folderName);
-  const projectFile = join2(projectPath, "project.json");
+  const projectPath = join3(PROJECTS_DIR, project.folderName);
+  const projectFile = join3(projectPath, "project.json");
   project.modified = (/* @__PURE__ */ new Date()).toISOString();
   writeFileSync2(projectFile, JSON.stringify(project, null, 2));
   return project;
@@ -10830,16 +11919,16 @@ function renameProject(project, newName) {
   return { oldName, newName };
 }
 function loadProject(folderName) {
-  const projectFile = join2(PROJECTS_DIR, folderName, "project.json");
-  if (!existsSync(projectFile)) {
+  const projectFile = join3(PROJECTS_DIR, folderName, "project.json");
+  if (!existsSync2(projectFile)) {
     throw new Error(`Project not found: ${folderName}`);
   }
-  const content = readFileSync2(projectFile, "utf-8");
+  const content = readFileSync4(projectFile, "utf-8");
   return JSON.parse(content);
 }
 function listProjects() {
   ensureDirectories();
-  const folders = readdirSync(PROJECTS_DIR, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
+  const folders = readdirSync2(PROJECTS_DIR, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
   const projects = [];
   for (const folder of folders) {
     try {
@@ -10872,7 +11961,7 @@ function getRenderPath(project) {
   return {
     version,
     filename,
-    fullPath: join2(PROJECTS_DIR, project.folderName, filename),
+    fullPath: join3(PROJECTS_DIR, project.folderName, filename),
     relativePath: filename
   };
 }
@@ -10969,39 +12058,39 @@ function generateReadme(project, session) {
   return lines.join("\n");
 }
 function exportProject(project, session) {
-  const projectPath = join2(PROJECTS_DIR, project.folderName);
-  const exportPath = join2(projectPath, "_source", "export");
-  if (!existsSync(exportPath)) {
-    mkdirSync(exportPath, { recursive: true });
+  const projectPath = join3(PROJECTS_DIR, project.folderName);
+  const exportPath = join3(projectPath, "_source", "export");
+  if (!existsSync2(exportPath)) {
+    mkdirSync2(exportPath, { recursive: true });
   }
   const { hasJB01, hasJB202 } = hasContent(session);
   const any = hasJB01 || hasJB202;
   const files = [];
-  const readmePath = join2(exportPath, "README.md");
+  const readmePath = join3(exportPath, "README.md");
   writeFileSync2(readmePath, generateReadme(project, session));
   files.push("README.md");
   const exportSession = { ...session, name: project.name };
   if (any) {
-    const fullMidiPath = join2(exportPath, `${project.name}.mid`);
+    const fullMidiPath = join3(exportPath, `${project.name}.mid`);
     generateFullMidi(exportSession, fullMidiPath);
     files.push(`${project.name}.mid`);
   }
   if (hasJB01) {
-    const jb01MidiPath = join2(exportPath, "jb01-drums.mid");
+    const jb01MidiPath = join3(exportPath, "jb01-drums.mid");
     generateJB01Midi(exportSession, jb01MidiPath);
     files.push("jb01-drums.mid");
   }
   if (hasJB202) {
-    const jb202MidiPath = join2(exportPath, "jb202-bass.mid");
+    const jb202MidiPath = join3(exportPath, "jb202-bass.mid");
     generateJB202Midi(exportSession, jb202MidiPath);
     files.push("jb202-bass.mid");
   }
   const renders = project.renders || [];
   if (renders.length > 0) {
     const latestRender = renders[renders.length - 1];
-    const srcPath = join2(projectPath, latestRender.file);
-    const dstPath = join2(exportPath, "latest.wav");
-    if (existsSync(srcPath)) {
+    const srcPath = join3(projectPath, latestRender.file);
+    const dstPath = join3(exportPath, "latest.wav");
+    if (existsSync2(srcPath)) {
       copyFileSync(srcPath, dstPath);
       files.push("latest.wav");
     }
@@ -11017,8 +12106,8 @@ var init_project = __esm({
     init_kit_loader();
     init_session();
     init_midi();
-    JAMBOT_HOME = join2(homedir(), "Documents", "Jambot");
-    PROJECTS_DIR = join2(JAMBOT_HOME, "projects");
+    JAMBOT_HOME = join3(homedir2(), "Documents", "Jambot");
+    PROJECTS_DIR = join3(JAMBOT_HOME, "projects");
   }
 });
 
@@ -11356,19 +12445,19 @@ function showJB200(session) {
   lines.push("PATTERN: " + formatMonoPattern(pattern));
   return lines.join("\n");
 }
-function showSampler(session) {
-  const kit = session.samplerKit;
+function showJBS(session) {
+  const kit = session.jbsKit;
   if (!kit) {
-    return "SAMPLER\n\nNo kit loaded. Use load_kit to load one.";
+    return "JB-S\n\nNo kit loaded. Use load_jbs_kit to load one.";
   }
-  const lines = ["SAMPLER", ""];
+  const lines = ["JB-S", ""];
   lines.push(`Kit: ${kit.name} (${kit.id})`);
   lines.push("");
   lines.push("SLOTS:");
   for (const slot of kit.slots) {
-    const pattern = session.samplerPattern[slot.id] || [];
+    const pattern = session.jbsPattern[slot.id] || [];
     const hits = pattern.filter((s) => s?.velocity > 0).length;
-    const params = session.samplerParams[slot.id] || {};
+    const params = session.jbsParams[slot.id] || {};
     let info = `  ${slot.id}: ${slot.name}`;
     if (hits > 0) info += ` \u2014 ${hits} hits`;
     if (params.level !== void 0 && params.level !== 0) info += ` @ ${params.level}dB`;
@@ -11491,8 +12580,8 @@ var init_session_tools = __esm({
           level: 0.25
           // -6dB for proper gain staging
         };
-        session.samplerPattern = {};
-        session.samplerParams = {};
+        session.jbsPattern = {};
+        session.jbsParams = {};
         session.jb200Pattern = createEmptyJB200Pattern();
         session.jb200Params = {
           osc1Waveform: "sawtooth",
@@ -11534,7 +12623,7 @@ var init_session_tools = __esm({
       },
       /**
        * Show current state of any instrument
-       * Generic tool that works with all synths: jb200, bass, lead, drums, sampler
+       * Generic tool that works with all synths: jb200, bass, lead, drums, jbs
        */
       show: async (input, session, context) => {
         const { instrument } = input;
@@ -11543,7 +12632,9 @@ var init_session_tools = __esm({
           jb202: showJB200,
           // alias
           jb01: showJB01,
-          sampler: showSampler
+          jbs: showJBS,
+          sampler: showJBS
+          // legacy alias
           // TODO: Add show functions for jt10, jt30, jt90
         };
         const showFn = showFns[instrument?.toLowerCase()];
@@ -11558,25 +12649,25 @@ var init_session_tools = __esm({
   }
 });
 
-// tools/sampler-tools.js
-var sampler_tools_exports = {};
-import { homedir as homedir2 } from "os";
-import { join as join3 } from "path";
-import { existsSync as existsSync2, readdirSync as readdirSync2, mkdirSync as mkdirSync2, copyFileSync as copyFileSync2, writeFileSync as writeFileSync3 } from "fs";
+// tools/jbs-tools.js
+var jbs_tools_exports = {};
+import { homedir as homedir3 } from "os";
+import { join as join4 } from "path";
+import { existsSync as existsSync3, readdirSync as readdirSync3, mkdirSync as mkdirSync3, copyFileSync as copyFileSync2, writeFileSync as writeFileSync3 } from "fs";
 import { execSync } from "child_process";
-var ffmpegPath, SAMPLER_SLOTS, samplerTools;
-var init_sampler_tools = __esm({
-  "tools/sampler-tools.js"() {
+var ffmpegPath, JBS_SLOTS, jbsTools;
+var init_jbs_tools = __esm({
+  "tools/jbs-tools.js"() {
     init_tools();
     init_converters();
     init_kit_loader();
     ffmpegPath = process.env.FFMPEG_PATH || "ffmpeg";
-    SAMPLER_SLOTS = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10"];
-    samplerTools = {
+    JBS_SLOTS = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10"];
+    jbsTools = {
       /**
        * List available sample kits (bundled + user)
        */
-      list_kits: async (input, session, context) => {
+      list_jbs_kits: async (input, session, context) => {
         const kits = getAvailableKits();
         const paths = getKitPaths();
         if (kits.length === 0) {
@@ -11592,24 +12683,13 @@ User kits folder: ${paths.user}`;
       },
       /**
        * Load a sample kit by ID
+       * Does NOT re-initialize params — the node's _registerParams() already
+       * sets defaults from jbs-params.json. Just load the kit.
        */
-      load_kit: async (input, session, context) => {
+      load_jbs_kit: async (input, session, context) => {
         try {
           const kit = loadKit(input.kit);
-          session.samplerKit = kit;
-          for (const slot of kit.slots) {
-            if (!session.samplerParams[slot.id]) {
-              session.samplerParams[slot.id] = {
-                level: 0.5,
-                // 0dB unity gain (normalized: 0.5 = 0dB, 1.0 = +6dB)
-                tune: 0,
-                attack: 0,
-                decay: 1,
-                filter: 1,
-                pan: 0
-              };
-            }
-          }
+          session.jbsKit = kit;
           const slotNames = kit.slots.map((s) => `${s.id}:${s.short}`).join(", ");
           return `Loaded kit "${kit.name}"
 Slots: ${slotNames}`;
@@ -11618,31 +12698,34 @@ Slots: ${slotNames}`;
         }
       },
       /**
-       * Add sample patterns - program hits on steps for each slot
+       * Add sample patterns - program hits on steps for each slot.
+       * Supports `bars` for multi-bar patterns.
        */
-      add_samples: async (input, session, context) => {
-        if (!session.samplerKit) {
-          return "No kit loaded. Use load_kit first.";
+      add_jbs: async (input, session, context) => {
+        if (!session.jbsKit) {
+          return "No kit loaded. Use load_jbs_kit first.";
         }
+        const bars = input.bars || 1;
+        const totalSteps = bars * 16;
         const added = [];
-        for (const slot of SAMPLER_SLOTS) {
+        for (const slot of JBS_SLOTS) {
           const steps = input[slot] || [];
           if (steps.length > 0) {
-            session.samplerPattern[slot] = Array(16).fill(null).map(() => ({ velocity: 0 }));
+            session.jbsPattern[slot] = Array(totalSteps).fill(null).map(() => ({ velocity: 0 }));
             const isDetailed = typeof steps[0] === "object";
             if (isDetailed) {
               for (const hit of steps) {
                 const step = hit.step;
                 const vel = hit.vel !== void 0 ? hit.vel : 1;
-                if (step >= 0 && step < 16) {
-                  session.samplerPattern[slot][step].velocity = vel;
+                if (step >= 0 && step < totalSteps) {
+                  session.jbsPattern[slot][step].velocity = vel;
                 }
               }
               added.push(`${slot}:${steps.length}`);
             } else {
               for (const step of steps) {
-                if (step >= 0 && step < 16) {
-                  session.samplerPattern[slot][step].velocity = 1;
+                if (step >= 0 && step < totalSteps) {
+                  session.jbsPattern[slot][step].velocity = 1;
                 }
               }
               added.push(`${slot}:${steps.length}`);
@@ -11651,91 +12734,86 @@ Slots: ${slotNames}`;
         }
         const slotInfo = added.map((a) => {
           const slotId = a.split(":")[0];
-          const slotMeta = session.samplerKit.slots.find((s) => s.id === slotId);
+          const slotMeta = session.jbsKit.slots.find((s) => s.id === slotId);
           return slotMeta ? `${slotMeta.short}:${a.split(":")[1]}` : a;
         });
-        return `Sampler samples: ${slotInfo.join(", ")}`;
+        const barsMsg = bars > 1 ? ` (${bars} bars)` : "";
+        return `JB-S pattern${barsMsg}: ${slotInfo.join(", ")}`;
       },
       /**
        * DEPRECATED: Use generic tweak() instead.
        *
        * Examples with generic tweak:
-       *   tweak({ path: 'sampler.s1.level', value: -6 })   → -6dB
-       *   tweak({ path: 'sampler.s1.tune', value: +3 })    → +3 semitones
-       *   tweak({ path: 'sampler.s2.filter', value: 2000 }) → 2000Hz
-       *   tweak({ path: 'sampler.s3.pan', value: -50 })    → L50
-       *
-       * This tool still works but is no longer the recommended approach.
-       * The generic tweak() handles unit conversion automatically.
+       *   tweak({ path: 'jbs.s1.level', value: -6 })   → -6dB
+       *   tweak({ path: 'jbs.s1.tune', value: +3 })    → +3 semitones
+       *   tweak({ path: 'jbs.s2.filter', value: 2000 }) → 2000Hz
+       *   tweak({ path: 'jbs.s3.pan', value: -50 })    → L50
        *
        * @deprecated
        */
-      tweak_samples: async (input, session, context) => {
+      tweak_jbs: async (input, session, context) => {
         const slot = input.slot;
-        if (!session.samplerParams[slot]) {
-          session.samplerParams[slot] = { level: 0.5, tune: 0, attack: 0, decay: 1, filter: 1, pan: 0 };
-        }
         const tweaks = [];
         if (input.mute === true) {
-          const def = getParamDef("sampler", slot, "level");
-          session.samplerParams[slot].level = def ? toEngine(-60, def) : 0;
+          const def = getParamDef("jbs", slot, "level");
+          session.jbsParams[slot] = { ...session.jbsParams[slot], level: def ? toEngine(-60, def) : 0 };
           tweaks.push("muted");
         } else if (input.mute === false) {
-          const def = getParamDef("sampler", slot, "level");
-          session.samplerParams[slot].level = def ? toEngine(0, def) : 0.5;
+          const def = getParamDef("jbs", slot, "level");
+          session.jbsParams[slot] = { ...session.jbsParams[slot], level: def ? toEngine(0, def) : 0.5 };
           tweaks.push("unmuted");
         }
         if (input.level !== void 0) {
-          const def = getParamDef("sampler", slot, "level");
-          session.samplerParams[slot].level = def ? toEngine(input.level, def) : input.level;
+          const def = getParamDef("jbs", slot, "level");
+          session.jbsParams[slot] = { ...session.jbsParams[slot], level: def ? toEngine(input.level, def) : input.level };
           tweaks.push(`level=${input.level}dB`);
         }
         if (input.tune !== void 0) {
-          session.samplerParams[slot].tune = input.tune;
+          session.jbsParams[slot] = { ...session.jbsParams[slot], tune: input.tune };
           tweaks.push(`tune=${input.tune > 0 ? "+" : ""}${input.tune}st`);
         }
         if (input.attack !== void 0) {
-          const def = getParamDef("sampler", slot, "attack");
-          session.samplerParams[slot].attack = def ? toEngine(input.attack, def) : input.attack / 100;
+          const def = getParamDef("jbs", slot, "attack");
+          session.jbsParams[slot] = { ...session.jbsParams[slot], attack: def ? toEngine(input.attack, def) : input.attack / 100 };
           tweaks.push(`attack=${input.attack}`);
         }
         if (input.decay !== void 0) {
-          const def = getParamDef("sampler", slot, "decay");
-          session.samplerParams[slot].decay = def ? toEngine(input.decay, def) : input.decay / 100;
+          const def = getParamDef("jbs", slot, "decay");
+          session.jbsParams[slot] = { ...session.jbsParams[slot], decay: def ? toEngine(input.decay, def) : input.decay / 100 };
           tweaks.push(`decay=${input.decay}`);
         }
         if (input.filter !== void 0) {
-          const def = getParamDef("sampler", slot, "filter");
-          session.samplerParams[slot].filter = def ? toEngine(input.filter, def) : input.filter;
+          const def = getParamDef("jbs", slot, "filter");
+          session.jbsParams[slot] = { ...session.jbsParams[slot], filter: def ? toEngine(input.filter, def) : input.filter };
           const display = input.filter >= 1e3 ? `${(input.filter / 1e3).toFixed(1)}kHz` : `${input.filter}Hz`;
           tweaks.push(`filter=${display}`);
         }
         if (input.pan !== void 0) {
-          const def = getParamDef("sampler", slot, "pan");
-          session.samplerParams[slot].pan = def ? toEngine(input.pan, def) : input.pan / 100;
+          const def = getParamDef("jbs", slot, "pan");
+          session.jbsParams[slot] = { ...session.jbsParams[slot], pan: def ? toEngine(input.pan, def) : input.pan / 100 };
           const panDisplay = input.pan === 0 ? "C" : input.pan < 0 ? `L${Math.abs(input.pan)}` : `R${input.pan}`;
           tweaks.push(`pan=${panDisplay}`);
         }
-        const slotMeta = session.samplerKit?.slots.find((s) => s.id === slot);
+        const slotMeta = session.jbsKit?.slots.find((s) => s.id === slot);
         const slotName = slotMeta ? slotMeta.name : slot;
-        return `Sampler ${slotName}: ${tweaks.join(", ")}`;
+        return `JB-S ${slotName}: ${tweaks.join(", ")}`;
       },
       /**
-       * Show current sampler state (loaded kit, slots, pattern)
+       * Show current JB-S state (loaded kit, slots, pattern)
        */
-      show_sampler: async (input, session, context) => {
-        const kit = session.samplerKit;
+      show_jbs: async (input, session, context) => {
+        const kit = session.jbsKit;
         if (!kit) {
-          return "Sampler: No kit loaded. Use load_kit to load one.";
+          return "JB-S: No kit loaded. Use load_jbs_kit to load one.";
         }
-        const lines = ["Sampler SAMPLER:", ""];
+        const lines = ["JB-S SAMPLER:", ""];
         lines.push(`Kit: ${kit.name} (${kit.id})`);
         lines.push("");
         lines.push("Slots:");
         for (const slot of kit.slots) {
-          const pattern = session.samplerPattern[slot.id] || [];
+          const pattern = session.jbsPattern[slot.id] || [];
           const hits = pattern.filter((s) => s?.velocity > 0).length;
-          const params = session.samplerParams[slot.id] || {};
+          const params = session.jbsParams[slot.id] || {};
           const level = params.level !== void 0 ? `${params.level}dB` : "0dB";
           let info = `  ${slot.id}: ${slot.name} (${slot.short})`;
           if (hits > 0) info += ` \u2014 ${hits} hits`;
@@ -11747,29 +12825,22 @@ Slots: ${slotNames}`;
       /**
        * Create a new kit from a folder of audio files
        */
-      create_kit: async (input, session, context) => {
+      create_jbs_kit: async (input, session, context) => {
         const { source_folder, kit_id, kit_name, slots } = input;
         const resolvePath = (p) => {
           if (p.startsWith("/")) return p;
-          if (p.startsWith("~")) return p.replace("~", homedir2());
+          if (p.startsWith("~")) return p.replace("~", homedir3());
           const candidates = [
             p,
-            // As-is (cwd)
-            join3(homedir2(), p),
-            // ~/path
-            join3(homedir2(), "Documents", p),
-            // ~/Documents/path
-            join3(homedir2(), "Documents", "Jambot", p),
-            // ~/Documents/Jambot/path (default project location)
-            join3(homedir2(), "Desktop", p),
-            // ~/Desktop/path
-            join3(homedir2(), "Downloads", p),
-            // ~/Downloads/path
-            join3(homedir2(), "Music", p)
-            // ~/Music/path
+            join4(homedir3(), p),
+            join4(homedir3(), "Documents", p),
+            join4(homedir3(), "Documents", "Jambot", p),
+            join4(homedir3(), "Desktop", p),
+            join4(homedir3(), "Downloads", p),
+            join4(homedir3(), "Music", p)
           ];
           for (const candidate of candidates) {
-            if (existsSync2(candidate)) return candidate;
+            if (existsSync3(candidate)) return candidate;
           }
           return null;
         };
@@ -11786,7 +12857,7 @@ Tried:
 - ~/Downloads/${source_folder}`;
         }
         const audioExtensions = [".wav", ".aiff", ".aif", ".mp3", ".m4a", ".flac"];
-        const files = readdirSync2(sourcePath).filter((f) => {
+        const files = readdirSync3(sourcePath).filter((f) => {
           const ext = f.toLowerCase().slice(f.lastIndexOf("."));
           return audioExtensions.includes(ext);
         }).sort();
@@ -11800,28 +12871,28 @@ Tried:
           return `Found ${files.length} audio files in ${source_folder}:
 ${fileList}${extra}
 
-Ask the user what to name each sound (or use auto-naming based on filenames). Then call create_kit again with the slots array.`;
+Ask the user what to name each sound (or use auto-naming based on filenames). Then call create_jbs_kit again with the slots array.`;
         }
         if (slots.length > 10) {
           return `Error: Maximum 10 slots per kit. You provided ${slots.length}.`;
         }
-        const userKitsPath = join3(homedir2(), "Documents", "Jambot", "kits");
-        const kitPath = join3(userKitsPath, kit_id);
-        const samplesPath = join3(kitPath, "samples");
-        if (existsSync2(kitPath)) {
+        const userKitsPath = join4(homedir3(), "Documents", "Jambot", "kits");
+        const kitPath = join4(userKitsPath, kit_id);
+        const samplesPath = join4(kitPath, "samples");
+        if (existsSync3(kitPath)) {
           return `Error: Kit "${kit_id}" already exists at ${kitPath}. Choose a different ID or delete the existing kit.`;
         }
-        mkdirSync2(samplesPath, { recursive: true });
+        mkdirSync3(samplesPath, { recursive: true });
         const kitSlots = [];
         const copied = [];
         for (let i = 0; i < slots.length; i++) {
           const slot = slots[i];
           const slotId = `s${i + 1}`;
-          const sourceFile = join3(sourcePath, slot.file);
-          if (!existsSync2(sourceFile)) {
+          const sourceFile = join4(sourcePath, slot.file);
+          if (!existsSync3(sourceFile)) {
             return `Error: File not found: ${slot.file}`;
           }
-          const destFile = join3(samplesPath, `${slotId}.wav`);
+          const destFile = join4(samplesPath, `${slotId}.wav`);
           const ext = slot.file.toLowerCase().slice(slot.file.lastIndexOf("."));
           if (ext === ".wav") {
             copyFileSync2(sourceFile, destFile);
@@ -11858,46 +12929,35 @@ Ask the user what to name each sound (or use auto-naming based on filenames). Th
           name: kit_name,
           slots: kitSlots
         };
-        writeFileSync3(join3(kitPath, "kit.json"), JSON.stringify(kitJson, null, 2));
+        writeFileSync3(join4(kitPath, "kit.json"), JSON.stringify(kitJson, null, 2));
         const newKit = loadKit(kit_id);
-        session.samplerKit = newKit;
-        session.samplerPattern = {};
-        for (const slot of newKit.slots) {
-          session.samplerParams[slot.id] = {
-            level: 0.5,
-            // 0dB unity gain (normalized: 0.5 = 0dB, 1.0 = +6dB)
-            tune: 0,
-            attack: 0,
-            decay: 1,
-            filter: 1,
-            pan: 0
-          };
-        }
+        session.jbsKit = newKit;
+        session.jbsPattern = {};
         const slotSummary = newKit.slots.map((s) => `${s.id}: ${s.name} (${s.short})`).join("\n");
         return `Created and loaded kit "${kit_name}" (${kit_id})
 
 Slots ready to use:
 ${slotSummary}
 
-Use add_samples to program patterns. Example: add_samples with s1:[0,4,8,12] for kicks on beats.`;
+Use add_jbs to program patterns. Example: add_jbs with s1:[0,4,8,12] for kicks on beats.`;
       }
     };
-    registerTools(samplerTools);
+    registerTools(jbsTools);
   }
 });
 
 // presets/loader.js
-import { readFileSync as readFileSync3, readdirSync as readdirSync3, existsSync as existsSync3 } from "fs";
-import { fileURLToPath as fileURLToPath2 } from "url";
-import { dirname as dirname2, join as join4 } from "path";
-import { homedir as homedir3 } from "os";
+import { readFileSync as readFileSync5, readdirSync as readdirSync4, existsSync as existsSync4 } from "fs";
+import { fileURLToPath as fileURLToPath4 } from "url";
+import { dirname as dirname4, join as join5 } from "path";
+import { homedir as homedir4 } from "os";
 function loadLibraryPresets(synth) {
-  const libraryPath = join4(LIBRARY_PRESETS_PATH, synth, "dist", "presets.json");
-  if (!existsSync3(libraryPath)) {
+  const libraryPath = join5(LIBRARY_PRESETS_PATH, synth, "dist", "presets.json");
+  if (!existsSync4(libraryPath)) {
     return [];
   }
   try {
-    const data = JSON.parse(readFileSync3(libraryPath, "utf-8"));
+    const data = JSON.parse(readFileSync5(libraryPath, "utf-8"));
     return (data.presets || []).map((preset) => ({
       id: preset.id,
       name: preset.name,
@@ -11914,12 +12974,12 @@ function loadLibraryPresets(synth) {
   }
 }
 function loadLibrarySequences(synth) {
-  const libraryPath = join4(LIBRARY_PRESETS_PATH, synth, "dist", "sequences.json");
-  if (!existsSync3(libraryPath)) {
+  const libraryPath = join5(LIBRARY_PRESETS_PATH, synth, "dist", "sequences.json");
+  if (!existsSync4(libraryPath)) {
     return [];
   }
   try {
-    const data = JSON.parse(readFileSync3(libraryPath, "utf-8"));
+    const data = JSON.parse(readFileSync5(libraryPath, "utf-8"));
     return (data.sequences || []).map((seq) => ({
       id: seq.id,
       name: seq.name,
@@ -11933,8 +12993,8 @@ function loadLibrarySequences(synth) {
   }
 }
 function getPresetPaths(synth, type) {
-  const bundledPath = join4(__dirname2, synth, type);
-  const userPath = join4(homedir3(), "Documents", "Jambot", "presets", synth, type);
+  const bundledPath = join5(__dirname4, synth, type);
+  const userPath = join5(homedir4(), "Documents", "Jambot", "presets", synth, type);
   return { bundledPath, userPath };
 }
 function listKits(synth) {
@@ -11952,18 +13012,18 @@ function listKits(synth) {
       // Cache for direct loading
     });
   }
-  if (existsSync3(bundledPath)) {
-    const files = readdirSync3(bundledPath).filter((f) => f.endsWith(".json"));
+  if (existsSync4(bundledPath)) {
+    const files = readdirSync4(bundledPath).filter((f) => f.endsWith(".json"));
     for (const file of files) {
       try {
-        const data = JSON.parse(readFileSync3(join4(bundledPath, file), "utf-8"));
+        const data = JSON.parse(readFileSync5(join5(bundledPath, file), "utf-8"));
         const id = file.replace(".json", "");
         if (kits.find((k) => k.id === id)) continue;
         kits.push({
           id,
           name: data.name || id,
           description: data.description || "",
-          path: join4(bundledPath, file),
+          path: join5(bundledPath, file),
           source: "bundled"
         });
       } catch (e) {
@@ -11971,11 +13031,11 @@ function listKits(synth) {
       }
     }
   }
-  if (existsSync3(userPath)) {
-    const files = readdirSync3(userPath).filter((f) => f.endsWith(".json"));
+  if (existsSync4(userPath)) {
+    const files = readdirSync4(userPath).filter((f) => f.endsWith(".json"));
     for (const file of files) {
       try {
-        const data = JSON.parse(readFileSync3(join4(userPath, file), "utf-8"));
+        const data = JSON.parse(readFileSync5(join5(userPath, file), "utf-8"));
         const id = file.replace(".json", "");
         const existingIdx = kits.findIndex((k) => k.id === id);
         if (existingIdx >= 0) kits.splice(existingIdx, 1);
@@ -11983,7 +13043,7 @@ function listKits(synth) {
           id,
           name: data.name || id,
           description: data.description || "",
-          path: join4(userPath, file),
+          path: join5(userPath, file),
           source: "user"
         });
       } catch (e) {
@@ -12010,7 +13070,7 @@ function loadKit2(synth, kitId, voice = "bass") {
     };
   }
   try {
-    const data = JSON.parse(readFileSync3(kit.path, "utf-8"));
+    const data = JSON.parse(readFileSync5(kit.path, "utf-8"));
     const engineParams = {};
     for (const [param, value] of Object.entries(data.params || {})) {
       const def = getParamDef(synth, voice, param);
@@ -12051,18 +13111,18 @@ function listSequences(synth) {
       // Cache for direct loading
     });
   }
-  if (existsSync3(bundledPath)) {
-    const files = readdirSync3(bundledPath).filter((f) => f.endsWith(".json"));
+  if (existsSync4(bundledPath)) {
+    const files = readdirSync4(bundledPath).filter((f) => f.endsWith(".json"));
     for (const file of files) {
       try {
-        const data = JSON.parse(readFileSync3(join4(bundledPath, file), "utf-8"));
+        const data = JSON.parse(readFileSync5(join5(bundledPath, file), "utf-8"));
         const id = file.replace(".json", "");
         if (sequences.find((s) => s.id === id)) continue;
         sequences.push({
           id,
           name: data.name || id,
           description: data.description || "",
-          path: join4(bundledPath, file),
+          path: join5(bundledPath, file),
           source: "bundled"
         });
       } catch (e) {
@@ -12070,11 +13130,11 @@ function listSequences(synth) {
       }
     }
   }
-  if (existsSync3(userPath)) {
-    const files = readdirSync3(userPath).filter((f) => f.endsWith(".json"));
+  if (existsSync4(userPath)) {
+    const files = readdirSync4(userPath).filter((f) => f.endsWith(".json"));
     for (const file of files) {
       try {
-        const data = JSON.parse(readFileSync3(join4(userPath, file), "utf-8"));
+        const data = JSON.parse(readFileSync5(join5(userPath, file), "utf-8"));
         const id = file.replace(".json", "");
         const existingIdx = sequences.findIndex((s) => s.id === id);
         if (existingIdx >= 0) sequences.splice(existingIdx, 1);
@@ -12082,7 +13142,7 @@ function listSequences(synth) {
           id,
           name: data.name || id,
           description: data.description || "",
-          path: join4(userPath, file),
+          path: join5(userPath, file),
           source: "user"
         });
       } catch (e) {
@@ -12115,7 +13175,7 @@ function loadSequence(synth, seqId) {
     };
   }
   try {
-    const data = JSON.parse(readFileSync3(seq.path, "utf-8"));
+    const data = JSON.parse(readFileSync5(seq.path, "utf-8"));
     let pattern = data.pattern;
     if (Array.isArray(pattern)) {
       pattern = pattern.slice(0, 16);
@@ -12134,13 +13194,13 @@ function loadSequence(synth, seqId) {
     return { error: `Failed to load sequence: ${e.message}` };
   }
 }
-var __filename2, __dirname2, LIBRARY_PRESETS_PATH;
+var __filename4, __dirname4, LIBRARY_PRESETS_PATH;
 var init_loader = __esm({
   "presets/loader.js"() {
     init_converters();
-    __filename2 = fileURLToPath2(import.meta.url);
-    __dirname2 = dirname2(__filename2);
-    LIBRARY_PRESETS_PATH = join4(__dirname2, "..", "..", "web", "public");
+    __filename4 = fileURLToPath4(import.meta.url);
+    __dirname4 = dirname4(__filename4);
+    LIBRARY_PRESETS_PATH = join5(__dirname4, "..", "..", "web", "public");
   }
 });
 
@@ -12391,49 +13451,51 @@ ${lines.join("\n")}`;
       },
       /**
        * Render a test tone for audio analysis
-       * Pure A440 saw wave, flat envelope, 1 second
+       * Pure oscillator output — no filter, no drive, no envelope
+       * Tests oscillators IN ISOLATION using DSP library
        */
       test_tone: async (input, session, context) => {
-        const { OfflineAudioContext: OfflineAudioContext9 } = await import("node-web-audio-api");
-        const { writeFileSync: writeFileSync7 } = await import("fs");
-        const { join: join8, dirname: dirname5 } = await import("path");
+        const { writeFileSync: writeFileSync8, mkdirSync: mkdirSync6 } = await import("fs");
+        const { join: join9, dirname: dirname7 } = await import("path");
+        const { createOscillatorSync: createOscillatorSync2 } = await Promise.resolve().then(() => (init_oscillators(), oscillators_exports));
+        const { noteToMidi: noteToMidi2, midiToFreq: midiToFreq2 } = await Promise.resolve().then(() => (init_note(), note_exports));
+        const { audioBufferToWav: audioBufferToWav3 } = await Promise.resolve().then(() => (init_wav(), wav_exports));
         const note = input.note || "A4";
+        const waveform = input.waveform || "sawtooth";
         const duration = input.duration || 1;
         const sampleRate = 44100;
-        const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        const match = note.match(/^([A-G]#?)(\d+)$/);
-        if (!match) return "Invalid note format (e.g., A4)";
-        const noteName = match[1];
-        const octave = parseInt(match[2]);
-        const midi = noteNames.indexOf(noteName) + (octave + 1) * 12;
-        const freq = 440 * Math.pow(2, (midi - 69) / 12);
+        const validWaveforms = ["sawtooth", "square", "triangle", "sine"];
+        if (!validWaveforms.includes(waveform)) {
+          return `Invalid waveform: ${waveform}. Use: ${validWaveforms.join(", ")}`;
+        }
+        const freq = midiToFreq2(noteToMidi2(note));
         const totalSamples = Math.ceil(duration * sampleRate);
-        const offlineContext = new OfflineAudioContext9(2, totalSamples, sampleRate);
-        const osc = offlineContext.createOscillator();
-        osc.type = "sawtooth";
-        osc.frequency.value = freq;
-        const gain = offlineContext.createGain();
-        gain.gain.value = 0.8;
-        osc.connect(gain);
-        gain.connect(offlineContext.destination);
-        osc.start(0);
-        osc.stop(duration);
-        const buffer = await offlineContext.startRendering();
-        const { audioBufferToWav: audioBufferToWav3 } = await Promise.resolve().then(() => (init_wav(), wav_exports));
+        const osc = createOscillatorSync2(waveform, sampleRate);
+        osc.setFrequency(freq);
+        const samples = osc.generate(totalSamples);
+        for (let i = 0; i < totalSamples; i++) {
+          samples[i] *= 0.8;
+        }
+        const buffer = {
+          sampleRate,
+          length: totalSamples,
+          duration,
+          numberOfChannels: 1,
+          getChannelData: (ch) => ch === 0 ? samples : null
+        };
         const wavData = audioBufferToWav3(buffer);
-        const filename = `test-${note.toLowerCase()}-saw.wav`;
-        const { homedir: homedir6 } = await import("os");
-        const { mkdirSync: mkdirSync5 } = await import("fs");
+        const filename = `test-${note.toLowerCase()}-${waveform}.wav`;
+        const { homedir: homedir7 } = await import("os");
         let filepath;
         if (context.renderPath) {
-          filepath = join8(dirname5(context.renderPath), filename);
+          filepath = join9(dirname7(context.renderPath), filename);
         } else {
-          const defaultDir = join8(homedir6(), "Documents", "Jambot");
-          mkdirSync5(defaultDir, { recursive: true });
-          filepath = join8(defaultDir, filename);
+          const defaultDir = join9(homedir7(), "Documents", "Jambot");
+          mkdirSync6(defaultDir, { recursive: true });
+          filepath = join9(defaultDir, filename);
         }
-        writeFileSync7(filepath, Buffer.from(wavData));
-        return `Test tone exported: ${filepath} (${note} = ${freq.toFixed(2)}Hz, ${duration}s)`;
+        writeFileSync8(filepath, Buffer.from(wavData));
+        return `Test tone exported: ${filepath} (${note} = ${freq.toFixed(2)}Hz, ${waveform}, ${duration}s)`;
       }
     };
     registerTools(jb200Tools);
@@ -12892,143 +13954,164 @@ ${lines.join("\n")}`;
 var mixer_tools_exports = {};
 function ensureMixerState(session) {
   if (!session.mixer) {
-    session.mixer = { sends: {}, voiceRouting: {}, channelInserts: {}, masterInserts: [], masterVolume: 0.8 };
+    session.mixer = { masterVolume: 0.8, effectChains: {} };
   }
 }
-var mixerTools;
+var EFFECT_NODE_CLASSES2, mixerTools;
 var init_mixer_tools = __esm({
   "tools/mixer-tools.js"() {
     init_tools();
+    init_delay_node();
+    init_eq_node();
+    init_filter_node();
+    init_sidechain_node();
+    init_reverb_node();
+    EFFECT_NODE_CLASSES2 = {
+      delay: DelayNode,
+      eq: EQNode,
+      filter: FilterNode,
+      sidechain: SidechainNode,
+      reverb: ReverbNode
+    };
     mixerTools = {
       /**
-       * Create a send bus with reverb
-       */
-      create_send: async (input, session, context) => {
-        const { name: busName, effect } = input;
-        ensureMixerState(session);
-        if (session.mixer.sends[busName]) {
-          return `Send bus "${busName}" already exists. Use route_to_send to add sources or tweak_reverb to adjust.`;
-        }
-        const params = {
-          decay: input.decay,
-          damping: input.damping,
-          predelay: input.predelay,
-          modulation: input.modulation,
-          lowcut: input.lowcut,
-          highcut: input.highcut,
-          width: input.width,
-          mix: input.mix ?? 0.3
-        };
-        Object.keys(params).forEach((k) => params[k] === void 0 && delete params[k]);
-        session.mixer.sends[busName] = { effect, params };
-        const paramList = Object.entries(params).filter(([k, v]) => k !== "mix" && v !== void 0).map(([k, v]) => `${k}=${v}`).join(", ");
-        return `Created send bus "${busName}" with plate reverb${paramList ? ` (${paramList})` : ""}. Use route_to_send to send voices to it.`;
-      },
-      /**
-       * Tweak reverb parameters on existing send
-       */
-      tweak_reverb: async (input, session, context) => {
-        const { send: busName } = input;
-        if (!session.mixer?.sends?.[busName]) {
-          return `Error: Send bus "${busName}" doesn't exist. Use create_send first.`;
-        }
-        if (session.mixer.sends[busName].effect !== "reverb") {
-          return `Error: "${busName}" is not a reverb bus.`;
-        }
-        const params = session.mixer.sends[busName].params || {};
-        const tweaks = [];
-        ["decay", "damping", "predelay", "modulation", "lowcut", "highcut", "width", "mix"].forEach((p) => {
-          if (input[p] !== void 0) {
-            params[p] = input[p];
-            tweaks.push(`${p}=${input[p]}`);
-          }
-        });
-        session.mixer.sends[busName].params = params;
-        return `Tweaked reverb "${busName}": ${tweaks.join(", ")}`;
-      },
-      /**
-       * Route a voice to a send bus
-       */
-      route_to_send: async (input, session, context) => {
-        const { voice, send, level } = input;
-        if (!session.mixer?.sends?.[send]) {
-          return `Error: Send bus "${send}" doesn't exist. Use create_send first.`;
-        }
-        if (!session.mixer.voiceRouting) session.mixer.voiceRouting = {};
-        if (!session.mixer.voiceRouting[voice]) {
-          session.mixer.voiceRouting[voice] = { sends: {}, inserts: [] };
-        }
-        session.mixer.voiceRouting[voice].sends[send] = level ?? 0.3;
-        return `Routing ${voice} \u2192 ${send} at ${((level ?? 0.3) * 100).toFixed(0)}% level`;
-      },
-      /**
        * Add channel insert (EQ, filter, etc.) - replaces existing insert of same type
+       * Routes through effectChains for actual DSP processing at render time.
        */
       add_channel_insert: async (input, session, context) => {
-        const { channel, effect, preset, params } = input;
+        const { channel, effect, preset, params: userParams } = input;
+        const NodeClass = EFFECT_NODE_CLASSES2[effect];
+        if (!NodeClass) {
+          return `Error: Unknown effect type "${effect}". Valid types: ${Object.keys(EFFECT_NODE_CLASSES2).join(", ")}`;
+        }
         ensureMixerState(session);
-        if (!session.mixer.channelInserts) session.mixer.channelInserts = {};
-        if (!session.mixer.channelInserts[channel]) session.mixer.channelInserts[channel] = [];
-        session.mixer.channelInserts[channel] = session.mixer.channelInserts[channel].filter((i) => i.type !== effect);
-        session.mixer.channelInserts[channel].push({
+        if (!session.mixer.effectChains) session.mixer.effectChains = {};
+        if (!session.mixer.effectChains[channel]) session.mixer.effectChains[channel] = [];
+        const chain = session.mixer.effectChains[channel];
+        const existing = chain.filter((e) => e.type === effect);
+        for (const e of existing) {
+          session.params.unregister(`fx.${channel}.${e.id}`);
+        }
+        const updatedChain = chain.filter((e) => e.type !== effect);
+        session.mixer.effectChains[channel] = updatedChain;
+        const effectCount = updatedChain.filter((e) => e.type === effect).length;
+        const effectId = `${effect}${effectCount + 1}`;
+        const node = new NodeClass(effectId);
+        if (preset && typeof node.loadPreset === "function") {
+          node.loadPreset(preset);
+        }
+        if (userParams) {
+          for (const [key, value] of Object.entries(userParams)) {
+            if (value !== void 0) node.setParam(key, value);
+          }
+        }
+        node.validateInterface();
+        const paramPath = `fx.${channel}.${effectId}`;
+        session.params.register(paramPath, node);
+        updatedChain.push({
+          id: effectId,
           type: effect,
-          preset,
-          params: params || {}
+          params: node.getParams(),
+          _node: node
         });
-        return `Added ${effect}${preset ? ` (${preset})` : ""} insert to ${channel} channel`;
+        return `Added ${effect}${preset ? ` (${preset})` : ""} insert to ${channel} (addressable as ${paramPath})`;
       },
       /**
        * Remove channel insert
        */
       remove_channel_insert: async (input, session, context) => {
         const { channel, effect } = input;
-        if (!session.mixer.channelInserts?.[channel]) {
-          return `No inserts on ${channel} channel`;
+        if (!session.mixer?.effectChains?.[channel]) {
+          return `No inserts on ${channel}`;
         }
+        const chain = session.mixer.effectChains[channel];
         if (effect === "all" || !effect) {
-          const count = session.mixer.channelInserts[channel].length;
-          delete session.mixer.channelInserts[channel];
-          return `Removed all ${count} insert(s) from ${channel} channel`;
-        } else {
-          const before = session.mixer.channelInserts[channel].length;
-          session.mixer.channelInserts[channel] = session.mixer.channelInserts[channel].filter((i) => i.type !== effect);
-          const removed = before - session.mixer.channelInserts[channel].length;
-          if (removed === 0) {
-            return `No ${effect} insert found on ${channel} channel`;
+          for (const e of chain) {
+            session.params.unregister(`fx.${channel}.${e.id}`);
           }
-          return `Removed ${effect} insert from ${channel} channel`;
+          const count = chain.length;
+          delete session.mixer.effectChains[channel];
+          return `Removed all ${count} insert(s) from ${channel}`;
+        } else {
+          const toRemove = chain.filter((e) => e.type === effect || e.id === effect);
+          if (toRemove.length === 0) {
+            return `No ${effect} insert found on ${channel}`;
+          }
+          for (const e of toRemove) {
+            session.params.unregister(`fx.${channel}.${e.id}`);
+          }
+          session.mixer.effectChains[channel] = chain.filter((e) => e.type !== effect && e.id !== effect);
+          if (session.mixer.effectChains[channel].length === 0) {
+            delete session.mixer.effectChains[channel];
+          }
+          return `Removed ${effect} insert from ${channel}`;
         }
       },
       /**
        * Add sidechain ducking (bass ducks on kick, etc.)
+       * Creates a proper SidechainNode and registers in ParamSystem.
        */
       add_sidechain: async (input, session, context) => {
-        const { target, trigger, amount } = input;
+        const { target, trigger, amount, attack, release, hold } = input;
         ensureMixerState(session);
-        if (!session.mixer.channelInserts) session.mixer.channelInserts = {};
-        if (!session.mixer.channelInserts[target]) session.mixer.channelInserts[target] = [];
-        session.mixer.channelInserts[target].push({
-          type: "ducker",
-          params: {
-            trigger,
-            amount: amount ?? 0.5
-          }
+        if (!session.mixer.effectChains) session.mixer.effectChains = {};
+        if (!session.mixer.effectChains[target]) session.mixer.effectChains[target] = [];
+        const chain = session.mixer.effectChains[target];
+        const effectCount = chain.filter((e) => e.type === "sidechain").length;
+        const effectId = `sidechain${effectCount + 1}`;
+        const node = new SidechainNode(effectId);
+        if (trigger) node.setParam("trigger", trigger);
+        if (amount !== void 0) node.setParam("amount", amount);
+        if (attack !== void 0) node.setParam("attack", attack);
+        if (release !== void 0) node.setParam("release", release);
+        if (hold !== void 0) node.setParam("hold", hold);
+        node.validateInterface();
+        const paramPath = `fx.${target}.${effectId}`;
+        session.params.register(paramPath, node);
+        chain.push({
+          id: effectId,
+          type: "sidechain",
+          params: node.getParams(),
+          _node: node
         });
-        return `Added sidechain: ${target} ducks when ${trigger} plays (${((amount ?? 0.5) * 100).toFixed(0)}% reduction)`;
+        const duckAmount = node.getParams().amount ?? 0.5;
+        return `Added sidechain: ${target} ducks when ${trigger || "kick"} plays (${(duckAmount * 100).toFixed(0)}% reduction, addressable as ${paramPath})`;
       },
       /**
        * Add effect to master bus
+       * Routes through effectChains['master'] for actual DSP processing at render time.
        */
       add_master_insert: async (input, session, context) => {
-        const { effect, preset, params } = input;
+        const { effect, preset, params: userParams } = input;
+        const NodeClass = EFFECT_NODE_CLASSES2[effect];
+        if (!NodeClass) {
+          return `Error: Unknown effect type "${effect}". Valid types: ${Object.keys(EFFECT_NODE_CLASSES2).join(", ")}`;
+        }
         ensureMixerState(session);
-        if (!session.mixer.masterInserts) session.mixer.masterInserts = [];
-        session.mixer.masterInserts.push({
+        if (!session.mixer.effectChains) session.mixer.effectChains = {};
+        if (!session.mixer.effectChains.master) session.mixer.effectChains.master = [];
+        const chain = session.mixer.effectChains.master;
+        const effectCount = chain.filter((e) => e.type === effect).length;
+        const effectId = `${effect}${effectCount + 1}`;
+        const node = new NodeClass(effectId);
+        if (preset && typeof node.loadPreset === "function") {
+          node.loadPreset(preset);
+        }
+        if (userParams) {
+          for (const [key, value] of Object.entries(userParams)) {
+            if (value !== void 0) node.setParam(key, value);
+          }
+        }
+        node.validateInterface();
+        const paramPath = `fx.master.${effectId}`;
+        session.params.register(paramPath, node);
+        chain.push({
+          id: effectId,
           type: effect,
-          preset,
-          params: params || {}
+          params: node.getParams(),
+          _node: node
         });
-        return `Added ${effect}${preset ? ` (${preset})` : ""} to master bus`;
+        return `Added ${effect}${preset ? ` (${preset})` : ""} to master bus (addressable as ${paramPath})`;
       },
       /**
        * Display current mixer configuration
@@ -13038,18 +14121,18 @@ var init_mixer_tools = __esm({
         const drums = session.get("drums.level") ?? 0;
         const bass = session.get("bass.level") ?? 0;
         const lead = session.get("lead.level") ?? 0;
-        const sampler = session.get("sampler.level") ?? 0;
+        const jbs = session.get("jbs.level") ?? 0;
         const formatLevel = (dB) => {
           if (dB === 0) return "0dB";
           return dB > 0 ? `+${dB}dB` : `${dB}dB`;
         };
         lines.push("OUTPUT LEVELS:");
-        lines.push(`  drums: ${formatLevel(drums)}  bass: ${formatLevel(bass)}  lead: ${formatLevel(lead)}  sampler: ${formatLevel(sampler)}`);
+        lines.push(`  drums: ${formatLevel(drums)}  bass: ${formatLevel(bass)}  lead: ${formatLevel(lead)}  jbs: ${formatLevel(jbs)}`);
         lines.push("");
-        const hasConfig = session.mixer && (Object.keys(session.mixer.sends || {}).length > 0 || Object.keys(session.mixer.voiceRouting || {}).length > 0 || Object.keys(session.mixer.channelInserts || {}).length > 0 || Object.keys(session.mixer.effectChains || {}).length > 0 || (session.mixer.masterInserts || []).length > 0);
+        const hasConfig = session.mixer && Object.keys(session.mixer.effectChains || {}).length > 0;
         if (!hasConfig) {
           lines.push('Use tweak({ path: "drums.level", value: -3 }) to adjust levels.');
-          lines.push("Use create_send, add_channel_insert, add_effect, or add_sidechain for more routing.");
+          lines.push("Use add_channel_insert, add_effect, or add_sidechain for more routing.");
           return lines.join("\n");
         }
         const effectChains = Object.entries(session.mixer.effectChains || {});
@@ -13058,42 +14141,11 @@ var init_mixer_tools = __esm({
           effectChains.forEach(([target, chain]) => {
             const chainStr = chain.map((e) => {
               const params = Object.entries(e.params || {}).filter(([k]) => k !== "mode").slice(0, 2).map(([k, v]) => `${k}=${v}`).join(", ");
-              return `${e.type}${e.params?.mode ? `(${e.params.mode})` : ""}${params ? ` [${params}]` : ""}`;
+              return `${e.id}: ${e.type}${e.params?.mode ? `(${e.params.mode})` : ""}${params ? ` [${params}]` : ""}`;
             }).join(" \u2192 ");
             lines.push(`  ${target}: ${chainStr}`);
           });
           lines.push("");
-        }
-        const sends = Object.entries(session.mixer.sends || {});
-        if (sends.length > 0) {
-          lines.push("SEND BUSES:");
-          sends.forEach(([name, config]) => {
-            lines.push(`  ${name}: ${config.effect}${config.params?.preset ? ` (${config.params.preset})` : ""}`);
-          });
-          lines.push("");
-        }
-        const routing = Object.entries(session.mixer.voiceRouting || {});
-        if (routing.length > 0) {
-          lines.push("VOICE ROUTING:");
-          routing.forEach(([voice, config]) => {
-            const sendInfo = Object.entries(config.sends || {}).map(([bus, level]) => `${bus} @ ${(level * 100).toFixed(0)}%`).join(", ");
-            if (sendInfo) lines.push(`  ${voice} \u2192 ${sendInfo}`);
-          });
-          lines.push("");
-        }
-        const inserts = Object.entries(session.mixer.channelInserts || {});
-        if (inserts.length > 0) {
-          lines.push("CHANNEL INSERTS:");
-          inserts.forEach(([channel, effects]) => {
-            const effectList = effects.map((e) => e.type + (e.preset ? ` (${e.preset})` : "")).join(" \u2192 ");
-            lines.push(`  ${channel}: ${effectList}`);
-          });
-          lines.push("");
-        }
-        if ((session.mixer.masterInserts || []).length > 0) {
-          const masterEffects = session.mixer.masterInserts.map((e) => e.type + (e.preset ? ` (${e.preset})` : "")).join(" \u2192 ");
-          lines.push("MASTER BUS:");
-          lines.push(`  ${masterEffects}`);
         }
         return lines.join("\n");
       },
@@ -13107,8 +14159,9 @@ var init_mixer_tools = __esm({
         if (!target || !effect) {
           return "Error: add_effect requires target and effect parameters";
         }
-        const validEffects = ["delay", "reverb", "filter", "eq"];
-        if (!validEffects.includes(effect)) {
+        const NodeClass = EFFECT_NODE_CLASSES2[effect];
+        if (!NodeClass) {
+          const validEffects = Object.keys(EFFECT_NODE_CLASSES2);
           return `Error: Unknown effect type "${effect}". Valid types: ${validEffects.join(", ")}`;
         }
         ensureMixerState(session);
@@ -13117,14 +14170,25 @@ var init_mixer_tools = __esm({
         const chain = session.mixer.effectChains[target];
         const effectCount = chain.filter((e) => e.type === effect).length;
         const effectId = `${effect}${effectCount + 1}`;
+        const node = new NodeClass(effectId);
+        for (const [key, value] of Object.entries(params)) {
+          if (value !== void 0) {
+            node.setParam(key, value);
+          }
+        }
+        node.validateInterface();
+        const paramPath = `fx.${target}.${effectId}`;
+        session.params.register(paramPath, node);
         const newEffect = {
           id: effectId,
           type: effect,
-          params: { ...params }
+          params: node.getParams(),
+          _node: node
         };
         if (after) {
           const afterIndex = chain.findIndex((e) => e.type === after || e.id === after);
           if (afterIndex === -1) {
+            session.params.unregister(paramPath);
             return `Error: Cannot find "${after}" in ${target} chain to insert after`;
           }
           chain.splice(afterIndex + 1, 0, newEffect);
@@ -13133,7 +14197,7 @@ var init_mixer_tools = __esm({
         }
         const paramStr = Object.entries(params).filter(([k, v]) => v !== void 0).map(([k, v]) => `${k}=${v}`).join(", ");
         const positionStr = after ? ` after ${after}` : "";
-        return `Added ${effect}${params.mode ? ` (${params.mode})` : ""} to ${target}${positionStr}${paramStr ? ` [${paramStr}]` : ""}`;
+        return `Added ${effect}${params.mode ? ` (${params.mode})` : ""} to ${target}${positionStr}${paramStr ? ` [${paramStr}]` : ""} (addressable as ${paramPath})`;
       },
       /**
        * Remove effect from a target
@@ -13149,15 +14213,20 @@ var init_mixer_tools = __esm({
         }
         const chain = session.mixer.effectChains[target];
         if (!effect || effect === "all") {
+          for (const e of chain) {
+            session.params.unregister(`fx.${target}.${e.id}`);
+          }
           const count = chain.length;
           delete session.mixer.effectChains[target];
           return `Removed all ${count} effect(s) from ${target}`;
         }
-        const beforeLen = chain.length;
+        const toRemove = chain.filter((e) => e.type === effect || e.id === effect);
         session.mixer.effectChains[target] = chain.filter((e) => e.type !== effect && e.id !== effect);
-        const removed = beforeLen - session.mixer.effectChains[target].length;
-        if (removed === 0) {
+        if (toRemove.length === 0) {
           return `No ${effect} found on ${target}`;
+        }
+        for (const e of toRemove) {
+          session.params.unregister(`fx.${target}.${e.id}`);
         }
         if (session.mixer.effectChains[target].length === 0) {
           delete session.mixer.effectChains[target];
@@ -13205,6 +14274,9 @@ var init_mixer_tools = __esm({
         const tweaked = [];
         for (const [key, value] of Object.entries(params)) {
           if (value !== void 0) {
+            if (effectObj._node) {
+              effectObj._node.setParam(key, value);
+            }
             effectObj.params[key] = value;
             tweaked.push(`${key}=${value}`);
           }
@@ -13219,6 +14291,74 @@ var init_mixer_tools = __esm({
   }
 });
 
+// core/automation.js
+function getAutomationSummary(session) {
+  const result = {};
+  const automationPaths = session.params.listAutomation();
+  for (const path of automationPaths) {
+    const [node, ...rest] = path.split(".");
+    const paramPath = rest.join(".");
+    const values = session.params.getAutomation(path);
+    if (!result[node]) result[node] = {};
+    result[node][paramPath] = values;
+  }
+  return result;
+}
+function clearNodeAutomation(session, nodeId) {
+  const automationPaths = session.params.listAutomation();
+  for (const path of automationPaths) {
+    if (path.startsWith(nodeId + ".")) {
+      session.params.clearAutomation(path);
+    }
+  }
+}
+function generateAutomation(pattern, min, max, steps = 16) {
+  const range = max - min;
+  const values = [];
+  switch (pattern) {
+    case "ramp":
+      for (let i = 0; i < steps; i++) {
+        values.push(min + range * i / (steps - 1));
+      }
+      break;
+    case "triangle":
+      const mid = Math.floor(steps / 2);
+      for (let i = 0; i < steps; i++) {
+        if (i < mid) {
+          values.push(min + range * i / mid);
+        } else {
+          values.push(max - range * (i - mid) / (steps - mid));
+        }
+      }
+      break;
+    case "random":
+      for (let i = 0; i < steps; i++) {
+        values.push(min + Math.random() * range);
+      }
+      break;
+    case "sine":
+      for (let i = 0; i < steps; i++) {
+        const t = i / steps * Math.PI * 2;
+        values.push(min + range / 2 * (1 + Math.sin(t)));
+      }
+      break;
+    case "square":
+      for (let i = 0; i < steps; i++) {
+        values.push(i % 2 === 0 ? min : max);
+      }
+      break;
+    default:
+      for (let i = 0; i < steps; i++) {
+        values.push(min);
+      }
+  }
+  return values;
+}
+var init_automation = __esm({
+  "core/automation.js"() {
+  }
+});
+
 // tools/song-tools.js
 var song_tools_exports = {};
 function getInsertsForInstrument(session, inst) {
@@ -13227,6 +14367,13 @@ function getInsertsForInstrument(session, inst) {
     const result = {};
     if (inserts["jb01"]) result["jb01"] = JSON.parse(JSON.stringify(inserts["jb01"]));
     for (const v of JB01_VOICES) {
+      if (inserts[v]) result[v] = JSON.parse(JSON.stringify(inserts[v]));
+    }
+    return Object.keys(result).length > 0 ? result : null;
+  }
+  if (inst === "jt90") {
+    const result = {};
+    for (const v of JT90_VOICES) {
       if (inserts[v]) result[v] = JSON.parse(JSON.stringify(inserts[v]));
     }
     return Object.keys(result).length > 0 ? result : null;
@@ -13250,21 +14397,40 @@ function restoreInserts(session, inserts) {
     session.mixer.channelInserts[channel] = JSON.parse(JSON.stringify(insertList));
   }
 }
+function getAutomationForInstrument(session, inst) {
+  const automation = {};
+  for (const [path, values] of session.params.automation) {
+    if (path.startsWith(inst + ".")) {
+      automation[path.slice(inst.length + 1)] = [...values];
+    }
+  }
+  return Object.keys(automation).length > 0 ? automation : void 0;
+}
+function restoreAutomation(session, inst, automation) {
+  if (!automation) return;
+  for (const [path, values] of Object.entries(automation)) {
+    session.params.automate(`${inst}.${path}`, [...values]);
+  }
+}
 function clearInsertsForInstrument(session, inst) {
   if (!session.mixer?.channelInserts) return;
   if (inst === "jb01") {
     for (const v of JB01_VOICES) delete session.mixer.channelInserts[v];
+  } else if (inst === "jt90") {
+    for (const v of JT90_VOICES) delete session.mixer.channelInserts[v];
   } else if (inst === "drums") {
     for (const v of DRUM_VOICES) delete session.mixer.channelInserts[v];
   } else {
     delete session.mixer.channelInserts[inst];
   }
 }
-var JB01_VOICES, DRUM_VOICES, songTools;
+var JB01_VOICES, JT90_VOICES, DRUM_VOICES, songTools;
 var init_song_tools = __esm({
   "tools/song-tools.js"() {
     init_tools();
+    init_automation();
     JB01_VOICES = ["jb01", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"];
+    JT90_VOICES = ["jt90", "kick", "snare", "clap", "rimshot", "lowtom", "midtom", "hitom", "ch", "oh", "crash", "ride"];
     DRUM_VOICES = ["drums", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"];
     songTools = {
       /**
@@ -13307,20 +14473,22 @@ var init_song_tools = __esm({
           session.currentPattern.lead = patternName;
           return `Saved lead pattern "${patternName}"`;
         }
-        if (instrument === "sampler") {
-          session.patterns.sampler[patternName] = {
-            pattern: JSON.parse(JSON.stringify(session.samplerPattern)),
-            params: JSON.parse(JSON.stringify(session.samplerParams)),
-            channelInserts: getInsertsForInstrument(session, "sampler")
+        if (instrument === "jbs" || instrument === "sampler") {
+          if (!session.patterns.jbs) session.patterns.jbs = {};
+          session.patterns.jbs[patternName] = {
+            pattern: JSON.parse(JSON.stringify(session.jbsPattern)),
+            params: JSON.parse(JSON.stringify(session.jbsParams)),
+            channelInserts: getInsertsForInstrument(session, "jbs")
           };
-          session.currentPattern.sampler = patternName;
-          return `Saved sampler pattern "${patternName}"`;
+          session.currentPattern.jbs = patternName;
+          return `Saved jbs pattern "${patternName}"`;
         }
         if (instrument === "jb01") {
           if (!session.patterns.jb01) session.patterns.jb01 = {};
           session.patterns.jb01[patternName] = {
             pattern: JSON.parse(JSON.stringify(session.jb01Pattern || {})),
             params: JSON.parse(JSON.stringify(session.jb01Params || {})),
+            automation: getAutomationForInstrument(session, "jb01"),
             channelInserts: getInsertsForInstrument(session, "jb01")
           };
           if (!session.currentPattern) session.currentPattern = {};
@@ -13341,11 +14509,50 @@ var init_song_tools = __esm({
           session.patterns.jb202[patternName] = {
             pattern: JSON.parse(JSON.stringify(session.jb202Pattern || [])),
             params: JSON.parse(JSON.stringify(session.jb202Params || {})),
+            automation: getAutomationForInstrument(session, "jb202"),
             channelInserts: getInsertsForInstrument(session, "jb202")
           };
           if (!session.currentPattern) session.currentPattern = {};
           session.currentPattern.jb202 = patternName;
           return `Saved jb202 pattern "${patternName}"`;
+        }
+        if (instrument === "jt10") {
+          if (!session.patterns.jt10) session.patterns.jt10 = {};
+          session.patterns.jt10[patternName] = {
+            pattern: JSON.parse(JSON.stringify(session.jt10Pattern || [])),
+            params: JSON.parse(JSON.stringify(session.jt10Params || {})),
+            automation: getAutomationForInstrument(session, "jt10"),
+            channelInserts: getInsertsForInstrument(session, "jt10")
+          };
+          if (!session.currentPattern) session.currentPattern = {};
+          session.currentPattern.jt10 = patternName;
+          return `Saved jt10 pattern "${patternName}"`;
+        }
+        if (instrument === "jt30") {
+          if (!session.patterns.jt30) session.patterns.jt30 = {};
+          session.patterns.jt30[patternName] = {
+            pattern: JSON.parse(JSON.stringify(session.jt30Pattern || [])),
+            params: JSON.parse(JSON.stringify(session.jt30Params || {})),
+            automation: getAutomationForInstrument(session, "jt30"),
+            channelInserts: getInsertsForInstrument(session, "jt30")
+          };
+          if (!session.currentPattern) session.currentPattern = {};
+          session.currentPattern.jt30 = patternName;
+          return `Saved jt30 pattern "${patternName}"`;
+        }
+        if (instrument === "jt90") {
+          if (!session.patterns.jt90) session.patterns.jt90 = {};
+          session.patterns.jt90[patternName] = {
+            pattern: JSON.parse(JSON.stringify(session.jt90Pattern || {})),
+            params: JSON.parse(JSON.stringify(session.jt90Params || {})),
+            automation: getAutomationForInstrument(session, "jt90"),
+            channelInserts: getInsertsForInstrument(session, "jt90"),
+            swing: session.jt90Swing || 0,
+            accentLevel: session.jt90AccentLevel || 1
+          };
+          if (!session.currentPattern) session.currentPattern = {};
+          session.currentPattern.jt90 = patternName;
+          return `Saved jt90 pattern "${patternName}"`;
         }
         return `Unknown instrument: ${instrument}`;
       },
@@ -13392,21 +14599,23 @@ var init_song_tools = __esm({
           session.currentPattern.lead = patternName;
           return `Loaded lead pattern "${patternName}"`;
         }
-        if (instrument === "sampler") {
-          const saved = session.patterns.sampler[patternName];
-          if (!saved) return `No sampler pattern "${patternName}" found`;
-          session.samplerPattern = JSON.parse(JSON.stringify(saved.pattern));
-          session.samplerParams = JSON.parse(JSON.stringify(saved.params));
-          clearInsertsForInstrument(session, "sampler");
+        if (instrument === "jbs" || instrument === "sampler") {
+          const saved = session.patterns.jbs?.[patternName];
+          if (!saved) return `No jbs pattern "${patternName}" found`;
+          session.jbsPattern = JSON.parse(JSON.stringify(saved.pattern));
+          session.jbsParams = JSON.parse(JSON.stringify(saved.params));
+          clearInsertsForInstrument(session, "jbs");
           restoreInserts(session, saved.channelInserts);
-          session.currentPattern.sampler = patternName;
-          return `Loaded sampler pattern "${patternName}"`;
+          session.currentPattern.jbs = patternName;
+          return `Loaded jbs pattern "${patternName}"`;
         }
         if (instrument === "jb01") {
           const saved = session.patterns.jb01?.[patternName];
           if (!saved) return `No jb01 pattern "${patternName}" found`;
           session.jb01Pattern = JSON.parse(JSON.stringify(saved.pattern));
           session.jb01Params = JSON.parse(JSON.stringify(saved.params));
+          clearNodeAutomation(session, "jb01");
+          restoreAutomation(session, "jb01", saved.automation);
           clearInsertsForInstrument(session, "jb01");
           restoreInserts(session, saved.channelInserts);
           if (!session.currentPattern) session.currentPattern = {};
@@ -13428,11 +14637,54 @@ var init_song_tools = __esm({
           if (!saved) return `No jb202 pattern "${patternName}" found`;
           session.jb202Pattern = JSON.parse(JSON.stringify(saved.pattern));
           session.jb202Params = JSON.parse(JSON.stringify(saved.params));
+          clearNodeAutomation(session, "jb202");
+          restoreAutomation(session, "jb202", saved.automation);
           clearInsertsForInstrument(session, "jb202");
           restoreInserts(session, saved.channelInserts);
           if (!session.currentPattern) session.currentPattern = {};
           session.currentPattern.jb202 = patternName;
           return `Loaded jb202 pattern "${patternName}"`;
+        }
+        if (instrument === "jt10") {
+          const saved = session.patterns.jt10?.[patternName];
+          if (!saved) return `No jt10 pattern "${patternName}" found`;
+          session.jt10Pattern = JSON.parse(JSON.stringify(saved.pattern));
+          if (saved.params) session.jt10Params = JSON.parse(JSON.stringify(saved.params));
+          clearNodeAutomation(session, "jt10");
+          restoreAutomation(session, "jt10", saved.automation);
+          clearInsertsForInstrument(session, "jt10");
+          restoreInserts(session, saved.channelInserts);
+          if (!session.currentPattern) session.currentPattern = {};
+          session.currentPattern.jt10 = patternName;
+          return `Loaded jt10 pattern "${patternName}"`;
+        }
+        if (instrument === "jt30") {
+          const saved = session.patterns.jt30?.[patternName];
+          if (!saved) return `No jt30 pattern "${patternName}" found`;
+          session.jt30Pattern = JSON.parse(JSON.stringify(saved.pattern));
+          if (saved.params) session.jt30Params = JSON.parse(JSON.stringify(saved.params));
+          clearNodeAutomation(session, "jt30");
+          restoreAutomation(session, "jt30", saved.automation);
+          clearInsertsForInstrument(session, "jt30");
+          restoreInserts(session, saved.channelInserts);
+          if (!session.currentPattern) session.currentPattern = {};
+          session.currentPattern.jt30 = patternName;
+          return `Loaded jt30 pattern "${patternName}"`;
+        }
+        if (instrument === "jt90") {
+          const saved = session.patterns.jt90?.[patternName];
+          if (!saved) return `No jt90 pattern "${patternName}" found`;
+          session.jt90Pattern = JSON.parse(JSON.stringify(saved.pattern));
+          if (saved.params) session.jt90Params = JSON.parse(JSON.stringify(saved.params));
+          if (saved.swing !== void 0) session.jt90Swing = saved.swing;
+          if (saved.accentLevel !== void 0) session.jt90AccentLevel = saved.accentLevel;
+          clearNodeAutomation(session, "jt90");
+          restoreAutomation(session, "jt90", saved.automation);
+          clearInsertsForInstrument(session, "jt90");
+          restoreInserts(session, saved.channelInserts);
+          if (!session.currentPattern) session.currentPattern = {};
+          session.currentPattern.jt90 = patternName;
+          return `Loaded jt90 pattern "${patternName}"`;
         }
         return `Unknown instrument: ${instrument}`;
       },
@@ -13445,14 +14697,15 @@ var init_song_tools = __esm({
         if (!patterns) return `Unknown instrument: ${instrument}`;
         if (!patterns[from]) return `No ${instrument} pattern "${from}" found`;
         patterns[to] = JSON.parse(JSON.stringify(patterns[from]));
-        return `Copied ${instrument} pattern "${from}" to "${to}"`;
+        await songTools.load_pattern({ instrument, name: to }, session, context);
+        return `Copied ${instrument} pattern "${from}" to "${to}" (now active)`;
       },
       /**
        * List all saved patterns per instrument
        */
       list_patterns: async (input, session, context) => {
         const lines = [];
-        for (const instrument of ["jb01", "jb200", "jb202", "sampler"]) {
+        for (const instrument of ["jb01", "jb200", "jb202", "jt10", "jt30", "jt90", "jbs"]) {
           const patterns = session.patterns?.[instrument] || {};
           const names = Object.keys(patterns);
           const current = session.currentPattern?.[instrument];
@@ -13484,7 +14737,10 @@ var init_song_tools = __esm({
             jb01: s.jb01 || null,
             jb200: s.jb200 || null,
             jb202: s.jb202 || null,
-            sampler: s.sampler || null,
+            jt10: s.jt10 || null,
+            jt30: s.jt30 || null,
+            jt90: s.jt90 || null,
+            jbs: s.jbs || s.sampler || null,
             // Dormant instruments (legacy support)
             drums: s.drums || null,
             bass: s.bass || null,
@@ -13508,7 +14764,7 @@ var init_song_tools = __esm({
       show_arrangement: async (input, session, context) => {
         const lines = [];
         lines.push("PATTERNS:");
-        for (const instrument of ["jb01", "jb200", "jb202", "sampler"]) {
+        for (const instrument of ["jb01", "jb200", "jb202", "jt10", "jt30", "jt90", "jbs"]) {
           const patterns = session.patterns?.[instrument] || {};
           const names = Object.keys(patterns);
           if (names.length > 0) {
@@ -13529,7 +14785,10 @@ var init_song_tools = __esm({
             if (section.patterns.jb01) parts.push(`jb01:${section.patterns.jb01}`);
             if (section.patterns.jb200) parts.push(`jb200:${section.patterns.jb200}`);
             if (section.patterns.jb202) parts.push(`jb202:${section.patterns.jb202}`);
-            if (section.patterns.sampler) parts.push(`sampler:${section.patterns.sampler}`);
+            if (section.patterns.jt10) parts.push(`jt10:${section.patterns.jt10}`);
+            if (section.patterns.jt30) parts.push(`jt30:${section.patterns.jt30}`);
+            if (section.patterns.jt90) parts.push(`jt90:${section.patterns.jt90}`);
+            if (section.patterns.jbs) parts.push(`jbs:${section.patterns.jbs}`);
             if (section.patterns.drums) parts.push(`drums:${section.patterns.drums}`);
             if (section.patterns.bass) parts.push(`bass:${section.patterns.bass}`);
             if (section.patterns.lead) parts.push(`lead:${section.patterns.lead}`);
@@ -13639,47 +14898,11 @@ Use /open <folder> or /recent to continue.`;
 
 // tools/generic-tools.js
 var generic_tools_exports = {};
-function parsePath(path) {
-  const parts = path.split(".");
-  if (parts.length < 2) {
-    return null;
-  }
-  const nodeId = parts[0];
-  if (parts.length === 2) {
-    return { nodeId, voice: nodeId, param: parts[1] };
-  }
-  if (parts.length >= 3) {
-    return { nodeId, voice: parts[1], param: parts.slice(2).join(".") };
-  }
-  return null;
-}
-function getDescriptorForPath(path) {
-  const parsed = parsePath(path);
-  if (!parsed) return null;
-  const synthId = NODE_TO_SYNTH[parsed.nodeId];
-  if (!synthId) return null;
-  return getParamDef(synthId, parsed.voice, parsed.param);
-}
-var NODE_TO_SYNTH, genericTools;
+var genericTools;
 var init_generic_tools = __esm({
   "tools/generic-tools.js"() {
     init_tools();
     init_converters();
-    NODE_TO_SYNTH = {
-      // Real instruments
-      jb01: "jb01",
-      jb202: "jb202",
-      jt10: "jt10",
-      jt30: "jt30",
-      jt90: "jt90",
-      sampler: "sampler",
-      jp9000: "jp9000",
-      // Aliases
-      drums: "jb01",
-      bass: "jb202",
-      lead: "jb202",
-      synth: "jb202"
-    };
     genericTools = {
       /**
        * Get any parameter value (returns producer-friendly units)
@@ -13702,9 +14925,11 @@ var init_generic_tools = __esm({
           }
           return `${path} is not set (undefined)`;
         }
-        const descriptor = getDescriptorForPath(path);
+        const descriptor = session.getDescriptor(path);
         if (descriptor) {
-          const producerValue = fromEngine(value, descriptor);
+          const segs = path.split(".");
+          const isNodeLevel = segs.length === 2 && segs[1] === "level";
+          const producerValue = isNodeLevel ? value : fromEngine(value, descriptor);
           return `${path} = ${formatValue(producerValue, descriptor)}`;
         }
         return `${path} = ${JSON.stringify(value)}`;
@@ -13743,14 +14968,16 @@ var init_generic_tools = __esm({
         if (!session.params.nodes.has(nodeId)) {
           return `Error: Unknown node "${nodeId}". Available: ${session.listNodes().join(", ")}`;
         }
-        const descriptor = getDescriptorForPath(path);
+        const descriptor = session.getDescriptor(path);
+        const segments = path.split(".");
+        const isNodeLevel = segments.length === 2 && segments[1] === "level";
         let finalProducerValue;
         if (delta !== void 0) {
           const currentEngineValue = session.get(path);
           if (currentEngineValue === void 0) {
             return `Error: Cannot apply delta - ${path} has no current value`;
           }
-          const currentProducerValue = descriptor ? fromEngine(currentEngineValue, descriptor) : currentEngineValue;
+          const currentProducerValue = descriptor && !isNodeLevel ? fromEngine(currentEngineValue, descriptor) : currentEngineValue;
           finalProducerValue = currentProducerValue + delta;
           if (descriptor) {
             finalProducerValue = Math.max(descriptor.min, Math.min(descriptor.max, finalProducerValue));
@@ -13758,7 +14985,7 @@ var init_generic_tools = __esm({
         } else {
           finalProducerValue = value;
         }
-        const engineValue = descriptor ? toEngine(finalProducerValue, descriptor) : finalProducerValue;
+        const engineValue = descriptor && !isNodeLevel ? toEngine(finalProducerValue, descriptor) : finalProducerValue;
         const success = session.set(path, engineValue);
         if (success) {
           const displayValue = descriptor ? formatValue(finalProducerValue, descriptor) : JSON.stringify(finalProducerValue);
@@ -13781,8 +15008,10 @@ var init_generic_tools = __esm({
         }
         const results = [];
         for (const [path, value] of Object.entries(params)) {
-          const descriptor = getDescriptorForPath(path);
-          const engineValue = descriptor ? toEngine(value, descriptor) : value;
+          const descriptor = session.getDescriptor(path);
+          const segments = path.split(".");
+          const isNodeLevel = segments.length === 2 && segments[1] === "level";
+          const engineValue = descriptor && !isNodeLevel ? toEngine(value, descriptor) : value;
           const success = session.set(path, engineValue);
           if (success) {
             const displayValue = descriptor ? formatValue(value, descriptor) : JSON.stringify(value);
@@ -13878,21 +15107,38 @@ Use list_params({ node: 'drums' }) to see parameters for a specific node.`;
   }
 });
 
-// effects/analyze-node.js
+// effects/spectral-analyzer.js
 import { execSync as execSync2 } from "child_process";
-import { existsSync as existsSync4, readFileSync as readFileSync4 } from "fs";
-import { basename } from "path";
-var AnalyzeNode;
-var init_analyze_node = __esm({
-  "effects/analyze-node.js"() {
-    init_node();
-    AnalyzeNode = class extends Node {
-      constructor(id = "analyze", config = {}) {
-        super(id, config);
-        this.registerParams({
-          bpm: { min: 60, max: 200, default: 128, unit: "bpm", description: "Session BPM for rhythm analysis" },
-          generateSpectrogram: { min: 0, max: 1, default: 0, unit: "boolean", description: "Generate spectrogram image" }
-        });
+import { existsSync as existsSync5 } from "fs";
+function clampDb(v, maxDb = 6) {
+  return isFinite(v) ? Math.max(-120, Math.min(maxDb, v)) : -120;
+}
+function hzToNote(hz) {
+  if (hz <= 0) {
+    return { note: "N/A", hz: 0, cents: 0, midiNote: 0 };
+  }
+  const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const a4 = 440;
+  const semitones = 12 * Math.log2(hz / a4);
+  const roundedSemitones = Math.round(semitones);
+  const cents = Math.round((semitones - roundedSemitones) * 100);
+  const midiNote = 69 + roundedSemitones;
+  const noteIndex = (midiNote % 12 + 12) % 12;
+  const noteName = noteNames[noteIndex];
+  const octave = Math.floor(midiNote / 12) - 1;
+  return {
+    note: `${noteName}${octave}`,
+    hz: Math.round(hz * 10) / 10,
+    cents,
+    midiNote
+  };
+}
+var SpectralAnalyzer, spectralAnalyzer;
+var init_spectral_analyzer = __esm({
+  "effects/spectral-analyzer.js"() {
+    SpectralAnalyzer = class {
+      constructor() {
+        this.fftSize = 4096;
       }
       /**
        * Check if sox is installed
@@ -13913,7 +15159,396 @@ var init_analyze_node = __esm({
        */
       runSox(args) {
         try {
-          const result = execSync2(`sox ${args} 2>&1`, { encoding: "utf-8" });
+          const result = execSync2(`sox ${args} 2>&1`, { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 });
+          return result;
+        } catch (e) {
+          return e.stdout?.toString() || e.stderr?.toString() || "";
+        }
+      }
+      /**
+       * Get spectral peaks from a WAV file
+       *
+       * Uses sox's stat -freq to get frequency spectrum data, then finds local maxima.
+       *
+       * @param {string} wavPath - Path to WAV file
+       * @param {Object} options - Analysis options
+       * @param {number} options.minFreq - Minimum frequency to consider (default: 20)
+       * @param {number} options.maxFreq - Maximum frequency to consider (default: 8000)
+       * @param {number} options.minPeakDb - Minimum amplitude for peaks (default: -40)
+       * @param {number} options.maxPeaks - Maximum number of peaks to return (default: 10)
+       * @returns {Array<{ freq: number, amplitudeDb: number, note: string, midiNote: number, cents: number }>}
+       */
+      getSpectralPeaks(wavPath, options = {}) {
+        const {
+          minFreq = 20,
+          maxFreq = 8e3,
+          minPeakDb = -40,
+          maxPeaks = 10
+        } = options;
+        if (!existsSync5(wavPath)) {
+          throw new Error(`File not found: ${wavPath}`);
+        }
+        if (!this.checkSoxInstalled()) {
+          throw new Error("sox is not installed. Run: brew install sox");
+        }
+        const output = this.runSox(`"${wavPath}" -n stat -freq`);
+        const lines = output.split("\n");
+        const spectrumData = [];
+        for (const line of lines) {
+          const match = line.trim().match(/^([\d.]+)\s+([-\d.eE+]+)/);
+          if (match) {
+            const freq = parseFloat(match[1]);
+            const linearAmp = parseFloat(match[2]);
+            const amplitudeDb = linearAmp > 0 ? clampDb(20 * Math.log10(linearAmp), 200) : -120;
+            if (freq >= minFreq && freq <= maxFreq && amplitudeDb >= minPeakDb && isFinite(amplitudeDb)) {
+              spectrumData.push({ freq, amplitude: amplitudeDb });
+            }
+          }
+        }
+        if (spectrumData.length < 3) {
+          return [];
+        }
+        spectrumData.sort((a, b) => a.freq - b.freq);
+        const peaks = [];
+        const minPeakDistance = 20;
+        for (let i = 1; i < spectrumData.length - 1; i++) {
+          const prev = spectrumData[i - 1];
+          const curr = spectrumData[i];
+          const next = spectrumData[i + 1];
+          if (curr.amplitude > prev.amplitude && curr.amplitude > next.amplitude) {
+            const tooClose = peaks.some((p) => Math.abs(p.freq - curr.freq) < minPeakDistance);
+            if (!tooClose) {
+              const noteInfo = hzToNote(curr.freq);
+              peaks.push({
+                freq: curr.freq,
+                amplitudeDb: Math.round(clampDb(curr.amplitude, 200) * 10) / 10,
+                note: noteInfo.note,
+                midiNote: noteInfo.midiNote,
+                cents: noteInfo.cents
+              });
+            }
+          }
+        }
+        peaks.sort((a, b) => b.amplitudeDb - a.amplitudeDb);
+        return peaks.slice(0, maxPeaks);
+      }
+      /**
+       * Detect resonance peaks (the "squelch" in squelchy sounds)
+       *
+       * A resonance peak is a spectral peak significantly louder than its neighbors.
+       * This indicates filter resonance - the characteristic acid squelch.
+       *
+       * @param {string} wavPath - Path to WAV file
+       * @param {Object} options - Detection options
+       * @param {number} options.minProminence - Minimum prominence in dB to count as resonance (default: 6)
+       * @param {number} options.minFreq - Minimum frequency to check (default: 200)
+       * @param {number} options.maxFreq - Maximum frequency to check (default: 4000)
+       * @returns {{ detected: boolean, peaks: Array<{ freq: number, note: string, prominenceDb: number }>, description: string }}
+       */
+      detectResonance(wavPath, options = {}) {
+        const {
+          minProminence = 6,
+          minFreq = 200,
+          maxFreq = 4e3
+        } = options;
+        if (!existsSync5(wavPath)) {
+          throw new Error(`File not found: ${wavPath}`);
+        }
+        const allPeaks = this.getSpectralPeaks(wavPath, {
+          minFreq,
+          maxFreq,
+          minPeakDb: -50,
+          maxPeaks: 20
+        });
+        if (allPeaks.length < 2) {
+          return {
+            detected: false,
+            peaks: [],
+            description: "Not enough spectral data for resonance detection"
+          };
+        }
+        const avgAmplitude = allPeaks.reduce((sum, p) => sum + p.amplitudeDb, 0) / allPeaks.length;
+        const prominentPeaks = [];
+        for (const peak of allPeaks) {
+          const prominence = peak.amplitudeDb - avgAmplitude;
+          if (isFinite(prominence) && prominence >= minProminence) {
+            prominentPeaks.push({
+              freq: peak.freq,
+              note: peak.note,
+              prominenceDb: Math.round(Math.min(prominence, 60) * 10) / 10,
+              amplitudeDb: peak.amplitudeDb
+            });
+          }
+        }
+        prominentPeaks.sort((a, b) => b.prominenceDb - a.prominenceDb);
+        const detected = prominentPeaks.length > 0;
+        let description = "";
+        if (detected) {
+          const top = prominentPeaks[0];
+          if (top.prominenceDb >= 12) {
+            description = `Strong resonance peak at ${Math.round(top.freq)}Hz (${top.note}), ${top.prominenceDb}dB above average - very squelchy`;
+          } else if (top.prominenceDb >= 8) {
+            description = `Resonance peak at ${Math.round(top.freq)}Hz (${top.note}), ${top.prominenceDb}dB above average - squelchy`;
+          } else {
+            description = `Mild resonance peak at ${Math.round(top.freq)}Hz (${top.note}), ${top.prominenceDb}dB above average - slightly squelchy`;
+          }
+        } else {
+          description = "No prominent resonance peaks detected - not squelchy";
+        }
+        return {
+          detected,
+          peaks: prominentPeaks.slice(0, 5),
+          // Return top 5 prominent peaks
+          description
+        };
+      }
+      /**
+       * Analyze narrow frequency bands for mud detection
+       *
+       * Uses sox sinc filters to measure RMS in narrow bands (default 50Hz wide).
+       * This helps identify frequency buildup in the "mud zone" (200-600Hz).
+       *
+       * @param {string} wavPath - Path to WAV file
+       * @param {Object} options - Analysis options
+       * @param {number} options.startHz - Start frequency (default: 200)
+       * @param {number} options.endHz - End frequency (default: 600)
+       * @param {number} options.bandwidthHz - Width of each band (default: 50)
+       * @returns {{ bands: Array<{ centerFreq: number, rmsDb: number, note: string }>, mudDetected: boolean, worstBand: object|null, description: string }}
+       */
+      analyzeNarrowBands(wavPath, options = {}) {
+        const {
+          startHz = 200,
+          endHz = 600,
+          bandwidthHz = 50
+        } = options;
+        if (!existsSync5(wavPath)) {
+          throw new Error(`File not found: ${wavPath}`);
+        }
+        if (!this.checkSoxInstalled()) {
+          throw new Error("sox is not installed. Run: brew install sox");
+        }
+        const bands = [];
+        const halfBand = bandwidthHz / 2;
+        for (let centerFreq = startHz + halfBand; centerFreq <= endHz - halfBand; centerFreq += bandwidthHz) {
+          const lowFreq = centerFreq - halfBand;
+          const highFreq = centerFreq + halfBand;
+          const output = this.runSox(`"${wavPath}" -n sinc ${lowFreq}-${highFreq} stats`);
+          const rmsMatch = output.match(/RMS lev dB\s+([-\d.inf]+)/);
+          const rawRms = rmsMatch ? parseFloat(rmsMatch[1]) : -60;
+          const rmsDb = clampDb(rawRms);
+          const noteInfo = hzToNote(centerFreq);
+          bands.push({
+            centerFreq,
+            rmsDb: Math.round(rmsDb * 10) / 10,
+            note: noteInfo.note
+          });
+        }
+        if (bands.length === 0) {
+          return {
+            bands: [],
+            mudDetected: false,
+            worstBand: null,
+            description: "No bands analyzed"
+          };
+        }
+        const avgRms = bands.reduce((sum, b) => sum + b.rmsDb, 0) / bands.length;
+        const sortedBands = [...bands].sort((a, b) => b.rmsDb - a.rmsDb);
+        const worstBand = sortedBands[0];
+        const mudThreshold = 4;
+        const mudDetected = worstBand.rmsDb - avgRms >= mudThreshold;
+        let description = "";
+        if (mudDetected) {
+          const excess = Math.round((worstBand.rmsDb - avgRms) * 10) / 10;
+          description = `Mud detected at ${worstBand.centerFreq}Hz (${worstBand.note}): ${excess}dB above average. Consider cutting this frequency.`;
+        } else {
+          description = `Low-mid frequencies are balanced. No significant mud detected.`;
+        }
+        return {
+          bands,
+          mudDetected,
+          worstBand: {
+            ...worstBand,
+            excessDb: Math.round((worstBand.rmsDb - avgRms) * 10) / 10
+          },
+          avgRmsDb: Math.round(avgRms * 10) / 10,
+          description
+        };
+      }
+      /**
+       * Measure spectral flux (how much the spectrum changes over time)
+       *
+       * High flux in the mid-range indicates filter sweeps - the "acid" character.
+       * This analyzes short windows and measures the difference between them.
+       *
+       * @param {string} wavPath - Path to WAV file
+       * @param {Object} options - Analysis options
+       * @param {number} options.windowMs - Window size in milliseconds (default: 100)
+       * @param {number} options.freqLow - Low frequency bound (default: 200)
+       * @param {number} options.freqHigh - High frequency bound (default: 2000)
+       * @returns {{ avgFlux: number, maxFlux: number, fluxLevel: string, description: string }}
+       */
+      measureSpectralFlux(wavPath, options = {}) {
+        const {
+          windowMs = 100,
+          freqLow = 200,
+          freqHigh = 2e3
+        } = options;
+        if (!existsSync5(wavPath)) {
+          throw new Error(`File not found: ${wavPath}`);
+        }
+        if (!this.checkSoxInstalled()) {
+          throw new Error("sox is not installed. Run: brew install sox");
+        }
+        const durationOutput = this.runSox(`--info -D "${wavPath}"`);
+        const duration = parseFloat(durationOutput.trim());
+        if (isNaN(duration) || duration <= 0) {
+          return {
+            avgFlux: 0,
+            maxFlux: 0,
+            fluxLevel: "unknown",
+            description: "Could not determine file duration"
+          };
+        }
+        const windowSec = windowMs / 1e3;
+        const numWindows = Math.floor(duration / windowSec);
+        const maxWindows = Math.min(numWindows, 20);
+        if (maxWindows < 2) {
+          return {
+            avgFlux: 0,
+            maxFlux: 0,
+            fluxLevel: "unknown",
+            description: "File too short for flux analysis"
+          };
+        }
+        const windowRms = [];
+        const step = duration / maxWindows;
+        for (let i = 0; i < maxWindows; i++) {
+          const start = i * step;
+          const output = this.runSox(`"${wavPath}" -n trim ${start.toFixed(3)} ${windowSec.toFixed(3)} sinc ${freqLow}-${freqHigh} stats`);
+          const rmsMatch = output.match(/RMS lev dB\s+([-\d.inf]+)/);
+          const rawRms = rmsMatch ? parseFloat(rmsMatch[1]) : -60;
+          windowRms.push(clampDb(rawRms));
+        }
+        const fluxValues = [];
+        for (let i = 1; i < windowRms.length; i++) {
+          const flux = Math.abs(windowRms[i] - windowRms[i - 1]);
+          fluxValues.push(flux);
+        }
+        if (fluxValues.length === 0) {
+          return {
+            avgFlux: 0,
+            maxFlux: 0,
+            fluxLevel: "static",
+            description: "No spectral movement detected"
+          };
+        }
+        const avgFlux = fluxValues.reduce((a, b) => a + b, 0) / fluxValues.length;
+        const maxFlux = Math.max(...fluxValues);
+        let fluxLevel, description;
+        if (avgFlux >= 6) {
+          fluxLevel = "high";
+          description = `High spectral flux (${avgFlux.toFixed(1)}dB avg) - filter is moving actively, strong acid character`;
+        } else if (avgFlux >= 3) {
+          fluxLevel = "medium";
+          description = `Medium spectral flux (${avgFlux.toFixed(1)}dB avg) - some filter movement, moderate dynamics`;
+        } else if (avgFlux >= 1) {
+          fluxLevel = "low";
+          description = `Low spectral flux (${avgFlux.toFixed(1)}dB avg) - minimal filter movement, static sound`;
+        } else {
+          fluxLevel = "static";
+          description = `Very low spectral flux (${avgFlux.toFixed(1)}dB avg) - no filter movement detected`;
+        }
+        return {
+          avgFlux: Math.round(avgFlux * 10) / 10,
+          maxFlux: Math.round(maxFlux * 10) / 10,
+          fluxLevel,
+          description
+        };
+      }
+      /**
+       * Format analysis results for human-readable output
+       * @param {Object} analysis - Combined analysis results
+       * @returns {string}
+       */
+      formatAnalysis(analysis) {
+        const lines = [];
+        if (analysis.resonance) {
+          lines.push("RESONANCE DETECTION:");
+          lines.push(`  ${analysis.resonance.description}`);
+          if (analysis.resonance.peaks && analysis.resonance.peaks.length > 0) {
+            lines.push("  Prominent peaks:");
+            for (const peak of analysis.resonance.peaks.slice(0, 3)) {
+              lines.push(`    ${Math.round(peak.freq)}Hz (${peak.note}): +${peak.prominenceDb}dB prominence`);
+            }
+          }
+          lines.push("");
+        }
+        if (analysis.mud) {
+          lines.push("MUD DETECTION (200-600Hz):");
+          lines.push(`  ${analysis.mud.description}`);
+          if (analysis.mud.bands && analysis.mud.bands.length > 0) {
+            lines.push("  Band levels:");
+            for (const band of analysis.mud.bands) {
+              const bar = "=".repeat(Math.max(0, Math.round((band.rmsDb + 60) / 3)));
+              lines.push(`    ${band.centerFreq}Hz: ${bar} ${band.rmsDb}dB`);
+            }
+          }
+          lines.push("");
+        }
+        if (analysis.flux) {
+          lines.push("SPECTRAL FLUX:");
+          lines.push(`  ${analysis.flux.description}`);
+          lines.push(`  Avg flux: ${analysis.flux.avgFlux}dB, Max flux: ${analysis.flux.maxFlux}dB`);
+          lines.push("");
+        }
+        return lines.join("\n");
+      }
+    };
+    spectralAnalyzer = new SpectralAnalyzer();
+  }
+});
+
+// effects/analyze-node.js
+import { execSync as execSync3 } from "child_process";
+import { existsSync as existsSync6, readFileSync as readFileSync6, writeFileSync as writeFileSync4 } from "fs";
+import { basename } from "path";
+import zlib from "zlib";
+function safeFixed(v, digits = 1) {
+  return isFinite(v) ? v.toFixed(digits) : "-120.0";
+}
+var AnalyzeNode;
+var init_analyze_node = __esm({
+  "effects/analyze-node.js"() {
+    init_node();
+    init_spectral_analyzer();
+    AnalyzeNode = class _AnalyzeNode extends Node {
+      constructor(id = "analyze", config = {}) {
+        super(id, config);
+        this.registerParams({
+          bpm: { min: 60, max: 200, default: 128, unit: "bpm", description: "Session BPM for rhythm analysis" },
+          generateSpectrogram: { min: 0, max: 1, default: 0, unit: "boolean", description: "Generate spectrogram image" }
+        });
+      }
+      /**
+       * Check if sox is installed
+       * @returns {boolean}
+       */
+      checkSoxInstalled() {
+        try {
+          execSync3("which sox", { stdio: "pipe" });
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      /**
+       * Run sox command and capture output
+       * @param {string} args - Sox arguments
+       * @returns {string}
+       */
+      runSox(args) {
+        try {
+          const result = execSync3(`sox ${args} 2>&1`, { encoding: "utf-8" });
           return result;
         } catch (e) {
           return e.stdout?.toString() || e.stderr?.toString() || "";
@@ -13927,7 +15562,7 @@ var init_analyze_node = __esm({
        */
       async analyze(wavPath, options = {}) {
         const bpm = options.bpm ?? this._params.bpm ?? 128;
-        if (!existsSync4(wavPath)) {
+        if (!existsSync6(wavPath)) {
           throw new Error(`File not found: ${wavPath}`);
         }
         if (!this.checkSoxInstalled()) {
@@ -13969,11 +15604,12 @@ var init_analyze_node = __esm({
           }
         }
         const statsOutput = this.runSox(`"${wavPath}" -n stats`);
-        const peakMatch = statsOutput.match(/Pk lev dB\s+([-\d.]+)/);
-        const rmsMatch = statsOutput.match(/RMS lev dB\s+([-\d.]+)/);
-        const peakLevel = peakMatch ? parseFloat(peakMatch[1]) : 0;
-        const rmsLevel = rmsMatch ? parseFloat(rmsMatch[1]) : 0;
-        const dynamicRange = Math.abs(peakLevel - rmsLevel);
+        const peakMatch = statsOutput.match(/Pk lev dB\s+([-\d.inf]+)/);
+        const rmsMatch = statsOutput.match(/RMS lev dB\s+([-\d.inf]+)/);
+        const peakLevel = clampDb(peakMatch ? parseFloat(peakMatch[1]) : -120);
+        const rmsLevel = clampDb(rmsMatch ? parseFloat(rmsMatch[1]) : -120);
+        const dynamicRange = isFinite(peakLevel) && isFinite(rmsLevel) ? Math.abs(peakLevel - rmsLevel) : 0;
+        const isSilent = peakLevel < -80;
         return {
           file: basename(wavPath),
           duration,
@@ -13982,7 +15618,8 @@ var init_analyze_node = __esm({
           bitDepth: bitDepthMatch ? parseInt(bitDepthMatch[1]) : 16,
           peakLevel,
           rmsLevel,
-          dynamicRange
+          dynamicRange,
+          isSilent
         };
       }
       /**
@@ -13992,18 +15629,18 @@ var init_analyze_node = __esm({
        */
       analyzeFrequencyBalance(wavPath) {
         const lowOutput = this.runSox(`"${wavPath}" -n sinc 20-250 stats 2>&1`);
-        const lowRms = lowOutput.match(/RMS lev dB\s+([-\d.]+)/);
+        const lowRms = lowOutput.match(/RMS lev dB\s+([-\d.inf]+)/);
         const lowMidOutput = this.runSox(`"${wavPath}" -n sinc 250-1000 stats 2>&1`);
-        const lowMidRms = lowMidOutput.match(/RMS lev dB\s+([-\d.]+)/);
+        const lowMidRms = lowMidOutput.match(/RMS lev dB\s+([-\d.inf]+)/);
         const highMidOutput = this.runSox(`"${wavPath}" -n sinc 1000-4000 stats 2>&1`);
-        const highMidRms = highMidOutput.match(/RMS lev dB\s+([-\d.]+)/);
+        const highMidRms = highMidOutput.match(/RMS lev dB\s+([-\d.inf]+)/);
         const highOutput = this.runSox(`"${wavPath}" -n sinc 4000-20000 stats 2>&1`);
-        const highRms = highOutput.match(/RMS lev dB\s+([-\d.]+)/);
+        const highRms = highOutput.match(/RMS lev dB\s+([-\d.inf]+)/);
         return {
-          low: lowRms ? parseFloat(lowRms[1]) : -60,
-          lowMid: lowMidRms ? parseFloat(lowMidRms[1]) : -60,
-          highMid: highMidRms ? parseFloat(highMidRms[1]) : -60,
-          high: highRms ? parseFloat(highRms[1]) : -60
+          low: clampDb(lowRms ? parseFloat(lowRms[1]) : -120),
+          lowMid: clampDb(lowMidRms ? parseFloat(lowMidRms[1]) : -120),
+          highMid: clampDb(highMidRms ? parseFloat(highMidRms[1]) : -120),
+          high: clampDb(highRms ? parseFloat(highRms[1]) : -120)
         };
       }
       /**
@@ -14014,6 +15651,14 @@ var init_analyze_node = __esm({
        */
       detectSidechain(wavPath, bpm = 128) {
         const duration = parseFloat(this.runSox(`--info -D "${wavPath}"`).trim());
+        if (isNaN(duration) || duration <= 2) {
+          return {
+            detected: false,
+            avgDuckingDb: 0,
+            duckingPattern: "unknown",
+            confidence: 0
+          };
+        }
         const beatsPerSecond = bpm / 60;
         const segmentDuration = 0.05;
         const numSegments = Math.floor(duration / segmentDuration);
@@ -14024,9 +15669,10 @@ var init_analyze_node = __esm({
           const start = i * segmentDuration;
           try {
             const output = this.runSox(`"${wavPath}" -n trim ${start.toFixed(3)} ${segmentDuration} stats 2>&1`);
-            const rmsMatch = output.match(/RMS lev dB\s+([-\d.]+)/);
+            const rmsMatch = output.match(/RMS lev dB\s+([-\d.inf]+)/);
             if (rmsMatch) {
-              amplitudes.push(parseFloat(rmsMatch[1]));
+              const rms = parseFloat(rmsMatch[1]);
+              amplitudes.push(isFinite(rms) ? rms : -120);
             }
           } catch {
           }
@@ -14043,12 +15689,27 @@ var init_analyze_node = __esm({
         for (let i = 1; i < amplitudes.length; i++) {
           diffs.push(amplitudes[i] - amplitudes[i - 1]);
         }
-        const significantDips = diffs.filter((d) => d < -3).length;
-        const significantRises = diffs.filter((d) => d > 3).length;
+        const significantDips = diffs.filter((d) => d < -6).length;
+        const significantRises = diffs.filter((d) => d > 6).length;
         const dipRatio = Math.min(significantDips, significantRises) / Math.max(significantDips, significantRises, 1);
         const totalDips = significantDips + significantRises;
-        const negativeDiffs = diffs.filter((d) => d < -2);
+        const negativeDiffs = diffs.filter((d) => d < -4);
         const avgDucking = negativeDiffs.length > 0 ? negativeDiffs.reduce((a, b) => a + b, 0) / negativeDiffs.length : 0;
+        const dipPositions = [];
+        for (let i = 0; i < diffs.length; i++) {
+          if (diffs[i] < -6) dipPositions.push(i);
+        }
+        let regularityScore = 0;
+        if (dipPositions.length >= 3) {
+          const spacings = [];
+          for (let i = 1; i < dipPositions.length; i++) {
+            spacings.push(dipPositions[i] - dipPositions[i - 1]);
+          }
+          const avgSpacing = spacings.reduce((a, b) => a + b, 0) / spacings.length;
+          const variance = spacings.reduce((sum, s) => sum + (s - avgSpacing) ** 2, 0) / spacings.length;
+          const cv = Math.sqrt(variance) / (avgSpacing || 1);
+          regularityScore = cv < 0.3 ? 0.3 : cv < 0.5 ? 0.15 : 0;
+        }
         const dipsPerSecond = significantDips / duration;
         let pattern = "unknown";
         if (dipsPerSecond > beatsPerSecond * 1.8) {
@@ -14060,10 +15721,10 @@ var init_analyze_node = __esm({
         }
         const confidence = Math.min(
           1,
-          dipRatio * 0.5 + (totalDips > 10 ? 0.3 : totalDips / 30) + (Math.abs(avgDucking) > 4 ? 0.2 : 0)
+          dipRatio * 0.4 + (totalDips > 10 ? 0.2 : totalDips / 50) + (Math.abs(avgDucking) > 6 ? 0.2 : 0) + regularityScore
         );
         return {
-          detected: confidence > 0.5 && Math.abs(avgDucking) > 3,
+          detected: confidence > 0.6 && Math.abs(avgDucking) > 6,
           avgDuckingDb: Math.abs(avgDucking),
           duckingPattern: pattern,
           confidence: Math.round(confidence * 100) / 100
@@ -14082,11 +15743,11 @@ var init_analyze_node = __esm({
        * @returns {Object} { detected: string, confidence: number, harmonics: Object }
        */
       detectWaveform(wavPath) {
-        if (!existsSync4(wavPath)) {
+        if (!existsSync6(wavPath)) {
           throw new Error(`File not found: ${wavPath}`);
         }
         try {
-          const buffer = readFileSync4(wavPath);
+          const buffer = readFileSync6(wavPath);
           const numChannels = buffer.readUInt16LE(22);
           const sampleRate = buffer.readUInt32LE(24);
           const bitsPerSample = buffer.readUInt16LE(34);
@@ -14288,6 +15949,237 @@ var init_analyze_node = __esm({
         return score / 4;
       }
       /**
+       * Generate an oscilloscope PNG from a WAV file
+       * @param {string} wavPath - Path to WAV file
+       * @param {Object} options
+       * @param {string} [options.output] - Output path (default: <filename>-scope.png)
+       * @param {number} [options.cycles] - Number of waveform cycles to display (default: 5)
+       * @param {number} [options.startMs] - Start time in ms (default: auto-detect stable region)
+       * @returns {string|null} Path to generated PNG
+       */
+      generateScope(wavPath, options = {}) {
+        const { output, cycles = 5, startMs } = options;
+        const outPath = output || wavPath.replace(/\.wav$/i, "-scope.png");
+        if (!existsSync6(wavPath)) {
+          throw new Error(`File not found: ${wavPath}`);
+        }
+        const buffer = readFileSync6(wavPath);
+        const wavInfo = this._parseWavChunks(buffer);
+        const { numChannels, sampleRate, bitsPerSample, dataOffset } = wavInfo;
+        const bytesPerSample = bitsPerSample / 8;
+        const totalSamples = Math.floor((buffer.length - dataOffset) / (bytesPerSample * numChannels));
+        const samples = new Float64Array(totalSamples);
+        for (let i = 0; i < totalSamples; i++) {
+          const offset = dataOffset + i * bytesPerSample * numChannels;
+          if (offset + bytesPerSample > buffer.length) break;
+          if (bitsPerSample === 16) {
+            samples[i] = buffer.readInt16LE(offset) / 32768;
+          } else if (bitsPerSample === 32) {
+            samples[i] = buffer.readFloatLE(offset);
+          } else {
+            samples[i] = (buffer.readUInt8(offset) - 128) / 128;
+          }
+        }
+        if (samples.length < 256) {
+          throw new Error("Not enough samples for scope display");
+        }
+        let scopeStart;
+        if (startMs !== void 0) {
+          scopeStart = Math.floor(startMs / 1e3 * sampleRate);
+        } else {
+          scopeStart = Math.floor(samples.length * 0.1);
+        }
+        scopeStart = Math.max(0, Math.min(scopeStart, samples.length - 256));
+        const searchWindow = Math.min(4096, samples.length - scopeStart);
+        const crossings = [];
+        for (let i = scopeStart + 1; i < scopeStart + searchWindow; i++) {
+          if (samples[i - 1] <= 0 && samples[i] > 0) {
+            crossings.push(i);
+          }
+        }
+        let samplesPerCycle;
+        if (crossings.length >= 3) {
+          const periods = [];
+          for (let i = 1; i < crossings.length; i++) {
+            periods.push(crossings[i] - crossings[i - 1]);
+          }
+          periods.sort((a, b) => a - b);
+          samplesPerCycle = periods[Math.floor(periods.length / 2)];
+        } else {
+          samplesPerCycle = Math.floor(sampleRate * 5e-3);
+        }
+        const windowSamples = samplesPerCycle * cycles;
+        const windowStart = crossings.length > 0 ? crossings[0] : scopeStart;
+        const windowEnd = Math.min(windowStart + windowSamples, samples.length);
+        const window2 = samples.slice(windowStart, windowEnd);
+        if (window2.length < 16) {
+          throw new Error("Window too small for scope display");
+        }
+        const W = 800, H = 300;
+        const bgR = 10, bgG = 10, bgB = 10;
+        const traceR = 0, traceG = 255, traceB = 136;
+        const gridR = 30, gridG = 30, gridB = 30;
+        const pixels = Buffer.alloc(W * H * 3);
+        for (let i = 0; i < W * H; i++) {
+          pixels[i * 3] = bgR;
+          pixels[i * 3 + 1] = bgG;
+          pixels[i * 3 + 2] = bgB;
+        }
+        const centerY = Math.floor(H / 2);
+        for (let x = 0; x < W; x++) {
+          const idx = (centerY * W + x) * 3;
+          pixels[idx] = gridR;
+          pixels[idx + 1] = gridG;
+          pixels[idx + 2] = gridB;
+        }
+        for (let c = 0; c <= cycles; c++) {
+          const x = Math.floor(c / cycles * (W - 1));
+          for (let y = 0; y < H; y++) {
+            const idx = (y * W + x) * 3;
+            pixels[idx] = gridR;
+            pixels[idx + 1] = gridG;
+            pixels[idx + 2] = gridB;
+          }
+        }
+        let peak = 0;
+        for (let i = 0; i < window2.length; i++) {
+          const a = Math.abs(window2[i]);
+          if (a > peak) peak = a;
+        }
+        if (peak < 1e-3) peak = 1;
+        const margin = 10;
+        const drawH = H - margin * 2;
+        let prevY = null;
+        for (let x = 0; x < W; x++) {
+          const sampleIdx = Math.floor(x / (W - 1) * (window2.length - 1));
+          const val = window2[sampleIdx] / peak;
+          const y = Math.round(margin + (1 - val) * drawH / 2);
+          const clampedY = Math.max(0, Math.min(H - 1, y));
+          if (prevY !== null) {
+            const yMin = Math.min(prevY, clampedY);
+            const yMax = Math.max(prevY, clampedY);
+            for (let dy = yMin; dy <= yMax; dy++) {
+              const idx = (dy * W + x) * 3;
+              pixels[idx] = traceR;
+              pixels[idx + 1] = traceG;
+              pixels[idx + 2] = traceB;
+            }
+          } else {
+            const idx = (clampedY * W + x) * 3;
+            pixels[idx] = traceR;
+            pixels[idx + 1] = traceG;
+            pixels[idx + 2] = traceB;
+          }
+          prevY = clampedY;
+        }
+        const png = this._encodePng(W, H, pixels);
+        writeFileSync4(outPath, png);
+        return outPath;
+      }
+      /**
+       * Parse WAV RIFF chunks to find fmt and data sections
+       * Handles extended fmt chunks correctly
+       * @param {Buffer} buffer
+       * @returns {{ numChannels: number, sampleRate: number, bitsPerSample: number, dataOffset: number }}
+       */
+      _parseWavChunks(buffer) {
+        let numChannels = 2, sampleRate = 44100, bitsPerSample = 16, dataOffset = 44;
+        let pos = 12;
+        while (pos < buffer.length - 8) {
+          const chunkId = buffer.toString("ascii", pos, pos + 4);
+          const chunkSize = buffer.readUInt32LE(pos + 4);
+          if (chunkId === "fmt ") {
+            numChannels = buffer.readUInt16LE(pos + 10);
+            sampleRate = buffer.readUInt32LE(pos + 12);
+            bitsPerSample = buffer.readUInt16LE(pos + 22);
+          } else if (chunkId === "data") {
+            dataOffset = pos + 8;
+            break;
+          }
+          pos += 8 + chunkSize;
+          if (chunkSize % 2 !== 0) pos++;
+        }
+        return { numChannels, sampleRate, bitsPerSample, dataOffset };
+      }
+      /**
+       * Minimal PNG encoder (RGB, 8-bit)
+       * @param {number} width
+       * @param {number} height
+       * @param {Buffer} pixels - RGB pixel data (width * height * 3 bytes)
+       * @returns {Buffer}
+       */
+      _encodePng(width, height, pixels) {
+        const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+        const ihdrData = Buffer.alloc(13);
+        ihdrData.writeUInt32BE(width, 0);
+        ihdrData.writeUInt32BE(height, 4);
+        ihdrData[8] = 8;
+        ihdrData[9] = 2;
+        ihdrData[10] = 0;
+        ihdrData[11] = 0;
+        ihdrData[12] = 0;
+        const ihdr = this._pngChunk("IHDR", ihdrData);
+        const rawData = Buffer.alloc(height * (1 + width * 3));
+        for (let y = 0; y < height; y++) {
+          const rowOffset = y * (1 + width * 3);
+          rawData[rowOffset] = 0;
+          pixels.copy(rawData, rowOffset + 1, y * width * 3, (y + 1) * width * 3);
+        }
+        const compressed = zlib.deflateRawSync(rawData);
+        const zlibHeader = Buffer.from([120, 1]);
+        const adler = this._adler32(rawData);
+        const adlerBuf = Buffer.alloc(4);
+        adlerBuf.writeUInt32BE(adler, 0);
+        const zlibData = Buffer.concat([zlibHeader, compressed, adlerBuf]);
+        const idat = this._pngChunk("IDAT", zlibData);
+        const iend = this._pngChunk("IEND", Buffer.alloc(0));
+        return Buffer.concat([signature, ihdr, idat, iend]);
+      }
+      /**
+       * Build a PNG chunk: length + type + data + CRC
+       */
+      _pngChunk(type, data) {
+        const typeBytes = Buffer.from(type, "ascii");
+        const length = Buffer.alloc(4);
+        length.writeUInt32BE(data.length, 0);
+        const crcInput = Buffer.concat([typeBytes, data]);
+        const crc = Buffer.alloc(4);
+        crc.writeUInt32BE(this._crc32(crcInput) >>> 0, 0);
+        return Buffer.concat([length, typeBytes, data, crc]);
+      }
+      /**
+       * CRC32 for PNG chunks
+       */
+      _crc32(buf) {
+        if (!_AnalyzeNode._crc32Table) {
+          const table = new Uint32Array(256);
+          for (let n = 0; n < 256; n++) {
+            let c = n;
+            for (let k = 0; k < 8; k++) {
+              c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
+            }
+            table[n] = c;
+          }
+          _AnalyzeNode._crc32Table = table;
+        }
+        let crc = 4294967295;
+        for (let i = 0; i < buf.length; i++) {
+          crc = _AnalyzeNode._crc32Table[(crc ^ buf[i]) & 255] ^ crc >>> 8;
+        }
+        return (crc ^ 4294967295) >>> 0;
+      }
+      /**
+       * Adler32 checksum for zlib
+       */
+      _adler32(buf) {
+        let a = 1, b = 0;
+        for (let i = 0; i < buf.length; i++) {
+          a = (a + buf[i]) % 65521;
+          b = (b + a) % 65521;
+        }
+        return (b << 16 | a) >>> 0;
+      }
+      /**
        * Generate a spectrogram image
        * @param {string} wavPath
        * @param {string} outputPath
@@ -14296,7 +16188,7 @@ var init_analyze_node = __esm({
       generateSpectrogram(wavPath, outputPath = null) {
         const outPath = outputPath || wavPath.replace(/\.wav$/i, "-spectrogram.png");
         try {
-          execSync2(`sox "${wavPath}" -n spectrogram -o "${outPath}" -x 1200 -y 400 -z 80`, { stdio: "pipe" });
+          execSync3(`sox "${wavPath}" -n spectrogram -o "${outPath}" -x 1200 -y 400 -z 80`, { stdio: "pipe" });
           return outPath;
         } catch {
           return null;
@@ -14310,28 +16202,37 @@ var init_analyze_node = __esm({
       formatAnalysis(analysis) {
         const lines = [
           `File: ${analysis.file}`,
-          `Duration: ${analysis.duration.toFixed(2)}s`,
+          `Duration: ${safeFixed(analysis.duration, 2)}s`,
           `Format: ${analysis.sampleRate}Hz, ${analysis.channels}ch, ${analysis.bitDepth}-bit`,
-          "",
+          ""
+        ];
+        if (analysis.isSilent) {
+          lines.push("LEVELS:");
+          lines.push("  Signal is silent or near-silent");
+          lines.push(`  Peak: ${safeFixed(analysis.peakLevel)} dB`);
+          lines.push("");
+          return lines.join("\n");
+        }
+        lines.push(
           "LEVELS:",
-          `  Peak: ${analysis.peakLevel.toFixed(1)} dB`,
-          `  RMS: ${analysis.rmsLevel.toFixed(1)} dB`,
-          `  Dynamic Range: ${analysis.dynamicRange.toFixed(1)} dB`,
+          `  Peak: ${safeFixed(analysis.peakLevel)} dB`,
+          `  RMS: ${safeFixed(analysis.rmsLevel)} dB`,
+          `  Dynamic Range: ${safeFixed(analysis.dynamicRange)} dB`,
           "",
           "FREQUENCY BALANCE:",
-          `  Low (20-250Hz):     ${analysis.frequencyBalance.low.toFixed(1)} dB`,
-          `  Low-Mid (250-1kHz): ${analysis.frequencyBalance.lowMid.toFixed(1)} dB`,
-          `  High-Mid (1-4kHz):  ${analysis.frequencyBalance.highMid.toFixed(1)} dB`,
-          `  High (4-20kHz):     ${analysis.frequencyBalance.high.toFixed(1)} dB`,
+          `  Low (20-250Hz):     ${safeFixed(analysis.frequencyBalance.low)} dB`,
+          `  Low-Mid (250-1kHz): ${safeFixed(analysis.frequencyBalance.lowMid)} dB`,
+          `  High-Mid (1-4kHz):  ${safeFixed(analysis.frequencyBalance.highMid)} dB`,
+          `  High (4-20kHz):     ${safeFixed(analysis.frequencyBalance.high)} dB`,
           "",
           "SIDECHAIN:",
           `  Detected: ${analysis.sidechain.detected ? "YES" : "NO"}`
-        ];
+        );
         if (analysis.sidechain.detected) {
-          lines.push(`  Avg Ducking: ${analysis.sidechain.avgDuckingDb.toFixed(1)} dB`);
+          lines.push(`  Avg Ducking: ${safeFixed(analysis.sidechain.avgDuckingDb)} dB`);
           lines.push(`  Pattern: ${analysis.sidechain.duckingPattern}`);
         }
-        lines.push(`  Confidence: ${(analysis.sidechain.confidence * 100).toFixed(0)}%`);
+        lines.push(`  Confidence: ${safeFixed(analysis.sidechain.confidence * 100, 0)}%`);
         if (analysis.spectrogramPath) {
           lines.push("");
           lines.push(`Spectrogram: ${analysis.spectrogramPath}`);
@@ -14345,6 +16246,9 @@ var init_analyze_node = __esm({
        */
       getRecommendations(analysis) {
         const recommendations = [];
+        if (analysis.isSilent || analysis.peakLevel < -60) {
+          return ["Signal too quiet or silent for reliable analysis."];
+        }
         if (analysis.peakLevel > -1) {
           recommendations.push("WARNING: Peak level very close to 0 dB. Risk of clipping. Reduce master volume.");
         } else if (analysis.peakLevel > -3) {
@@ -14378,402 +16282,6 @@ var init_analyze_node = __esm({
         return recommendations;
       }
     };
-  }
-});
-
-// effects/spectral-analyzer.js
-import { execSync as execSync3 } from "child_process";
-import { existsSync as existsSync5 } from "fs";
-function hzToNote(hz) {
-  if (hz <= 0) {
-    return { note: "N/A", hz: 0, cents: 0, midiNote: 0 };
-  }
-  const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const a4 = 440;
-  const semitones = 12 * Math.log2(hz / a4);
-  const roundedSemitones = Math.round(semitones);
-  const cents = Math.round((semitones - roundedSemitones) * 100);
-  const midiNote = 69 + roundedSemitones;
-  const noteIndex = (midiNote % 12 + 12) % 12;
-  const noteName = noteNames[noteIndex];
-  const octave = Math.floor(midiNote / 12) - 1;
-  return {
-    note: `${noteName}${octave}`,
-    hz: Math.round(hz * 10) / 10,
-    cents,
-    midiNote
-  };
-}
-var SpectralAnalyzer, spectralAnalyzer;
-var init_spectral_analyzer = __esm({
-  "effects/spectral-analyzer.js"() {
-    SpectralAnalyzer = class {
-      constructor() {
-        this.fftSize = 4096;
-      }
-      /**
-       * Check if sox is installed
-       * @returns {boolean}
-       */
-      checkSoxInstalled() {
-        try {
-          execSync3("which sox", { stdio: "pipe" });
-          return true;
-        } catch {
-          return false;
-        }
-      }
-      /**
-       * Run sox command and capture output
-       * @param {string} args - Sox arguments
-       * @returns {string}
-       */
-      runSox(args) {
-        try {
-          const result = execSync3(`sox ${args} 2>&1`, { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 });
-          return result;
-        } catch (e) {
-          return e.stdout?.toString() || e.stderr?.toString() || "";
-        }
-      }
-      /**
-       * Get spectral peaks from a WAV file
-       *
-       * Uses sox's stat -freq to get frequency spectrum data, then finds local maxima.
-       *
-       * @param {string} wavPath - Path to WAV file
-       * @param {Object} options - Analysis options
-       * @param {number} options.minFreq - Minimum frequency to consider (default: 20)
-       * @param {number} options.maxFreq - Maximum frequency to consider (default: 8000)
-       * @param {number} options.minPeakDb - Minimum amplitude for peaks (default: -40)
-       * @param {number} options.maxPeaks - Maximum number of peaks to return (default: 10)
-       * @returns {Array<{ freq: number, amplitudeDb: number, note: string, midiNote: number, cents: number }>}
-       */
-      getSpectralPeaks(wavPath, options = {}) {
-        const {
-          minFreq = 20,
-          maxFreq = 8e3,
-          minPeakDb = -40,
-          maxPeaks = 10
-        } = options;
-        if (!existsSync5(wavPath)) {
-          throw new Error(`File not found: ${wavPath}`);
-        }
-        if (!this.checkSoxInstalled()) {
-          throw new Error("sox is not installed. Run: brew install sox");
-        }
-        const output = this.runSox(`"${wavPath}" -n stat -freq`);
-        const lines = output.split("\n");
-        const spectrumData = [];
-        for (const line of lines) {
-          const match = line.trim().match(/^([\d.]+)\s+([-\d.]+)/);
-          if (match) {
-            const freq = parseFloat(match[1]);
-            const amplitude = parseFloat(match[2]);
-            if (freq >= minFreq && freq <= maxFreq && amplitude >= minPeakDb && isFinite(amplitude)) {
-              spectrumData.push({ freq, amplitude });
-            }
-          }
-        }
-        if (spectrumData.length < 3) {
-          return [];
-        }
-        spectrumData.sort((a, b) => a.freq - b.freq);
-        const peaks = [];
-        const minPeakDistance = 20;
-        for (let i = 1; i < spectrumData.length - 1; i++) {
-          const prev = spectrumData[i - 1];
-          const curr = spectrumData[i];
-          const next = spectrumData[i + 1];
-          if (curr.amplitude > prev.amplitude && curr.amplitude > next.amplitude) {
-            const tooClose = peaks.some((p) => Math.abs(p.freq - curr.freq) < minPeakDistance);
-            if (!tooClose) {
-              const noteInfo = hzToNote(curr.freq);
-              peaks.push({
-                freq: curr.freq,
-                amplitudeDb: Math.round(curr.amplitude * 10) / 10,
-                note: noteInfo.note,
-                midiNote: noteInfo.midiNote,
-                cents: noteInfo.cents
-              });
-            }
-          }
-        }
-        peaks.sort((a, b) => b.amplitudeDb - a.amplitudeDb);
-        return peaks.slice(0, maxPeaks);
-      }
-      /**
-       * Detect resonance peaks (the "squelch" in squelchy sounds)
-       *
-       * A resonance peak is a spectral peak significantly louder than its neighbors.
-       * This indicates filter resonance - the characteristic acid squelch.
-       *
-       * @param {string} wavPath - Path to WAV file
-       * @param {Object} options - Detection options
-       * @param {number} options.minProminence - Minimum prominence in dB to count as resonance (default: 6)
-       * @param {number} options.minFreq - Minimum frequency to check (default: 200)
-       * @param {number} options.maxFreq - Maximum frequency to check (default: 4000)
-       * @returns {{ detected: boolean, peaks: Array<{ freq: number, note: string, prominenceDb: number }>, description: string }}
-       */
-      detectResonance(wavPath, options = {}) {
-        const {
-          minProminence = 6,
-          minFreq = 200,
-          maxFreq = 4e3
-        } = options;
-        if (!existsSync5(wavPath)) {
-          throw new Error(`File not found: ${wavPath}`);
-        }
-        const allPeaks = this.getSpectralPeaks(wavPath, {
-          minFreq,
-          maxFreq,
-          minPeakDb: -50,
-          maxPeaks: 20
-        });
-        if (allPeaks.length < 2) {
-          return {
-            detected: false,
-            peaks: [],
-            description: "Not enough spectral data for resonance detection"
-          };
-        }
-        const avgAmplitude = allPeaks.reduce((sum, p) => sum + p.amplitudeDb, 0) / allPeaks.length;
-        const prominentPeaks = [];
-        for (const peak of allPeaks) {
-          const prominence = peak.amplitudeDb - avgAmplitude;
-          if (prominence >= minProminence) {
-            prominentPeaks.push({
-              freq: peak.freq,
-              note: peak.note,
-              prominenceDb: Math.round(prominence * 10) / 10,
-              amplitudeDb: peak.amplitudeDb
-            });
-          }
-        }
-        prominentPeaks.sort((a, b) => b.prominenceDb - a.prominenceDb);
-        const detected = prominentPeaks.length > 0;
-        let description = "";
-        if (detected) {
-          const top = prominentPeaks[0];
-          if (top.prominenceDb >= 12) {
-            description = `Strong resonance peak at ${Math.round(top.freq)}Hz (${top.note}), ${top.prominenceDb}dB above average - very squelchy`;
-          } else if (top.prominenceDb >= 8) {
-            description = `Resonance peak at ${Math.round(top.freq)}Hz (${top.note}), ${top.prominenceDb}dB above average - squelchy`;
-          } else {
-            description = `Mild resonance peak at ${Math.round(top.freq)}Hz (${top.note}), ${top.prominenceDb}dB above average - slightly squelchy`;
-          }
-        } else {
-          description = "No prominent resonance peaks detected - not squelchy";
-        }
-        return {
-          detected,
-          peaks: prominentPeaks.slice(0, 5),
-          // Return top 5 prominent peaks
-          description
-        };
-      }
-      /**
-       * Analyze narrow frequency bands for mud detection
-       *
-       * Uses sox sinc filters to measure RMS in narrow bands (default 50Hz wide).
-       * This helps identify frequency buildup in the "mud zone" (200-600Hz).
-       *
-       * @param {string} wavPath - Path to WAV file
-       * @param {Object} options - Analysis options
-       * @param {number} options.startHz - Start frequency (default: 200)
-       * @param {number} options.endHz - End frequency (default: 600)
-       * @param {number} options.bandwidthHz - Width of each band (default: 50)
-       * @returns {{ bands: Array<{ centerFreq: number, rmsDb: number, note: string }>, mudDetected: boolean, worstBand: object|null, description: string }}
-       */
-      analyzeNarrowBands(wavPath, options = {}) {
-        const {
-          startHz = 200,
-          endHz = 600,
-          bandwidthHz = 50
-        } = options;
-        if (!existsSync5(wavPath)) {
-          throw new Error(`File not found: ${wavPath}`);
-        }
-        if (!this.checkSoxInstalled()) {
-          throw new Error("sox is not installed. Run: brew install sox");
-        }
-        const bands = [];
-        const halfBand = bandwidthHz / 2;
-        for (let centerFreq = startHz + halfBand; centerFreq <= endHz - halfBand; centerFreq += bandwidthHz) {
-          const lowFreq = centerFreq - halfBand;
-          const highFreq = centerFreq + halfBand;
-          const output = this.runSox(`"${wavPath}" -n sinc ${lowFreq}-${highFreq} stats`);
-          const rmsMatch = output.match(/RMS lev dB\s+([-\d.]+)/);
-          const rmsDb = rmsMatch ? parseFloat(rmsMatch[1]) : -60;
-          const noteInfo = hzToNote(centerFreq);
-          bands.push({
-            centerFreq,
-            rmsDb: Math.round(rmsDb * 10) / 10,
-            note: noteInfo.note
-          });
-        }
-        if (bands.length === 0) {
-          return {
-            bands: [],
-            mudDetected: false,
-            worstBand: null,
-            description: "No bands analyzed"
-          };
-        }
-        const avgRms = bands.reduce((sum, b) => sum + b.rmsDb, 0) / bands.length;
-        const sortedBands = [...bands].sort((a, b) => b.rmsDb - a.rmsDb);
-        const worstBand = sortedBands[0];
-        const mudThreshold = 4;
-        const mudDetected = worstBand.rmsDb - avgRms >= mudThreshold;
-        let description = "";
-        if (mudDetected) {
-          const excess = Math.round((worstBand.rmsDb - avgRms) * 10) / 10;
-          description = `Mud detected at ${worstBand.centerFreq}Hz (${worstBand.note}): ${excess}dB above average. Consider cutting this frequency.`;
-        } else {
-          description = `Low-mid frequencies are balanced. No significant mud detected.`;
-        }
-        return {
-          bands,
-          mudDetected,
-          worstBand: {
-            ...worstBand,
-            excessDb: Math.round((worstBand.rmsDb - avgRms) * 10) / 10
-          },
-          avgRmsDb: Math.round(avgRms * 10) / 10,
-          description
-        };
-      }
-      /**
-       * Measure spectral flux (how much the spectrum changes over time)
-       *
-       * High flux in the mid-range indicates filter sweeps - the "acid" character.
-       * This analyzes short windows and measures the difference between them.
-       *
-       * @param {string} wavPath - Path to WAV file
-       * @param {Object} options - Analysis options
-       * @param {number} options.windowMs - Window size in milliseconds (default: 100)
-       * @param {number} options.freqLow - Low frequency bound (default: 200)
-       * @param {number} options.freqHigh - High frequency bound (default: 2000)
-       * @returns {{ avgFlux: number, maxFlux: number, fluxLevel: string, description: string }}
-       */
-      measureSpectralFlux(wavPath, options = {}) {
-        const {
-          windowMs = 100,
-          freqLow = 200,
-          freqHigh = 2e3
-        } = options;
-        if (!existsSync5(wavPath)) {
-          throw new Error(`File not found: ${wavPath}`);
-        }
-        if (!this.checkSoxInstalled()) {
-          throw new Error("sox is not installed. Run: brew install sox");
-        }
-        const durationOutput = this.runSox(`--info -D "${wavPath}"`);
-        const duration = parseFloat(durationOutput.trim());
-        if (isNaN(duration) || duration <= 0) {
-          return {
-            avgFlux: 0,
-            maxFlux: 0,
-            fluxLevel: "unknown",
-            description: "Could not determine file duration"
-          };
-        }
-        const windowSec = windowMs / 1e3;
-        const numWindows = Math.floor(duration / windowSec);
-        const maxWindows = Math.min(numWindows, 20);
-        if (maxWindows < 2) {
-          return {
-            avgFlux: 0,
-            maxFlux: 0,
-            fluxLevel: "unknown",
-            description: "File too short for flux analysis"
-          };
-        }
-        const windowRms = [];
-        const step = duration / maxWindows;
-        for (let i = 0; i < maxWindows; i++) {
-          const start = i * step;
-          const output = this.runSox(`"${wavPath}" -n trim ${start.toFixed(3)} ${windowSec.toFixed(3)} sinc ${freqLow}-${freqHigh} stats`);
-          const rmsMatch = output.match(/RMS lev dB\s+([-\d.]+)/);
-          const rmsDb = rmsMatch ? parseFloat(rmsMatch[1]) : -60;
-          windowRms.push(rmsDb);
-        }
-        const fluxValues = [];
-        for (let i = 1; i < windowRms.length; i++) {
-          const flux = Math.abs(windowRms[i] - windowRms[i - 1]);
-          fluxValues.push(flux);
-        }
-        if (fluxValues.length === 0) {
-          return {
-            avgFlux: 0,
-            maxFlux: 0,
-            fluxLevel: "static",
-            description: "No spectral movement detected"
-          };
-        }
-        const avgFlux = fluxValues.reduce((a, b) => a + b, 0) / fluxValues.length;
-        const maxFlux = Math.max(...fluxValues);
-        let fluxLevel, description;
-        if (avgFlux >= 6) {
-          fluxLevel = "high";
-          description = `High spectral flux (${avgFlux.toFixed(1)}dB avg) - filter is moving actively, strong acid character`;
-        } else if (avgFlux >= 3) {
-          fluxLevel = "medium";
-          description = `Medium spectral flux (${avgFlux.toFixed(1)}dB avg) - some filter movement, moderate dynamics`;
-        } else if (avgFlux >= 1) {
-          fluxLevel = "low";
-          description = `Low spectral flux (${avgFlux.toFixed(1)}dB avg) - minimal filter movement, static sound`;
-        } else {
-          fluxLevel = "static";
-          description = `Very low spectral flux (${avgFlux.toFixed(1)}dB avg) - no filter movement detected`;
-        }
-        return {
-          avgFlux: Math.round(avgFlux * 10) / 10,
-          maxFlux: Math.round(maxFlux * 10) / 10,
-          fluxLevel,
-          description
-        };
-      }
-      /**
-       * Format analysis results for human-readable output
-       * @param {Object} analysis - Combined analysis results
-       * @returns {string}
-       */
-      formatAnalysis(analysis) {
-        const lines = [];
-        if (analysis.resonance) {
-          lines.push("RESONANCE DETECTION:");
-          lines.push(`  ${analysis.resonance.description}`);
-          if (analysis.resonance.peaks && analysis.resonance.peaks.length > 0) {
-            lines.push("  Prominent peaks:");
-            for (const peak of analysis.resonance.peaks.slice(0, 3)) {
-              lines.push(`    ${Math.round(peak.freq)}Hz (${peak.note}): +${peak.prominenceDb}dB prominence`);
-            }
-          }
-          lines.push("");
-        }
-        if (analysis.mud) {
-          lines.push("MUD DETECTION (200-600Hz):");
-          lines.push(`  ${analysis.mud.description}`);
-          if (analysis.mud.bands && analysis.mud.bands.length > 0) {
-            lines.push("  Band levels:");
-            for (const band of analysis.mud.bands) {
-              const bar = "=".repeat(Math.max(0, Math.round((band.rmsDb + 60) / 3)));
-              lines.push(`    ${band.centerFreq}Hz: ${bar} ${band.rmsDb}dB`);
-            }
-          }
-          lines.push("");
-        }
-        if (analysis.flux) {
-          lines.push("SPECTRAL FLUX:");
-          lines.push(`  ${analysis.flux.description}`);
-          lines.push(`  Avg flux: ${analysis.flux.avgFlux}dB, Max flux: ${analysis.flux.maxFlux}dB`);
-          lines.push("");
-        }
-        return lines.join("\n");
-      }
-    };
-    spectralAnalyzer = new SpectralAnalyzer();
   }
 });
 
@@ -15149,6 +16657,27 @@ ${recommendations.map((r) => `  - ${r}`).join("\n")}`;
         }
       },
       /**
+       * Generate an oscilloscope PNG from a WAV file
+       * Shows time-domain waveform trace — useful for visually verifying synth output shape
+       */
+      show_scope: async (input, session, context) => {
+        const { filename, output, cycles, startMs } = input;
+        const wavPath = filename || session.lastRenderedFile;
+        if (!wavPath) {
+          return "No WAV file to analyze. Render first, or provide a filename.";
+        }
+        try {
+          const scopePath = analyzeNode.generateScope(wavPath, { output, cycles, startMs });
+          if (scopePath) {
+            return `Oscilloscope generated: ${scopePath}`;
+          } else {
+            return "Failed to generate oscilloscope image.";
+          }
+        } catch (e) {
+          return `Oscilloscope error: ${e.message}`;
+        }
+      },
+      /**
        * Get spectral peaks - find dominant frequencies
        *
        * Returns the loudest frequency peaks in the spectrum with their
@@ -15194,13 +16723,13 @@ var jp9000_tools_exports = {};
 __export(jp9000_tools_exports, {
   jp9000Tools: () => jp9000Tools
 });
-import { readFileSync as readFileSync5, writeFileSync as writeFileSync4, existsSync as existsSync6, mkdirSync as mkdirSync3, readdirSync as readdirSync4 } from "fs";
-import { join as join5 } from "path";
-import { homedir as homedir4 } from "os";
+import { readFileSync as readFileSync7, writeFileSync as writeFileSync5, existsSync as existsSync7, mkdirSync as mkdirSync4, readdirSync as readdirSync5 } from "fs";
+import { join as join6 } from "path";
+import { homedir as homedir5 } from "os";
 function getRigsDir() {
-  const rigsDir = join5(homedir4(), "Documents", "Jambot", "rigs");
-  if (!existsSync6(rigsDir)) {
-    mkdirSync3(rigsDir, { recursive: true });
+  const rigsDir = join6(homedir5(), "Documents", "Jambot", "rigs");
+  if (!existsSync7(rigsDir)) {
+    mkdirSync4(rigsDir, { recursive: true });
   }
   return rigsDir;
 }
@@ -15392,7 +16921,7 @@ ${category}:`);
           return `Error: rig name required`;
         }
         const filename = sanitizeName(name) + ".json";
-        const filepath = join5(getRigsDir(), filename);
+        const filepath = join6(getRigsDir(), filename);
         const rig = {
           name,
           description: description || "",
@@ -15401,7 +16930,7 @@ ${category}:`);
           triggerModules: [...jp9000._triggerModules]
         };
         try {
-          writeFileSync4(filepath, JSON.stringify(rig, null, 2));
+          writeFileSync5(filepath, JSON.stringify(rig, null, 2));
           return `Saved rig "${name}" to ${filepath}`;
         } catch (err) {
           return `Error saving rig: ${err.message}`;
@@ -15417,15 +16946,15 @@ ${category}:`);
           return `Error: rig name required`;
         }
         const filename = sanitizeName(name) + ".json";
-        const filepath = join5(getRigsDir(), filename);
-        if (!existsSync6(filepath)) {
-          const exactPath = join5(getRigsDir(), name.endsWith(".json") ? name : name + ".json");
-          if (!existsSync6(exactPath)) {
+        const filepath = join6(getRigsDir(), filename);
+        if (!existsSync7(filepath)) {
+          const exactPath = join6(getRigsDir(), name.endsWith(".json") ? name : name + ".json");
+          if (!existsSync7(exactPath)) {
             return `Error: rig "${name}" not found. Use list_jp9000_rigs to see available rigs.`;
           }
         }
         try {
-          const data = JSON.parse(readFileSync5(filepath, "utf-8"));
+          const data = JSON.parse(readFileSync7(filepath, "utf-8"));
           const { Rack: Rack2 } = await Promise.resolve().then(() => (init_rack(), rack_exports));
           jp9000.rack = Rack2.fromJSON(data.rack);
           if (data.triggerModules) {
@@ -15443,14 +16972,14 @@ ${jp9000.describe()}`;
       list_jp9000_rigs: async (input, session, context) => {
         const rigsDir = getRigsDir();
         try {
-          const files = readdirSync4(rigsDir).filter((f) => f.endsWith(".json"));
+          const files = readdirSync5(rigsDir).filter((f) => f.endsWith(".json"));
           if (files.length === 0) {
             return `No saved rigs found in ${rigsDir}`;
           }
           const lines = ["JP9000 SAVED RIGS", "\u2550".repeat(40)];
           for (const file of files) {
             try {
-              const data = JSON.parse(readFileSync5(join5(rigsDir, file), "utf-8"));
+              const data = JSON.parse(readFileSync7(join6(rigsDir, file), "utf-8"));
               const moduleCount = data.rack?.modules?.length || 0;
               const desc = data.description ? ` \u2014 ${data.description}` : "";
               lines.push(`  ${data.name} (${moduleCount} modules)${desc}`);
@@ -15470,6 +16999,856 @@ Location: ${rigsDir}`);
   }
 });
 
+// tools/jt-tools.js
+var jt_tools_exports = {};
+function stepsToPattern2(steps, length = 16, velocity = 1, accent = false) {
+  return Array(length).fill(null).map((_, i) => ({
+    velocity: steps.includes(i) ? velocity : 0,
+    accent: steps.includes(i) ? accent : false
+  }));
+}
+var JT90_VOICES2, jtTools;
+var init_jt_tools = __esm({
+  "tools/jt-tools.js"() {
+    init_tools();
+    init_converters();
+    JT90_VOICES2 = ["kick", "snare", "clap", "rimshot", "lowtom", "midtom", "hitom", "ch", "oh", "crash", "ride"];
+    jtTools = {
+      // ==================== JT10 (Lead Synth) ====================
+      /**
+       * Add JT10 lead pattern
+       */
+      add_jt10: async (input, session, context) => {
+        const pattern = input.pattern || [];
+        const bars = input.bars || 1;
+        const steps = bars * 16;
+        if (!Array.isArray(pattern)) {
+          return "JT10: pattern must be an array of steps";
+        }
+        session.jt10Pattern = Array(steps).fill(null).map((_, i) => {
+          const step = pattern[i] || {};
+          return {
+            note: step.note || "C3",
+            gate: step.gate || false,
+            accent: step.accent || false,
+            slide: step.slide || false
+          };
+        });
+        const activeSteps = session.jt10Pattern.filter((s) => s.gate).length;
+        const barsLabel = bars > 1 ? ` (${bars} bars)` : "";
+        return `JT10: ${activeSteps} notes programmed${barsLabel}`;
+      },
+      /**
+       * Tweak JT10 lead parameters
+       */
+      tweak_jt10: async (input, session, context) => {
+        const tweaks = [];
+        if (input.level !== void 0) {
+          session.set("jt10.level", input.level);
+          tweaks.push(`level=${input.level}dB`);
+        }
+        if (input.mute === true) {
+          session.set("jt10.level", -60);
+          tweaks.push("muted");
+        } else if (input.mute === false) {
+          session.set("jt10.level", 0);
+          tweaks.push("unmuted");
+        }
+        const paramMap = {
+          sawLevel: "sawLevel",
+          pulseLevel: "pulseLevel",
+          pulseWidth: "pulseWidth",
+          subLevel: "subLevel",
+          subMode: "subMode",
+          filterCutoff: "cutoff",
+          filterResonance: "resonance",
+          filterEnvAmount: "envMod",
+          keyTrack: "keyTrack",
+          ampAttack: "attack",
+          ampDecay: "decay",
+          ampSustain: "sustain",
+          ampRelease: "release",
+          filterAttack: "filterAttack",
+          filterDecay: "filterDecay",
+          filterSustain: "filterSustain",
+          filterRelease: "filterRelease",
+          lfoRate: "lfoRate",
+          lfoToPitch: "lfoToPitch",
+          lfoToFilter: "lfoToFilter",
+          lfoToPW: "lfoToPW",
+          glideTime: "glideTime"
+        };
+        for (const [inputKey, engineKey] of Object.entries(paramMap)) {
+          if (input[inputKey] !== void 0) {
+            const def = getParamDef("jt10", "lead", engineKey);
+            let value = input[inputKey];
+            if (def && typeof value === "number" && def.unit !== "choice") {
+              value = toEngine(value, def);
+            }
+            session.set(`jt10.lead.${engineKey}`, value);
+            tweaks.push(`${inputKey}=${input[inputKey]}`);
+          }
+        }
+        if (tweaks.length === 0) {
+          return "JT10: no changes";
+        }
+        return `JT10: ${tweaks.join(", ")}`;
+      },
+      // ==================== JT30 (Acid Bass) ====================
+      /**
+       * Add JT30 acid bass pattern
+       */
+      add_jt30: async (input, session, context) => {
+        const pattern = input.pattern;
+        if (!pattern || !Array.isArray(pattern)) {
+          return "JT30: pattern must be an array of 16 steps";
+        }
+        const normalized = pattern.slice(0, 16);
+        while (normalized.length < 16) {
+          normalized.push({ note: "C2", gate: false, accent: false, slide: false });
+        }
+        session.jt30Pattern = normalized;
+        const activeSteps = normalized.filter((s) => s.gate).length;
+        return `JT30: ${activeSteps} notes programmed`;
+      },
+      /**
+       * Tweak JT30 acid bass parameters
+       */
+      tweak_jt30: async (input, session, context) => {
+        const tweaks = [];
+        if (input.level !== void 0) {
+          session.set("jt30.level", input.level);
+          tweaks.push(`level=${input.level}dB`);
+        }
+        if (input.mute === true) {
+          session.set("jt30.level", -60);
+          tweaks.push("muted");
+        } else if (input.mute === false) {
+          session.set("jt30.level", 0);
+          tweaks.push("unmuted");
+        }
+        const paramMap = {
+          waveform: "waveform",
+          filterCutoff: "cutoff",
+          filterResonance: "resonance",
+          filterEnvAmount: "envMod",
+          filterDecay: "decay",
+          accentLevel: "accent",
+          drive: "drive"
+        };
+        for (const [inputKey, engineKey] of Object.entries(paramMap)) {
+          if (input[inputKey] !== void 0) {
+            const def = getParamDef("jt30", "bass", engineKey);
+            let value = input[inputKey];
+            if (def && typeof value === "number") {
+              value = toEngine(value, def);
+            }
+            session.set(`jt30.bass.${engineKey}`, value);
+            tweaks.push(`${inputKey}=${input[inputKey]}`);
+          }
+        }
+        if (tweaks.length === 0) {
+          return "JT30: no changes";
+        }
+        return `JT30: ${tweaks.join(", ")}`;
+      },
+      // ==================== JT90 (Drum Machine) ====================
+      /**
+       * Add JT90 drum pattern
+       */
+      add_jt90: async (input, session, context) => {
+        const bars = input.bars || 1;
+        const steps = bars * 16;
+        const added = [];
+        if (input.clear) {
+          for (const voice of JT90_VOICES2) {
+            session.jt90Pattern[voice] = stepsToPattern2([], steps);
+          }
+        }
+        if (bars > 1) {
+          for (const voice of JT90_VOICES2) {
+            if (!session.jt90Pattern[voice] || session.jt90Pattern[voice].length < steps) {
+              session.jt90Pattern[voice] = stepsToPattern2([], steps);
+            }
+          }
+        }
+        for (const voice of JT90_VOICES2) {
+          if (input[voice] !== void 0) {
+            const data = input[voice];
+            if (Array.isArray(data)) {
+              if (data.length > 0 && typeof data[0] === "number") {
+                session.jt90Pattern[voice] = stepsToPattern2(data, steps);
+                added.push(`${voice}: ${data.length} hits`);
+              } else {
+                if (data.length < steps) {
+                  const padded = [...data, ...Array(steps - data.length).fill({ velocity: 0, accent: false })];
+                  session.jt90Pattern[voice] = padded;
+                } else {
+                  session.jt90Pattern[voice] = data;
+                }
+                const activeSteps = data.filter((s) => s && s.velocity > 0).length;
+                added.push(`${voice}: ${activeSteps} hits`);
+              }
+            }
+          }
+        }
+        if (added.length === 0) {
+          return "JT90: no pattern changes";
+        }
+        const barsLabel = bars > 1 ? ` (${bars} bars)` : "";
+        const clearLabel = input.clear ? " (cleared first)" : "";
+        return `JT90: ${added.join(", ")}${barsLabel}${clearLabel}`;
+      },
+      /**
+       * Tweak JT90 drum voice parameters
+       */
+      tweak_jt90: async (input, session, context) => {
+        const voice = input.voice;
+        if (!voice || !JT90_VOICES2.includes(voice)) {
+          return `JT90: invalid voice. Use: ${JT90_VOICES2.join(", ")}`;
+        }
+        const tweaks = [];
+        if (input.mute === true) {
+          const def = getParamDef("jt90", voice, "level");
+          session.set(`jt90.${voice}.level`, def ? toEngine(-60, def) : 0);
+          tweaks.push("muted");
+        } else if (input.mute === false) {
+          const def = getParamDef("jt90", voice, "level");
+          session.set(`jt90.${voice}.level`, def ? toEngine(0, def) : 0.5);
+          tweaks.push("unmuted");
+        }
+        if (input.level !== void 0) {
+          const def = getParamDef("jt90", voice, "level");
+          const value = def ? toEngine(input.level, def) : input.level / 100;
+          session.set(`jt90.${voice}.level`, value);
+          tweaks.push(`level=${input.level}`);
+        }
+        if (input.tune !== void 0) {
+          const def = getParamDef("jt90", voice, "tune");
+          const value = def ? toEngine(input.tune, def) : input.tune;
+          session.set(`jt90.${voice}.tune`, value);
+          tweaks.push(`tune=${input.tune}c`);
+        }
+        if (input.decay !== void 0) {
+          const def = getParamDef("jt90", voice, "decay");
+          const value = def ? toEngine(input.decay, def) : input.decay / 100;
+          session.set(`jt90.${voice}.decay`, value);
+          tweaks.push(`decay=${input.decay}`);
+        }
+        if (input.attack !== void 0 && voice === "kick") {
+          const def = getParamDef("jt90", voice, "attack");
+          const value = def ? toEngine(input.attack, def) : input.attack / 100;
+          session.set(`jt90.${voice}.attack`, value);
+          tweaks.push(`attack=${input.attack}`);
+        }
+        if (input.tone !== void 0) {
+          const def = getParamDef("jt90", voice, "tone");
+          const value = def ? toEngine(input.tone, def) : input.tone / 100;
+          session.set(`jt90.${voice}.tone`, value);
+          tweaks.push(`tone=${input.tone}`);
+        }
+        if (input.snappy !== void 0 && voice === "snare") {
+          const def = getParamDef("jt90", voice, "snappy");
+          const value = def ? toEngine(input.snappy, def) : input.snappy / 100;
+          session.set(`jt90.${voice}.snappy`, value);
+          tweaks.push(`snappy=${input.snappy}`);
+        }
+        if (tweaks.length === 0) {
+          return `JT90 ${voice}: no changes`;
+        }
+        return `JT90 ${voice}: ${tweaks.join(", ")}`;
+      }
+    };
+    registerTools(jtTools);
+  }
+});
+
+// tools/automation-tools.js
+var automation_tools_exports = {};
+var automationTools;
+var init_automation_tools = __esm({
+  "tools/automation-tools.js"() {
+    init_tools();
+    init_automation();
+    automationTools = {
+      /**
+       * Set per-step automation values for a parameter
+       */
+      automate: async (input, session) => {
+        const { path, values, pattern, min, max, steps } = input;
+        if (!path) {
+          return 'Error: path is required (e.g., "jb01.ch.decay", "jb202.filterCutoff")';
+        }
+        let automationValues = values;
+        if (!automationValues && pattern) {
+          if (min === void 0 || max === void 0) {
+            return "Error: min and max required when using pattern";
+          }
+          automationValues = generateAutomation(pattern, min, max, steps || 16);
+        }
+        if (!automationValues || automationValues.length === 0) {
+          return "Error: values array or pattern required";
+        }
+        const [nodeId] = path.split(".");
+        if (!session._nodes[nodeId]) {
+          return `Error: unknown instrument "${nodeId}"`;
+        }
+        session.automate(path, automationValues);
+        const activeSteps = automationValues.filter((v) => v !== null && v !== void 0).length;
+        const paramName = path.split(".").slice(1).join(".");
+        return `${nodeId} ${paramName} automation set: ${activeSteps}/${automationValues.length} steps`;
+      },
+      /**
+       * Clear automation for a parameter, instrument, or all
+       */
+      clear_automation: async (input, session) => {
+        const { path } = input;
+        if (!path) {
+          session.clearAutomation();
+          return "Cleared all automation";
+        }
+        if (session.params.hasAutomation(path)) {
+          session.clearAutomation(path);
+          return `Cleared automation on ${path}`;
+        }
+        clearNodeAutomation(session, path);
+        const remaining = session.params.listAutomation().filter((p) => p.startsWith(path + "."));
+        if (remaining.length === 0) {
+          return `Cleared all automation for ${path}`;
+        }
+        return `No automation found for "${path}"`;
+      },
+      /**
+       * Show all active automation lanes
+       */
+      show_automation: async (input, session) => {
+        const summary = getAutomationSummary(session);
+        const nodes = Object.keys(summary);
+        if (nodes.length === 0) {
+          return "No active automation";
+        }
+        const lines = ["AUTOMATION:"];
+        for (const [node, params] of Object.entries(summary)) {
+          for (const [param, values] of Object.entries(params)) {
+            const activeSteps = values.filter((v) => v !== null && v !== void 0).length;
+            const viz = values.map((v) => v !== null && v !== void 0 ? "\u2588" : "\xB7").join("");
+            lines.push(`  ${node}.${param}: ${viz} (${activeSteps}/${values.length} steps)`);
+          }
+        }
+        return lines.join("\n");
+      }
+    };
+    registerTools(automationTools);
+  }
+});
+
+// core/routing.js
+function createTrack(id, config = {}) {
+  return {
+    id,
+    nodeId: config.nodeId || id,
+    // Maps to instrument node
+    volume: config.volume ?? 0,
+    // dB
+    mute: config.mute ?? false,
+    solo: config.solo ?? false,
+    pan: config.pan ?? 0,
+    // -100 to +100
+    inserts: [],
+    // Channel inserts
+    sends: {}
+    // { sendId: level }
+  };
+}
+function createSend(id, effectType, params = {}) {
+  let effectNode;
+  switch (effectType) {
+    case "delay":
+      effectNode = new DelayNode(id, params);
+      break;
+    case "reverb":
+      effectNode = new ReverbNode(id, params);
+      break;
+    case "eq":
+      effectNode = new EQNode(id, params);
+      break;
+    case "filter":
+      effectNode = new FilterNode(id, params);
+      break;
+    case "sidechain":
+      effectNode = new SidechainNode(id, params);
+      break;
+    default:
+      effectNode = new DelayNode(id, params);
+  }
+  return {
+    id,
+    effectType,
+    effectNode,
+    params: effectNode.getParams(),
+    level: params.level ?? 1
+    // Send bus output level
+  };
+}
+function addTrackInsert(track, effectType, config = {}) {
+  let effectNode;
+  switch (effectType) {
+    case "eq":
+      effectNode = new EQNode(`${track.id}-${effectType}`, config);
+      break;
+    case "filter":
+      effectNode = new FilterNode(`${track.id}-${effectType}`, config);
+      break;
+    case "sidechain":
+    case "ducker":
+      effectNode = new SidechainNode(`${track.id}-${effectType}`, config);
+      break;
+    default:
+      throw new Error(`Unknown effect type: ${effectType}`);
+  }
+  track.inserts = track.inserts.filter((i) => i.effectType !== effectType);
+  const insert = {
+    effectType,
+    effectNode,
+    params: effectNode.getParams()
+  };
+  track.inserts.push(insert);
+  return insert;
+}
+function removeTrackInsert(track, effectType) {
+  if (effectType === "all") {
+    track.inserts = [];
+  } else {
+    track.inserts = track.inserts.filter((i) => i.effectType !== effectType);
+  }
+}
+function routeToSend(track, sendId, level) {
+  track.sends[sendId] = level;
+}
+function removeFromSend(track, sendId) {
+  delete track.sends[sendId];
+}
+var RoutingManager;
+var init_routing = __esm({
+  "core/routing.js"() {
+    init_delay_node();
+    init_eq_node();
+    init_filter_node();
+    init_reverb_node();
+    init_sidechain_node();
+    RoutingManager = class {
+      constructor() {
+        this.tracks = /* @__PURE__ */ new Map();
+        this.sends = /* @__PURE__ */ new Map();
+        this.master = {
+          volume: 0.8,
+          inserts: []
+        };
+      }
+      // === TRACKS ===
+      addTrack(id, config = {}) {
+        const track = createTrack(id, config);
+        this.tracks.set(id, track);
+        return track;
+      }
+      removeTrack(id) {
+        return this.tracks.delete(id);
+      }
+      getTrack(id) {
+        return this.tracks.get(id);
+      }
+      listTracks() {
+        return Array.from(this.tracks.keys());
+      }
+      // === SENDS ===
+      addSend(id, effectType = "delay", params = {}) {
+        const send = createSend(id, effectType, params);
+        this.sends.set(id, send);
+        return send;
+      }
+      removeSend(id) {
+        for (const track of this.tracks.values()) {
+          delete track.sends[id];
+        }
+        return this.sends.delete(id);
+      }
+      getSend(id) {
+        return this.sends.get(id);
+      }
+      listSends() {
+        return Array.from(this.sends.keys());
+      }
+      // === ROUTING ===
+      route(trackId, sendId, level) {
+        const track = this.tracks.get(trackId);
+        if (!track) throw new Error(`Unknown track: ${trackId}`);
+        if (!this.sends.has(sendId)) throw new Error(`Unknown send: ${sendId}`);
+        routeToSend(track, sendId, level);
+      }
+      unroute(trackId, sendId) {
+        const track = this.tracks.get(trackId);
+        if (track) {
+          removeFromSend(track, sendId);
+        }
+      }
+      // === INSERTS ===
+      addInsert(trackId, effectType, config = {}) {
+        const track = this.tracks.get(trackId);
+        if (!track) throw new Error(`Unknown track: ${trackId}`);
+        return addTrackInsert(track, effectType, config);
+      }
+      removeInsert(trackId, effectType) {
+        const track = this.tracks.get(trackId);
+        if (track) {
+          removeTrackInsert(track, effectType);
+        }
+      }
+      addMasterInsert(effectType, config = {}) {
+        let effectNode;
+        switch (effectType) {
+          case "eq":
+            effectNode = new EQNode(`master-${effectType}`, config);
+            break;
+          case "filter":
+            effectNode = new FilterNode(`master-${effectType}`, config);
+            break;
+          default:
+            throw new Error(`Unknown effect type: ${effectType}`);
+        }
+        this.master.inserts.push({
+          effectType,
+          effectNode,
+          params: effectNode.getParams()
+        });
+      }
+      // === SERIALIZATION ===
+      serialize() {
+        const tracks = {};
+        for (const [id, track] of this.tracks) {
+          tracks[id] = {
+            nodeId: track.nodeId,
+            volume: track.volume,
+            mute: track.mute,
+            solo: track.solo,
+            pan: track.pan,
+            sends: { ...track.sends },
+            inserts: track.inserts.map((i) => ({
+              effectType: i.effectType,
+              params: i.params
+            }))
+          };
+        }
+        const sends = {};
+        for (const [id, send] of this.sends) {
+          sends[id] = {
+            effectType: send.effectType,
+            params: send.params,
+            level: send.level
+          };
+        }
+        return {
+          tracks,
+          sends,
+          master: {
+            volume: this.master.volume,
+            inserts: this.master.inserts.map((i) => ({
+              effectType: i.effectType,
+              params: i.params
+            }))
+          }
+        };
+      }
+      deserialize(data) {
+        this.tracks.clear();
+        this.sends.clear();
+        if (data.tracks) {
+          for (const [id, trackData] of Object.entries(data.tracks)) {
+            const track = this.addTrack(id, trackData);
+            if (trackData.inserts) {
+              for (const insertData of trackData.inserts) {
+                addTrackInsert(track, insertData.effectType, { params: insertData.params });
+              }
+            }
+          }
+        }
+        if (data.sends) {
+          for (const [id, sendData] of Object.entries(data.sends)) {
+            this.addSend(id, sendData.effectType, sendData.params);
+          }
+        }
+        if (data.master) {
+          this.master.volume = data.master.volume ?? 0.8;
+          this.master.inserts = [];
+          if (data.master.inserts) {
+            for (const insertData of data.master.inserts) {
+              this.addMasterInsert(insertData.effectType, { params: insertData.params });
+            }
+          }
+        }
+      }
+      // === DISPLAY ===
+      getRoutingInfo() {
+        const lines = ["ROUTING:", ""];
+        lines.push("TRACKS:");
+        for (const [id, track] of this.tracks) {
+          let info = `  ${id}:`;
+          if (track.mute) info += " [MUTE]";
+          if (track.solo) info += " [SOLO]";
+          info += ` vol=${track.volume}dB`;
+          if (track.pan !== 0) info += ` pan=${track.pan}`;
+          lines.push(info);
+          if (track.inserts.length > 0) {
+            lines.push(`    inserts: ${track.inserts.map((i) => i.effectType).join(" \u2192 ")}`);
+          }
+          const sendInfo = Object.entries(track.sends).map(([s, l]) => `${s}@${(l * 100).toFixed(0)}%`).join(", ");
+          if (sendInfo) {
+            lines.push(`    sends: ${sendInfo}`);
+          }
+        }
+        lines.push("");
+        if (this.sends.size > 0) {
+          lines.push("SENDS:");
+          for (const [id, send] of this.sends) {
+            lines.push(`  ${id}: ${send.effectType}`);
+          }
+          lines.push("");
+        }
+        lines.push("MASTER:");
+        lines.push(`  volume: ${this.master.volume}`);
+        if (this.master.inserts.length > 0) {
+          lines.push(`  inserts: ${this.master.inserts.map((i) => i.effectType).join(" \u2192 ")}`);
+        }
+        return lines.join("\n");
+      }
+    };
+  }
+});
+
+// tools/routing-tools.js
+var routing_tools_exports = {};
+function ensureRouting(session) {
+  if (!session.routing) {
+    session.routing = new RoutingManager();
+    const nodes = session.listNodes();
+    for (const nodeId of nodes) {
+      session.routing.addTrack(nodeId, { nodeId });
+    }
+  }
+  return session.routing;
+}
+var routingTools;
+var init_routing_tools = __esm({
+  "tools/routing-tools.js"() {
+    init_tools();
+    init_routing();
+    routingTools = {
+      /**
+       * Add a new track
+       *
+       * Examples:
+       *   add_track({ id: 'synth2', nodeId: 'lead' })  // Another lead track
+       *   add_track({ id: 'fx_return', volume: -6 })   // FX return channel
+       */
+      add_track: async (input, session, context) => {
+        const { id, nodeId, volume, mute, pan } = input;
+        if (!id) {
+          return "Error: id required";
+        }
+        const routing = ensureRouting(session);
+        if (routing.tracks.has(id)) {
+          return `Track "${id}" already exists`;
+        }
+        routing.addTrack(id, { nodeId, volume, mute, pan });
+        return `Added track "${id}"${nodeId ? ` \u2192 ${nodeId}` : ""}`;
+      },
+      /**
+       * Remove a track
+       */
+      remove_track: async (input, session, context) => {
+        const { id } = input;
+        if (!id) {
+          return "Error: id required";
+        }
+        const routing = ensureRouting(session);
+        if (!routing.tracks.has(id)) {
+          return `Track "${id}" doesn't exist`;
+        }
+        routing.removeTrack(id);
+        return `Removed track "${id}"`;
+      },
+      /**
+       * List all tracks
+       */
+      list_tracks: async (input, session, context) => {
+        const routing = ensureRouting(session);
+        const tracks = routing.listTracks();
+        if (tracks.length === 0) {
+          return "No tracks";
+        }
+        const lines = ["TRACKS:", ""];
+        for (const id of tracks) {
+          const track = routing.getTrack(id);
+          let info = `  ${id}`;
+          if (track.nodeId !== id) info += ` \u2192 ${track.nodeId}`;
+          if (track.mute) info += " [MUTE]";
+          if (track.volume !== 0) info += ` (${track.volume}dB)`;
+          lines.push(info);
+        }
+        return lines.join("\n");
+      },
+      /**
+       * Add a send bus (with effect)
+       *
+       * Examples:
+       *   add_send({ id: 'delay1', effect: 'delay', time: 375 })
+       */
+      add_send: async (input, session, context) => {
+        const { id, effect, ...params } = input;
+        if (!id) {
+          return "Error: id required";
+        }
+        const routing = ensureRouting(session);
+        if (routing.sends.has(id)) {
+          return `Send "${id}" already exists`;
+        }
+        routing.addSend(id, effect || "delay", params);
+        return `Added send "${id}" with ${effect || "delay"}`;
+      },
+      /**
+       * Remove a send bus
+       */
+      remove_send: async (input, session, context) => {
+        const { id } = input;
+        if (!id) {
+          return "Error: id required";
+        }
+        const routing = ensureRouting(session);
+        if (!routing.sends.has(id)) {
+          return `Send "${id}" doesn't exist`;
+        }
+        routing.removeSend(id);
+        return `Removed send "${id}"`;
+      },
+      /**
+       * List all sends
+       */
+      list_sends: async (input, session, context) => {
+        const routing = ensureRouting(session);
+        const sends = routing.listSends();
+        if (sends.length === 0) {
+          return 'No sends. Use add_send({ id: "delay1", effect: "delay" }) to create one.';
+        }
+        const lines = ["SENDS:", ""];
+        for (const id of sends) {
+          const send = routing.getSend(id);
+          lines.push(`  ${id}: ${send.effectType}`);
+        }
+        return lines.join("\n");
+      },
+      /**
+       * Route a track to a send
+       *
+       * Examples:
+       *   route({ track: 'drums', send: 'delay1', level: 0.3 })
+       *   route({ track: 'ch', send: 'delay1', level: 0.5 })
+       */
+      route: async (input, session, context) => {
+        const { track, send, level } = input;
+        if (!track || !send) {
+          return "Error: track and send required";
+        }
+        const routing = ensureRouting(session);
+        if (!routing.tracks.has(track)) {
+          return `Track "${track}" doesn't exist. Available: ${routing.listTracks().join(", ")}`;
+        }
+        if (!routing.sends.has(send)) {
+          return `Send "${send}" doesn't exist. Available: ${routing.listSends().join(", ")}`;
+        }
+        routing.route(track, send, level ?? 0.3);
+        return `Routed ${track} \u2192 ${send} @ ${((level ?? 0.3) * 100).toFixed(0)}%`;
+      },
+      /**
+       * Remove routing from track to send
+       */
+      unroute: async (input, session, context) => {
+        const { track, send } = input;
+        if (!track || !send) {
+          return "Error: track and send required";
+        }
+        const routing = ensureRouting(session);
+        routing.unroute(track, send);
+        return `Unrouted ${track} from ${send}`;
+      },
+      /**
+       * Show full routing configuration
+       */
+      show_routing: async (input, session, context) => {
+        const routing = ensureRouting(session);
+        return routing.getRoutingInfo();
+      },
+      /**
+       * Set track volume
+       *
+       * Examples:
+       *   set_track_volume({ track: 'drums', volume: -3 })
+       *   set_track_volume({ track: 'bass', volume: -6 })
+       */
+      set_track_volume: async (input, session, context) => {
+        const { track, volume } = input;
+        if (!track) {
+          return "Error: track required";
+        }
+        const routing = ensureRouting(session);
+        const t = routing.getTrack(track);
+        if (!t) {
+          return `Track "${track}" doesn't exist`;
+        }
+        t.volume = volume ?? 0;
+        return `Set ${track} volume to ${volume ?? 0}dB`;
+      },
+      /**
+       * Mute/unmute a track
+       */
+      mute_track: async (input, session, context) => {
+        const { track, mute } = input;
+        if (!track) {
+          return "Error: track required";
+        }
+        const routing = ensureRouting(session);
+        const t = routing.getTrack(track);
+        if (!t) {
+          return `Track "${track}" doesn't exist`;
+        }
+        t.mute = mute ?? !t.mute;
+        return `${track} ${t.mute ? "muted" : "unmuted"}`;
+      },
+      /**
+       * Solo a track (mutes all others)
+       */
+      solo_track: async (input, session, context) => {
+        const { track, solo } = input;
+        if (!track) {
+          return "Error: track required";
+        }
+        const routing = ensureRouting(session);
+        const t = routing.getTrack(track);
+        if (!t) {
+          return `Track "${track}" doesn't exist`;
+        }
+        if (solo !== false) {
+          for (const [id, tr] of routing.tracks) {
+            tr.solo = id === track;
+          }
+        } else {
+          t.solo = false;
+        }
+        return `${track} ${t.solo ? "soloed" : "solo off"}`;
+      }
+    };
+    registerTools(routingTools);
+  }
+});
+
 // tools/index.js
 function registerTool(name, handler) {
   if (toolHandlers.has(name)) {
@@ -15485,7 +17864,7 @@ function registerTools(tools) {
 async function initializeTools() {
   if (initialized) return;
   await Promise.resolve().then(() => (init_session_tools(), session_tools_exports));
-  await Promise.resolve().then(() => (init_sampler_tools(), sampler_tools_exports));
+  await Promise.resolve().then(() => (init_jbs_tools(), jbs_tools_exports));
   await Promise.resolve().then(() => (init_jb200_tools(), jb200_tools_exports));
   await Promise.resolve().then(() => (init_jb202_tools(), jb202_tools_exports));
   await Promise.resolve().then(() => (init_jb01_tools(), jb01_tools_exports));
@@ -15495,6 +17874,9 @@ async function initializeTools() {
   await Promise.resolve().then(() => (init_generic_tools(), generic_tools_exports));
   await Promise.resolve().then(() => (init_analyze_tools(), analyze_tools_exports));
   await Promise.resolve().then(() => (init_jp9000_tools(), jp9000_tools_exports));
+  await Promise.resolve().then(() => (init_jt_tools(), jt_tools_exports));
+  await Promise.resolve().then(() => (init_automation_tools(), automation_tools_exports));
+  await Promise.resolve().then(() => (init_routing_tools(), routing_tools_exports));
   initialized = true;
 }
 async function executeTool(name, input, session, context = {}) {
@@ -15959,15 +18341,15 @@ init_project();
 init_tools();
 init_session();
 import Anthropic from "@anthropic-ai/sdk";
-import { readFileSync as readFileSync7, existsSync as existsSync7, mkdirSync as mkdirSync4, writeFileSync as writeFileSync6 } from "fs";
-import { fileURLToPath as fileURLToPath4 } from "url";
-import { dirname as dirname4, join as join7 } from "path";
-import { homedir as homedir5 } from "os";
+import { readFileSync as readFileSync9, existsSync as existsSync8, mkdirSync as mkdirSync5, writeFileSync as writeFileSync7 } from "fs";
+import { fileURLToPath as fileURLToPath6 } from "url";
+import { dirname as dirname6, join as join8 } from "path";
+import { homedir as homedir6 } from "os";
 
 // core/render.js
 init_wav();
 import { OfflineAudioContext as OfflineAudioContext8, AudioContext as AudioContext2 } from "node-web-audio-api";
-import { writeFileSync as writeFileSync5 } from "fs";
+import { writeFileSync as writeFileSync6 } from "fs";
 
 // effects/delay.js
 function processAnalogDelay(inputBuffer, params, sampleRate) {
@@ -16139,179 +18521,450 @@ function softSaturate(x, amount) {
   return x * (1 - amount) + saturated * amount;
 }
 
-// effects/reverb.js
-function createSeededRandom(seed = 12345) {
-  let state = seed;
-  return function() {
-    state = state * 1103515245 + 12345 & 2147483647;
-    return state / 2147483647;
+// effects/eq.js
+function highpassCoeffs(freq, q, sampleRate) {
+  const w0 = 2 * Math.PI * freq / sampleRate;
+  const cosW0 = Math.cos(w0);
+  const sinW0 = Math.sin(w0);
+  const alpha = sinW0 / (2 * q);
+  const a0 = 1 + alpha;
+  return {
+    b0: (1 + cosW0) / 2 / a0,
+    b1: -(1 + cosW0) / a0,
+    b2: (1 + cosW0) / 2 / a0,
+    a1: -2 * cosW0 / a0,
+    a2: (1 - alpha) / a0
   };
 }
-function generatePlateReverbIR(context, params = {}) {
-  const sampleRate = context.sampleRate;
-  const seed = params.seed ?? 12345;
-  const random = createSeededRandom(seed);
-  const decay = Math.max(0.5, Math.min(10, params.decay ?? 2));
-  const damping = Math.max(0, Math.min(1, params.damping ?? 0.5));
-  const predelayMs = Math.max(0, Math.min(100, params.predelay ?? 20));
-  const modulation = Math.max(0, Math.min(1, params.modulation ?? 0.3));
-  const lowcut = Math.max(20, Math.min(500, params.lowcut ?? 100));
-  const highcut = Math.max(2e3, Math.min(2e4, params.highcut ?? 8e3));
-  const width = Math.max(0, Math.min(1, params.width ?? 1));
-  const predelaySamples = Math.floor(predelayMs / 1e3 * sampleRate);
-  const tailSamples = Math.floor(decay * sampleRate * 1.5);
-  const totalSamples = predelaySamples + tailSamples;
-  const buffer = context.createBuffer(2, totalSamples, sampleRate);
-  const diffusionDelays = [142, 107, 379, 277, 419, 181, 521, 233];
-  const diffusionCoeff = 0.625;
-  for (let ch = 0; ch < 2; ch++) {
-    const data = buffer.getChannelData(ch);
-    for (let i = 0; i < predelaySamples; i++) {
-      data[i] = 0;
-    }
-    const tailStart = predelaySamples;
-    const earlyEnd = tailStart + Math.floor(0.05 * sampleRate);
-    const earlyReflections = [
-      { delay: 7e-3, gain: 0.8 },
-      { delay: 0.011, gain: 0.7 },
-      { delay: 0.019, gain: 0.6 },
-      { delay: 0.027, gain: 0.5 },
-      { delay: 0.031, gain: 0.45 },
-      { delay: 0.041, gain: 0.35 }
-    ];
-    const stereoPhase = ch === 0 ? 0 : Math.PI * 0.7 * width;
-    const stereoMod = ch === 0 ? 1 : 1 - width * 0.5 + width * 0.5;
-    for (const ref of earlyReflections) {
-      const samplePos = tailStart + Math.floor(ref.delay * sampleRate);
-      const stereoDelay = ch === 0 ? 0 : Math.floor(3e-3 * sampleRate * width);
-      if (samplePos + stereoDelay < data.length) {
-        data[samplePos + stereoDelay] += ref.gain * (ch === 0 ? 1 : 0.95);
-      }
-    }
-    for (let i = earlyEnd; i < totalSamples; i++) {
-      const t = (i - tailStart) / sampleRate;
-      const tNorm = t / decay;
-      const fastDecay = Math.exp(-4 * t / decay);
-      const slowDecay = Math.exp(-2.5 * t / decay);
-      const envelope = fastDecay * 0.6 + slowDecay * 0.4;
-      const dampingFactor = 1 - damping * tNorm * 0.8;
-      const phase1 = i * 1e-4 + stereoPhase;
-      const phase2 = i * 17e-5 + stereoPhase * 1.3;
-      let noise = 0;
-      noise += (random() * 2 - 1) * 0.5;
-      noise += Math.sin(i * 0.01 + ch * Math.PI) * (random() * 0.3);
-      noise += Math.sin(i * 3e-3 + phase1) * (random() * 0.2);
-      if (modulation > 0) {
-        const modFreq = 0.5 + random() * 1.5;
-        const modDepth = modulation * 0.15;
-        noise *= 1 + Math.sin(t * modFreq * Math.PI * 2 + ch * Math.PI * 0.5) * modDepth;
-      }
-      for (const delay of diffusionDelays) {
-        const sourceIdx = i - delay;
-        if (sourceIdx >= tailStart && sourceIdx < i) {
-          noise += (data[sourceIdx] || 0) * diffusionCoeff * 0.1;
-        }
-      }
-      data[i] = noise * envelope * dampingFactor * 0.4 * stereoMod;
-    }
-    if (highcut < 15e3) {
-      const rc = 1 / (2 * Math.PI * highcut);
-      const dt = 1 / sampleRate;
-      const alpha = dt / (rc + dt);
-      let prev = 0;
-      for (let i = tailStart; i < totalSamples; i++) {
-        prev = prev + alpha * (data[i] - prev);
-        data[i] = prev;
-      }
-    }
-    if (lowcut > 30) {
-      const rc = 1 / (2 * Math.PI * lowcut);
-      const dt = 1 / sampleRate;
-      const alpha = rc / (rc + dt);
-      let prevIn = 0;
-      let prevOut = 0;
-      for (let i = tailStart; i < totalSamples; i++) {
-        const input = data[i];
-        data[i] = alpha * (prevOut + input - prevIn);
-        prevIn = input;
-        prevOut = data[i];
-      }
-    }
-  }
-  let maxAmp = 0;
-  for (let ch = 0; ch < 2; ch++) {
-    const data = buffer.getChannelData(ch);
-    for (let i = 0; i < totalSamples; i++) {
-      maxAmp = Math.max(maxAmp, Math.abs(data[i]));
-    }
-  }
-  if (maxAmp > 0.5) {
-    const normFactor = 0.5 / maxAmp;
-    for (let ch = 0; ch < 2; ch++) {
-      const data = buffer.getChannelData(ch);
-      for (let i = 0; i < totalSamples; i++) {
-        data[i] *= normFactor;
-      }
-    }
-  }
-  return buffer;
+function lowShelfCoeffs(freq, gainDb, sampleRate) {
+  const A = Math.pow(10, gainDb / 40);
+  const w0 = 2 * Math.PI * freq / sampleRate;
+  const cosW0 = Math.cos(w0);
+  const sinW0 = Math.sin(w0);
+  const alpha = sinW0 / 2 * Math.sqrt((A + 1 / A) * (1 / 0.707 - 1) + 2);
+  const sqrtA2alpha = 2 * Math.sqrt(A) * alpha;
+  const a0 = A + 1 + (A - 1) * cosW0 + sqrtA2alpha;
+  return {
+    b0: A * (A + 1 - (A - 1) * cosW0 + sqrtA2alpha) / a0,
+    b1: 2 * A * (A - 1 - (A + 1) * cosW0) / a0,
+    b2: A * (A + 1 - (A - 1) * cosW0 - sqrtA2alpha) / a0,
+    a1: -2 * (A - 1 + (A + 1) * cosW0) / a0,
+    a2: (A + 1 + (A - 1) * cosW0 - sqrtA2alpha) / a0
+  };
 }
-
-// core/render.js
-globalThis.OfflineAudioContext = OfflineAudioContext8;
-globalThis.AudioContext = AudioContext2;
-async function applyEffect(buffer, effect, sampleRate, bpm) {
-  const { type, params = {} } = effect;
-  switch (type) {
-    case "delay":
-      return processDelay(buffer, params, sampleRate, bpm);
-    case "reverb":
-      const context = new OfflineAudioContext8(2, buffer.length, sampleRate);
-      const ir = generatePlateReverbIR(context, params);
-      return applyConvolution(buffer, ir, params.mix ?? 0.3, sampleRate);
-    // Future effects can be added here
-    // case 'filter':
-    // case 'eq':
-    default:
-      console.warn(`Unknown effect type: ${type}`);
-      return buffer;
+function peakingCoeffs(freq, gainDb, q, sampleRate) {
+  const A = Math.pow(10, gainDb / 40);
+  const w0 = 2 * Math.PI * freq / sampleRate;
+  const cosW0 = Math.cos(w0);
+  const sinW0 = Math.sin(w0);
+  const alpha = sinW0 / (2 * q);
+  const a0 = 1 + alpha / A;
+  return {
+    b0: (1 + alpha * A) / a0,
+    b1: -2 * cosW0 / a0,
+    b2: (1 - alpha * A) / a0,
+    a1: -2 * cosW0 / a0,
+    a2: (1 - alpha / A) / a0
+  };
+}
+function highShelfCoeffs(freq, gainDb, sampleRate) {
+  const A = Math.pow(10, gainDb / 40);
+  const w0 = 2 * Math.PI * freq / sampleRate;
+  const cosW0 = Math.cos(w0);
+  const sinW0 = Math.sin(w0);
+  const alpha = sinW0 / 2 * Math.sqrt((A + 1 / A) * (1 / 0.707 - 1) + 2);
+  const sqrtA2alpha = 2 * Math.sqrt(A) * alpha;
+  const a0 = A + 1 - (A - 1) * cosW0 + sqrtA2alpha;
+  return {
+    b0: A * (A + 1 + (A - 1) * cosW0 + sqrtA2alpha) / a0,
+    b1: -2 * A * (A - 1 + (A + 1) * cosW0) / a0,
+    b2: A * (A + 1 + (A - 1) * cosW0 - sqrtA2alpha) / a0,
+    a1: 2 * (A - 1 - (A + 1) * cosW0) / a0,
+    a2: (A + 1 - (A - 1) * cosW0 - sqrtA2alpha) / a0
+  };
+}
+function applyBiquad(data, length, coeffs) {
+  const { b0, b1, b2, a1, a2 } = coeffs;
+  let z1 = 0, z2 = 0;
+  for (let i = 0; i < length; i++) {
+    const input = data[i];
+    const output = b0 * input + z1;
+    z1 = b1 * input - a1 * output + z2;
+    z2 = b2 * input - a2 * output;
+    data[i] = output;
   }
 }
-function applyConvolution(inputBuffer, ir, mix, sampleRate) {
+function processEq(inputBuffer, params, sampleRate) {
+  const {
+    highpass = 30,
+    lowGain = 0,
+    midFreq = 1e3,
+    midGain = 0,
+    midQ = 1,
+    highGain = 0
+  } = params;
+  const numChannels = inputBuffer.numberOfChannels || 1;
   const length = inputBuffer.length;
-  const irLength = ir.length;
-  const outputLength = length + irLength - 1;
-  const outputL = new Float32Array(outputLength);
-  const outputR = new Float32Array(outputLength);
-  const inputL = inputBuffer.getChannelData(0);
-  const inputR = inputBuffer.numberOfChannels > 1 ? inputBuffer.getChannelData(1) : inputL;
-  const irL = ir.getChannelData(0);
-  const irR = ir.numberOfChannels > 1 ? ir.getChannelData(1) : irL;
-  for (let i = 0; i < length; i++) {
-    for (let j = 0; j < irLength; j++) {
-      outputL[i + j] += inputL[i] * irL[j];
-      outputR[i + j] += inputR[i] * irR[j];
-    }
+  const outputChannels = [];
+  for (let ch = 0; ch < Math.max(numChannels, 2); ch++) {
+    const src = inputBuffer.getChannelData(ch % numChannels);
+    const out = new Float32Array(length);
+    out.set(src);
+    outputChannels.push(out);
   }
-  const dryGain = 1 - mix;
-  const wetGain = mix;
-  const resultL = new Float32Array(length);
-  const resultR = new Float32Array(length);
-  for (let i = 0; i < length; i++) {
-    resultL[i] = inputL[i] * dryGain + outputL[i] * wetGain;
-    resultR[i] = inputR[i] * dryGain + outputR[i] * wetGain;
+  const bands = [];
+  if (highpass > 20) {
+    bands.push(highpassCoeffs(
+      Math.min(Math.max(highpass, 20), sampleRate * 0.49),
+      0.707,
+      sampleRate
+    ));
+  }
+  if (Math.abs(lowGain) > 0.1) {
+    bands.push(lowShelfCoeffs(200, lowGain, sampleRate));
+  }
+  if (Math.abs(midGain) > 0.1) {
+    bands.push(peakingCoeffs(
+      Math.min(Math.max(midFreq, 20), sampleRate * 0.49),
+      midGain,
+      Math.max(midQ, 0.1),
+      sampleRate
+    ));
+  }
+  if (Math.abs(highGain) > 0.1) {
+    bands.push(highShelfCoeffs(8e3, highGain, sampleRate));
+  }
+  for (const data of outputChannels) {
+    for (const coeffs of bands) {
+      applyBiquad(data, length, coeffs);
+    }
   }
   return {
     numberOfChannels: 2,
     length,
     sampleRate,
-    getChannelData: (ch) => ch === 0 ? resultL : resultR
+    getChannelData: (ch) => outputChannels[ch] || outputChannels[0]
   };
 }
-async function processEffectChain(buffer, chain, sampleRate, bpm) {
+
+// effects/filter.js
+init_biquad();
+function processFilter(inputBuffer, params, sampleRate) {
+  const {
+    mode = "lowpass",
+    cutoff = 2e3,
+    resonance = 30
+  } = params;
+  const numChannels = inputBuffer.numberOfChannels || 1;
+  const length = inputBuffer.length;
+  const q = 0.5 + resonance / 100 * 19.5;
+  const outputChannels = [];
+  for (let ch = 0; ch < Math.max(numChannels, 2); ch++) {
+    const src = inputBuffer.getChannelData(ch % numChannels);
+    const out = new Float32Array(length);
+    out.set(src);
+    const filter = new BiquadFilter(sampleRate);
+    if (mode === "highpass") {
+      filter.setHighpass(cutoff, q);
+    } else if (mode === "bandpass") {
+      filter.setBandpass(cutoff, q);
+    } else {
+      filter.setLowpass(cutoff, q);
+    }
+    filter.process(out);
+    outputChannels.push(out);
+  }
+  return {
+    numberOfChannels: 2,
+    length,
+    sampleRate,
+    getChannelData: (ch) => outputChannels[ch] || outputChannels[0]
+  };
+}
+
+// effects/reverb.js
+var COMB_TUNINGS = [1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617];
+var ALLPASS_TUNINGS = [556, 441, 341, 225];
+var STEREO_OFFSET = 23;
+function processReverb(inputBuffer, params, sampleRate) {
+  const {
+    decay = 2,
+    damping = 50,
+    predelay = 10,
+    mix = 30,
+    width = 100,
+    lowcut = 80,
+    highcut = 1e4,
+    size = 50
+  } = params;
+  const numChannels = inputBuffer.numberOfChannels;
+  const length = inputBuffer.length;
+  const inputL = inputBuffer.getChannelData(0);
+  const inputR = numChannels > 1 ? inputBuffer.getChannelData(1) : inputL;
+  const outputL = new Float32Array(length);
+  const outputR = new Float32Array(length);
+  const srScale = sampleRate / 44100;
+  const sizeScale = 0.5 + size / 100 * 2.5;
+  const feedback = 0.84 + Math.min(decay, 10) / 10 * 0.16;
+  const damp = damping / 100;
+  const damp2 = 1 - damp;
+  const wetGain = mix / 100;
+  const dryGain = 1 - wetGain;
+  const widthAmount = width / 100;
+  const wet1 = wetGain * (widthAmount / 2 + 0.5);
+  const wet2 = wetGain * ((1 - widthAmount) / 2);
+  const predelaySamples = Math.max(1, Math.floor(predelay / 1e3 * sampleRate));
+  const predelayBuf = new Float32Array(predelaySamples);
+  let predelayIdx = 0;
+  const combBufsL = [];
+  const combBufsR = [];
+  const combIdxL = new Int32Array(8);
+  const combIdxR = new Int32Array(8);
+  const combFilterStateL = new Float32Array(8);
+  const combFilterStateR = new Float32Array(8);
+  for (let c = 0; c < 8; c++) {
+    const tunedL = Math.floor(COMB_TUNINGS[c] * sizeScale * srScale);
+    const tunedR = Math.floor((COMB_TUNINGS[c] + STEREO_OFFSET) * sizeScale * srScale);
+    combBufsL.push(new Float32Array(Math.max(1, tunedL)));
+    combBufsR.push(new Float32Array(Math.max(1, tunedR)));
+  }
+  const allpassBufsL = [];
+  const allpassBufsR = [];
+  const allpassIdxL = new Int32Array(4);
+  const allpassIdxR = new Int32Array(4);
+  for (let a = 0; a < 4; a++) {
+    const tunedL = Math.floor(ALLPASS_TUNINGS[a] * sizeScale * srScale);
+    const tunedR = Math.floor((ALLPASS_TUNINGS[a] + STEREO_OFFSET) * sizeScale * srScale);
+    allpassBufsL.push(new Float32Array(Math.max(1, tunedL)));
+    allpassBufsR.push(new Float32Array(Math.max(1, tunedR)));
+  }
+  const hpAlpha = calculateHighpassAlpha2(lowcut, sampleRate);
+  const lpAlpha = calculateLowpassAlpha2(highcut, sampleRate);
+  let hpPrevL = 0, hpPrevR = 0;
+  let lpPrevL = 0, lpPrevR = 0;
+  for (let i = 0; i < length; i++) {
+    const inputMono = (inputL[i] + inputR[i]) * 0.5;
+    const predelayed = predelayBuf[predelayIdx];
+    predelayBuf[predelayIdx] = inputMono;
+    predelayIdx = (predelayIdx + 1) % predelaySamples;
+    let combSumL = 0;
+    let combSumR = 0;
+    for (let c = 0; c < 8; c++) {
+      const bufL = combBufsL[c];
+      const idxL = combIdxL[c];
+      const readL = bufL[idxL];
+      combFilterStateL[c] = readL * damp2 + combFilterStateL[c] * damp;
+      bufL[idxL] = predelayed + combFilterStateL[c] * feedback;
+      combIdxL[c] = (idxL + 1) % bufL.length;
+      combSumL += readL;
+      const bufR = combBufsR[c];
+      const idxR = combIdxR[c];
+      const readR = bufR[idxR];
+      combFilterStateR[c] = readR * damp2 + combFilterStateR[c] * damp;
+      bufR[idxR] = predelayed + combFilterStateR[c] * feedback;
+      combIdxR[c] = (idxR + 1) % bufR.length;
+      combSumR += readR;
+    }
+    combSumL /= 3;
+    combSumR /= 3;
+    let allpassOutL = combSumL;
+    let allpassOutR = combSumR;
+    for (let a = 0; a < 4; a++) {
+      const abufL = allpassBufsL[a];
+      const aidxL = allpassIdxL[a];
+      const bufferedL = abufL[aidxL];
+      const inL = allpassOutL;
+      allpassOutL = bufferedL - inL;
+      abufL[aidxL] = inL + bufferedL * 0.5;
+      allpassIdxL[a] = (aidxL + 1) % abufL.length;
+      const abufR = allpassBufsR[a];
+      const aidxR = allpassIdxR[a];
+      const bufferedR = abufR[aidxR];
+      const inR = allpassOutR;
+      allpassOutR = bufferedR - inR;
+      abufR[aidxR] = inR + bufferedR * 0.5;
+      allpassIdxR[a] = (aidxR + 1) % abufR.length;
+    }
+    let wetL = allpassOutL;
+    let wetR = allpassOutR;
+    const hpFilteredL = wetL - hpPrevL;
+    hpPrevL = wetL - hpAlpha * hpFilteredL;
+    wetL = hpFilteredL;
+    const hpFilteredR = wetR - hpPrevR;
+    hpPrevR = wetR - hpAlpha * hpFilteredR;
+    wetR = hpFilteredR;
+    lpPrevL = lpPrevL + lpAlpha * (wetL - lpPrevL);
+    wetL = lpPrevL;
+    lpPrevR = lpPrevR + lpAlpha * (wetR - lpPrevR);
+    wetR = lpPrevR;
+    outputL[i] = inputL[i] * dryGain + wetL * wet1 + wetR * wet2;
+    outputR[i] = inputR[i] * dryGain + wetR * wet1 + wetL * wet2;
+  }
+  return {
+    numberOfChannels: 2,
+    length,
+    sampleRate,
+    getChannelData: (ch) => ch === 0 ? outputL : outputR
+  };
+}
+function calculateHighpassAlpha2(freq, sampleRate) {
+  const rc = 1 / (2 * Math.PI * freq);
+  const dt = 1 / sampleRate;
+  return rc / (rc + dt);
+}
+function calculateLowpassAlpha2(freq, sampleRate) {
+  const rc = 1 / (2 * Math.PI * freq);
+  const dt = 1 / sampleRate;
+  return dt / (rc + dt);
+}
+
+// effects/sidechain.js
+function getTriggerPositions(pattern, trigger, stepDuration, sampleRate, totalLength) {
+  if (!pattern) return [];
+  const voiceSteps = pattern[trigger];
+  if (!voiceSteps || !Array.isArray(voiceSteps)) return [];
+  const patternLength = voiceSteps.length > 0 ? Math.max(...voiceSteps) + 1 : 16;
+  const isGateArray = voiceSteps.length >= 16 || voiceSteps.every((v) => v === 0 || v === 1);
+  const hitSteps = [];
+  if (isGateArray) {
+    for (let i = 0; i < voiceSteps.length; i++) {
+      if (voiceSteps[i]) hitSteps.push(i);
+    }
+  } else {
+    hitSteps.push(...voiceSteps);
+  }
+  if (hitSteps.length === 0) return [];
+  const stepsInPattern = isGateArray ? voiceSteps.length : 16;
+  const samplesPerStep = Math.round(stepDuration * sampleRate);
+  const samplesPerPattern = stepsInPattern * samplesPerStep;
+  const positions = [];
+  if (samplesPerPattern <= 0) return [];
+  const loops = Math.ceil(totalLength / samplesPerPattern);
+  for (let loop = 0; loop < loops; loop++) {
+    const loopOffset = loop * samplesPerPattern;
+    for (const step of hitSteps) {
+      const pos = loopOffset + step * samplesPerStep;
+      if (pos < totalLength) {
+        positions.push(pos);
+      }
+    }
+  }
+  return positions;
+}
+function processSidechain(inputBuffer, params, sampleRate, bpm, context) {
+  const {
+    trigger = "kick",
+    amount = 0.5,
+    attack = 5,
+    release = 100,
+    hold = 20
+  } = params;
+  const numChannels = inputBuffer.numberOfChannels || 1;
+  const length = inputBuffer.length;
+  if (!context?.session || !context?.stepDuration) {
+    return inputBuffer;
+  }
+  const session = context.session;
+  let triggerPattern = null;
+  for (const pattern of [session.jb01Pattern, session.jt90Pattern]) {
+    if (pattern && pattern[trigger]) {
+      triggerPattern = pattern;
+      break;
+    }
+  }
+  if (!triggerPattern) {
+    return inputBuffer;
+  }
+  const positions = getTriggerPositions(
+    triggerPattern,
+    trigger,
+    context.stepDuration,
+    sampleRate,
+    length
+  );
+  if (positions.length === 0) {
+    return inputBuffer;
+  }
+  const envelope = new Float32Array(length);
+  envelope.fill(1);
+  const attackSamples = Math.max(1, Math.round(attack / 1e3 * sampleRate));
+  const holdSamples = Math.round(hold / 1e3 * sampleRate);
+  const releaseSamples = Math.max(1, Math.round(release / 1e3 * sampleRate));
+  const duckLevel = 1 - amount;
+  for (const pos of positions) {
+    for (let i = 0; i < attackSamples; i++) {
+      const idx = pos + i;
+      if (idx >= length) break;
+      const t = i / attackSamples;
+      const gain = 1 - (1 - duckLevel) * t;
+      envelope[idx] = Math.min(envelope[idx], gain);
+    }
+    const holdStart = pos + attackSamples;
+    for (let i = 0; i < holdSamples; i++) {
+      const idx = holdStart + i;
+      if (idx >= length) break;
+      envelope[idx] = Math.min(envelope[idx], duckLevel);
+    }
+    const releaseStart = holdStart + holdSamples;
+    for (let i = 0; i < releaseSamples; i++) {
+      const idx = releaseStart + i;
+      if (idx >= length) break;
+      const t = i / releaseSamples;
+      const gain = duckLevel + (1 - duckLevel) * t;
+      envelope[idx] = Math.min(envelope[idx], gain);
+    }
+  }
+  const outputChannels = [];
+  for (let ch = 0; ch < Math.max(numChannels, 2); ch++) {
+    const src = inputBuffer.getChannelData(ch % numChannels);
+    const out = new Float32Array(length);
+    for (let i = 0; i < length; i++) {
+      out[i] = src[i] * envelope[i];
+    }
+    outputChannels.push(out);
+  }
+  return {
+    numberOfChannels: 2,
+    length,
+    sampleRate,
+    getChannelData: (ch) => outputChannels[ch] || outputChannels[0]
+  };
+}
+
+// core/render.js
+globalThis.OfflineAudioContext = OfflineAudioContext8;
+globalThis.AudioContext = AudioContext2;
+var EFFECT_PROCESSORS = {
+  delay: (buffer, params, sampleRate, bpm) => {
+    return processDelay(buffer, params, sampleRate, bpm);
+  },
+  eq: (buffer, params, sampleRate) => {
+    return processEq(buffer, params, sampleRate);
+  },
+  filter: (buffer, params, sampleRate) => {
+    return processFilter(buffer, params, sampleRate);
+  },
+  reverb: (buffer, params, sampleRate) => {
+    return processReverb(buffer, params, sampleRate);
+  },
+  sidechain: (buffer, params, sampleRate, bpm, context) => {
+    return processSidechain(buffer, params, sampleRate, bpm, context);
+  }
+};
+async function applyEffect(buffer, effect, sampleRate, bpm, context) {
+  const { type } = effect;
+  const params = effect._node ? effect._node.getParams() : effect.params || {};
+  const processor = EFFECT_PROCESSORS[type];
+  if (!processor) {
+    console.warn(`Unknown effect type: ${type}`);
+    return buffer;
+  }
+  return processor(buffer, params, sampleRate, bpm, context);
+}
+async function processEffectChain(buffer, chain, sampleRate, bpm, context) {
   let result = buffer;
   for (const effect of chain) {
-    result = await applyEffect(result, effect, sampleRate, bpm);
+    result = await applyEffect(result, effect, sampleRate, bpm, context);
   }
   return result;
 }
@@ -16347,14 +19000,14 @@ function mixVoiceBuffers(voiceBuffers, length, sampleRate) {
     getChannelData: (ch) => ch === 0 ? outputL : outputR
   };
 }
-async function renderInstrumentWithEffects(node, renderOptions, effectChains, instrumentId, sampleRate, bpm) {
+async function renderInstrumentWithEffects(node, renderOptions, effectChains, instrumentId, sampleRate, bpm, context) {
   const voiceChains = getVoiceEffectChains(effectChains, instrumentId);
   const hasVoiceEffects = Object.keys(voiceChains).length > 0;
   const instrumentChain = effectChains?.[instrumentId] || [];
   if (!hasVoiceEffects || typeof node.renderVoices !== "function") {
     let buffer = await node.renderPattern(renderOptions);
     if (buffer && instrumentChain.length > 0) {
-      buffer = await processEffectChain(buffer, instrumentChain, sampleRate, bpm);
+      buffer = await processEffectChain(buffer, instrumentChain, sampleRate, bpm, context);
     }
     return buffer;
   }
@@ -16373,14 +19026,14 @@ async function renderInstrumentWithEffects(node, renderOptions, effectChains, in
     if (!buffer) continue;
     const chain = voiceChains[voice];
     if (chain && chain.length > 0) {
-      processedVoices[voice] = await processEffectChain(buffer, chain, sampleRate, bpm);
+      processedVoices[voice] = await processEffectChain(buffer, chain, sampleRate, bpm, context);
     } else {
       processedVoices[voice] = buffer;
     }
   }
   let mixedBuffer = mixVoiceBuffers(processedVoices, maxLength, sampleRate);
   if (instrumentChain.length > 0) {
-    mixedBuffer = await processEffectChain(mixedBuffer, instrumentChain, sampleRate, bpm);
+    mixedBuffer = await processEffectChain(mixedBuffer, instrumentChain, sampleRate, bpm, context);
   }
   return mixedBuffer;
 }
@@ -16413,12 +19066,12 @@ async function renderSession(session, bars, filename) {
   masterGain.connect(context.destination);
   const outputBuffer = await context.startRendering();
   const instrumentBuffers = [];
-  const canonicalIds = ["jb01", "jb200", "jb202", "jp9000", "sampler", "jt10", "jt30", "jt90"];
+  const canonicalIds = ["jb01", "jb200", "jb202", "jp9000", "jbs", "jt10", "jt30", "jt90"];
+  const renderContext = { session, stepDuration };
   for (const id of canonicalIds) {
     const node = session._nodes[id];
     if (!node) continue;
-    const level = session.getInstrumentLevel(id);
-    const linearLevel = Math.pow(10, level / 20);
+    const linearLevel = node.getOutputGain();
     if (hasArrangement) {
       for (const section of arrangementPlan) {
         const patternName = section.patterns[id];
@@ -16440,7 +19093,8 @@ async function renderSession(session, bars, filename) {
             session.mixer?.effectChains,
             id,
             sampleRate,
-            session.bpm
+            session.bpm,
+            renderContext
           );
           if (buffer) {
             instrumentBuffers.push({
@@ -16456,18 +19110,27 @@ async function renderSession(session, bars, filename) {
       }
     } else {
       try {
+        const instrumentAutomation = {};
+        for (const [path, values] of session.params.automation) {
+          if (path.startsWith(id + ".")) {
+            instrumentAutomation[path.slice(id.length + 1)] = values;
+          }
+        }
+        const hasAutomation = Object.keys(instrumentAutomation).length > 0;
         const buffer = await renderInstrumentWithEffects(
           node,
           {
             bars: renderBars,
             stepDuration,
             swing: session.clock.swing,
-            sampleRate
+            sampleRate,
+            automation: hasAutomation ? instrumentAutomation : void 0
           },
           session.mixer?.effectChains,
           id,
           sampleRate,
-          session.bpm
+          session.bpm,
+          renderContext
         );
         if (buffer) {
           instrumentBuffers.push({
@@ -16493,6 +19156,45 @@ async function renderSession(session, bars, filename) {
       }
     }
   }
+  if (session.routing && session.routing.sends.size > 0) {
+    for (const [sendId, send] of session.routing.sends) {
+      const sendL = new Float32Array(outputBuffer.length);
+      const sendR = new Float32Array(outputBuffer.length);
+      for (const [trackId, track] of session.routing.tracks) {
+        const sendLevel = track.sends[sendId];
+        if (sendLevel === void 0 || sendLevel === 0) continue;
+        for (const { id, buffer, startBar, level } of instrumentBuffers) {
+          if (id !== track.nodeId) continue;
+          const startSample = Math.floor(startBar * samplesPerBar);
+          const mixLen = Math.min(outputBuffer.length - startSample, buffer.length);
+          const bufL = buffer.getChannelData(0);
+          const bufR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : bufL;
+          for (let i = 0; i < mixLen; i++) {
+            sendL[startSample + i] += bufL[i] * level * sendLevel;
+            sendR[startSample + i] += bufR[i] * level * sendLevel;
+          }
+        }
+      }
+      const sendBuffer = {
+        numberOfChannels: 2,
+        length: outputBuffer.length,
+        sampleRate,
+        getChannelData: (ch) => ch === 0 ? sendL : sendR
+      };
+      const processor = EFFECT_PROCESSORS[send.effectType];
+      if (!processor) continue;
+      const sendParams = { ...send.effectNode.getParams(), mix: 100 };
+      const processed = processor(sendBuffer, sendParams, sampleRate, session.bpm, renderContext);
+      for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {
+        const mainData = outputBuffer.getChannelData(ch);
+        const wetData = processed.getChannelData(ch % processed.numberOfChannels);
+        const wetLen = Math.min(outputBuffer.length, processed.length);
+        for (let i = 0; i < wetLen; i++) {
+          mainData[i] += wetData[i] * send.level;
+        }
+      }
+    }
+  }
   const masterChain = session.mixer?.effectChains?.master;
   let finalBuffer = outputBuffer;
   if (masterChain && masterChain.length > 0) {
@@ -16502,7 +19204,7 @@ async function renderSession(session, bars, filename) {
       sampleRate: outputBuffer.sampleRate,
       getChannelData: (ch) => outputBuffer.getChannelData(ch)
     };
-    const processedMaster = await processEffectChain(wrappedBuffer, masterChain, sampleRate, session.bpm);
+    const processedMaster = await processEffectChain(wrappedBuffer, masterChain, sampleRate, session.bpm, renderContext);
     for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {
       const mainData = outputBuffer.getChannelData(ch);
       const processedData = processedMaster.getChannelData(ch);
@@ -16512,7 +19214,7 @@ async function renderSession(session, bars, filename) {
     }
   }
   const wav = audioBufferToWav2(outputBuffer);
-  writeFileSync5(filename, Buffer.from(wav));
+  writeFileSync6(filename, Buffer.from(wav));
   const synths = instrumentBuffers.map((b) => b.id.toUpperCase()).filter((v, i, a) => a.indexOf(v) === i);
   if (hasArrangement) {
     const sectionCount = session.arrangement.length;
@@ -16522,75 +19224,110 @@ async function renderSession(session, bars, filename) {
 }
 
 // core/library.js
-import { readFileSync as readFileSync6 } from "fs";
-import { dirname as dirname3, join as join6 } from "path";
-import { fileURLToPath as fileURLToPath3 } from "url";
-var __dirname3 = dirname3(fileURLToPath3(import.meta.url));
-var LIBRARY = {};
+import { readFileSync as readFileSync8 } from "fs";
+import { dirname as dirname5, join as join7 } from "path";
+import { fileURLToPath as fileURLToPath5 } from "url";
+var __dirname5 = dirname5(fileURLToPath5(import.meta.url));
+var LIBRARY = { genres: {}, artists: {} };
 try {
-  const libraryPath = join6(__dirname3, "..", "library.json");
-  LIBRARY = JSON.parse(readFileSync6(libraryPath, "utf-8"));
+  const libraryPath = join7(__dirname5, "..", "library.json");
+  LIBRARY = JSON.parse(readFileSync8(libraryPath, "utf-8"));
 } catch (e) {
   console.warn("Could not load library.json:", e.message);
 }
+function resolveEntry(key) {
+  return LIBRARY.genres?.[key] || LIBRARY.artists?.[key] || null;
+}
 var LIBRARY_ALIASES = {
-  // === GENRES ===
-  // Classic / Old School House
+  // === CORE GENRES (17) ===
   "classic house": "classic_house",
   "old school house": "classic_house",
   "oldschool house": "classic_house",
   "old school": "classic_house",
-  // Detroit Techno
   "detroit techno": "detroit_techno",
   "detroit": "detroit_techno",
-  // Berlin Techno
   "berlin techno": "berlin_techno",
   "berlin": "berlin_techno",
   "berghain": "berlin_techno",
-  // Industrial Techno
   "industrial techno": "industrial_techno",
   "industrial": "industrial_techno",
-  // Chicago House
   "chicago house": "chicago_house",
   "chicago": "chicago_house",
-  // Deep House
   "deep house": "deep_house",
-  "deep": "deep_house",
-  // Tech House
   "tech house": "tech_house",
   "tech-house": "tech_house",
-  // Acid House
   "acid house": "acid_house",
-  // Acid Techno
   "acid techno": "acid_techno",
-  // Generic acid -> acid house (more common)
   "acid": "acid_house",
-  // Electro
   "electro": "electro",
   "electro funk": "electro",
-  // Drum and Bass
   "drum and bass": "drum_and_bass",
   "drum & bass": "drum_and_bass",
   "dnb": "drum_and_bass",
   "d&b": "drum_and_bass",
   "drumnbass": "drum_and_bass",
-  // Jungle
   "jungle": "jungle",
-  // Trance
   "trance": "trance",
-  // Minimal
   "minimal techno": "minimal_techno",
   "minimal": "minimal_techno",
-  // Breakbeat
   "breakbeat": "breakbeat",
   "breaks": "breakbeat",
   "big beat": "breakbeat",
-  // Ambient
   "ambient": "ambient",
-  // IDM
   "idm": "idm",
   "intelligent dance": "idm",
-  // Generic terms -> sensible defaults
+  // === DEEP GENRES (16) ===
+  "doomcore": "doomcore",
+  "doom core": "doomcore",
+  "gabber": "gabber",
+  "hardcore techno": "gabber",
+  "uk funky": "uk_funky",
+  "funky house": "uk_funky",
+  "footwork": "footwork",
+  "juke": "footwork",
+  "gqom": "gqom",
+  "kuduro": "kuduro",
+  "afro house": "afro_house",
+  "afrohouse": "afro_house",
+  "dub techno": "dub_techno",
+  "microhouse": "microhouse",
+  "micro house": "microhouse",
+  "psytrance": "psytrance",
+  "darkpsy": "psytrance",
+  "psy trance": "psytrance",
+  "reggaeton": "reggaeton",
+  "uk garage": "uk_garage",
+  "2-step": "uk_garage",
+  "2step": "uk_garage",
+  "ukg": "uk_garage",
+  "vaporwave": "vaporwave",
+  "future funk": "vaporwave",
+  "witch house": "witch_house",
+  "darksynth": "darksynth",
+  "dark synthwave": "darksynth",
+  "drill": "drill",
+  "uk drill": "drill",
+  "chicago drill": "drill",
+  // === PROFILE GENRES (12) ===
+  "breakcore": "breakcore",
+  "complextro": "complextro",
+  "drift phonk": "drift_phonk",
+  "phonk": "drift_phonk",
+  "future garage": "future_garage",
+  "gym phonk": "gym_phonk",
+  "jersey club": "jersey_club",
+  "neurofunk": "neurofunk",
+  "neuro": "neurofunk",
+  "pluggnb": "pluggnb",
+  "plug": "pluggnb",
+  "rawstyle": "rawstyle",
+  "raw hardstyle": "rawstyle",
+  "sigilkore": "sigilkore",
+  "stutterhouse": "stutterhouse",
+  "stutter house": "stutterhouse",
+  "wave": "wave",
+  "trap wave": "wave",
+  // === GENERIC TERMS → sensible defaults ===
   "techno": "berlin_techno",
   "house": "classic_house",
   // === ARTISTS ===
@@ -16603,7 +19340,9 @@ function detectLibraryKeys(text) {
   const found = /* @__PURE__ */ new Set();
   const sortedAliases = Object.keys(LIBRARY_ALIASES).sort((a, b) => b.length - a.length);
   for (const alias of sortedAliases) {
-    if (lower.includes(alias)) {
+    const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`(?:^|\\W)${escaped}(?:$|\\W)`);
+    if (re.test(lower)) {
       found.add(LIBRARY_ALIASES[alias]);
     }
   }
@@ -16612,24 +19351,9 @@ function detectLibraryKeys(text) {
 function buildLibraryContext(keys) {
   if (!keys.length) return "";
   const sections = keys.map((key) => {
-    const entry = LIBRARY[key];
+    const entry = resolveEntry(key);
     if (!entry) return "";
-    if (entry.type === "genre") {
-      return `
-=== ${entry.name.toUpperCase()} (Genre) ===
-BPM: ${entry.bpm[0]}-${entry.bpm[1]} | Keys: ${entry.keys.join(", ")} | Swing: ${entry.swing}%
-
-${entry.description}
-
-${entry.production}
-
-Reference settings:
-- Drums: ${JSON.stringify(entry.drums)}
-- Bass: ${JSON.stringify(entry.bass)}
-- Classic tracks: ${entry.references.join(", ")}
-`;
-    }
-    if (entry.type === "artist") {
+    if (LIBRARY.artists?.[key]) {
       let artistSection = `
 === ${entry.name.toUpperCase()} (Artist Style) ===
 BPM: ${entry.bpm[0]}-${entry.bpm[1]} | Swing: ${entry.swing}% | Base genre: ${entry.genre}
@@ -16664,18 +19388,45 @@ Keywords: ${entry.keywords.join(", ")}`;
 Reference tracks: ${entry.references.join(", ")}`;
       return artistSection;
     }
-    if (entry.type === "mood") {
-      return `
-=== ${entry.name.toUpperCase()} (Mood) ===
-${entry.description || ""}
-Adjustments: ${JSON.stringify(entry.adjustments)}
-Keywords: ${entry.keywords?.join(", ") || ""}
+    const tier = entry.tier || "core";
+    const header = `=== ${entry.name.toUpperCase()} (Genre \u2014 ${tier}) ===`;
+    const bpmLine = entry.bpm ? `BPM: ${entry.bpm[0]}-${entry.bpm[1]}` : "";
+    const keysLine = entry.keys?.length ? `Keys: ${entry.keys.join(", ")}` : "";
+    const swingLine = entry.swing != null ? `Swing: ${entry.swing}%` : "";
+    const meta = [bpmLine, keysLine, swingLine].filter(Boolean).join(" | ");
+    let section = `
+${header}
+${meta}
 `;
+    if (entry.description) section += `
+${entry.description}
+`;
+    if (entry.production) section += `
+${entry.production}
+`;
+    if (entry.drums) section += `
+Reference drums: ${JSON.stringify(entry.drums)}`;
+    if (entry.bass) section += `
+Reference bass: ${JSON.stringify(entry.bass)}`;
+    if (entry.modulation) section += `
+Modulation: ${JSON.stringify(entry.modulation)}`;
+    if (entry.mixing) section += `
+Mixing: ${JSON.stringify(entry.mixing)}`;
+    if (entry.reasoning) section += `
+Reasoning: ${entry.reasoning}`;
+    if (entry.lineage) section += `
+Lineage: ${entry.lineage}`;
+    if (entry.currentScene) section += `
+Current scene: ${entry.currentScene}`;
+    if (entry.references?.length) {
+      section += `
+Classic tracks: ${entry.references.join(", ")}`;
     }
-    return `
-=== ${entry.name?.toUpperCase() || key.toUpperCase()} ===
-${JSON.stringify(entry, null, 2)}
-`;
+    if (entry.sources?.length) {
+      section += `
+Sources: ${entry.sources.join(", ")}`;
+    }
+    return section;
   }).filter(Boolean);
   if (!sections.length) return "";
   return `
@@ -16729,7 +19480,7 @@ var TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "sampler", "jt10", "jt30", "jt90"], description: "Which instrument's pattern to save" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "jbs", "jt10", "jt30", "jt90"], description: "Which instrument's pattern to save" },
         name: { type: "string", description: "Pattern name (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -16741,7 +19492,7 @@ var TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "sampler", "jt10", "jt30", "jt90"], description: "Which instrument's pattern to load" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "jbs", "jt10", "jt30", "jt90"], description: "Which instrument's pattern to load" },
         name: { type: "string", description: "Pattern name to load (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -16753,7 +19504,7 @@ var TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "sampler", "jt10", "jt30", "jt90"], description: "Which instrument" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "jbs", "jt10", "jt30", "jt90"], description: "Which instrument" },
         from: { type: "string", description: "Source pattern name (A, B, etc)" },
         to: { type: "string", description: "Destination pattern name" }
       },
@@ -16777,14 +19528,14 @@ var TOOLS = [
       properties: {
         sections: {
           type: "array",
-          description: "Array of sections. Each section: {bars: 4, jb01: 'A', jb202: 'A', sampler: 'A', jt10: 'A', jt30: 'A', jt90: 'A'}",
+          description: "Array of sections. Each section: {bars: 4, jb01: 'A', jb202: 'A', jbs: 'A', jt10: 'A', jt30: 'A', jt90: 'A'}",
           items: {
             type: "object",
             properties: {
               bars: { type: "number", description: "Number of bars for this section" },
               jb01: { type: "string", description: "JB01 drum pattern name (or omit to silence)" },
               jb202: { type: "string", description: "JB202 bass pattern name (or omit to silence)" },
-              sampler: { type: "string", description: "Sampler pattern name (or omit to silence)" },
+              jbs: { type: "string", description: "JB-S sampler pattern name (or omit to silence)" },
               jt10: { type: "string", description: "JT10 lead pattern name (or omit to silence)" },
               jt30: { type: "string", description: "JT30 acid bass pattern name (or omit to silence)" },
               jt90: { type: "string", description: "JT90 drum pattern name (or omit to silence)" }
@@ -16816,11 +19567,12 @@ var TOOLS = [
   },
   {
     name: "test_tone",
-    description: "Render a pure test tone for audio analysis. Outputs a clean saw wave with flat envelope (no ADSR shaping). Default is A440 (A4) for 1 second.",
+    description: "Render a pure test tone for audio analysis. Uses DSP oscillators IN ISOLATION \u2014 no filter, no drive, no envelope. Default is A440 sawtooth for 1 second.",
     input_schema: {
       type: "object",
       properties: {
         note: { type: "string", description: "Note name (default 'A4' = 440Hz)" },
+        waveform: { type: "string", enum: ["sawtooth", "square", "triangle", "sine"], description: "Oscillator waveform (default 'sawtooth')" },
         duration: { type: "number", description: "Duration in seconds (default 1.0)" }
       }
     }
@@ -16858,11 +19610,11 @@ var TOOLS = [
         mute: { type: "boolean", description: "Mute bass (sets level to -60dB)" },
         level: { type: "number", description: "Output level in dB (-60 to +6, 0=unity gain)" },
         levelDelta: { type: "number", description: "Relative level adjustment in dB (e.g., -5 to reduce by 5dB, +3 to boost by 3dB)" },
-        osc1Waveform: { type: "string", enum: ["sawtooth", "square", "triangle"], description: "Osc 1 waveform" },
+        osc1Waveform: { type: "string", enum: ["sawtooth", "square", "triangle", "sine"], description: "Osc 1 waveform" },
         osc1Octave: { type: "number", description: "Osc 1 octave shift in semitones (-24 to +24)" },
         osc1Detune: { type: "number", description: "Osc 1 fine tune (-50 to +50)" },
         osc1Level: { type: "number", description: "Osc 1 level 0-100" },
-        osc2Waveform: { type: "string", enum: ["sawtooth", "square", "triangle"], description: "Osc 2 waveform" },
+        osc2Waveform: { type: "string", enum: ["sawtooth", "square", "triangle", "sine"], description: "Osc 2 waveform" },
         osc2Octave: { type: "number", description: "Osc 2 octave shift in semitones (-24 to +24)" },
         osc2Detune: { type: "number", description: "Osc 2 fine tune (-50 to +50). 5-10 adds fatness" },
         osc2Level: { type: "number", description: "Osc 2 level 0-100" },
@@ -17020,7 +19772,7 @@ var TOOLS = [
       properties: {
         pattern: {
           type: "array",
-          description: "Array of 16 steps. Each step: {note: 'C3', gate: true, accent: false, slide: false}. Lead range: C2-C5",
+          description: "Array of steps. Each step: {note: 'C3', gate: true, accent: false, slide: false}. Lead range: C2-C5",
           items: {
             type: "object",
             properties: {
@@ -17030,37 +19782,42 @@ var TOOLS = [
               slide: { type: "boolean", description: "Glide/portamento to this note" }
             }
           }
-        }
+        },
+        bars: { type: "number", description: "Pattern length in bars (default 1). Use for multi-bar patterns." }
       },
       required: ["pattern"]
     }
   },
   {
     name: "tweak_jt10",
-    description: "Adjust JT10 lead synth parameters. Use mute:true to silence.",
+    description: "Adjust JT10 lead synth parameters. UNITS: level in dB (-60 to +6, 0=unity), all others 0-100. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {
-        mute: { type: "boolean", description: "Mute lead (sets level to 0)" },
-        level: { type: "number", description: "Output level 0-100" },
-        waveform: { type: "string", enum: ["sawtooth", "pulse"], description: "Oscillator waveform" },
-        pulseWidth: { type: "number", description: "Pulse width 0-100 (pulse waveform only)" },
+        mute: { type: "boolean", description: "Mute lead (sets level to -60dB)" },
+        level: { type: "number", description: "Output level in dB (-60 to +6, 0=unity gain)" },
+        sawLevel: { type: "number", description: "Sawtooth oscillator level 0-100" },
+        pulseLevel: { type: "number", description: "Pulse oscillator level 0-100" },
+        pulseWidth: { type: "number", description: "Pulse width 0-100 (50=square)" },
         subLevel: { type: "number", description: "Sub-oscillator level 0-100" },
-        subOctave: { type: "number", description: "Sub-oscillator octave (-1 or -2)" },
-        filterCutoff: { type: "number", description: "Filter cutoff in Hz (20-16000)" },
+        subMode: { type: "number", description: "Sub mode: 0=off, 1=-1oct, 2=-2oct" },
+        filterCutoff: { type: "number", description: "Filter cutoff 0-100" },
         filterResonance: { type: "number", description: "Filter resonance 0-100" },
         filterEnvAmount: { type: "number", description: "Filter envelope depth 0-100" },
-        filterAttack: { type: "number", description: "Filter envelope attack 0-100" },
-        filterDecay: { type: "number", description: "Filter envelope decay 0-100" },
-        filterSustain: { type: "number", description: "Filter envelope sustain 0-100" },
-        filterRelease: { type: "number", description: "Filter envelope release 0-100" },
+        keyTrack: { type: "number", description: "Keyboard tracking 0-100" },
         ampAttack: { type: "number", description: "Amp envelope attack 0-100" },
         ampDecay: { type: "number", description: "Amp envelope decay 0-100" },
         ampSustain: { type: "number", description: "Amp envelope sustain 0-100" },
         ampRelease: { type: "number", description: "Amp envelope release 0-100" },
+        filterAttack: { type: "number", description: "Filter envelope attack 0-100 (null = follow amp)" },
+        filterDecay: { type: "number", description: "Filter envelope decay 0-100 (null = follow amp)" },
+        filterSustain: { type: "number", description: "Filter envelope sustain 0-100 (null = follow amp)" },
+        filterRelease: { type: "number", description: "Filter envelope release 0-100 (null = follow amp)" },
         lfoRate: { type: "number", description: "LFO rate 0-100" },
-        lfoAmount: { type: "number", description: "LFO modulation amount 0-100" },
-        lfoDestination: { type: "string", enum: ["pitch", "filter", "pulseWidth"], description: "LFO destination" }
+        lfoToPitch: { type: "number", description: "LFO to pitch depth 0-100" },
+        lfoToFilter: { type: "number", description: "LFO to filter depth 0-100" },
+        lfoToPW: { type: "number", description: "LFO to pulse width depth 0-100" },
+        glideTime: { type: "number", description: "Portamento/glide time 0-100" }
       },
       required: []
     }
@@ -17181,10 +19938,10 @@ var TOOLS = [
       required: ["name"]
     }
   },
-  // Sampler tools
+  // JB-S Sampler tools
   {
-    name: "list_kits",
-    description: "List all available sample kits (bundled + user kits from ~/Documents/Jambot/kits/)",
+    name: "list_jbs_kits",
+    description: "List all available JB-S sample kits (bundled + user kits from ~/Documents/Jambot/kits/)",
     input_schema: {
       type: "object",
       properties: {},
@@ -17192,8 +19949,8 @@ var TOOLS = [
     }
   },
   {
-    name: "load_kit",
-    description: "Load a sample kit for the Sampler. Use list_kits first to see available kits.",
+    name: "load_jbs_kit",
+    description: "Load a sample kit for the JB-S sampler. Use list_jbs_kits first to see available kits.",
     input_schema: {
       type: "object",
       properties: {
@@ -17203,11 +19960,12 @@ var TOOLS = [
     }
   },
   {
-    name: "add_samples",
-    description: "Add sample patterns to the Sampler. Must load_kit first. Slots are s1-s10. For simple patterns use step arrays [0,4,8,12]. For velocity control use [{step:0,vel:1},{step:4,vel:0.5}].",
+    name: "add_jbs",
+    description: "Add sample patterns to the JB-S sampler. Must load_jbs_kit first. Slots are s1-s10. For simple patterns use step arrays [0,4,8,12]. For velocity control use [{step:0,vel:1},{step:4,vel:0.5}]. Use bars param for multi-bar patterns.",
     input_schema: {
       type: "object",
       properties: {
+        bars: { type: "number", description: "Pattern length in bars (default 1). Use for multi-bar patterns." },
         s1: { type: "array", description: "Steps for slot 1 (usually kick)" },
         s2: { type: "array", description: "Steps for slot 2 (usually snare)" },
         s3: { type: "array", description: "Steps for slot 3 (usually clap)" },
@@ -17223,8 +19981,8 @@ var TOOLS = [
     }
   },
   {
-    name: "tweak_samples",
-    description: "Tweak Sampler parameters. UNITS: level in dB, tune in semitones, attack/decay 0-100, filter in Hz, pan L/R -100 to +100. Use mute:true to silence.",
+    name: "tweak_jbs",
+    description: "Tweak JB-S sampler parameters. UNITS: level in dB, tune in semitones, attack/decay 0-100, filter in Hz, pan L/R -100 to +100. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {
@@ -17241,7 +19999,16 @@ var TOOLS = [
     }
   },
   {
-    name: "create_kit",
+    name: "show_jbs",
+    description: "Show current JB-S sampler state (loaded kit, slots, pattern).",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "create_jbs_kit",
     description: "Create a new sample kit from audio files in a folder. Scans the folder for WAV/AIFF/MP3 files and creates a kit in ~/Documents/Jambot/kits/. Returns the list of found files so you can ask the user what to name each slot.",
     input_schema: {
       type: "object",
@@ -17267,65 +20034,12 @@ var TOOLS = [
   },
   // === MIXER TOOLS ===
   {
-    name: "create_send",
-    description: "Create a send bus with an effect. For reverb: Dattorro plate algorithm with full controls. Multiple voices can send to the same bus.",
-    input_schema: {
-      type: "object",
-      properties: {
-        name: { type: "string", description: "Name for the send bus (e.g., 'reverb', 'delay')" },
-        effect: { type: "string", enum: ["reverb", "eq"], description: "Type of effect for the bus" },
-        // Plate reverb parameters
-        decay: { type: "number", description: "Reverb tail length in seconds (0.5-10, default 2). Short for tight drums, long for pads." },
-        damping: { type: "number", description: "High-frequency rolloff (0-1, default 0.5). 0=bright/shimmery, 1=dark/warm." },
-        predelay: { type: "number", description: "Gap before reverb starts in ms (0-100, default 20). Adds clarity, separates dry from wet." },
-        modulation: { type: "number", description: "Subtle pitch wobble (0-1, default 0.3). Adds movement and shimmer." },
-        lowcut: { type: "number", description: "Remove low frequencies from reverb in Hz (20-500, default 100). Keeps bass tight." },
-        highcut: { type: "number", description: "Remove high frequencies from reverb in Hz (2000-20000, default 8000). Tames harshness." },
-        width: { type: "number", description: "Stereo spread (0-1, default 1). 0=mono, 1=full stereo." },
-        mix: { type: "number", description: "Wet/dry balance (0-1, default 0.3). How much reverb in the send output." }
-      },
-      required: ["name", "effect"]
-    }
-  },
-  {
-    name: "tweak_reverb",
-    description: "Adjust reverb parameters on an existing send bus. Use this to fine-tune the reverb sound.",
-    input_schema: {
-      type: "object",
-      properties: {
-        send: { type: "string", description: "Name of the reverb send bus to tweak" },
-        decay: { type: "number", description: "Tail length in seconds (0.5-10)" },
-        damping: { type: "number", description: "High-frequency rolloff (0-1). 0=bright, 1=dark." },
-        predelay: { type: "number", description: "Gap before reverb in ms (0-100)" },
-        modulation: { type: "number", description: "Pitch wobble for shimmer (0-1)" },
-        lowcut: { type: "number", description: "Low cut frequency in Hz (20-500)" },
-        highcut: { type: "number", description: "High cut frequency in Hz (2000-20000)" },
-        width: { type: "number", description: "Stereo spread (0-1)" },
-        mix: { type: "number", description: "Wet/dry balance (0-1)" }
-      },
-      required: ["send"]
-    }
-  },
-  {
-    name: "route_to_send",
-    description: "Route a voice or channel to a send bus. Use this to add reverb/effects to specific sounds.",
-    input_schema: {
-      type: "object",
-      properties: {
-        voice: { type: "string", description: "Voice to route (e.g., 'kick', 'snare', 'ch', 'oh', 'jb202', 'sampler')" },
-        send: { type: "string", description: "Name of the send bus to route to" },
-        level: { type: "number", description: "Send level (0-1, default 0.3)" }
-      },
-      required: ["voice", "send"]
-    }
-  },
-  {
     name: "add_channel_insert",
     description: "Add an insert effect to a channel or individual drum voice. Supports per-voice filtering on drums (kick, snare, ch, etc).",
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["jb01", "jb202", "sampler", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to add effect to" },
+        channel: { type: "string", enum: ["jb01", "jb202", "jbs", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to add effect to" },
         effect: { type: "string", enum: ["eq", "filter", "ducker"], description: "Type of effect" },
         preset: { type: "string", description: "Effect preset (eq: 'acidBass'/'crispHats'/'warmPad'; filter: 'dubDelay'/'telephone'/'lofi')" },
         params: {
@@ -17342,7 +20056,7 @@ var TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["jb01", "jb202", "sampler", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to remove effect from" },
+        channel: { type: "string", enum: ["jb01", "jb202", "jbs", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to remove effect from" },
         effect: { type: "string", enum: ["eq", "filter", "ducker", "all"], description: "Type of effect to remove, or 'all' to clear all inserts" }
       },
       required: ["channel"]
@@ -17354,7 +20068,7 @@ var TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        target: { type: "string", description: "What to duck (e.g., 'jb202', 'sampler')" },
+        target: { type: "string", description: "What to duck (e.g., 'jb202', 'jbs')" },
         trigger: { type: "string", description: "What triggers the duck (e.g., 'kick')" },
         amount: { type: "number", description: "How much to duck (0-1, default 0.5)" }
       },
@@ -17367,8 +20081,8 @@ var TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        effect: { type: "string", enum: ["eq", "reverb"], description: "Type of effect" },
-        preset: { type: "string", description: "Effect preset (eq: 'master', reverb: 'plate'/'room')" },
+        effect: { type: "string", enum: ["eq"], description: "Type of effect" },
+        preset: { type: "string", description: "Effect preset (eq: 'master')" },
         params: { type: "object", description: "Effect parameters" }
       },
       required: ["effect"]
@@ -17488,6 +20202,20 @@ var TOOLS = [
     }
   },
   {
+    name: "show_scope",
+    description: "Generate an oscilloscope PNG from a WAV file. Shows the time-domain waveform trace \u2014 useful for visually verifying synth output shape, checking for clipping, and debugging synthesis. Auto-detects fundamental frequency for clean cycle display.",
+    input_schema: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "Path to WAV file (defaults to last rendered)" },
+        output: { type: "string", description: "Output path for scope PNG (defaults to <filename>-scope.png)" },
+        cycles: { type: "number", description: "Number of waveform cycles to display (default: 5)" },
+        startMs: { type: "number", description: "Start time in ms (default: auto-detect stable region, skipping attack transients)" }
+      },
+      required: []
+    }
+  },
+  {
     name: "show_spectrum",
     description: "Display a full-range ASCII spectrum analyzer visualization, like an EQ plugin. Shows energy across 8 frequency bands from Sub (20Hz) to Air (20kHz) as a vertical bar graph.",
     input_schema: {
@@ -17528,11 +20256,11 @@ var TOOLS = [
         saturation: { type: "number", description: "Analog warmth 0-100 (analog mode only, default 20)" },
         spread: { type: "number", description: "Stereo width 0-100 (pingpong mode only, default 100)" },
         // Reverb params
-        decay: { type: "number", description: "Reverb tail length in seconds (0.5-10, default 2)" },
-        damping: { type: "number", description: "High-frequency rolloff (0-1, default 0.5)" },
-        predelay: { type: "number", description: "Gap before reverb in ms (0-100, default 10)" },
-        modulation: { type: "number", description: "Pitch wobble for shimmer (0-1, default 0.2)" },
-        width: { type: "number", description: "Stereo spread (0-1, default 1)" }
+        decay: { type: "number", description: "Reverb tail length in seconds (0.1-10, default 2)" },
+        damping: { type: "number", description: "High-frequency rolloff 0-100 (0=bright, 100=dark, default 50)" },
+        predelay: { type: "number", description: "Gap before reverb onset in ms (0-100, default 10)" },
+        width: { type: "number", description: "Stereo spread 0-100 (default 100)" },
+        size: { type: "number", description: "Room size 0-100 (default 50)" }
       },
       required: ["target", "effect"]
     }
@@ -17576,11 +20304,12 @@ var TOOLS = [
         highcut: { type: "number", description: "Highcut frequency Hz" },
         saturation: { type: "number", description: "Analog warmth 0-100" },
         spread: { type: "number", description: "Stereo width 0-100" },
-        decay: { type: "number", description: "Reverb tail seconds" },
-        damping: { type: "number", description: "Reverb damping 0-1" },
-        predelay: { type: "number", description: "Reverb predelay ms" },
-        modulation: { type: "number", description: "Reverb modulation 0-1" },
-        width: { type: "number", description: "Reverb stereo width 0-1" }
+        // Reverb params
+        decay: { type: "number", description: "Reverb tail length in seconds (0.1-10)" },
+        damping: { type: "number", description: "High-frequency rolloff 0-100" },
+        predelay: { type: "number", description: "Gap before reverb onset in ms (0-100)" },
+        width: { type: "number", description: "Stereo spread 0-100" },
+        size: { type: "number", description: "Room size 0-100" }
       },
       required: ["target", "effect"]
     }
@@ -17588,11 +20317,11 @@ var TOOLS = [
   // === PRESET TOOLS (Generic) ===
   {
     name: "save_preset",
-    description: "Save current instrument settings as a user preset. Works for any instrument (jb01, jb202, sampler). Presets are stored in ~/Documents/Jambot/presets/.",
+    description: "Save current instrument settings as a user preset. Works for any instrument (jb01, jb202, jbs). Presets are stored in ~/Documents/Jambot/presets/.",
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "sampler"], description: "Which instrument to save preset for" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "jbs"], description: "Which instrument to save preset for" },
         id: { type: "string", description: "Preset ID (lowercase, hyphenated, e.g., 'my-deep-kick')" },
         name: { type: "string", description: "Display name (e.g., 'My Deep Kick')" },
         description: { type: "string", description: "Optional description of the preset's sound" }
@@ -17606,7 +20335,7 @@ var TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "sampler"], description: "Which instrument to load preset for" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "jbs"], description: "Which instrument to load preset for" },
         id: { type: "string", description: "Preset ID to load" }
       },
       required: ["instrument", "id"]
@@ -17618,7 +20347,7 @@ var TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "sampler"], description: "Filter by instrument (optional, shows all if omitted)" }
+        instrument: { type: "string", enum: ["jb01", "jb202", "jbs"], description: "Filter by instrument (optional, shows all if omitted)" }
       },
       required: []
     }
@@ -17626,11 +20355,11 @@ var TOOLS = [
   // === GENERIC PARAMETER TOOLS (Unified System) ===
   {
     name: "get_param",
-    description: "Get any parameter value via unified path. Works for ALL instruments and parameters. Examples: 'jb01.kick.decay' \u2192 37, 'jb202.filterCutoff' \u2192 2000, 'sampler.s1.level' \u2192 0",
+    description: "Get any parameter value via unified path. Works for ALL instruments and parameters. Examples: 'jb01.kick.decay' \u2192 37, 'jb202.filterCutoff' \u2192 2000, 'jbs.s1.level' \u2192 0",
     input_schema: {
       type: "object",
       properties: {
-        path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb202.filterCutoff', 'sampler.s1.level')" }
+        path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb202.filterCutoff', 'jbs.s1.level')" }
       },
       required: ["path"]
     }
@@ -17641,7 +20370,7 @@ var TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb202.filterCutoff', 'sampler.s1.level')" },
+        path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb202.filterCutoff', 'jbs.s1.level')" },
         value: { type: "number", description: "Absolute value to set" },
         delta: { type: "number", description: "Relative adjustment (positive to increase, negative to decrease). Use this for 'increase by X' or 'reduce by X' requests." }
       },
@@ -17665,7 +20394,7 @@ var TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        node: { type: "string", description: "Node to list params for (jb01, jb202, sampler). Omit to list all available nodes." }
+        node: { type: "string", description: "Node to list params for (jb01, jb202, jbs). Omit to list all available nodes." }
       },
       required: []
     }
@@ -17676,7 +20405,7 @@ var TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        node: { type: "string", description: "Node to get state for (jb01, jb202, sampler)" },
+        node: { type: "string", description: "Node to get state for (jb01, jb202, jbs)" },
         voice: { type: "string", description: "Optional: filter to specific voice (e.g., 'kick', 'snare')" }
       },
       required: ["node"]
@@ -17867,18 +20596,211 @@ var TOOLS = [
       properties: {},
       required: []
     }
+  },
+  // AUTOMATION (per-step parameter changes — "knob mashing")
+  {
+    name: "automate",
+    description: "Add per-step parameter automation to any instrument \u2014 dynamic 'knob mashing' that changes a parameter value on every step. Provide an array of 16 values (one per step). Use null to keep the static value for that step. Uses SAME UNITS as tweak: decay/attack/tone are 0-100, level is dB (-60 to +6), tune is semitones, filterCutoff is Hz, etc.",
+    input_schema: {
+      type: "object",
+      properties: {
+        path: {
+          type: "string",
+          description: "Parameter path (same format as tweak). Examples: 'jb01.ch.decay', 'jb01.kick.attack', 'jb202.filterCutoff', 'jb202.filterResonance'"
+        },
+        values: {
+          type: "array",
+          description: "Array of values (one per step, typically 16). Use null to keep the static value. Same units as tweak. Example for decay: [20, 80, 30, 90, null, 50, 15, 95, 25, 70, 40, 85, 10, 60, 35, 75]",
+          items: { type: ["number", "null"] }
+        }
+      },
+      required: ["path", "values"]
+    }
+  },
+  {
+    name: "clear_automation",
+    description: "Clear automation from a parameter or all automation. Use before saving a pattern that should NOT have knob-mashing.",
+    input_schema: {
+      type: "object",
+      properties: {
+        path: {
+          type: "string",
+          description: "Parameter path to clear (e.g., 'jb01.ch.decay'). Omit to clear ALL automation. Use instrument prefix (e.g., 'jb01') to clear all automation for one instrument."
+        }
+      },
+      required: []
+    }
+  },
+  {
+    name: "show_automation",
+    description: "Show all active automation lanes \u2014 which parameters have per-step values.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  // === SEND/RETURN ROUTING ===
+  {
+    name: "add_send",
+    description: "Create a send bus with an effect (reverb, delay, etc). Multiple instruments can route to a shared send at different levels \u2014 standard DAW send/return workflow.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Send bus ID (e.g., 'verb', 'delay1')" },
+        effect: { type: "string", enum: ["reverb", "delay", "eq", "filter"], description: "Effect type for this send bus" },
+        // Reverb params
+        decay: { type: "number", description: "Reverb tail length in seconds (0.1-10)" },
+        damping: { type: "number", description: "High-frequency rolloff 0-100" },
+        predelay: { type: "number", description: "Gap before reverb onset in ms (0-100)" },
+        mix: { type: "number", description: "Wet/dry mix 0-100 (default 100 for sends \u2014 fully wet)" },
+        width: { type: "number", description: "Stereo spread 0-100" },
+        size: { type: "number", description: "Room size 0-100" },
+        // Delay params
+        mode: { type: "string", enum: ["analog", "pingpong"], description: "Delay mode" },
+        time: { type: "number", description: "Delay time in ms (1-2000)" },
+        sync: { type: "string", enum: ["off", "8th", "dotted8th", "triplet8th", "16th", "quarter"], description: "Tempo sync" },
+        feedback: { type: "number", description: "Feedback amount 0-100" }
+      },
+      required: ["id", "effect"]
+    }
+  },
+  {
+    name: "remove_send",
+    description: "Remove a send bus and all routes to it.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Send bus ID to remove" }
+      },
+      required: ["id"]
+    }
+  },
+  {
+    name: "list_sends",
+    description: "List all send buses and their effects.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "route",
+    description: "Route a track to a send bus at a specific level. The track's audio is mixed into the send at the given level.",
+    input_schema: {
+      type: "object",
+      properties: {
+        track: { type: "string", description: "Track ID to route from (e.g., 'jb01', 'jb202')" },
+        send: { type: "string", description: "Send bus ID to route to (e.g., 'verb')" },
+        level: { type: "number", description: "Send level 0-1 (default 0.3). How much signal goes to the send." }
+      },
+      required: ["track", "send"]
+    }
+  },
+  {
+    name: "unroute",
+    description: "Remove a route from a track to a send bus.",
+    input_schema: {
+      type: "object",
+      properties: {
+        track: { type: "string", description: "Track ID" },
+        send: { type: "string", description: "Send bus ID" }
+      },
+      required: ["track", "send"]
+    }
+  },
+  {
+    name: "show_routing",
+    description: "Show the full routing configuration \u2014 tracks, sends, and all route connections.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  // === TRACK MANAGEMENT ===
+  {
+    name: "add_track",
+    description: "Add a new track to the routing system. Tracks are auto-created for instruments, but use this for extra tracks or FX returns.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Track ID" },
+        nodeId: { type: "string", description: "Instrument node ID this track maps to (defaults to id)" },
+        volume: { type: "number", description: "Track volume in dB (default 0)" },
+        mute: { type: "boolean", description: "Start muted" }
+      },
+      required: ["id"]
+    }
+  },
+  {
+    name: "remove_track",
+    description: "Remove a track from the routing system.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Track ID to remove" }
+      },
+      required: ["id"]
+    }
+  },
+  {
+    name: "list_tracks",
+    description: "List all tracks in the routing system.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "set_track_volume",
+    description: "Set a track's volume in dB.",
+    input_schema: {
+      type: "object",
+      properties: {
+        track: { type: "string", description: "Track ID" },
+        volume: { type: "number", description: "Volume in dB" }
+      },
+      required: ["track"]
+    }
+  },
+  {
+    name: "mute_track",
+    description: "Mute or unmute a track. Toggles if mute param not provided.",
+    input_schema: {
+      type: "object",
+      properties: {
+        track: { type: "string", description: "Track ID" },
+        mute: { type: "boolean", description: "true=mute, false=unmute. Omit to toggle." }
+      },
+      required: ["track"]
+    }
+  },
+  {
+    name: "solo_track",
+    description: "Solo a track (mutes all others). Use solo:false to unsolo.",
+    input_schema: {
+      type: "object",
+      properties: {
+        track: { type: "string", description: "Track ID" },
+        solo: { type: "boolean", description: "true=solo, false=unsolo" }
+      },
+      required: ["track"]
+    }
   }
 ];
 
 // jambot.js
 init_converters();
-var __dirname4 = dirname4(fileURLToPath4(import.meta.url));
-var JAMBOT_PROMPT = readFileSync7(join7(__dirname4, "JAMBOT-PROMPT.md"), "utf-8");
-var JAMBOT_CONFIG_DIR = join7(homedir5(), ".jambot");
-var JAMBOT_ENV_FILE = join7(JAMBOT_CONFIG_DIR, ".env");
+var __dirname6 = dirname6(fileURLToPath6(import.meta.url));
+var JAMBOT_PROMPT = readFileSync9(join8(__dirname6, "JAMBOT-PROMPT.md"), "utf-8");
+var JAMBOT_CONFIG_DIR = join8(homedir6(), ".jambot");
+var JAMBOT_ENV_FILE = join8(JAMBOT_CONFIG_DIR, ".env");
 function loadEnvFile(path) {
   try {
-    const content = readFileSync7(path, "utf-8");
+    const content = readFileSync9(path, "utf-8");
     for (const line of content.split("\n")) {
       const trimmed = line.trim();
       if (trimmed && !trimmed.startsWith("#") && trimmed.includes("=")) {
@@ -17895,21 +20817,21 @@ function getApiKey() {
   if (process.env.ANTHROPIC_API_KEY) {
     return process.env.ANTHROPIC_API_KEY;
   }
-  if (existsSync7(JAMBOT_ENV_FILE)) {
+  if (existsSync8(JAMBOT_ENV_FILE)) {
     loadEnvFile(JAMBOT_ENV_FILE);
     if (process.env.ANTHROPIC_API_KEY) {
       return process.env.ANTHROPIC_API_KEY;
     }
   }
-  const localEnv = join7(process.cwd(), ".env");
-  if (existsSync7(localEnv)) {
+  const localEnv = join8(process.cwd(), ".env");
+  if (existsSync8(localEnv)) {
     loadEnvFile(localEnv);
     if (process.env.ANTHROPIC_API_KEY) {
       return process.env.ANTHROPIC_API_KEY;
     }
   }
-  const devEnv = join7(__dirname4, "..", "sms-bot", ".env.local");
-  if (existsSync7(devEnv)) {
+  const devEnv = join8(__dirname6, "..", "sms-bot", ".env.local");
+  if (existsSync8(devEnv)) {
     loadEnvFile(devEnv);
     if (process.env.ANTHROPIC_API_KEY) {
       return process.env.ANTHROPIC_API_KEY;
@@ -17918,10 +20840,10 @@ function getApiKey() {
   return null;
 }
 function saveApiKey(key) {
-  if (!existsSync7(JAMBOT_CONFIG_DIR)) {
-    mkdirSync4(JAMBOT_CONFIG_DIR, { recursive: true });
+  if (!existsSync8(JAMBOT_CONFIG_DIR)) {
+    mkdirSync5(JAMBOT_CONFIG_DIR, { recursive: true });
   }
-  writeFileSync6(JAMBOT_ENV_FILE, `ANTHROPIC_API_KEY=${key}
+  writeFileSync7(JAMBOT_ENV_FILE, `ANTHROPIC_API_KEY=${key}
 `);
   process.env.ANTHROPIC_API_KEY = key;
 }
@@ -18159,7 +21081,7 @@ async function runAgentLoop(task, session, messages, callbacks, context = {}) {
     const sessionContext = buildSessionContext(session);
     const systemPrompt = JAMBOT_PROMPT + genreContext + sessionContext;
     const response = await getClient().messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: process.env.JAMBOT_MODEL || "claude-opus-5",
       max_tokens: 1024,
       system: systemPrompt,
       tools: TOOLS,
@@ -18203,6 +21125,12 @@ async function runAgentLoop(task, session, messages, callbacks, context = {}) {
         }
       }
       messages.push({ role: "user", content: toolResults });
+    }
+    if (response.stop_reason !== "end_turn" && response.stop_reason !== "tool_use") {
+      messages.push({ role: "assistant", content: response.content });
+      callbacks.onResponse?.(response.stop_reason === "refusal" ? "Request declined by safety classifiers." : `(stopped: ${response.stop_reason})`);
+      callbacks.onEnd?.();
+      break;
     }
   }
   return { session, messages };
@@ -18257,7 +21185,7 @@ Or just talk:
   > make me a techno beat at 128
   > add a bass line
   > tweak the kick decay
-  > add reverb to the hats
+  > add delay to the hats
 `;
 var CHANGELOG_TEXT = `
 Changelog
@@ -18275,7 +21203,7 @@ Changelog
 
   Features
   \u2022 Song mode with patterns and arrangements
-  \u2022 Effect chains (delay works, reverb exists)
+  \u2022 Effect chains (delay, EQ, filter, sidechain)
   \u2022 Analyze tools (spectral analysis, mixing feedback)
   \u2022 Project persistence to ~/Documents/Jambot/
   \u2022 Web UIs at kochi.to/jb01, /jb202, etc.

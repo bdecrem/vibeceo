@@ -125,7 +125,10 @@ class SynthVoice {
     this.filter.reset();
 
     this.ampEnv.trigger(accent ? 1.0 : 0.8);
-    this.filterEnv.trigger(accent ? 1.5 : 1.0);
+    // Filter env stays in [0,1] — accent depth is an octave boost in the
+    // cutoff mapping (velocities >1 used to slam the filter to the clamp).
+    this.filterEnv.trigger(1.0);
+    this.accentActive = accent;
 
     this.gateOpen = true;
   }
@@ -214,10 +217,15 @@ class SynthVoice {
     const ampValue = this.ampEnv.processSample();
     const filterEnvValue = this.filterEnv.processSample();
 
-    // Filter modulation
+    // Filter modulation — exponential octave mapping (same fix as jt30):
+    // the old additive form (base + env*8000, clamp 16000, accent env vel 1.5)
+    // pinned the filter at 5-16kHz on accents = the resonance screech.
+    // envAmount is bipolar (-1..1); exponential handles negative sweeps naturally.
     const baseCutoff = normalizedToHz(params.filterCutoff);
     const envAmount = (params.filterEnvAmount - 0.5) * 2;
-    const modCutoff = clamp(baseCutoff + envAmount * filterEnvValue * 8000, 20, 16000);
+    const accentOctaveBoost = this.accentActive ? 1.25 : 1.0;
+    const octaves = envAmount * 4.5 * filterEnvValue * accentOctaveBoost;
+    const modCutoff = clamp(baseCutoff * Math.pow(2, octaves), 20, 5500);
     this.filter.setCutoff(modCutoff);
 
     // Filter

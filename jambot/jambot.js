@@ -421,7 +421,7 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
     const sessionContext = buildSessionContext(session);
     const systemPrompt = JAMBOT_PROMPT + genreContext + sessionContext;
     const response = await getClient().messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: process.env.JAMBOT_MODEL || "claude-opus-5",
       max_tokens: 1024,
       system: systemPrompt,
       tools: TOOLS,
@@ -475,6 +475,17 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
       }
 
       messages.push({ role: "user", content: toolResults });
+    }
+
+    // Any other stop reason (max_tokens, refusal, ...) used to fall through
+    // and re-send the identical request forever — terminate instead.
+    if (response.stop_reason !== "end_turn" && response.stop_reason !== "tool_use") {
+      messages.push({ role: "assistant", content: response.content });
+      callbacks.onResponse?.(response.stop_reason === "refusal"
+        ? "Request declined by safety classifiers."
+        : `(stopped: ${response.stop_reason})`);
+      callbacks.onEnd?.();
+      break;
     }
   }
 

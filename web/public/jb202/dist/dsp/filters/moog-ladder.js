@@ -121,7 +121,10 @@ export class MoogLadderFilter {
     // Frequency-dependent damping: an analog ladder loses feedback gain as cutoff
     // approaches Nyquist. Without this the digital loop keeps full resonance at
     // 8-16kHz and screams. Full squelch below ~3kHz, tapering above.
-    const damping = Math.max(1.0 - 0.65 * fcClamped * fcClamped, 0.3);
+    // Bites by ~5.5kHz (the synth engines' cutoff cap), not just near Nyquist:
+    // at fc=0.25 (5.5kHz) damping=0.72 -> r<=2.38 at res 100 (no self-osc whistle);
+    // below ~1.5kHz damping>0.97 so the acid squelch keeps full feedback.
+    const damping = Math.max(1.0 - 4.5 * fcClamped * fcClamped, 0.3);
     this.r = resCurved * 3.3 * damping;  // near self-oscillation for acid squelch, tamed up top
 
     // Gain compensation: mild below 50% resonance, none above
