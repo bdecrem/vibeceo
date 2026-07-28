@@ -297,20 +297,20 @@ const jtTools = {
       tweaks.push('unmuted');
     }
 
-    // Level: 0-100 -> 0-1
+    // Level: dB (-60 to +6, 0=unity) -> node gain
     if (input.level !== undefined) {
       const def = getParamDef('jt90', voice, 'level');
       const value = def ? toEngine(input.level, def) : input.level / 100;
       session.set(`jt90.${voice}.level`, value);
-      tweaks.push(`level=${input.level}`);
+      tweaks.push(`level=${input.level}dB`);
     }
 
-    // Tune: cents (-1200 to +1200)
+    // Tune: semitones (-12 to +12)
     if (input.tune !== undefined) {
       const def = getParamDef('jt90', voice, 'tune');
       const value = def ? toEngine(input.tune, def) : input.tune;
       session.set(`jt90.${voice}.tune`, value);
-      tweaks.push(`tune=${input.tune}c`);
+      tweaks.push(`tune=${input.tune}st`);
     }
 
     // Decay: 0-100 -> 0-1
@@ -327,6 +327,14 @@ const jtTools = {
       const value = def ? toEngine(input.attack, def) : input.attack / 100;
       session.set(`jt90.${voice}.attack`, value);
       tweaks.push(`attack=${input.attack}`);
+    }
+
+    // Sweep / pitch envelope depth (kick only): 0-100 -> 0-1
+    if (input.sweep !== undefined && voice === 'kick') {
+      const def = getParamDef('jt90', voice, 'sweep');
+      const value = def ? toEngine(input.sweep, def) : input.sweep / 100;
+      session.set(`jt90.${voice}.sweep`, value);
+      tweaks.push(`sweep=${input.sweep}`);
     }
 
     // Tone: 0-100 -> 0-1

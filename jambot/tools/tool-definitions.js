@@ -357,7 +357,7 @@ export const TOOLS = [
   },
   {
     name: "tweak_jt10",
-    description: "Adjust JT10 lead synth parameters. UNITS: level in dB (-60 to +6, 0=unity), all others 0-100. Use mute:true to silence.",
+    description: "Adjust JT10 lead synth parameters. UNITS: level in dB (-60 to +6, 0=unity), filterCutoff in Hz (20-16000), all others 0-100. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {
@@ -368,7 +368,7 @@ export const TOOLS = [
         pulseWidth: { type: "number", description: "Pulse width 0-100 (50=square)" },
         subLevel: { type: "number", description: "Sub-oscillator level 0-100" },
         subMode: { type: "number", description: "Sub mode: 0=off, 1=-1oct, 2=-2oct" },
-        filterCutoff: { type: "number", description: "Filter cutoff 0-100" },
+        filterCutoff: { type: "number", description: "Filter cutoff in Hz (20-16000)" },
         filterResonance: { type: "number", description: "Filter resonance 0-100" },
         filterEnvAmount: { type: "number", description: "Filter envelope depth 0-100" },
         keyTrack: { type: "number", description: "Keyboard tracking 0-100" },
@@ -415,12 +415,12 @@ export const TOOLS = [
   },
   {
     name: "tweak_jt30",
-    description: "Adjust JT30 acid bass parameters. Use mute:true to silence.",
+    description: "Adjust JT30 acid bass parameters. UNITS: level in dB (-60 to +6, 0=unity), filterCutoff in Hz (20-16000), all others 0-100. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {
-        mute: { type: "boolean", description: "Mute bass (sets level to 0)" },
-        level: { type: "number", description: "Output level 0-100" },
+        mute: { type: "boolean", description: "Mute bass (sets level to -60dB)" },
+        level: { type: "number", description: "Output level in dB (-60 to +6, 0=unity gain)" },
         waveform: { type: "string", enum: ["sawtooth", "square"], description: "Oscillator waveform" },
         filterCutoff: { type: "number", description: "Filter cutoff in Hz (20-16000). 300=deep, 800=present, 2000=bright" },
         filterResonance: { type: "number", description: "Filter resonance 0-100. Classic acid squelch at 60-80" },
@@ -458,16 +458,17 @@ export const TOOLS = [
   },
   {
     name: "tweak_jt90",
-    description: "Adjust JT90 drum voice parameters. UNITS: level 0-100, tune in cents (-1200 to +1200), decay/attack/tone 0-100. Use mute:true to silence.",
+    description: "Adjust JT90 drum voice parameters. UNITS: level in dB (-60 to +6, 0=unity), tune in semitones (-12 to +12), decay/attack/tone/sweep/snappy 0-100. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {
         voice: { type: "string", enum: ["kick", "snare", "clap", "rimshot", "lowtom", "midtom", "hitom", "ch", "oh", "crash", "ride"], description: "Voice to tweak (required)" },
-        mute: { type: "boolean", description: "Mute voice (sets level to 0)" },
-        level: { type: "number", description: "Volume 0-100" },
-        tune: { type: "number", description: "Pitch in cents (-1200 to +1200)" },
+        mute: { type: "boolean", description: "Mute voice (sets level to -60dB)" },
+        level: { type: "number", description: "Volume in dB (-60 to +6, 0=unity)" },
+        tune: { type: "number", description: "Pitch in semitones (-12 to +12)" },
         decay: { type: "number", description: "Decay time 0-100" },
         attack: { type: "number", description: "Attack/click amount 0-100 (kick only)" },
+        sweep: { type: "number", description: "Pitch envelope depth 0-100 (kick only)" },
         tone: { type: "number", description: "Tone/brightness 0-100" },
         snappy: { type: "number", description: "Snare snappiness 0-100 (snare only)" }
       },
@@ -607,11 +608,11 @@ export const TOOLS = [
       type: "object",
       properties: {
         channel: { type: "string", enum: ["jb01", "jb202", "jbs", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to add effect to" },
-        effect: { type: "string", enum: ["eq", "filter", "ducker"], description: "Type of effect" },
+        effect: { type: "string", enum: ["delay", "eq", "filter", "sidechain", "reverb"], description: "Type of effect" },
         preset: { type: "string", description: "Effect preset (eq: 'acidBass'/'crispHats'/'warmPad'; filter: 'dubDelay'/'telephone'/'lofi')" },
         params: {
           type: "object",
-          description: "Effect parameters (eq: highpass, lowGain, midGain, midFreq, highGain; filter: mode, cutoff, resonance; ducker: amount, trigger)"
+          description: "Effect parameters (eq: highpass, lowGain, midGain, midFreq, highGain; filter: mode, cutoff, resonance; sidechain: amount, trigger)"
         }
       },
       required: ["channel", "effect"]
@@ -619,12 +620,12 @@ export const TOOLS = [
   },
   {
     name: "remove_channel_insert",
-    description: "Remove a channel insert effect (filter, eq, ducker). Use to clear effects from a pattern before saving.",
+    description: "Remove a channel insert effect (delay, eq, filter, sidechain, reverb). Use to clear effects from a pattern before saving.",
     input_schema: {
       type: "object",
       properties: {
         channel: { type: "string", enum: ["jb01", "jb202", "jbs", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to remove effect from" },
-        effect: { type: "string", enum: ["eq", "filter", "ducker", "all"], description: "Type of effect to remove, or 'all' to clear all inserts" }
+        effect: { type: "string", enum: ["delay", "eq", "filter", "sidechain", "reverb", "all"], description: "Type of effect to remove, or 'all' to clear all inserts" }
       },
       required: ["channel"]
     }
@@ -648,7 +649,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        effect: { type: "string", enum: ["eq"], description: "Type of effect" },
+        effect: { type: "string", enum: ["delay", "eq", "filter", "sidechain", "reverb"], description: "Type of effect" },
         preset: { type: "string", description: "Effect preset (eq: 'master')" },
         params: { type: "object", description: "Effect parameters" }
       },
@@ -810,7 +811,7 @@ export const TOOLS = [
       type: "object",
       properties: {
         target: { type: "string", description: "Target for effect: instrument (jb01, jb202), voice (jb01.ch, jb01.kick, jb01.snare), or 'master'" },
-        effect: { type: "string", enum: ["delay", "reverb"], description: "Type of effect to add" },
+        effect: { type: "string", enum: ["delay", "eq", "filter", "sidechain", "reverb"], description: "Type of effect to add" },
         after: { type: "string", description: "Insert after this effect type/ID (for ordering). Omit to append." },
         // Delay params
         mode: { type: "string", enum: ["analog", "pingpong"], description: "Delay mode: analog (mono+saturation) or pingpong (stereo bounce)" },
@@ -879,44 +880,6 @@ export const TOOLS = [
         size: { type: "number", description: "Room size 0-100" }
       },
       required: ["target", "effect"]
-    }
-  },
-  // === PRESET TOOLS (Generic) ===
-  {
-    name: "save_preset",
-    description: "Save current instrument settings as a user preset. Works for any instrument (jb01, jb202, jbs). Presets are stored in ~/Documents/Jambot/presets/.",
-    input_schema: {
-      type: "object",
-      properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "jbs"], description: "Which instrument to save preset for" },
-        id: { type: "string", description: "Preset ID (lowercase, hyphenated, e.g., 'my-deep-kick')" },
-        name: { type: "string", description: "Display name (e.g., 'My Deep Kick')" },
-        description: { type: "string", description: "Optional description of the preset's sound" }
-      },
-      required: ["instrument", "id", "name"]
-    }
-  },
-  {
-    name: "load_preset",
-    description: "Load a user preset for an instrument. Applies saved parameters to the current session.",
-    input_schema: {
-      type: "object",
-      properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "jbs"], description: "Which instrument to load preset for" },
-        id: { type: "string", description: "Preset ID to load" }
-      },
-      required: ["instrument", "id"]
-    }
-  },
-  {
-    name: "list_presets",
-    description: "List available user presets. Can filter by instrument or show all.",
-    input_schema: {
-      type: "object",
-      properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "jbs"], description: "Filter by instrument (optional, shows all if omitted)" }
-      },
-      required: []
     }
   },
   // === GENERIC PARAMETER TOOLS (Unified System) ===
