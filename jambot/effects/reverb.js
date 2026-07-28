@@ -49,8 +49,10 @@ export function processReverb(inputBuffer, params, sampleRate) {
   // At size=0: ~12-18ms (tight room). At size=100: ~75-110ms (cathedral).
   const sizeScale = 0.5 + (size / 100) * 2.5;
 
-  // Feedback coefficient: maps decay (0.1–10s) to feedback (0.84–1.0)
-  const feedback = 0.84 + (Math.min(decay, 10) / 10) * 0.16;
+  // Feedback coefficient: maps decay (0.1–10s) to feedback (0.84–0.965).
+  // The old ceiling was exactly 1.0 at decay=10 — an integrator, not a
+  // reverb: the tail never decayed and accumulated input until it clipped.
+  const feedback = 0.84 + (Math.min(decay, 10) / 10) * 0.125;
   // Damping coefficient for one-pole lowpass in each comb's feedback path
   const damp = damping / 100;
   const damp2 = 1 - damp;

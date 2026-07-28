@@ -21,8 +21,16 @@ function getTriggerPositions(pattern, trigger, stepDuration, sampleRate, totalLe
   if (!pattern) return [];
 
   // Drum patterns: { kick: [0, 4, 8, 12], snare: [4, 12] }
-  const voiceSteps = pattern[trigger];
+  let voiceSteps = pattern[trigger];
   if (!voiceSteps || !Array.isArray(voiceSteps)) return [];
+
+  // Drum patterns arrive as arrays of {velocity, accent} step objects.
+  // Normalize to a gate array via velocity — the old code fell into the
+  // gate-array branch (length >= 16) where every object was truthy, so
+  // the sidechain ducked on all 16 steps regardless of the pattern.
+  if (voiceSteps.length > 0 && typeof voiceSteps[0] === 'object' && voiceSteps[0] !== null) {
+    voiceSteps = voiceSteps.map(s => (s && s.velocity > 0) ? 1 : 0);
+  }
 
   const patternLength = voiceSteps.length > 0
     ? Math.max(...voiceSteps) + 1
@@ -105,10 +113,16 @@ export function processSidechain(inputBuffer, params, sampleRate, bpm, context) 
   const session = context.session;
   let triggerPattern = null;
 
+  // Prefer a pattern whose trigger voice actually HAS hits — jb01's default
+  // pattern exists with all-zero velocities and used to shadow the real
+  // trigger instrument (e.g. a jt90 kick).
   for (const pattern of [session.jb01Pattern, session.jt90Pattern]) {
     if (pattern && pattern[trigger]) {
-      triggerPattern = pattern;
-      break;
+      const steps = pattern[trigger];
+      const hasHits = Array.isArray(steps) && steps.some(s =>
+        (typeof s === 'object' && s !== null) ? s.velocity > 0 : !!s);
+      if (hasHits) { triggerPattern = pattern; break; }
+      if (!triggerPattern) triggerPattern = pattern;
     }
   }
 
