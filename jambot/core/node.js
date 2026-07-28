@@ -301,6 +301,11 @@ export class EffectNode extends Node {
     // Web Audio nodes (set during audio context creation)
     this._inputNode = null;
     this._outputNode = null;
+
+    // Effect DSP reads _params raw in producer units (ms, Hz, 0-100).
+    // The generic tweak/get paths must NOT to/fromEngine-convert for this
+    // node — conversion happens at most once, at the consuming boundary.
+    this.producerUnitStorage = true;
   }
 
   /**

@@ -8,6 +8,16 @@
 import { registerTools } from './index.js';
 import { toEngine, fromEngine, formatValue } from '../params/converters.js';
 
+/**
+ * Nodes that store/consume producer units directly (effects, jbs sampler)
+ * declare producerUnitStorage — the generic paths skip unit conversion for
+ * them so conversion happens at most once, at the node's own boundary.
+ */
+function nodeStoresProducerUnits(session, path) {
+  const resolved = session.params?._resolveNode?.(path);
+  return !!(resolved && resolved.node && resolved.node.producerUnitStorage);
+}
+
 const genericTools = {
   /**
    * Get any parameter value (returns producer-friendly units)
@@ -27,10 +37,9 @@ const genericTools = {
     const value = session.get(path);
 
     if (value === undefined) {
-      // Check if node exists
-      const [nodeId] = path.split('.');
-      if (!session.params.nodes.has(nodeId)) {
-        return `Error: Unknown node "${nodeId}". Available: ${session.listNodes().join(', ')}`;
+      // Check if node exists — resolver handles multi-segment ids ('fx.*')
+      if (!session.params?._resolveNode?.(path)) {
+        return `Error: No node for "${path}". Available: ${session.listNodes().join(', ')}`;
       }
       return `${path} is not set (undefined)`;
     }
@@ -39,10 +48,12 @@ const genericTools = {
     const descriptor = session.getDescriptor(path);
 
     if (descriptor) {
-      // Node-level 'level' already returns dB from getLevel() — skip fromEngine
+      // Node-level 'level' already returns dB from getLevel(); producer-unit
+      // nodes (effects, jbs) store producer values raw — skip fromEngine
       const segs = path.split('.');
       const isNodeLevel = segs.length === 2 && segs[1] === 'level';
-      const producerValue = isNodeLevel ? value : fromEngine(value, descriptor);
+      const skip = isNodeLevel || nodeStoresProducerUnits(session, path);
+      const producerValue = skip ? value : fromEngine(value, descriptor);
       return `${path} = ${formatValue(producerValue, descriptor)}`;
     }
 
@@ -83,10 +94,10 @@ const genericTools = {
       return 'Error: value or delta required';
     }
 
-    // Validate node exists
-    const [nodeId] = path.split('.');
-    if (!session.params.nodes.has(nodeId)) {
-      return `Error: Unknown node "${nodeId}". Available: ${session.listNodes().join(', ')}`;
+    // Validate node exists — use the resolver, node ids can be multi-segment
+    // (effect nodes register as 'fx.<target>.<id>')
+    if (!session.params?._resolveNode?.(path)) {
+      return `Error: No node for "${path}". Available: ${session.listNodes().join(', ')}`;
     }
 
     // Get descriptor for unit conversion
@@ -96,6 +107,7 @@ const genericTools = {
     // so skip toEngine/fromEngine to avoid double-conversion
     const segments = path.split('.');
     const isNodeLevel = segments.length === 2 && segments[1] === 'level';
+    const skipConvert = isNodeLevel || nodeStoresProducerUnits(session, path);
 
     let finalProducerValue;
 
@@ -106,7 +118,7 @@ const genericTools = {
         return `Error: Cannot apply delta - ${path} has no current value`;
       }
       // Convert current engine value back to producer units
-      const currentProducerValue = (descriptor && !isNodeLevel) ? fromEngine(currentEngineValue, descriptor) : currentEngineValue;
+      const currentProducerValue = (descriptor && !skipConvert) ? fromEngine(currentEngineValue, descriptor) : currentEngineValue;
       finalProducerValue = currentProducerValue + delta;
       // Clamp to valid range if we have a descriptor
       if (descriptor) {
@@ -115,7 +127,7 @@ const genericTools = {
     } else {
       finalProducerValue = value;
     }
-    const engineValue = (descriptor && !isNodeLevel) ? toEngine(finalProducerValue, descriptor) : finalProducerValue;
+    const engineValue = (descriptor && !skipConvert) ? toEngine(finalProducerValue, descriptor) : finalProducerValue;
 
     const success = session.set(path, engineValue);
 
@@ -147,10 +159,12 @@ const genericTools = {
       // Get descriptor for unit conversion
       const descriptor = session.getDescriptor(path);
 
-      // Node-level 'level' (e.g. 'jt10.level') goes straight to setLevel(dB)
+      // Node-level 'level' (e.g. 'jt10.level') goes straight to setLevel(dB);
+      // producer-unit nodes (effects, jbs) take producer values raw
       const segments = path.split('.');
       const isNodeLevel = segments.length === 2 && segments[1] === 'level';
-      const engineValue = (descriptor && !isNodeLevel) ? toEngine(value, descriptor) : value;
+      const skipConvert = isNodeLevel || nodeStoresProducerUnits(session, path);
+      const engineValue = (descriptor && !skipConvert) ? toEngine(value, descriptor) : value;
 
       const success = session.set(path, engineValue);
       if (success) {

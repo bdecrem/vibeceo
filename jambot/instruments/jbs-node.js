@@ -23,6 +23,11 @@ export class JBSNode extends InstrumentNode {
 
     this._voices = SLOTS;
 
+    // Slot params are stored in producer units and converted to engine units
+    // once, in getSlotEngineParams() at render time. The generic tweak/get
+    // paths must NOT pre-convert (that was a double conversion).
+    this.producerUnitStorage = true;
+
     // Kit contains sample buffers
     this._kit = config.kit || null;
 
