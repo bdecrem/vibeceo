@@ -54,7 +54,8 @@ export const VOICE_PARAM_DEFS = {
     { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
   ],
   ltom: [
-    { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -12, unit: 'semitones' },
+    // -2 (~71Hz): default toms ascend low < mid < high (was -12 = 40Hz sub)
+    { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -2, unit: 'semitones' },
     { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 1 },
     { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
   ],
@@ -64,7 +65,8 @@ export const VOICE_PARAM_DEFS = {
     { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
   ],
   htom: [
-    { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -12, unit: 'semitones' },
+    // 0 (~160Hz): was -12 = 80Hz, which put the HIGH tom below the mid tom
+    { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
     { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.55 },
     { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
   ],

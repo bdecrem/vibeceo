@@ -16,6 +16,7 @@ const tests = [
   'test-platform-rules.js',
   'test-analyze.js',
   'test-oscillators.js',
+  'test-audio-regression.js',
 ];
 
 let allPassed = true;
