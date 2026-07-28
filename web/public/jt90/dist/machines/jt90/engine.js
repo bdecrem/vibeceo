@@ -431,8 +431,13 @@ export class JT90Engine {
     let currentTime = 0;
     let sampleIndex = 0;
 
+    // Wrap at the PATTERN's length, not at one bar — multi-bar patterns
+    // (set via node.setPattern with N*16-step tracks) used to silently loop
+    // their first 16 steps. jt30/jb202 already wrap at pattern length.
+    const patternLen = Math.max(stepsPerBar,
+      ...Object.values(renderPattern).map(t => (Array.isArray(t) ? t.length : 0)));
     for (let step = 0; step < totalSteps; step++) {
-      const patternStep = step % stepsPerBar;
+      const patternStep = step % patternLen;
 
       // Apply per-step automation (values already in engine units)
       if (automation) {
