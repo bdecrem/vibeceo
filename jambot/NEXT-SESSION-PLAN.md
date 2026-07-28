@@ -59,6 +59,12 @@ every effect param written through the generic path is double-converted
   measurement on a tom pattern.
 
 ## P2 — majors (79, see report for all; the ones to do first)
+### Status 2026-07-27 late: items 1-4 below DONE (commits e07ee0f77, 120dc8f9f)
+- audio regression suite live in tests/ (7th file, screech guard + decay +
+  sidechain + units + mixer); tom defaults ascend; JAMBOT-PROMPT.md rewritten;
+  JAMBOT_MODEL documented. Bonus fix: build.js never shipped JAMBOT-PROMPT.md
+  into dist/ though the bundle reads it at runtime (distributed build crashed).
+- REMAINING: the other ~75 majors in the report (work top-to-bottom) + P3.
 
 1. **Add the 5 missing regression tests** (report section: tests) — especially
    the per-instrument render-and-analyze smoke test asserting no resonance
