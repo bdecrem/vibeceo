@@ -147,7 +147,12 @@ export class JBSNode extends InstrumentNode {
       const value = this._params[path];
 
       if (value !== undefined) {
-        result[paramName] = toEngine(value, paramDef);
+        // SampleVoice consumes tune in SEMITONES (playbackRate = 2^(st/12));
+        // toEngine would convert semitones to cents (x100), which clamped
+        // every real tune to the +/-12 rail — pass semitones through raw.
+        result[paramName] = paramDef.unit === 'semitones'
+          ? value
+          : toEngine(value, paramDef);
       }
     }
 
