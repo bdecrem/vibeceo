@@ -93,7 +93,10 @@ export class CymbalVoice extends Voice {
         this.tune = value;
         break;
       case 'decay':
-        this.decay = Math.max(0.3, Math.min(4, value));
+        // Engine delivers a normalized 0-1 value (producer 0-100 / 100).
+        // Map it onto the voice's real ring range (0.3-4 s) so the full knob
+        // is reachable instead of interpreting 0-1 directly as seconds.
+        this.decay = 0.3 + Math.max(0, Math.min(1, value)) * 3.7;
         break;
       case 'level':
         this.level = Math.max(0, Math.min(1, value));

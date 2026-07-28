@@ -122,18 +122,17 @@ export class JB01Node extends InstrumentNode {
       return true;
     }
 
-    // Validate: warn if value appears to be in producer units instead of engine units
+    // setParam takes ENGINE units (0-1) as its contract. Do NOT guess units by
+    // magnitude and silently convert — that was a second conversion path beside
+    // converters.js that misclassified legitimate small producer values and made
+    // read/write asymmetric (set 55 -> read 0.55). Producer->engine conversion
+    // belongs at the tool boundary. Fail loudly on clearly out-of-range input
+    // instead of guessing; store the value as given so read == write.
     if (typeof value === 'number' && parts.length === 2) {
       const [voice, paramName] = parts;
       const paramDef = JB01_PARAMS[voice]?.[paramName];
-      if (paramDef) {
-        if (paramDef.unit === '0-100' && value > 1.5) {
-          console.warn(`JB01Node.setParam: ${path}=${value} appears to be producer units (0-100), expected engine units (0-1). Converting automatically.`);
-          value = toEngine(value, paramDef);
-        } else if (paramDef.unit === 'dB' && value < -1.5 && value >= -60) {
-          console.warn(`JB01Node.setParam: ${path}=${value} appears to be dB, expected engine units (0-1). Converting automatically.`);
-          value = toEngine(value, paramDef);
-        }
+      if (paramDef && (paramDef.unit === '0-100' || paramDef.unit === 'dB') && (value < -1.5 || value > 1.5)) {
+        console.warn(`JB01Node.setParam: ${path}=${value} is outside engine units (0-1); expected a producer->engine conversion at the tool boundary. Storing raw (not converting).`);
       }
     }
 
@@ -346,9 +345,28 @@ export class JB01Node extends InstrumentNode {
       sampleRate = 44100,
       pattern = this._pattern,
       params = null,
+      automation = null,
     } = options;
 
     const voiceBuffers = {};
+
+    // Convert automation from producer units to engine units, once.
+    // (Same conversion as renderPattern — without this, adding any voice-level
+    // effect silently disabled all parameter automation for the instrument.)
+    const rawAutomation = automation || this._getAutomationForRender();
+    let engineAutomation = undefined;
+    if (rawAutomation && Object.keys(rawAutomation).length > 0) {
+      engineAutomation = {};
+      for (const [path, values] of Object.entries(rawAutomation)) {
+        const [voice, param] = path.split('.');
+        const paramDef = JB01_PARAMS[voice]?.[param];
+        if (paramDef && Array.isArray(values)) {
+          engineAutomation[path] = values.map(v =>
+            v !== null && v !== undefined ? toEngine(v, paramDef) : null
+          );
+        }
+      }
+    }
 
     for (const voice of VOICES) {
       // Check if this voice has any hits
@@ -380,12 +398,14 @@ export class JB01Node extends InstrumentNode {
         }
       }
 
-      // Render just this voice
+      // Render just this voice (forward automation so per-voice effects
+      // don't disable parameter automation)
       const buffer = await engine.renderPattern(soloPattern, {
         bars,
         stepDuration,
         swing,
         sampleRate,
+        automation: engineAutomation,
       });
 
       if (buffer) {

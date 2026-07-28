@@ -475,10 +475,30 @@ export class JT90Node extends InstrumentNode {
       sampleRate = 44100,
       pattern = this._pattern,
       params = null,
+      automation = null,
     } = options;
 
     const { JT90Engine } = await import('../../web/public/jt90/dist/machines/jt90/engine.js');
     const voiceBuffers = {};
+
+    // Convert automation from producer units to engine units + user->engine
+    // voice names, once. (Same conversion as renderPattern — without this,
+    // adding any voice-level effect silently disabled all automation.)
+    const rawAutomation = automation || this._getAutomationForRender();
+    let engineAutomation = undefined;
+    if (rawAutomation && Object.keys(rawAutomation).length > 0) {
+      engineAutomation = {};
+      for (const [path, values] of Object.entries(rawAutomation)) {
+        const [voice, param] = path.split('.');
+        const engineVoice = VOICE_TO_ENGINE[voice] || voice;
+        const paramDef = JT90_PARAMS[voice]?.[param];
+        if (paramDef && Array.isArray(values)) {
+          engineAutomation[`${engineVoice}.${param}`] = values.map(v =>
+            v !== null && v !== undefined ? toEngine(v, paramDef) : null
+          );
+        }
+      }
+    }
 
     for (const voice of VOICES) {
       // Check if this voice has any hits
@@ -522,6 +542,7 @@ export class JT90Node extends InstrumentNode {
         bpm,
         swing: swing || this._swing,
         sampleRate,
+        automation: engineAutomation,
       });
 
       if (buffer) {

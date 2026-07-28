@@ -25,6 +25,9 @@ export class SnareVoice extends Voice {
     const peak = Math.max(0, Math.min(1, velocity * this.level));
     const tuneMultiplier = Math.pow(2, this.tune / 1200);
     const bodyMix = 1 - (this.snappy * 0.5);
+    // Decay (0-1) scales overall length. 0.5 (default) => d=1.0 (unchanged);
+    // 0 => 0.5x, 1 => 1.5x. Envelope + stop times below are multiplied by d.
+    const d = 0.5 + this.decay;
 
     // === OSC 1: Low body (180Hz) ===
     const osc1 = this.context.createOscillator();
@@ -35,12 +38,12 @@ export class SnareVoice extends Voice {
 
     const osc1Gain = this.context.createGain();
     osc1Gain.gain.setValueAtTime(peak * bodyMix * 0.8, time);
-    osc1Gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+    osc1Gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15 * d);
 
     osc1.connect(osc1Gain);
     osc1Gain.connect(this.output);
     osc1.start(time);
-    osc1.stop(time + 0.25);
+    osc1.stop(time + 0.25 * d);
 
     // === OSC 2: High body (330Hz) ===
     const osc2 = this.context.createOscillator();
@@ -51,12 +54,12 @@ export class SnareVoice extends Voice {
 
     const osc2Gain = this.context.createGain();
     osc2Gain.gain.setValueAtTime(peak * bodyMix * 0.5, time);
-    osc2Gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+    osc2Gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08 * d);
 
     osc2.connect(osc2Gain);
     osc2Gain.connect(this.output);
     osc2.start(time);
-    osc2.stop(time + 0.18);
+    osc2.stop(time + 0.18 * d);
 
     // === NOISE: Snare wires ===
     const noiseSource = this.context.createBufferSource();
@@ -72,7 +75,7 @@ export class SnareVoice extends Voice {
 
     const noiseGain = this.context.createGain();
     const snappyLevel = peak * (0.3 + this.snappy * 0.7);
-    const noiseDecay = 0.15 + this.snappy * 0.1;
+    const noiseDecay = (0.15 + this.snappy * 0.1) * d;
     noiseGain.gain.setValueAtTime(snappyLevel, time);
     noiseGain.gain.exponentialRampToValueAtTime(0.001, time + noiseDecay);
 

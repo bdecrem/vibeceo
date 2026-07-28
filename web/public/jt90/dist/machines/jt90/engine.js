@@ -357,7 +357,7 @@ export class JT90Engine {
       }
 
       // Soft limiting
-      sample = fastTanh(sample * 0.7) / fastTanh(0.7);
+      sample = fastTanh(sample);  // unity slope near 0, ceiling 1.0 (was /fastTanh(0.7) => ceiling ~1.63, overshot and clipped)
       sample *= this.masterVolume;
 
       outputL[i] = sample;
@@ -483,7 +483,7 @@ export class JT90Engine {
         }
 
         // Soft limiting
-        sample = fastTanh(sample * 0.7) / fastTanh(0.7);
+        sample = fastTanh(sample);  // unity slope near 0, ceiling 1.0 (was /fastTanh(0.7) => ceiling ~1.63, overshot and clipped)
         sample *= this.masterVolume;
 
         output[sampleIndex] = sample;
@@ -507,7 +507,7 @@ export class JT90Engine {
 
       if (!anyActive) break;
 
-      sample = fastTanh(sample * 0.7) / fastTanh(0.7);
+      sample = fastTanh(sample);  // unity slope near 0, ceiling 1.0 (was /fastTanh(0.7) => ceiling ~1.63, overshot and clipped)
       sample *= this.masterVolume;
 
       output[sampleIndex++] = sample;
