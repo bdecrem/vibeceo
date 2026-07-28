@@ -181,14 +181,16 @@ class SynthVoice {
   processSample(masterVolume = 1.0) {
     const params = this.params;
 
-    // Handle slide
+    // Handle slide — exponential glide whose rate derives from slideDuration.
+    // The old fixed 0.1-per-sample coefficient had a ~0.23ms time constant:
+    // slides completed instantly and were inaudible as glides.
     if (this.slideTarget !== null) {
-      this.slideProgress += 1 / (this.slideDuration * this.sampleRate);
-      if (this.slideProgress >= 1) {
+      const dur = Math.max(0.005, this.slideDuration);
+      const k = 1 - Math.exp(-5 / (dur * this.sampleRate));  // ~99% settled after dur
+      this.currentFreq += (this.slideTarget - this.currentFreq) * k;
+      if (Math.abs(this.currentFreq - this.slideTarget) < Math.abs(this.slideTarget) * 0.001) {
         this.currentFreq = this.slideTarget;
         this.slideTarget = null;
-      } else {
-        this.currentFreq = this.currentFreq + (this.slideTarget - this.currentFreq) * 0.1;
       }
     }
 

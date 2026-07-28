@@ -15,6 +15,7 @@
 
 import { ParamSystem } from './params.js';
 import { Clock } from './clock.js';
+import { RoutingManager } from './routing.js';
 import { JBSNode } from '../instruments/jbs-node.js';
 import { JB202Node } from '../instruments/jb202-node.js';
 import { JB01Node } from '../instruments/jb01-node.js';
@@ -559,6 +560,7 @@ export function serializeSession(session) {
     jp9000Level: session._nodes.jp9000.getLevel(),
     params: session.params.serialize(),
     mixer: mixerData,
+    routing: session.routing ? session.routing.serialize() : undefined,
     patterns: session.patterns,
     currentPattern: session.currentPattern,
     arrangement: session.arrangement,
@@ -595,6 +597,10 @@ export function deserializeSession(data) {
       ...data.mixer,
       effectChains: reconstructEffectNodes(data.mixer.effectChains, session.params),
     };
+  }
+  if (data.routing) {
+    if (!session.routing) session.routing = new RoutingManager();
+    session.routing.deserialize(data.routing);
   }
   if (data.patterns) session.patterns = data.patterns;
   if (data.currentPattern) session.currentPattern = data.currentPattern;
@@ -638,6 +644,10 @@ export function restoreSessionInPlace(existingSession, data) {
       ...data.mixer,
       effectChains: reconstructEffectNodes(data.mixer.effectChains, existingSession.params),
     };
+  }
+  if (data.routing) {
+    if (!existingSession.routing) existingSession.routing = new RoutingManager();
+    existingSession.routing.deserialize(data.routing);
   }
   if (data.patterns) existingSession.patterns = data.patterns;
   if (data.currentPattern) existingSession.currentPattern = data.currentPattern;

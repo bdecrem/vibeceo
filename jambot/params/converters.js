@@ -75,8 +75,10 @@ export function getParamDef(synth, voice, param) {
 export function toEngine(value, paramDef) {
   const { unit, min, max } = paramDef;
 
-  // Clamp to valid range first
-  const clamped = typeof value === 'number'
+  // Clamp to valid range first. Choice descriptors have no min/max —
+  // clamping against undefined turned every numeric choice (e.g. subMode)
+  // into NaN, so only clamp when a numeric range actually exists.
+  const clamped = (typeof value === 'number' && typeof min === 'number' && typeof max === 'number')
     ? Math.max(min, Math.min(max, value))
     : value;
 

@@ -174,7 +174,17 @@ export class ParamSystem {
       return false;
     }
 
-    this.automation.set(path, values);
+    // Store under the CANONICAL node id. Render collects automation by
+    // canonical-id prefix, so lanes stored under alias paths (drums.*,
+    // bass.*, sampler.*) were accepted here and then silently dropped.
+    // Only rewrite when the node's own id is a registered single key —
+    // effect nodes resolve via multi-segment 'fx.*' ids and keep their path.
+    let storePath = path;
+    const firstSegment = path.split('.')[0];
+    if (firstSegment !== resolved.node.id && this.nodes.get(resolved.node.id) === resolved.node) {
+      storePath = `${resolved.node.id}.${resolved.paramPath}`;
+    }
+    this.automation.set(storePath, values);
     return true;
   }
 

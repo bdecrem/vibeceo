@@ -40,6 +40,6 @@
     "lfoToFilter": { "unit": "0-100", "min": 0, "max": 100, "default": 0, "hint": "LFO to filter depth" },
     "lfoToPW": { "unit": "0-100", "min": 0, "max": 100, "default": 0, "hint": "LFO to pulse width depth" },
 
-    "glideTime": { "unit": "0-100", "min": 0, "max": 100, "default": 5, "hint": "portamento/glide time" }
+    "glideTime": { "unit": "seconds", "min": 0, "max": 1, "default": 0.05, "hint": "portamento/glide time in seconds" }
   }
 }

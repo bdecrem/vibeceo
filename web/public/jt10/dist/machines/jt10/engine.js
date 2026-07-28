@@ -198,11 +198,16 @@ class SynthVoice {
   processSample(masterVolume = 1.0) {
     const params = this.params;
 
-    // Handle glide
-    if (this.slideProgress < 1) {
-      const slideRate = 1 / (this.slideDuration * this.sampleRate);
-      this.slideProgress = Math.min(1, this.slideProgress + slideRate);
-      this.currentFreq = this.currentFreq + (this.targetFreq - this.currentFreq) * 0.1;
+    // Handle glide — exponential, rate from glideTime (the old fixed 0.1/sample
+    // coefficient made every glide finish in <1ms, and glideTime=0 could leave
+    // a slid note stuck off-pitch mid-way).
+    if (this.currentFreq !== this.targetFreq) {
+      const dur = Math.max(0.005, this.slideDuration || 0.005);
+      const k = 1 - Math.exp(-5 / (dur * this.sampleRate));
+      this.currentFreq += (this.targetFreq - this.currentFreq) * k;
+      if (Math.abs(this.currentFreq - this.targetFreq) < Math.abs(this.targetFreq) * 0.001) {
+        this.currentFreq = this.targetFreq;
+      }
     }
 
     // LFO
@@ -226,8 +231,11 @@ class SynthVoice {
     this.pulseOsc.setFrequency(freq);
     this.pulseOsc.setPulseWidth(pw);
 
-    // Sub-oscillator (1 or 2 octaves down)
-    const subOctave = params.subMode >= 1 ? 2 : 1;
+    // Sub-oscillator — subMode per the documented contract (params JSON):
+    // 0 = OFF, 1 = -1 octave, 2 = -2 octaves. (The engine used to treat 0 as
+    // -1 oct, so the "off" setting still played a sub.)
+    const subActive = params.subMode >= 1;
+    const subOctave = params.subMode >= 2 ? 2 : 1;
     this.subOsc.setFrequency(freq / Math.pow(2, subOctave));
 
     // Generate oscillators
@@ -237,14 +245,17 @@ class SynthVoice {
     const pulseSample = this.pulseOsc._generateSample() * params.pulseLevel;
     this.pulseOsc._advancePhase();
 
-    const subSample = this.subOsc._generateSample() * params.subLevel;
-    this.subOsc._advancePhase();
+    let subSample = 0;
+    if (subActive) {
+      subSample = this.subOsc._generateSample() * params.subLevel;
+      this.subOsc._advancePhase();
+    }
 
     // Mix
     let sample = sawSample + pulseSample + subSample;
 
     // Normalize mix level
-    const totalLevel = params.sawLevel + params.pulseLevel + params.subLevel;
+    const totalLevel = params.sawLevel + params.pulseLevel + (subActive ? params.subLevel : 0);
     if (totalLevel > 1) {
       sample /= totalLevel;
     }

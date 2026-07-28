@@ -192,13 +192,16 @@ class SynthVoice {
   processSample(masterVolume = 1.0) {
     const params = this.params;
 
-    // Handle slide (exponential glide for authentic 303 sound)
-    if (this.slideProgress < 1) {
-      const slideRate = 1 / (this.slideDuration * this.sampleRate);
-      this.slideProgress = Math.min(1, this.slideProgress + slideRate);
-      // Exponential interpolation for musical glide
-      const t = this.slideProgress * this.slideProgress; // Quadratic easing
-      this.currentFreq = this.currentFreq + (this.targetFreq - this.currentFreq) * 0.15;
+    // Handle slide — exponential glide, rate from slideTime (the old fixed
+    // 0.15-per-sample coefficient completed every slide in <1ms; the 303's
+    // signature portamento needs the full ~60ms).
+    if (this.currentFreq !== this.targetFreq) {
+      const dur = Math.max(0.005, this.slideDuration || 0.06);
+      const k = 1 - Math.exp(-5 / (dur * this.sampleRate));
+      this.currentFreq += (this.targetFreq - this.currentFreq) * k;
+      if (Math.abs(this.currentFreq - this.targetFreq) < Math.abs(this.targetFreq) * 0.001) {
+        this.currentFreq = this.targetFreq;
+      }
     }
 
     // Set oscillator frequency
