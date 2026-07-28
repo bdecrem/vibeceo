@@ -12,9 +12,11 @@
  *   Other instruments have private DEFAULT_PARAMS in their web engines.)
  */
 import { strict as assert } from 'node:assert';
-import { createRequire } from 'module';
+import { readFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const require = createRequire(import.meta.url);
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 let passed = 0;
 let failed = 0;
@@ -34,16 +36,21 @@ function test(name, fn) {
 // PART 1: JSON Self-Validation — ALL instruments
 // ============================================================
 
-const VALID_UNITS = ['dB', '0-100', 'semitones', 'Hz', 'bipolar', 'pan', 'choice'];
+// 'seconds' is a pass-through unit (converters leave it unchanged) used by
+// jt10 glideTime — a real time value that must NOT be unit-converted.
+const VALID_UNITS = ['dB', '0-100', 'semitones', 'Hz', 'bipolar', 'pan', 'choice', 'seconds'];
 
-const ALL_PARAMS = {
-  jb01: require('../params/jb01-params.json'),
-  jb202: require('../params/jb202-params.json'),
-  jt10: require('../params/jt10-params.json'),
-  jt30: require('../params/jt30-params.json'),
-  jt90: require('../params/jt90-params.json'),
-  jbs: require('../params/jbs-params.json'),
-};
+// Glob every params/*-params.json (single source of truth — new instruments
+// are self-validated automatically). jb200 is a retired synth (no session
+// node) — skip it.
+const paramsDir = join(__dirname, '..', 'params');
+const SKIP_PARAMS = new Set(['jb200-params.json']);
+const ALL_PARAMS = {};
+for (const file of readdirSync(paramsDir).sort()) {
+  if (!file.endsWith('-params.json') || SKIP_PARAMS.has(file)) continue;
+  const synthId = file.replace('-params.json', '');
+  ALL_PARAMS[synthId] = JSON.parse(readFileSync(join(paramsDir, file), 'utf-8'));
+}
 
 for (const [synthId, json] of Object.entries(ALL_PARAMS)) {
   // _meta must exist

@@ -7,9 +7,12 @@
  * that predate this test. Remove entries as you clean them up.
  * The goal is to shrink these lists to empty.
  */
+import { strict as assert } from 'node:assert';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'url';
+import { createSession } from '../core/session.js';
+import { initializeTools, executeTool } from '../tools/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const toolsDir = join(__dirname, '..', 'tools');
@@ -139,6 +142,84 @@ for (const file of toolFiles) {
       );
     }
   });
+}
+
+// ============================================================
+// Rule: Parameter addressability via the public session API (R2/R10/R16)
+// PLATFORM.md documents session.get()/set() as the single read/write API, and
+// that adding effects makes tweak() work "for free" because every effect param
+// is addressable as fx.{target}.{effectId}.{param}. Exercise it end to end:
+//   - instrument params round-trip through session.get()/set()
+//   - aliases (drums→jb01, bass→jb202) resolve to the canonical node
+//   - every effect type registers addressable fx.* params after add_effect
+// This is behavioral (not a pattern match), but it guards the same contract.
+// ============================================================
+
+await initializeTools();
+
+// --- Instrument addressability + alias resolution ---
+test('addressability: session.set/get round-trips (jb01.kick.decay)', () => {
+  const s = createSession();
+  assert.strictEqual(s.set('jb01.kick.decay', 0.5), true);
+  assert.strictEqual(s.get('jb01.kick.decay'), 0.5);
+});
+
+test('addressability: alias drums→jb01 resolves to canonical node', () => {
+  const s = createSession();
+  s.set('drums.kick.decay', 0.33);
+  assert.strictEqual(s.get('drums.kick.decay'), 0.33);
+  assert.strictEqual(s.get('jb01.kick.decay'), 0.33, 'alias write must reach canonical node');
+});
+
+test('addressability: alias bass→jb202 resolves to canonical node', () => {
+  const s = createSession();
+  s.set('bass.filterCutoff', 0.7);
+  assert.strictEqual(s.get('bass.filterCutoff'), 0.7);
+  assert.strictEqual(s.get('jb202.filterCutoff'), 0.7, 'alias write must reach canonical node');
+});
+
+// --- Effect-parameter addressability (R10 "tweak() for free") ---
+// Add every effect type to master + one instrument chain, then assert each
+// registered fx.* param is gettable, settable (round-trips), and has a descriptor.
+const fxSession = createSession();
+for (const effect of ['delay', 'eq', 'filter', 'sidechain', 'reverb']) {
+  const result = await executeTool('add_effect', { target: 'master', effect }, fxSession);
+  test(`addressability: add_effect ${effect} on master succeeds`, () => {
+    assert.ok(
+      typeof result === 'string' && !result.startsWith('Error'),
+      `add_effect ${effect} failed: ${result}`
+    );
+  });
+}
+// Effect on an instrument chain (proves non-master targets register too).
+await executeTool('add_effect', { target: 'jb202', effect: 'delay' }, fxSession);
+
+const fxNodes = fxSession.listNodes().filter((n) => n.startsWith('fx.'));
+test('addressability: all 5 effect types registered under fx.master.*', () => {
+  for (const id of ['fx.master.delay1', 'fx.master.eq1', 'fx.master.filter1', 'fx.master.sidechain1', 'fx.master.reverb1']) {
+    assert.ok(fxNodes.includes(id), `Missing addressable effect node: ${id}`);
+  }
+  assert.ok(fxNodes.includes('fx.jb202.delay1'), 'Effect on instrument chain not registered');
+});
+
+for (const nodeId of fxNodes) {
+  const descriptors = fxSession.describe(nodeId) || {};
+  const paramNames = Object.keys(descriptors);
+
+  test(`addressability: ${nodeId} exposes params`, () => {
+    assert.ok(paramNames.length > 0, `Effect node ${nodeId} registered no addressable params`);
+  });
+
+  for (const param of paramNames) {
+    const path = `${nodeId}.${param}`;
+    test(`addressability: ${path} get/set round-trips + has descriptor`, () => {
+      const value = fxSession.get(path);
+      assert.notStrictEqual(value, undefined, `get(${path}) returned undefined`);
+      assert.strictEqual(fxSession.set(path, value), true, `set(${path}) failed`);
+      assert.deepStrictEqual(fxSession.get(path), value, `${path} did not round-trip`);
+      assert.ok(fxSession.getDescriptor(path), `No descriptor for ${path}`);
+    });
+  }
 }
 
 // ============================================================

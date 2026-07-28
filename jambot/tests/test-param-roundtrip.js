@@ -8,20 +8,22 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { toEngine, fromEngine, getParamDef } from '../params/converters.js';
-import { createRequire } from 'module';
+import { createSession } from '../core/session.js';
 
-const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Load all param definitions
-const ALL_PARAMS = {
-  jb01: require('../params/jb01-params.json'),
-  jb202: require('../params/jb202-params.json'),
-  jt10: require('../params/jt10-params.json'),
-  jt30: require('../params/jt30-params.json'),
-  jt90: require('../params/jt90-params.json'),
-  jbs: require('../params/jbs-params.json'),
-};
+// Load ALL param definitions by globbing params/*-params.json — the same files
+// converters.js loads. This is the single source of truth: a new instrument's
+// params JSON gets round-trip coverage automatically, no test edits required.
+// jb200 is a retired synth (no session node) — skip it.
+const paramsDir = join(__dirname, '..', 'params');
+const SKIP_PARAMS = new Set(['jb200-params.json']);
+const ALL_PARAMS = {};
+for (const file of readdirSync(paramsDir).sort()) {
+  if (!file.endsWith('-params.json') || SKIP_PARAMS.has(file)) continue;
+  const synthId = file.replace('-params.json', '');
+  ALL_PARAMS[synthId] = JSON.parse(readFileSync(join(paramsDir, file), 'utf-8'));
+}
 
 let passed = 0;
 let failed = 0;
@@ -87,6 +89,75 @@ test('JT90 kick tune +5st = 500 cents', () => {
   const def = ALL_PARAMS.jt90.kick.tune;
   const engineVal = toEngine(5, def);
   assert.strictEqual(engineVal, 500, `Expected 500 cents, got ${engineVal}`);
+});
+
+// ============================================================
+// Golden conversion table — ABSOLUTE values.
+// Round-trip (fromEngine(toEngine(x)) ≈ x) is satisfied by ANY matched pair of
+// inverse curves, so a broken dB taper / Hz log curve / pan law would still
+// pass all the round-trip assertions above. These rows pin the curves
+// themselves to known engine values, which round-trip structurally cannot.
+// Values verified against params/converters.js.
+// ============================================================
+const GOLDEN = [
+  // dB taper: linear / maxLinear, ceiling +6dB → maxLinear ≈ 1.9953
+  { name: 'dB +6 (max)  → 1.0',      producer: 6,        engine: 1.0,        def: { unit: 'dB', min: -60, max: 6 } },
+  { name: 'dB 0 (unity) → 0.5012',   producer: 0,        engine: 0.501187,   def: { unit: 'dB', min: -60, max: 6 } },
+  { name: 'dB -6        → 0.2512',   producer: -6,       engine: 0.251189,   def: { unit: 'dB', min: -60, max: 6 } },
+  { name: 'dB -60 (min) → ~0.0005',  producer: -60,      engine: 0.000501,   def: { unit: 'dB', min: -60, max: 6 } },
+  // 0-100 linear
+  { name: '0-100 50 → 0.5',          producer: 50,       engine: 0.5,        def: { unit: '0-100', min: 0, max: 100 } },
+  { name: '0-100 100 → 1.0',         producer: 100,      engine: 1.0,        def: { unit: '0-100', min: 0, max: 100 } },
+  // pan law: ±100 → ±1
+  { name: 'pan -100 → -1',           producer: -100,     engine: -1,         def: { unit: 'pan', min: -100, max: 100 } },
+  { name: 'pan +100 → +1',           producer: 100,      engine: 1,          def: { unit: 'pan', min: -100, max: 100 } },
+  { name: 'pan 0 → 0',               producer: 0,        engine: 0,          def: { unit: 'pan', min: -100, max: 100 } },
+  // Hz log midpoint: geometric mean of [20, 20000] = 632.4555 → 0.5
+  { name: 'Hz 632.4555 → 0.5',       producer: 632.4555, engine: 0.5,        def: { unit: 'Hz', min: 20, max: 20000 } },
+  // bipolar center → 0.5
+  { name: 'bipolar 0 (-50..50) → 0.5', producer: 0,      engine: 0.5,        def: { unit: 'bipolar', min: -50, max: 50 } },
+];
+
+for (const row of GOLDEN) {
+  test(`golden toEngine: ${row.name}`, () => {
+    const got = toEngine(row.producer, row.def);
+    assert.ok(
+      Math.abs(got - row.engine) < 1e-3,
+      `Expected engine ~${row.engine}, got ${got}`
+    );
+  });
+}
+
+// Semitones stay semitones (as cents), NOT normalized 0-1 — jbs tune.
+test('golden: jbs tune +5st stays in pitch domain (500 cents)', () => {
+  const def = ALL_PARAMS.jbs.slot.tune;
+  assert.strictEqual(def.unit, 'semitones');
+  assert.strictEqual(toEngine(5, def), 500, 'semitones → cents');
+  assert.strictEqual(fromEngine(500, def), 5, 'cents → semitones');
+});
+
+// ============================================================
+// R2: exercise the documented read/write API — session.get()/session.set().
+// No other test in the suite calls these. Assert set→get round-trips and that
+// aliases (drums→jb01) resolve to the SAME canonical node.
+// ============================================================
+test('session set/get round-trip (jb01.kick.decay)', () => {
+  const s = createSession();
+  assert.strictEqual(s.set('jb01.kick.decay', 0.5), true, 'set should succeed');
+  assert.strictEqual(s.get('jb01.kick.decay'), 0.5, 'get should return what set wrote');
+});
+
+test('session set/get round-trip (jt90.kick.tune, semitones)', () => {
+  const s = createSession();
+  assert.strictEqual(s.set('jt90.kick.tune', 3), true);
+  assert.strictEqual(s.get('jt90.kick.tune'), 3);
+});
+
+test('session alias resolves to canonical node (drums → jb01)', () => {
+  const s = createSession();
+  s.set('drums.kick.decay', 0.42);
+  assert.strictEqual(s.get('drums.kick.decay'), 0.42, 'alias path reads back');
+  assert.strictEqual(s.get('jb01.kick.decay'), 0.42, 'alias writes reach canonical node');
 });
 
 // Regression: No local toEngine in instrument files

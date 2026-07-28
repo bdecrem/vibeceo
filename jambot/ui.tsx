@@ -408,7 +408,17 @@ function App() {
 
   // Session state
   const [input, setInput] = useState('');
-  const [session, setSession] = useState(createSession());
+  // The session lives in a ref so its identity — and its accessor facade
+  // (jb202Pattern getters/setters that write straight to the instrument nodes)
+  // — survives across re-renders. Spreading it ({ ...session }) would turn
+  // those getters/setters into dead data properties, so tool pattern writes
+  // would silently stop reaching the nodes. Force re-renders with a counter
+  // instead of replacing the session object; only swap sessionRef.current when
+  // genuinely loading a new session.
+  const sessionRef = useRef(createSession());
+  const session = sessionRef.current;
+  const [, setSessionRev] = useState(0);
+  const bumpSession = () => setSessionRev((r) => r + 1);
   const [agentMessages, setAgentMessages] = useState([]);
   const [displayMessages, setDisplayMessages] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -559,8 +569,8 @@ function App() {
       firstPromptRef.current = null;
     }
     // Reset session
-    const newSession = createSession();
-    setSession(newSession);
+    sessionRef.current = createSession();
+    bumpSession();
     setAgentMessages([]);
   }, [session, addMessage]);
 
@@ -571,7 +581,7 @@ function App() {
 
       // Restore session in-place for consistency with onOpenProject
       restoreProjectInPlace(session, loadedProject);
-      setSession({ ...session }); // Force React re-render
+      bumpSession(); // Force re-render (session mutated in place — never spread it)
       setAgentMessages([]);
 
       addMessage('project', `Opened project: ${loadedProject.name}`);
@@ -657,8 +667,8 @@ function App() {
         break;
 
       case '/clear':
-        const newSession = createSession();
-        setSession(newSession);
+        sessionRef.current = createSession();
+        bumpSession();
         setAgentMessages([]);
         setDisplayMessages([]);
         if (project) {
@@ -672,10 +682,23 @@ function App() {
         addMessage('info', buildMixOverview(session, project));
         break;
 
-      case '/status':
-        const voices = Object.keys(session.pattern);
-        const voiceList = voices.length > 0 ? voices.join(', ') : '(empty)';
-        const tweaks = Object.keys(session.voiceParams);
+      case '/status': {
+        // Build from the public session API. session.pattern / session.voiceParams
+        // are legacy fields that no longer exist on the node-based session —
+        // reading them threw and crashed the command.
+        const hasVelocitySteps = (pat) =>
+          pat && Object.values(pat).some((v) => v?.some?.((s) => s?.velocity > 0));
+        const hasGateSteps = (pat) => Array.isArray(pat) && pat.some((s) => s?.gate);
+
+        const active = [];
+        if (hasVelocitySteps(session.jb01Pattern)) active.push('JB01 (drums)');
+        if (hasGateSteps(session.jb202Pattern)) active.push('JB202 (bass)');
+        if (session.jbsKit && hasVelocitySteps(session.jbsPattern)) active.push('JB-S (samples)');
+        if (hasGateSteps(session.jt10Pattern)) active.push('JT10');
+        if (hasGateSteps(session.jt30Pattern)) active.push('JT30');
+        if (hasVelocitySteps(session.jt90Pattern)) active.push('JT90 (drums)');
+        const activeList = active.length > 0 ? active.join(', ') : '(empty)';
+
         let statusText = '';
         if (project) {
           statusText += `Project: ${project.name}\n`;
@@ -686,12 +709,10 @@ function App() {
         }
         statusText += `Session: ${session.bpm} BPM`;
         if (session.swing > 0) statusText += `, swing ${session.swing}%`;
-        statusText += `\nDrums: ${voiceList}`;
-        if (tweaks.length > 0) {
-          statusText += `\nTweaks: ${tweaks.map(v => `${v}(${Object.keys(session.voiceParams[v]).join(',')})`).join(', ')}`;
-        }
+        statusText += `\nActive: ${activeList}`;
         addMessage('info', statusText);
         break;
+      }
 
       case '/help':
         addMessage('info', HELP_TEXT);
@@ -873,12 +894,12 @@ function App() {
             try {
               const loadedProject = loadProject(folderName);
               // CRITICAL: Update existing session in-place so the running agent loop
-              // sees the changes (setSession creates a new object that wouldn't be visible
-              // to code holding the old reference)
+              // sees the changes (holding one stable session object; spreading it
+              // would break its accessor facade and the agent's live reference)
               restoreProjectInPlace(session, loadedProject);
               // Update state
               setProject(loadedProject);
-              setSession({ ...session }); // Force React re-render with same object
+              bumpSession(); // Force re-render (session mutated in place — never spread it)
               currentProject = loadedProject;
               // Clear agent messages for fresh start
               setAgentMessages([]);
@@ -902,8 +923,8 @@ function App() {
         setProject({ ...currentProject });
       }
 
-      // Force session state update
-      setSession({ ...session });
+      // Force re-render to reflect this turn's in-place session changes
+      bumpSession();
     } catch (err) {
       addMessage('system', `Error: ${err.message}`);
     }
