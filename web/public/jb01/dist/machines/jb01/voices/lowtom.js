@@ -83,7 +83,10 @@ export class LowTomVoice extends Voice {
     const samples = 256;
     const curve = new Float32Array(samples);
     for (let i = 0; i < samples; i++) {
-      const x = (i * 2) / samples - 1;
+      // Symmetric domain [-1, +1] with exact 0 at the center — the old
+      // (i*2)/samples - 1 form mapped zero input to -0.00586, leaking DC
+      // through every scheduled-but-silent tom voice.
+      const x = (i / (samples - 1)) * 2 - 1;
       curve[i] = Math.tanh(x * 1.5);
     }
     return curve;
