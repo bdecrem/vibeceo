@@ -360,15 +360,36 @@ export async function renderSession(session, bars, filename) {
   }
 
   // === MIX ALL BUFFERS ===
-  for (const { buffer, startBar, level } of instrumentBuffers) {
+  // Track state (volume/mute/solo/pan from RoutingManager) is applied here —
+  // it used to be data-only, making the whole mixer tool surface a no-op.
+  const tracksByNode = new Map();
+  let anySolo = false;
+  if (session.routing?.tracks) {
+    for (const [, tr] of session.routing.tracks) {
+      tracksByNode.set(tr.nodeId || tr.id, tr);
+      if (tr.solo) anySolo = true;
+    }
+  }
+
+  for (const { id, buffer, startBar, level } of instrumentBuffers) {
+    const tr = tracksByNode.get(id);
+    if (tr && (tr.mute || (anySolo && !tr.solo))) continue;
+
+    const trackGain = tr ? Math.pow(10, (tr.volume || 0) / 20) : 1;
+    // Equal-power pan: -100 (hard L) .. +100 (hard R); 0 = unity both sides
+    const pan = tr ? Math.max(-100, Math.min(100, tr.pan || 0)) / 100 : 0;
+    const theta = (pan + 1) * Math.PI / 4;
+    const panGain = [Math.cos(theta) * Math.SQRT2, Math.sin(theta) * Math.SQRT2];
+
     const startSample = Math.floor(startBar * samplesPerBar);
     const mixLength = Math.min(outputBuffer.length - startSample, buffer.length);
 
     for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {
       const mainData = outputBuffer.getChannelData(ch);
       const instData = buffer.getChannelData(ch % buffer.numberOfChannels);
+      const g = level * trackGain * (outputBuffer.numberOfChannels > 1 ? panGain[ch % 2] : 1);
       for (let i = 0; i < mixLength; i++) {
-        mainData[startSample + i] += instData[i] * level;
+        mainData[startSample + i] += instData[i] * g;
       }
     }
   }
