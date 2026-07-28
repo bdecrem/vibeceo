@@ -1630,3 +1630,10 @@ import { JB01Engine } from 'https://kochi.to/jb01/dist/machines/jb01/engine.js';
 | DK004 | JT10 | JT10 arpeggio. 32-bar filter sweep. Square geometry. |
 | DK005 | JT10 + JB01 | Drift. 80-bar arc: rise, peak, dissolve, drift, return with kick. 118 BPM. |
 | DK006 | JT10 + JB01 | Plastikman-style minimal. Filter is the composition. Ghost bars. 126 BPM. C minor. |
+
+## Model
+
+The agent loop model is `process.env.JAMBOT_MODEL || "claude-opus-5"`
+(jambot.js, runAgentLoop). Set `JAMBOT_MODEL=claude-fable-5` for the
+top-tier model on demanding production sessions. The loop terminates on
+any non-tool_use stop reason (refusal, max_tokens) instead of retrying.

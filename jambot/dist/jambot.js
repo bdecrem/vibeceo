@@ -769,6 +769,7 @@ var init_node = __esm({
         super(id, config);
         this._inputNode = null;
         this._outputNode = null;
+        this.producerUnitStorage = true;
       }
       /**
        * Get all params as an object for render
@@ -1149,6 +1150,7 @@ var init_jbs_node = __esm({
       constructor(config = {}) {
         super("jbs", config);
         this._voices = SLOTS;
+        this.producerUnitStorage = true;
         this._kit = config.kit || null;
         this.setLevel(-6);
         this._pattern = {};
@@ -1242,7 +1244,7 @@ var init_jbs_node = __esm({
           const path = `${slot}.${paramName}`;
           const value = this._params[path];
           if (value !== void 0) {
-            result[paramName] = toEngine(value, paramDef);
+            result[paramName] = paramDef.unit === "semitones" ? value : toEngine(value, paramDef);
           }
         }
         return result;
@@ -4156,7 +4158,7 @@ var init_lowtom = __esm({
         const samples = 256;
         const curve = new Float32Array(samples);
         for (let i = 0; i < samples; i++) {
-          const x = i * 2 / samples - 1;
+          const x = i / (samples - 1) * 2 - 1;
           curve[i] = Math.tanh(x * 1.5);
         }
         return curve;
@@ -4257,7 +4259,7 @@ var init_hitom = __esm({
         const samples = 256;
         const curve = new Float32Array(samples);
         for (let i = 0; i < samples; i++) {
-          const x = i * 2 / samples - 1;
+          const x = i / (samples - 1) * 2 - 1;
           curve[i] = Math.tanh(x * 1.5);
         }
         return curve;
@@ -7741,7 +7743,8 @@ var init_param_defs = __esm({
         { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
       ],
       ltom: [
-        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: -12, unit: "semitones" },
+        // -2 (~71Hz): default toms ascend low < mid < high (was -12 = 40Hz sub)
+        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: -2, unit: "semitones" },
         { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 1 },
         { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
       ],
@@ -7751,7 +7754,8 @@ var init_param_defs = __esm({
         { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
       ],
       htom: [
-        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: -12, unit: "semitones" },
+        // 0 (~160Hz): was -12 = 80Hz, which put the HIGH tom below the mid tom
+        { id: "tune", label: "Tune", min: -12, max: 12, defaultValue: 0, unit: "semitones" },
         { id: "decay", label: "Decay", min: 0, max: 1, defaultValue: 0.55 },
         { id: "level", label: "Level", min: 0, max: 1, defaultValue: 1 }
       ],
@@ -14898,6 +14902,10 @@ Use /open <folder> or /recent to continue.`;
 
 // tools/generic-tools.js
 var generic_tools_exports = {};
+function nodeStoresProducerUnits(session, path) {
+  const resolved = session.params?._resolveNode?.(path);
+  return !!(resolved && resolved.node && resolved.node.producerUnitStorage);
+}
 var genericTools;
 var init_generic_tools = __esm({
   "tools/generic-tools.js"() {
@@ -14919,9 +14927,8 @@ var init_generic_tools = __esm({
         }
         const value = session.get(path);
         if (value === void 0) {
-          const [nodeId] = path.split(".");
-          if (!session.params.nodes.has(nodeId)) {
-            return `Error: Unknown node "${nodeId}". Available: ${session.listNodes().join(", ")}`;
+          if (!session.params?._resolveNode?.(path)) {
+            return `Error: No node for "${path}". Available: ${session.listNodes().join(", ")}`;
           }
           return `${path} is not set (undefined)`;
         }
@@ -14929,7 +14936,8 @@ var init_generic_tools = __esm({
         if (descriptor) {
           const segs = path.split(".");
           const isNodeLevel = segs.length === 2 && segs[1] === "level";
-          const producerValue = isNodeLevel ? value : fromEngine(value, descriptor);
+          const skip = isNodeLevel || nodeStoresProducerUnits(session, path);
+          const producerValue = skip ? value : fromEngine(value, descriptor);
           return `${path} = ${formatValue(producerValue, descriptor)}`;
         }
         return `${path} = ${JSON.stringify(value)}`;
@@ -14964,20 +14972,20 @@ var init_generic_tools = __esm({
         if (value === void 0 && delta === void 0) {
           return "Error: value or delta required";
         }
-        const [nodeId] = path.split(".");
-        if (!session.params.nodes.has(nodeId)) {
-          return `Error: Unknown node "${nodeId}". Available: ${session.listNodes().join(", ")}`;
+        if (!session.params?._resolveNode?.(path)) {
+          return `Error: No node for "${path}". Available: ${session.listNodes().join(", ")}`;
         }
         const descriptor = session.getDescriptor(path);
         const segments = path.split(".");
         const isNodeLevel = segments.length === 2 && segments[1] === "level";
+        const skipConvert = isNodeLevel || nodeStoresProducerUnits(session, path);
         let finalProducerValue;
         if (delta !== void 0) {
           const currentEngineValue = session.get(path);
           if (currentEngineValue === void 0) {
             return `Error: Cannot apply delta - ${path} has no current value`;
           }
-          const currentProducerValue = descriptor && !isNodeLevel ? fromEngine(currentEngineValue, descriptor) : currentEngineValue;
+          const currentProducerValue = descriptor && !skipConvert ? fromEngine(currentEngineValue, descriptor) : currentEngineValue;
           finalProducerValue = currentProducerValue + delta;
           if (descriptor) {
             finalProducerValue = Math.max(descriptor.min, Math.min(descriptor.max, finalProducerValue));
@@ -14985,7 +14993,7 @@ var init_generic_tools = __esm({
         } else {
           finalProducerValue = value;
         }
-        const engineValue = descriptor && !isNodeLevel ? toEngine(finalProducerValue, descriptor) : finalProducerValue;
+        const engineValue = descriptor && !skipConvert ? toEngine(finalProducerValue, descriptor) : finalProducerValue;
         const success = session.set(path, engineValue);
         if (success) {
           const displayValue = descriptor ? formatValue(finalProducerValue, descriptor) : JSON.stringify(finalProducerValue);
@@ -15011,7 +15019,8 @@ var init_generic_tools = __esm({
           const descriptor = session.getDescriptor(path);
           const segments = path.split(".");
           const isNodeLevel = segments.length === 2 && segments[1] === "level";
-          const engineValue = descriptor && !isNodeLevel ? toEngine(value, descriptor) : value;
+          const skipConvert = isNodeLevel || nodeStoresProducerUnits(session, path);
+          const engineValue = descriptor && !skipConvert ? toEngine(value, descriptor) : value;
           const success = session.set(path, engineValue);
           if (success) {
             const displayValue = descriptor ? formatValue(value, descriptor) : JSON.stringify(value);
@@ -18705,7 +18714,7 @@ function processReverb(inputBuffer, params, sampleRate) {
   const outputR = new Float32Array(length);
   const srScale = sampleRate / 44100;
   const sizeScale = 0.5 + size / 100 * 2.5;
-  const feedback = 0.84 + Math.min(decay, 10) / 10 * 0.16;
+  const feedback = 0.84 + Math.min(decay, 10) / 10 * 0.125;
   const damp = damping / 100;
   const damp2 = 1 - damp;
   const wetGain = mix / 100;
@@ -18821,8 +18830,11 @@ function calculateLowpassAlpha2(freq, sampleRate) {
 // effects/sidechain.js
 function getTriggerPositions(pattern, trigger, stepDuration, sampleRate, totalLength) {
   if (!pattern) return [];
-  const voiceSteps = pattern[trigger];
+  let voiceSteps = pattern[trigger];
   if (!voiceSteps || !Array.isArray(voiceSteps)) return [];
+  if (voiceSteps.length > 0 && typeof voiceSteps[0] === "object" && voiceSteps[0] !== null) {
+    voiceSteps = voiceSteps.map((s) => s && s.velocity > 0 ? 1 : 0);
+  }
   const patternLength = voiceSteps.length > 0 ? Math.max(...voiceSteps) + 1 : 16;
   const isGateArray = voiceSteps.length >= 16 || voiceSteps.every((v) => v === 0 || v === 1);
   const hitSteps = [];
@@ -18868,8 +18880,13 @@ function processSidechain(inputBuffer, params, sampleRate, bpm, context) {
   let triggerPattern = null;
   for (const pattern of [session.jb01Pattern, session.jt90Pattern]) {
     if (pattern && pattern[trigger]) {
-      triggerPattern = pattern;
-      break;
+      const steps = pattern[trigger];
+      const hasHits = Array.isArray(steps) && steps.some((s) => typeof s === "object" && s !== null ? s.velocity > 0 : !!s);
+      if (hasHits) {
+        triggerPattern = pattern;
+        break;
+      }
+      if (!triggerPattern) triggerPattern = pattern;
     }
   }
   if (!triggerPattern) {
@@ -19145,14 +19162,29 @@ async function renderSession(session, bars, filename) {
       }
     }
   }
-  for (const { buffer, startBar, level } of instrumentBuffers) {
+  const tracksByNode = /* @__PURE__ */ new Map();
+  let anySolo = false;
+  if (session.routing?.tracks) {
+    for (const [, tr] of session.routing.tracks) {
+      tracksByNode.set(tr.nodeId || tr.id, tr);
+      if (tr.solo) anySolo = true;
+    }
+  }
+  for (const { id, buffer, startBar, level } of instrumentBuffers) {
+    const tr = tracksByNode.get(id);
+    if (tr && (tr.mute || anySolo && !tr.solo)) continue;
+    const trackGain = tr ? Math.pow(10, (tr.volume || 0) / 20) : 1;
+    const pan = tr ? Math.max(-100, Math.min(100, tr.pan || 0)) / 100 : 0;
+    const theta = (pan + 1) * Math.PI / 4;
+    const panGain = [Math.cos(theta) * Math.SQRT2, Math.sin(theta) * Math.SQRT2];
     const startSample = Math.floor(startBar * samplesPerBar);
     const mixLength = Math.min(outputBuffer.length - startSample, buffer.length);
     for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {
       const mainData = outputBuffer.getChannelData(ch);
       const instData = buffer.getChannelData(ch % buffer.numberOfChannels);
+      const g = level * trackGain * (outputBuffer.numberOfChannels > 1 ? panGain[ch % 2] : 1);
       for (let i = 0; i < mixLength; i++) {
-        mainData[startSample + i] += instData[i] * level;
+        mainData[startSample + i] += instData[i] * g;
       }
     }
   }

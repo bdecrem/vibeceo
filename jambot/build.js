@@ -32,6 +32,8 @@ await esbuild.build({
 // Copy library.json (unified music knowledge)
 if (existsSync('library.json')) {
   copyFileSync('library.json', 'dist/library.json');
+  // the bundle reads the system prompt at runtime — must ship with dist
+  copyFileSync('JAMBOT-PROMPT.md', 'dist/JAMBOT-PROMPT.md');
 }
 
 // Copy params folder (needed at runtime for instrument parameters)
