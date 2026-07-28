@@ -41,7 +41,9 @@ export async function initializeTools() {
   // Dynamic imports ensure toolHandlers is initialized first
   await import('./session-tools.js');
   await import('./jbs-tools.js');
-  await import('./jb200-tools.js');
+  // jb200-tools.js retired: the JB200 node is no longer registered in the
+  // session, so its tools (add_jb200/tweak_jb200/etc.) reported success while
+  // producing no audio or crashing. File left on disk; simply not loaded.
   await import('./jb202-tools.js');
   await import('./jb01-tools.js');
   await import('./mixer-tools.js');

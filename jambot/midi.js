@@ -260,11 +260,12 @@ export function generateJB202Midi(session, outputPath) {
   const bars = session.bars || 2;
   const ppq = 96;
 
-  // Get JB200 pattern (session.jb200Pattern or session.bassPattern both work)
-  const pattern = session.jb200Pattern || session.bassPattern || [];
+  // Get JB202 bass pattern. The live session exposes jb202Pattern/bassPattern;
+  // jb200Pattern is kept last as a legacy alias for older saved projects.
+  const pattern = session.jb202Pattern || session.bassPattern || session.jb200Pattern || [];
 
   const trackEvents = [
-    ...trackNameEvent('JB200 Bass'),
+    ...trackNameEvent('JB202 Bass'),
     ...tempoEvent(session.bpm),
     ...melodicPatternToMidi(pattern, 0, bars, ppq),
   ];
@@ -355,10 +356,10 @@ export function generateFullMidi(session, outputPath) {
     ...drumPatternToMidi(session.jb01Pattern || session.drumPattern || {}, bars, ppq),
   ];
 
-  // Track 2: JB200 Bass (channel 1)
-  const jb200Track = [
-    ...trackNameEvent('JB200 Bass'),
-    ...melodicPatternToMidi(session.jb200Pattern || [], 0, bars, ppq),
+  // Track 2: JB202 Bass (channel 1)
+  const jb202Track = [
+    ...trackNameEvent('JB202 Bass'),
+    ...melodicPatternToMidi(session.jb202Pattern || session.bassPattern || session.jb200Pattern || [], 0, bars, ppq),
   ];
 
   // Track 3: JT90 Drums (channel 10 - shares with JB01)
@@ -386,7 +387,7 @@ export function generateFullMidi(session, outputPath) {
     ...generateHeader(1, 6, ppq), // Format 1, 6 tracks (tempo + 5 instruments)
     ...generateTrack(tempoTrack),
     ...generateTrack(jb01Track),
-    ...generateTrack(jb200Track),
+    ...generateTrack(jb202Track),
     ...generateTrack(jt90Track),
     ...generateTrack(jt30Track),
     ...generateTrack(jt10Track),
@@ -404,9 +405,9 @@ export function hasContent(session) {
     Array.isArray(voice) && voice.some(step => step?.velocity > 0)
   );
 
-  // JB200 bass
-  const jb200Pattern = session.jb200Pattern || [];
-  const hasJB200 = Array.isArray(jb200Pattern) && jb200Pattern.some(s => s?.gate);
+  // JB202 bass (jb200Pattern kept last as a legacy alias for old saved projects)
+  const jb202Pattern = session.jb202Pattern || session.bassPattern || session.jb200Pattern || [];
+  const hasJB202 = Array.isArray(jb202Pattern) && jb202Pattern.some(s => s?.gate);
 
   // JT90 drums
   const jt90Pattern = session._nodes?.jt90?.getPattern?.() || {};
@@ -423,8 +424,10 @@ export function hasContent(session) {
   const hasJT10 = Array.isArray(jt10Pattern) && jt10Pattern.some(s => s?.gate);
 
   return {
-    hasJB01, hasJB200, hasJT90, hasJT30, hasJT10,
-    any: hasJB01 || hasJB200 || hasJT90 || hasJT30 || hasJT10,
+    // hasJB200 kept as a backward-compatible alias for hasJB202.
+    hasJB202, hasJB200: hasJB202,
+    hasJB01, hasJT90, hasJT30, hasJT10,
+    any: hasJB01 || hasJB202 || hasJT90 || hasJT30 || hasJT10,
   };
 }
 
