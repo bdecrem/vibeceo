@@ -21,11 +21,48 @@ const EFFECT_NODE_CLASSES = {
   reverb: ReverbNode,
 };
 
+// Canonical instrument ids the render loop actually consults (render.js:268).
+const CANONICAL_IDS = ['jb01', 'jb200', 'jb202', 'jp9000', 'jbs', 'jt10', 'jt30', 'jt90'];
+
 // Helper to ensure mixer state exists
 function ensureMixerState(session) {
   if (!session.mixer) {
     session.mixer = { masterVolume: 0.8, effectChains: {} };
   }
+}
+
+/**
+ * Normalize an effect target to the canonical instrument id the renderer keys
+ * on, so add_effect on an alias ('bass', 'drums', 'lead') actually renders.
+ * Effect chains used to be keyed by the raw target string while render.js only
+ * looks up canonical ids — 'bass' reported success but never processed.
+ *
+ * - 'master' and unknown targets pass through unchanged.
+ * - A voice suffix is preserved: 'bass.ch' → 'jb202.ch'.
+ * - Already-canonical ids ('jb202', 'jt90') pass through unchanged.
+ *
+ * @param {Object} session
+ * @param {string} target
+ * @returns {string} canonical target key
+ */
+function canonicalTargetId(session, target) {
+  if (!target || target === 'master') return target;
+  const nodes = session?.params?.nodes;
+  if (!nodes) return target;
+
+  const dot = target.indexOf('.');
+  const head = dot === -1 ? target : target.slice(0, dot);
+  const tail = dot === -1 ? '' : target.slice(dot); // includes leading '.'
+
+  if (CANONICAL_IDS.includes(head)) return target;
+
+  const node = nodes.get(head);
+  if (!node) return target; // unknown alias — leave as-is
+
+  for (const id of CANONICAL_IDS) {
+    if (nodes.get(id) === node) return id + tail;
+  }
+  return target;
 }
 
 const mixerTools = {
@@ -34,62 +71,38 @@ const mixerTools = {
    * Routes through effectChains for actual DSP processing at render time.
    */
   add_channel_insert: async (input, session, context) => {
-    const { channel, effect, preset, params: userParams } = input;
+    let { channel, effect, preset, params: userParams } = input;
+    // 'ducker' is the sidechain node under a friendlier name (the schema still
+    // advertises it); accept it rather than erroring.
+    if (effect === 'ducker') effect = 'sidechain';
 
-    const NodeClass = EFFECT_NODE_CLASSES[effect];
-    if (!NodeClass) {
-      return `Error: Unknown effect type "${effect}". Valid types: ${Object.keys(EFFECT_NODE_CLASSES).join(', ')}`;
+    if (!channel || !effect) {
+      return 'Error: add_channel_insert requires channel and effect parameters';
     }
 
-    ensureMixerState(session);
-    if (!session.mixer.effectChains) session.mixer.effectChains = {};
-    if (!session.mixer.effectChains[channel]) session.mixer.effectChains[channel] = [];
-
-    const chain = session.mixer.effectChains[channel];
-
-    // Remove existing effect of same type (replace, don't duplicate)
-    const existing = chain.filter(e => e.type === effect);
-    for (const e of existing) {
-      session.params.unregister(`fx.${channel}.${e.id}`);
-    }
-    const updatedChain = chain.filter(e => e.type !== effect);
-    session.mixer.effectChains[channel] = updatedChain;
-
-    // Create new effect node
-    const effectCount = updatedChain.filter(e => e.type === effect).length;
-    const effectId = `${effect}${effectCount + 1}`;
-    const node = new NodeClass(effectId);
-
-    // Apply preset first, then user params on top
-    if (preset && typeof node.loadPreset === 'function') {
-      node.loadPreset(preset);
-    }
-    if (userParams) {
-      for (const [key, value] of Object.entries(userParams)) {
-        if (value !== undefined) node.setParam(key, value);
+    // Channel-insert semantics: replace an existing insert of the same type
+    // (don't stack duplicates). Then delegate to the single add_effect path so
+    // there is exactly one way to append an effect to a chain.
+    if (session.mixer?.effectChains) {
+      const key = canonicalTargetId(session, channel);
+      if (session.mixer.effectChains[key]?.some(e => e.type === effect)) {
+        await mixerTools.remove_channel_insert({ channel, effect }, session, context);
       }
     }
 
-    node.validateInterface();
-
-    const paramPath = `fx.${channel}.${effectId}`;
-    session.params.register(paramPath, node);
-
-    updatedChain.push({
-      id: effectId,
-      type: effect,
-      params: node.getParams(),
-      _node: node,
-    });
-
-    return `Added ${effect}${preset ? ` (${preset})` : ''} insert to ${channel} (addressable as ${paramPath})`;
+    return mixerTools.add_effect(
+      { target: channel, effect, preset, ...(userParams || {}) },
+      session,
+      context
+    );
   },
 
   /**
    * Remove channel insert
    */
   remove_channel_insert: async (input, session, context) => {
-    const { channel, effect } = input;
+    const { effect } = input;
+    const channel = canonicalTargetId(session, input.channel);
 
     if (!session.mixer?.effectChains?.[channel]) {
       return `No inserts on ${channel}`;
@@ -125,7 +138,9 @@ const mixerTools = {
    * Creates a proper SidechainNode and registers in ParamSystem.
    */
   add_sidechain: async (input, session, context) => {
-    const { target, trigger, amount, attack, release, hold } = input;
+    const { trigger, amount, attack, release, hold } = input;
+    // Key the chain on the canonical id the renderer consults, not the raw alias.
+    const target = canonicalTargetId(session, input.target);
 
     ensureMixerState(session);
     if (!session.mixer.effectChains) session.mixer.effectChains = {};
@@ -150,7 +165,6 @@ const mixerTools = {
     chain.push({
       id: effectId,
       type: 'sidechain',
-      params: node.getParams(),
       _node: node,
     });
 
@@ -163,44 +177,19 @@ const mixerTools = {
    * Routes through effectChains['master'] for actual DSP processing at render time.
    */
   add_master_insert: async (input, session, context) => {
-    const { effect, preset, params: userParams } = input;
+    let { effect, preset, params: userParams } = input;
+    if (effect === 'ducker') effect = 'sidechain';
 
-    const NodeClass = EFFECT_NODE_CLASSES[effect];
-    if (!NodeClass) {
-      return `Error: Unknown effect type "${effect}". Valid types: ${Object.keys(EFFECT_NODE_CLASSES).join(', ')}`;
+    if (!effect) {
+      return 'Error: add_master_insert requires an effect parameter';
     }
 
-    ensureMixerState(session);
-    if (!session.mixer.effectChains) session.mixer.effectChains = {};
-    if (!session.mixer.effectChains.master) session.mixer.effectChains.master = [];
-
-    const chain = session.mixer.effectChains.master;
-    const effectCount = chain.filter(e => e.type === effect).length;
-    const effectId = `${effect}${effectCount + 1}`;
-
-    const node = new NodeClass(effectId);
-    if (preset && typeof node.loadPreset === 'function') {
-      node.loadPreset(preset);
-    }
-    if (userParams) {
-      for (const [key, value] of Object.entries(userParams)) {
-        if (value !== undefined) node.setParam(key, value);
-      }
-    }
-
-    node.validateInterface();
-
-    const paramPath = `fx.master.${effectId}`;
-    session.params.register(paramPath, node);
-
-    chain.push({
-      id: effectId,
-      type: effect,
-      params: node.getParams(),
-      _node: node,
-    });
-
-    return `Added ${effect}${preset ? ` (${preset})` : ''} to master bus (addressable as ${paramPath})`;
+    // Thin wrapper over the single add_effect path (target = master bus).
+    return mixerTools.add_effect(
+      { target: 'master', effect, preset, ...(userParams || {}) },
+      session,
+      context
+    );
   },
 
   /**
@@ -241,12 +230,14 @@ const mixerTools = {
       lines.push('EFFECT CHAINS:');
       effectChains.forEach(([target, chain]) => {
         const chainStr = chain.map(e => {
-          const params = Object.entries(e.params || {})
+          // Read live params from the node — the single source of truth.
+          const p = e._node ? e._node.getParams() : {};
+          const params = Object.entries(p)
             .filter(([k]) => k !== 'mode')
             .slice(0, 2)
             .map(([k, v]) => `${k}=${v}`)
             .join(', ');
-          return `${e.id}: ${e.type}${e.params?.mode ? `(${e.params.mode})` : ''}${params ? ` [${params}]` : ''}`;
+          return `${e.id}: ${e.type}${p.mode ? `(${p.mode})` : ''}${params ? ` [${params}]` : ''}`;
         }).join(' → ');
         lines.push(`  ${target}: ${chainStr}`);
       });
@@ -263,9 +254,13 @@ const mixerTools = {
    * @param {Object} input - { target, effect, after?, mode?, ...params }
    */
   add_effect: async (input, session, context) => {
-    const { target, effect, after, ...params } = input;
+    const { effect, after, preset, target: _target, ...params } = input;
+    // Key the chain on the canonical instrument id the renderer consults —
+    // aliases ('bass', 'drums', 'lead') previously stored a chain that never
+    // rendered. 'master' and unknown targets pass through unchanged.
+    const target = canonicalTargetId(session, input.target);
 
-    if (!target || !effect) {
+    if (!input.target || !effect) {
       return 'Error: add_effect requires target and effect parameters';
     }
 
@@ -286,8 +281,11 @@ const mixerTools = {
     const effectCount = chain.filter(e => e.type === effect).length;
     const effectId = `${effect}${effectCount + 1}`;
 
-    // Instantiate the effect node and apply user params
+    // Instantiate the effect node, apply preset first then explicit params on top
     const node = new NodeClass(effectId);
+    if (preset && typeof node.loadPreset === 'function') {
+      node.loadPreset(preset);
+    }
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined) {
         node.setParam(key, value);
@@ -301,10 +299,12 @@ const mixerTools = {
     const paramPath = `fx.${target}.${effectId}`;
     session.params.register(paramPath, node);
 
+    // Store ONLY {id, type, _node} — the node is the single source of truth.
+    // A `params` snapshot here would drift from the live node (show_* read the
+    // snapshot, render reads the node) on any generic-path write.
     const newEffect = {
       id: effectId,
       type: effect,
-      params: node.getParams(),
       _node: node,
     };
 
@@ -335,11 +335,11 @@ const mixerTools = {
    * @param {Object} input - { target, effect }
    */
   remove_effect: async (input, session, context) => {
-    const { target, effect } = input;
-
-    if (!target) {
+    const { effect } = input;
+    if (!input.target) {
       return 'Error: remove_effect requires target parameter';
     }
+    const target = canonicalTargetId(session, input.target);
 
     if (!session.mixer?.effectChains?.[target]) {
       return `No effect chain on ${target}`;
@@ -393,8 +393,10 @@ const mixerTools = {
 
     entries.forEach(([target, chain]) => {
       const chainStr = chain.map(e => {
-        const mode = e.params?.mode ? `(${e.params.mode})` : '';
-        const params = Object.entries(e.params || {})
+        // Read live params from the node — the single source of truth.
+        const p = e._node ? e._node.getParams() : {};
+        const mode = p.mode ? `(${p.mode})` : '';
+        const params = Object.entries(p)
           .filter(([k]) => k !== 'mode')
           .map(([k, v]) => `${k}=${typeof v === 'number' ? v.toFixed(0) : v}`)
           .join(', ');
@@ -413,11 +415,12 @@ const mixerTools = {
    * @param {Object} input - { target, effect, ...params }
    */
   tweak_effect: async (input, session, context) => {
-    const { target, effect, ...params } = input;
+    const { effect, target: _target, ...params } = input;
 
-    if (!target || !effect) {
+    if (!input.target || !effect) {
       return 'Error: tweak_effect requires target and effect parameters';
     }
+    const target = canonicalTargetId(session, input.target);
 
     if (!session.mixer?.effectChains?.[target]) {
       return `No effect chain on ${target}`;
@@ -430,14 +433,15 @@ const mixerTools = {
       return `No ${effect} found on ${target}`;
     }
 
-    // Update params via node if available, keep effectObj.params in sync
+    // Write through to the node — the single source of truth. Values are stored
+    // in producer units, exactly as the generic tweak path does for effect nodes
+    // (EffectNode.producerUnitStorage), so both paths agree at render.
     const tweaked = [];
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined) {
         if (effectObj._node) {
           effectObj._node.setParam(key, value);
         }
-        effectObj.params[key] = value;
         tweaked.push(`${key}=${value}`);
       }
     }

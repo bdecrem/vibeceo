@@ -160,11 +160,15 @@ export function processPingPongDelay(inputBuffer, params, sampleRate) {
   const dryGain = 1 - wetGain;
   const spreadAmount = spread / 100;
 
-  // Spread affects stereo width of output
-  // spread=100: full ping-pong (L stays L, R stays R)
-  // spread=0: mono (L and R averaged)
-  const crossGain = spreadAmount;  // For feedback routing
-  const monoMix = (1 - spreadAmount) * 0.5;  // How much opposite channel bleeds in
+  // Spread steers WHERE the feedback goes without changing HOW MUCH regenerates.
+  // cross=1 (spread=100): full ping-pong (L feeds R, R feeds L).
+  // cross=0 (spread=0): two parallel mono delays, each channel fed by itself.
+  // The total feedback gain is `feedbackGain` in both cases — spread never
+  // multiplies feedback, so a low/zero spread no longer collapses the tail to a
+  // single repeat (the old `crossGain = spreadAmount` zeroed the whole feedback
+  // path at spread=0, silently turning feedback off).
+  const cross = spreadAmount;  // feedback routing (steer only)
+  const monoMix = (1 - spreadAmount) * 0.5;  // output width: how much opposite channel bleeds in
 
   for (let i = 0; i < length; i++) {
     // Read from delay buffers (unfiltered for output)
@@ -196,8 +200,9 @@ export function processPingPongDelay(inputBuffer, params, sampleRate) {
     // Ping pong: L delay feeds into R, R delay feeds into L
     // Input goes to L first, then bounces
     // Use filtered feedback for what goes back into the buffer
-    const toDelayL = inputL[i] * 0.5 + inputR[i] * 0.5 + feedbackR * feedbackGain * crossGain;
-    const toDelayR = feedbackL * feedbackGain * crossGain;
+    const inputMono = inputL[i] * 0.5 + inputR[i] * 0.5;
+    const toDelayL = inputMono + (feedbackR * cross + feedbackL * (1 - cross)) * feedbackGain;
+    const toDelayR = (feedbackL * cross + feedbackR * (1 - cross)) * feedbackGain;
 
     // Write to delay buffers
     delayBufferL[delayWriteIndexL] = toDelayL;
@@ -305,6 +310,12 @@ function softSaturate(x, amount) {
   // Soft clip using tanh approximation
   const saturated = driven / (1 + Math.abs(driven));
 
-  // Mix dry and saturated based on amount
-  return x * (1 - amount) + saturated * amount;
+  // Mix dry and saturated based on amount.
+  // Divide the wet term by `drive` so the shaper has UNITY small-signal gain:
+  // d/dx at 0 = (1-amount) + drive*(amount/drive) = 1 for all amounts. Without
+  // this the wet path had gain (1+3*amount^2) up to 4x (+12 dB), which pushed
+  // the delay's feedback loop above unity and made it self-oscillate into a
+  // permanent drone at feedback settings well below 100. Large peaks still get
+  // tanh-style limited (saturated saturates to ±1, scaled by amount/drive).
+  return x * (1 - amount) + saturated * (amount / drive);
 }

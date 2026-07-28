@@ -49,12 +49,24 @@ export function processReverb(inputBuffer, params, sampleRate) {
   // At size=0: ~12-18ms (tight room). At size=100: ~75-110ms (cathedral).
   const sizeScale = 0.5 + (size / 100) * 2.5;
 
-  // Feedback coefficient: maps decay (0.1–10s) to feedback (0.84–0.965).
-  // The old ceiling was exactly 1.0 at decay=10 — an integrator, not a
-  // reverb: the tail never decayed and accumulated input until it clipped.
-  const feedback = 0.84 + (Math.min(decay, 10) / 10) * 0.125;
-  // Damping coefficient for one-pole lowpass in each comb's feedback path
-  const damp = damping / 100;
+  // Feedback per comb is derived from `decay` (the target RT60 in seconds) AND
+  // that comb's actual loop time, so 'seconds' is accurate and size-independent
+  // by construction. A comb of loop time L recirculating at gain g reaches
+  // −60 dB (0.001) after RT60 = L·log(0.001)/log(g); solving for g at RT60=decay
+  // gives g = 10^(−3·L/decay). (Old code used one fixed gain for every comb, so
+  // RT60 scaled with loop length: 6× swing across size, and 0.1–2s barely
+  // moved.) Ceiling stays at 0.965 (the just-fixed anti-integrator limit).
+  const clampDecay = Math.min(decay, 10);
+  const combFbFor = (loopSamples) => {
+    const loopSec = loopSamples / sampleRate;
+    return Math.min(0.965, Math.pow(10, (-3 * loopSec) / clampDecay));
+  };
+  // Damping: one-pole lowpass in each comb's feedback path. Scaled like stock
+  // Freeverb (Jezar's scaledamp = 0.4) so damping=100 reads as MAXIMALLY DARK
+  // rather than OFF. The lowpass has unity DC gain for any damp, so it only
+  // rolls off highs — it never kills the tail. (Old `damp = damping/100` made
+  // damp2 = 0 at damping=100, zeroing the entire feedback path = silent tail.)
+  const damp = (damping / 100) * 0.4;
   const damp2 = 1 - damp;
 
   const wetGain = mix / 100;
@@ -76,11 +88,19 @@ export function processReverb(inputBuffer, params, sampleRate) {
   const combFilterStateL = new Float32Array(8);
   const combFilterStateR = new Float32Array(8);
 
+  // Per-comb feedback gains (derived from each comb's real loop length).
+  const combFeedbackL = new Float32Array(8);
+  const combFeedbackR = new Float32Array(8);
+
   for (let c = 0; c < 8; c++) {
     const tunedL = Math.floor(COMB_TUNINGS[c] * sizeScale * srScale);
     const tunedR = Math.floor((COMB_TUNINGS[c] + STEREO_OFFSET) * sizeScale * srScale);
-    combBufsL.push(new Float32Array(Math.max(1, tunedL)));
-    combBufsR.push(new Float32Array(Math.max(1, tunedR)));
+    const lenL = Math.max(1, tunedL);
+    const lenR = Math.max(1, tunedR);
+    combBufsL.push(new Float32Array(lenL));
+    combBufsR.push(new Float32Array(lenR));
+    combFeedbackL[c] = combFbFor(lenL);
+    combFeedbackR[c] = combFbFor(lenR);
   }
 
   // --- Allpass filters (4 per channel) ---
@@ -123,7 +143,7 @@ export function processReverb(inputBuffer, params, sampleRate) {
       const readL = bufL[idxL];
       // One-pole lowpass damping in feedback path
       combFilterStateL[c] = readL * damp2 + combFilterStateL[c] * damp;
-      bufL[idxL] = predelayed + combFilterStateL[c] * feedback;
+      bufL[idxL] = predelayed + combFilterStateL[c] * combFeedbackL[c];
       combIdxL[c] = (idxL + 1) % bufL.length;
       combSumL += readL;
 
@@ -132,7 +152,7 @@ export function processReverb(inputBuffer, params, sampleRate) {
       const idxR = combIdxR[c];
       const readR = bufR[idxR];
       combFilterStateR[c] = readR * damp2 + combFilterStateR[c] * damp;
-      bufR[idxR] = predelayed + combFilterStateR[c] * feedback;
+      bufR[idxR] = predelayed + combFilterStateR[c] * combFeedbackR[c];
       combIdxR[c] = (idxR + 1) % bufR.length;
       combSumR += readR;
     }

@@ -27,8 +27,16 @@ export function processFilter(inputBuffer, params, sampleRate) {
   const numChannels = inputBuffer.numberOfChannels || 1;
   const length = inputBuffer.length;
 
-  // Map resonance 0-100 to Q 0.5-20
-  const q = 0.5 + (resonance / 100) * 19.5;
+  // Map resonance 0-100 to Q with a PERCEPTUAL (squared) curve, not linear.
+  // The old linear map (Q 0.5-20) made the DEFAULT resonance 30 a Q of 6.35 =
+  // +16 dB resonant peak, so a plain "lowpass the drums" clipped the master.
+  // Squared keeps the low/default end tame: res 30 → Q ~2.3, res 100 → Q 20.
+  const q = 0.5 + Math.pow(resonance / 100, 2) * 19.5;
+
+  // Makeup attenuation compensating the resonant peak (≈ Q for a resonant
+  // biquad), so mode+cutoff-only usage stays near unity and does not clip.
+  // At Q ≤ 1 (gentle) this is 1.0 (no change); it only kicks in as Q climbs.
+  const makeup = 1 / Math.max(1, q);
 
   // Build output buffer and apply filter per channel
   const outputChannels = [];
@@ -48,6 +56,9 @@ export function processFilter(inputBuffer, params, sampleRate) {
     }
 
     filter.process(out);
+    if (makeup !== 1) {
+      for (let i = 0; i < length; i++) out[i] *= makeup;
+    }
     outputChannels.push(out);
   }
 
