@@ -17,7 +17,9 @@ Remaining: **11 critical, 79 major, 68 minor**. This file is the work order.
 - Always finish with `node tests/run-tests.js` (32 must pass) and a render
   A/B before/after.
 
-## P1 — remaining criticals (11)
+## P1 — remaining criticals (11) — ✅ ALL DONE 2026-07-27 evening
+(commits eb310a8c2, cluster B, 0b25185c7, cluster D, cluster E — every fix
+render-verified; details in each commit message. Next up: P2.)
 
 **Cluster A — the unit-conversion split-brain (5 findings, ONE architectural fix).**
 JBSNode and all effect nodes store PRODUCER units; every other instrument node
