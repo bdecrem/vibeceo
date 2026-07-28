@@ -64,7 +64,18 @@ every effect param written through the generic path is double-converted
   sidechain + units + mixer); tom defaults ascend; JAMBOT-PROMPT.md rewritten;
   JAMBOT_MODEL documented. Bonus fix: build.js never shipped JAMBOT-PROMPT.md
   into dist/ though the bundle reads it at runtime (distributed build crashed).
-- REMAINING: the other ~75 majors in the report (work top-to-bottom) + P3.
+- Wave 2 (2026-07-27 night, hybrid fable + 6 opus subagents): ~50 more majors
+  fixed across 8 commits (9fee54fa0..ea10cbd39): audible glide in all three
+  synths, subMode off, alias automation, routing persistence, choice-param NaN,
+  truthful tool schemas, jb200 retirement + MIDI export, test suite to ~1590
+  assertions, ui /status, snare/cymbal decay, JT90 limiter, delay/reverb/filter
+  correctness (true RT60), canonical effect chains, JP9000 robustness (9 fixes).
+- REMAINING (~25 majors + 68 minors + doc sync): the big ones left are the
+  render-tail truncation at pattern/section end (reverb/delay/voice ring-outs
+  hard-cut — needs render.js tail design), session._nodes dual registry,
+  sends outside the ParamSystem, sidechain hardcoding instruments,
+  song-tools per-instrument copy-paste, jt90-node _swing/_accentLevel dead
+  knobs, jbs multi-bar truncation + double output gain. All in the report.
 
 1. **Add the 5 missing regression tests** (report section: tests) — especially
    the per-instrument render-and-analyze smoke test asserting no resonance
