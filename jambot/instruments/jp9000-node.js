@@ -71,6 +71,9 @@ export class JP9000Node extends InstrumentNode {
    * @param {string} id - Module ID
    */
   removeModule(id) {
+    if (!this.rack.getModule(id)) {
+      throw new Error(`Module not found: ${id}. Available: ${this.getModuleIds().join(', ') || '(none)'}`);
+    }
     this.rack.removeModule(id);
     // Remove from trigger list if present
     this._triggerModules = this._triggerModules.filter(m => m !== id);
@@ -120,7 +123,10 @@ export class JP9000Node extends InstrumentNode {
    * @param {string} to - Destination
    */
   disconnect(from, to) {
-    this.rack.disconnect(from, to);
+    const removed = this.rack.disconnect(from, to);
+    if (removed === 0) {
+      throw new Error(`No connection to disconnect: ${from} → ${to}`);
+    }
   }
 
   /**
@@ -242,11 +248,15 @@ export class JP9000Node extends InstrumentNode {
    */
   pluck(moduleId, note, velocity = 1) {
     const module = this.rack.getModule(moduleId);
-    if (module && module.type === 'string') {
-      const freq = noteToFreq(note);
-      module.setParam('frequency', freq);
-      module.trigger(velocity);
+    if (!module) {
+      throw new Error(`Module not found: ${moduleId}. Available: ${this.getModuleIds().join(', ') || '(none)'}`);
     }
+    if (module.type !== 'string') {
+      throw new Error(`Module "${moduleId}" is a ${module.type}, not a string — pluck only works on string modules.`);
+    }
+    const freq = noteToFreq(note);
+    module.setParam('frequency', freq);
+    module.trigger(Math.max(0, Math.min(1, velocity)));
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -295,6 +305,7 @@ export class JP9000Node extends InstrumentNode {
       stepDuration,
       sampleRate = 44100,
       automation = null,
+      swing = 0,
     } = options;
 
     const pattern = this._pattern;
@@ -317,13 +328,24 @@ export class JP9000Node extends InstrumentNode {
     // Reset all modules
     this.rack.resetAll();
 
+    // Swing: delay off-beat (odd) 16ths by up to half a step, same formula as
+    // jbs-node. onsetOf gives each step's start sample; segment lengths flex so
+    // the total sample count is unchanged. swing=0 renders bit-identically.
+    const swingSamples = Math.round(swing * 0.5 * samplesPerStep);
+    const onsetOf = (s) =>
+      s >= totalSteps
+        ? totalSamples
+        : s * samplesPerStep + ((s % 2 === 1) ? swingSamples : 0);
+
     // Process step by step
     for (let step = 0; step < totalSteps; step++) {
       const patternStep = step % pattern.length;
       const stepData = pattern[patternStep];
-      const stepStart = step * samplesPerStep;
+      const stepStart = onsetOf(step);
+      const segLen = onsetOf(step + 1) - stepStart;
 
-      // Apply per-step automation (direct units — no conversion needed)
+      // Apply per-step automation (direct units — no conversion needed).
+      // Guard each set so a stray/misspelled automation path can't abort a render.
       if (automation) {
         for (const [path, values] of Object.entries(automation)) {
           const val = values[patternStep % values.length];
@@ -332,7 +354,11 @@ export class JP9000Node extends InstrumentNode {
             if (dotIdx > 0) {
               const moduleId = path.substring(0, dotIdx);
               const param = path.substring(dotIdx + 1);
-              this.rack.setParam(moduleId, param, val);
+              try {
+                this.rack.setParam(moduleId, param, val);
+              } catch {
+                // Ignore unknown automation targets mid-render.
+              }
             }
           }
         }
@@ -344,6 +370,11 @@ export class JP9000Node extends InstrumentNode {
         if (stepData.note) {
           const freq = noteToFreq(stepData.note);
 
+          // Effective velocity: clamp to 0-1, then apply accent boost (x1.3,
+          // capped at 1) so velocity>1 can't slam env/VCA into clipping.
+          const baseVel = Math.max(0, Math.min(1, stepData.velocity ?? 1));
+          const vel = stepData.accent ? Math.min(1, baseVel * 1.3) : baseVel;
+
           // Set frequency on trigger modules
           for (const moduleId of this._triggerModules) {
             const module = this.rack.getModule(moduleId);
@@ -351,14 +382,14 @@ export class JP9000Node extends InstrumentNode {
               if (module.params.frequency) {
                 module.setParam('frequency', freq);
               }
-              module.trigger(stepData.velocity || 1);
+              module.trigger(vel);
             }
           }
 
           // Also trigger envelopes
           for (const module of this.rack.modules.values()) {
             if (module.type === 'env-adsr') {
-              module.trigger(stepData.velocity || 1);
+              module.trigger(vel);
             }
           }
         }
@@ -371,11 +402,12 @@ export class JP9000Node extends InstrumentNode {
         }
       }
 
-      // Render this step
-      const stepBuffer = this.rack.render(samplesPerStep);
+      // Render this step (segment length flexes with swing)
+      if (segLen <= 0) continue;
+      const stepBuffer = this.rack.render(segLen);
 
       // Copy to output (mono to stereo)
-      for (let i = 0; i < samplesPerStep; i++) {
+      for (let i = 0; i < segLen; i++) {
         outputL[stepStart + i] = stepBuffer[i];
         outputR[stepStart + i] = stepBuffer[i];
       }

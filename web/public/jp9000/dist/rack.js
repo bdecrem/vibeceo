@@ -14,6 +14,7 @@ export class Rack {
     this.connections = [];          // [{ from: 'mod.output', to: 'mod.input' }]
     this.outputModuleId = null;     // Final output module ID
     this._processingOrder = null;   // Cached topological sort
+    this._idCounter = 0;            // Monotonic ID counter (never reused after removal)
   }
 
   /**
@@ -23,7 +24,20 @@ export class Rack {
    * @returns {string} Module ID
    */
   addModule(type, id = null) {
-    const moduleId = id || `${type.replace('-', '_')}_${this.modules.size + 1}`;
+    let moduleId;
+    if (id) {
+      // Explicit ID must not collide with an existing module.
+      if (this.modules.has(id)) {
+        throw new Error(`Module id already exists: ${id}`);
+      }
+      moduleId = id;
+    } else {
+      // Auto ID from a monotonic counter, never reusing a removed module's ID.
+      const base = type.replace('-', '_');
+      do {
+        moduleId = `${base}_${++this._idCounter}`;
+      } while (this.modules.has(moduleId));
+    }
     const module = createModule(type, moduleId, this.sampleRate);
     this.modules.set(moduleId, module);
     this._processingOrder = null; // Invalidate cache
@@ -35,12 +49,13 @@ export class Rack {
    * @param {string} id - Module ID
    */
   removeModule(id) {
-    this.modules.delete(id);
+    const existed = this.modules.delete(id);
     // Remove any connections involving this module
     this.connections = this.connections.filter(
       c => !c.from.startsWith(id + '.') && !c.to.startsWith(id + '.')
     );
     this._processingOrder = null;
+    return existed;
   }
 
   /**
@@ -70,6 +85,15 @@ export class Rack {
     if (!fromModule.outputs[fromPort]) throw new Error(`Output not found: ${from}`);
     if (!toModule.inputs[toPort]) throw new Error(`Input not found: ${to}`);
 
+    // Reject feedback loops: the topological renderer can't schedule a cycle
+    // and would hand a module a never-filled buffer, silencing the whole patch.
+    if (fromId === toId) {
+      throw new Error(`Cannot connect a module to itself: ${from} → ${to}`);
+    }
+    if (this._reaches(toId, fromId)) {
+      throw new Error(`Connection would create a feedback loop: ${from} → ${to} (${toId} already feeds ${fromId})`);
+    }
+
     // Check for duplicate connection
     const exists = this.connections.some(c => c.from === from && c.to === to);
     if (!exists) {
@@ -79,15 +103,42 @@ export class Rack {
   }
 
   /**
+   * Can signal flow from startId to targetId through existing connections?
+   * Used by connect() to detect cycles before they're wired up.
+   * @param {string} startId
+   * @param {string} targetId
+   * @returns {boolean}
+   */
+  _reaches(startId, targetId) {
+    const stack = [startId];
+    const seen = new Set();
+    while (stack.length) {
+      const cur = stack.pop();
+      if (cur === targetId) return true;
+      if (seen.has(cur)) continue;
+      seen.add(cur);
+      for (const conn of this.connections) {
+        const [fId] = conn.from.split('.');
+        const [tId] = conn.to.split('.');
+        if (fId === cur) stack.push(tId);
+      }
+    }
+    return false;
+  }
+
+  /**
    * Disconnect two module ports
    * @param {string} from - Source port
    * @param {string} to - Destination port
    */
   disconnect(from, to) {
+    const before = this.connections.length;
     this.connections = this.connections.filter(
       c => c.from !== from || c.to !== to
     );
-    this._processingOrder = null;
+    const removed = before - this.connections.length;
+    if (removed > 0) this._processingOrder = null;
+    return removed;
   }
 
   /**
@@ -96,6 +147,13 @@ export class Rack {
    * @param {string} [outputName='audio'] - Output port name
    */
   setOutput(moduleId, outputName = 'audio') {
+    const module = this.modules.get(moduleId);
+    if (!module) {
+      throw new Error(`Module not found: ${moduleId}. Available: ${[...this.modules.keys()].join(', ') || '(none)'}`);
+    }
+    if (!module.outputs[outputName]) {
+      throw new Error(`Output not found: ${moduleId}.${outputName}. Valid outputs: ${Object.keys(module.outputs).join(', ')}`);
+    }
     this.outputModuleId = moduleId;
     this.outputPortName = outputName;
   }
@@ -108,9 +166,13 @@ export class Rack {
    */
   setParam(moduleId, param, value) {
     const module = this.modules.get(moduleId);
-    if (module) {
-      module.setParam(param, value);
+    if (!module) {
+      throw new Error(`Module not found: ${moduleId}. Available: ${[...this.modules.keys()].join(', ') || '(none)'}`);
     }
+    if (!(param in module.params)) {
+      throw new Error(`Unknown param "${param}" on ${moduleId} (${module.type}). Valid params: ${Object.keys(module.params).join(', ')}`);
+    }
+    module.setParam(param, value);
   }
 
   /**
@@ -226,15 +288,35 @@ export class Rack {
     for (const moduleId of order) {
       const module = this.modules.get(moduleId);
 
-      // Wire up inputs from connections
+      // Collect all incoming source buffers per input port
+      const incoming = {}; // toPort -> [Float32Array, ...]
       for (const conn of this.connections) {
         const [toId, toPort] = conn.to.split('.');
-        if (toId === moduleId) {
-          const [fromId, fromPort] = conn.from.split('.');
-          const fromModule = this.modules.get(fromId);
-          if (fromModule && fromModule.outputs[fromPort]) {
-            module.inputs[toPort].buffer = fromModule.outputs[fromPort].buffer;
+        if (toId !== moduleId) continue;
+        const [fromId, fromPort] = conn.from.split('.');
+        const fromModule = this.modules.get(fromId);
+        const buf = fromModule && fromModule.outputs[fromPort]
+          ? fromModule.outputs[fromPort].buffer
+          : null;
+        if (!buf) continue;
+        (incoming[toPort] || (incoming[toPort] = [])).push(buf);
+      }
+
+      // Wire inputs: a single source passes through; multiple sources into the
+      // same port are summed into a fresh mix buffer (last-write-wins would
+      // otherwise drop every source but the last).
+      for (const toPort in incoming) {
+        if (!module.inputs[toPort]) continue;
+        const bufs = incoming[toPort];
+        if (bufs.length === 1) {
+          module.inputs[toPort].buffer = bufs[0];
+        } else {
+          const mix = new Float32Array(bufferSize);
+          for (const b of bufs) {
+            const n = Math.min(bufferSize, b.length);
+            for (let i = 0; i < n; i++) mix[i] += b[i];
           }
+          module.inputs[toPort].buffer = mix;
         }
       }
 

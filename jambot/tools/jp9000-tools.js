@@ -39,16 +39,15 @@ function sanitizeName(name) {
 }
 
 /**
- * Ensure JP9000 node exists in session
+ * Get the JP9000 node via the public param registry (registered at
+ * session creation — no lazy creation, no _nodes back-door).
  */
 function ensureJP9000(session) {
-  if (!session._nodes) {
-    session._nodes = {};
+  const node = session.params.nodes.get('jp9000');
+  if (!node) {
+    throw new Error('JP9000 node is not registered in this session');
   }
-  if (!session._nodes.jp9000) {
-    session._nodes.jp9000 = new JP9000Node({ sampleRate: 44100 });
-  }
-  return session._nodes.jp9000;
+  return node;
 }
 
 const jp9000Tools = {
@@ -98,8 +97,12 @@ const jp9000Tools = {
       return `Error: module id required`;
     }
 
-    jp9000.removeModule(id);
-    return `Removed module "${id}"`;
+    try {
+      jp9000.removeModule(id);
+      return `Removed module "${id}"`;
+    } catch (err) {
+      return `Error: ${err.message}`;
+    }
   },
 
   /**
@@ -132,8 +135,12 @@ const jp9000Tools = {
       return `Error: both "from" and "to" ports required`;
     }
 
-    jp9000.disconnect(from, to);
-    return `Disconnected ${from} → ${to}`;
+    try {
+      jp9000.disconnect(from, to);
+      return `Disconnected ${from} → ${to}`;
+    } catch (err) {
+      return `Error: ${err.message}`;
+    }
   },
 
   /**
@@ -147,8 +154,12 @@ const jp9000Tools = {
       return `Error: module id required`;
     }
 
-    jp9000.setOutput(module, port || 'audio');
-    return `Output set to ${module}.${port || 'audio'}`;
+    try {
+      jp9000.setOutput(module, port || 'audio');
+      return `Output set to ${module}.${port || 'audio'}`;
+    } catch (err) {
+      return `Error: ${err.message}`;
+    }
   },
 
   /**
@@ -162,8 +173,12 @@ const jp9000Tools = {
       return `Error: module, param, and value required`;
     }
 
-    jp9000.setModuleParam(moduleId, param, value);
-    return `Set ${moduleId}.${param} = ${value}`;
+    try {
+      jp9000.setModuleParam(moduleId, param, value);
+      return `Set ${moduleId}.${param} = ${value}`;
+    } catch (err) {
+      return `Error: ${err.message}`;
+    }
   },
 
   /**
@@ -177,8 +192,12 @@ const jp9000Tools = {
       return `Error: module and note required (e.g., module: "string1", note: "E2")`;
     }
 
-    jp9000.pluck(moduleId, note, velocity || 1);
-    return `Plucked ${moduleId} at ${note}${velocity && velocity !== 1 ? ` (velocity: ${velocity})` : ''}`;
+    try {
+      jp9000.pluck(moduleId, note, velocity ?? 1);
+      return `Plucked ${moduleId} at ${note}${velocity && velocity !== 1 ? ` (velocity: ${velocity})` : ''}`;
+    } catch (err) {
+      return `Error: ${err.message}`;
+    }
   },
 
   /**
@@ -195,7 +214,7 @@ const jp9000Tools = {
         note: step.note || 'C2',
         gate: step.gate || false,
         accent: step.accent || false,
-        velocity: step.velocity ?? 1,
+        velocity: Math.max(0, Math.min(1, step.velocity ?? 1)),
       };
     });
 

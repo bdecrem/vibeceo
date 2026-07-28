@@ -83,6 +83,14 @@ export class FilterBiquadModule extends Module {
       output[i] = this.filter.processSample(audioIn[i]);
     }
 
+    // Resonance gain compensation — a resonant biquad boosts its peak by ~Q,
+    // clipping the output for any q above ~1. Attenuate by ~1/Q above unity so
+    // the resonant peak stays below full scale (mirrors the lp24 comp).
+    if (q > 1) {
+      const comp = 1 / q;
+      for (let i = 0; i < bufferSize; i++) output[i] *= comp;
+    }
+
     this.outputs.audio.buffer = output;
   }
 }
