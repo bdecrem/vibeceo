@@ -59,6 +59,13 @@ jobs:
         run: |
           vercel env ls production --token=$TOKEN 2>&1 | grep -viE "telemetry|roadmap|opt-out|about-telemetry" | sed -E 's/[[:space:]]+/ /g' | cut -c1-110 | head -40
 
+      - name: Latest production deployments (state only)
+        env:
+          PID: ${{ steps.resolve.outputs.id }}
+        run: |
+          TEAM=""; case "$VERCEL_ORG_ID" in team_*) TEAM="&teamId=$VERCEL_ORG_ID";; esac
+          curl -sf "https://api.vercel.com/v6/deployments?projectId=$PID&target=production&limit=4$TEAM" -H "Authorization: Bearer $TOKEN" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);for(const d of (j.deployments||[]))console.log("deployment", new Date(d.created).toISOString(), d.state||d.readyState, "source="+(d.meta&&d.meta.githubCommitRef?"git:"+d.meta.githubCommitRef:(d.source||"?")), d.url)})'
+
       - name: Apply
         if: ${{ github.event.inputs.mode == 'apply' }}
         env:
