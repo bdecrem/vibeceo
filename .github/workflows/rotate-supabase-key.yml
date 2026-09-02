@@ -2,9 +2,11 @@ name: Rotate Supabase service key on Vercel
 
 # Manual only. The Supabase service key was rotated; the web project's
 # production env still had the old one, so every /api/synth-* route 500'd.
-#   inspect: print project name + production env var NAMES (no values)
-#   apply:   replace SUPABASE_SERVICE_KEY in production from the
-#            SUPABASE_SERVICE_KEY_ROTATED repo secret, then redeploy production
+# The VERCEL_PROJECT_ID repo secret points at the pixelpit project, so the
+# main web project (webtoys.ai / kochi.to) is resolved by domain instead.
+#   inspect: print candidate project names + production domains, no ids/values
+#   apply:   replace SUPABASE_SERVICE_KEY in that project's production env
+#            from the SUPABASE_SERVICE_KEY_ROTATED repo secret, then redeploy
 on:
   workflow_dispatch:
     inputs:
@@ -12,42 +14,67 @@ on:
         description: 'inspect | apply'
         required: true
         default: 'inspect'
+      domain:
+        description: 'production domain that identifies the project'
+        required: true
+        default: 'webtoys.ai'
 
 jobs:
   rotate:
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - name: Install Vercel CLI
         run: npm install -g vercel
 
-      - name: Inspect (names only)
+      - name: Resolve project by production domain (id is masked)
+        id: resolve
         run: |
-          echo "== project for VERCEL_PROJECT_ID =="
-          vercel env ls production --token=${{ secrets.VERCEL_TOKEN }} 2>&1 | sed -E 's/[[:space:]]+/ /g' | cut -c1-120 | head -60
+          set -e
+          TEAM=""; case "$VERCEL_ORG_ID" in team_*) TEAM="teamId=$VERCEL_ORG_ID&";; esac
+          curl -sf "https://api.vercel.com/v9/projects?${TEAM}limit=100" -H "Authorization: Bearer $TOKEN" > projects.json
+          node -e '
+            const want = process.argv[1];
+            const j = JSON.parse(require("fs").readFileSync("projects.json","utf8"));
+            const rows = (j.projects||[]).map(p => { const doms = new Set(); for (const t of Object.values(p.targets||{})) for (const a of (t.alias||[])) doms.add(a); for (const d of (p.latestDeployments||[])) for (const a of (d.alias||[])) doms.add(a); return { name: p.name, id: p.id, doms: [...doms] }; });
+            for (const r of rows) console.log("project", r.name, "→", r.doms.filter(d => !/vercel\.app$/.test(d)).join(", ") || "(no custom domains)");
+            const hit = rows.find(r => r.doms.some(d => d === want || d === "www." + want));
+            if (!hit) { console.error("no project serves " + want); process.exit(1); }
+            console.log("::add-mask::" + hit.id);
+            require("fs").appendFileSync(process.env.GITHUB_OUTPUT, "id=" + hit.id + "\nname=" + hit.name + "\n");
+            console.log("resolved:", hit.name);
+          ' "${{ github.event.inputs.domain }}"
+
+      - name: Inspect production env (names only)
+        env:
+          VERCEL_PROJECT_ID: ${{ steps.resolve.outputs.id }}
+        run: |
+          vercel env ls production --token=$TOKEN 2>&1 | grep -viE "telemetry|roadmap|opt-out|about-telemetry" | sed -E 's/[[:space:]]+/ /g' | cut -c1-110 | head -40
 
       - name: Apply
         if: ${{ github.event.inputs.mode == 'apply' }}
+        env:
+          VERCEL_PROJECT_ID: ${{ steps.resolve.outputs.id }}
         run: |
           set -e
-          vercel env rm SUPABASE_SERVICE_KEY production --yes --token=${{ secrets.VERCEL_TOKEN }} || echo "(no existing production SUPABASE_SERVICE_KEY)"
-          printf '%s' "${{ secrets.SUPABASE_SERVICE_KEY_ROTATED }}" | vercel env add SUPABASE_SERVICE_KEY production --token=${{ secrets.VERCEL_TOKEN }}
+          vercel env rm SUPABASE_SERVICE_KEY production --yes --token=$TOKEN || echo "(no existing production SUPABASE_SERVICE_KEY)"
+          printf '%s' "${{ secrets.SUPABASE_SERVICE_KEY_ROTATED }}" | vercel env add SUPABASE_SERVICE_KEY production --token=$TOKEN
           echo "== production env now =="
-          vercel env ls production --token=${{ secrets.VERCEL_TOKEN }} 2>&1 | grep -i supabase | sed -E 's/[[:space:]]+/ /g' | cut -c1-100
+          vercel env ls production --token=$TOKEN 2>&1 | grep -i supabase | sed -E 's/[[:space:]]+/ /g' | cut -c1-100
 
       - name: Redeploy production with the new env
         if: ${{ github.event.inputs.mode == 'apply' }}
+        env:
+          PID: ${{ steps.resolve.outputs.id }}
+          PNAME: ${{ steps.resolve.outputs.name }}
         run: |
           set -e
-          TEAM=""
-          case "$VERCEL_ORG_ID" in team_*) TEAM="&teamId=$VERCEL_ORG_ID";; esac
-          LATEST=$(curl -sf "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&target=production&limit=1$TEAM" -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}")
-          DEP_ID=$(echo "$LATEST" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);const d=j.deployments&&j.deployments[0];console.log(d?d.uid:"")})')
-          NAME=$(echo "$LATEST" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);const d=j.deployments&&j.deployments[0];console.log(d?d.name:"")})')
-          echo "latest production deployment: $DEP_ID ($NAME)"
+          TEAM=""; case "$VERCEL_ORG_ID" in team_*) TEAM="&teamId=$VERCEL_ORG_ID";; esac
+          DEP_ID=$(curl -sf "https://api.vercel.com/v6/deployments?projectId=$PID&target=production&limit=1$TEAM" -H "Authorization: Bearer $TOKEN" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);const d=j.deployments&&j.deployments[0];console.log(d?d.uid:"")})')
           [ -n "$DEP_ID" ] || { echo "no production deployment found"; exit 1; }
-          RESP=$(curl -s -w '\n%{http_code}' -X POST "https://api.vercel.com/v13/deployments?forceNew=1${TEAM}" -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" -H 'Content-Type: application/json' -d "{\"name\":\"$NAME\",\"deploymentId\":\"$DEP_ID\",\"target\":\"production\"}")
-          echo "$RESP" | tail -1 | sed 's/^/redeploy HTTP /'
-          echo "$RESP" | head -1 | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);console.log("new deployment:",j.url||j.id||"", j.readyState||"", j.error?JSON.stringify(j.error):"")}catch(e){console.log(s.slice(0,300))}})'
+          echo "::add-mask::$DEP_ID"
+          RESP=$(curl -s -w '\n%{http_code}' -X POST "https://api.vercel.com/v13/deployments?forceNew=1${TEAM}" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "{\"name\":\"$PNAME\",\"deploymentId\":\"$DEP_ID\",\"target\":\"production\"}")
+          echo "redeploy HTTP $(echo "$RESP" | tail -1)"
+          echo "$RESP" | head -1 | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);console.log("new deployment:",j.url||"", j.readyState||"", j.error?JSON.stringify(j.error).slice(0,200):"")}catch(e){console.log(s.slice(0,200))}})'
