@@ -2,6 +2,8 @@
 
 Last updated: 2025-01-23
 
+> **Stale.** For what actually works today see [INVENTORY.md](INVENTORY.md) — dated, measured per instrument and effect.
+
 See **PLATFORM.md** for architecture documentation.
 
 ---

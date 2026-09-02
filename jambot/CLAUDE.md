@@ -26,7 +26,10 @@
 npm start          # Run jambot
 npm run build      # Build for release (only when cutting a release)
 node jambot/tests/run-tests.js   # Run architecture tests
+node jambot/tests/inventory.js   # Exercise every instrument/effect, measure the audio (feeds INVENTORY.md)
 ```
+
+**What works, as of when:** [INVENTORY.md](INVENTORY.md) is the authoritative, dated inventory of instruments, effects, and services. Update it (re-run the inventory script, fix the date) whenever an instrument or effect changes.
 
 ### Mandatory: Run Tests After Changes
 

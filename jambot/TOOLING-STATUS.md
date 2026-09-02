@@ -2,6 +2,8 @@
 
 _Last updated: 2026-02-21_
 
+> **Superseded for instrument/effect status by [INVENTORY.md](INVENTORY.md)** (dated, measured, re-runnable with `node jambot/tests/inventory.js`). This file is kept for the February 2026 notes only.
+
 ## Summary
 
 ### ✅ Fully working
