@@ -3,8 +3,8 @@ name: Rotate Supabase service key on Vercel
 # Manual only. The Supabase service key was rotated; the web project's
 # production env still had the old one, so every /api/synth-* route 500'd.
 # The VERCEL_PROJECT_ID repo secret points at the pixelpit project, so the
-# main web project (webtoys.ai / kochi.to) is resolved by domain instead.
-#   inspect: print candidate project names + production domains, no ids/values
+# main web project is looked up by name and its domain list is verified first.
+#   inspect: print the project's domains + production env NAMES, no ids/values
 #   apply:   replace SUPABASE_SERVICE_KEY in that project's production env
 #            from the SUPABASE_SERVICE_KEY_ROTATED repo secret, then redeploy
 on:
@@ -14,8 +14,12 @@ on:
         description: 'inspect | apply'
         required: true
         default: 'inspect'
+      project:
+        description: 'Vercel project name (the monorepo web app)'
+        required: true
+        default: 'vibeceo'
       domain:
-        description: 'production domain that identifies the project'
+        description: 'a production domain the project must serve (sanity check)'
         required: true
         default: 'webtoys.ai'
 
@@ -29,22 +33,23 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel
 
-      - name: Resolve project by production domain (id is masked)
+      - name: Resolve project by name and verify its domains (id is masked)
         id: resolve
         run: |
           set -e
-          TEAM=""; case "$VERCEL_ORG_ID" in team_*) TEAM="teamId=$VERCEL_ORG_ID&";; esac
-          curl -sf "https://api.vercel.com/v9/projects?${TEAM}limit=100" -H "Authorization: Bearer $TOKEN" > projects.json
+          TEAM=""; case "$VERCEL_ORG_ID" in team_*) TEAM="?teamId=$VERCEL_ORG_ID";; esac
+          NAME="${{ github.event.inputs.project }}"
+          curl -sf "https://api.vercel.com/v9/projects/$NAME$TEAM" -H "Authorization: Bearer $TOKEN" > project.json
+          curl -sf "https://api.vercel.com/v9/projects/$NAME/domains$TEAM" -H "Authorization: Bearer $TOKEN" > domains.json
           node -e '
-            const want = process.argv[1];
-            const j = JSON.parse(require("fs").readFileSync("projects.json","utf8"));
-            const rows = (j.projects||[]).map(p => { const doms = new Set(); for (const t of Object.values(p.targets||{})) for (const a of (t.alias||[])) doms.add(a); for (const d of (p.latestDeployments||[])) for (const a of (d.alias||[])) doms.add(a); return { name: p.name, id: p.id, doms: [...doms] }; });
-            for (const r of rows) console.log("project", r.name, "→", r.doms.filter(d => !/vercel\.app$/.test(d)).join(", ") || "(no custom domains)");
-            const hit = rows.find(r => r.doms.some(d => d === want || d === "www." + want));
-            if (!hit) { console.error("no project serves " + want); process.exit(1); }
-            console.log("::add-mask::" + hit.id);
-            require("fs").appendFileSync(process.env.GITHUB_OUTPUT, "id=" + hit.id + "\nname=" + hit.name + "\n");
-            console.log("resolved:", hit.name);
+            const fs = require("fs"); const want = process.argv[1];
+            const p = JSON.parse(fs.readFileSync("project.json","utf8")); const d = JSON.parse(fs.readFileSync("domains.json","utf8"));
+            const doms = (d.domains||[]).map(x => x.name);
+            console.log("project", p.name, "domains:", doms.join(", ") || "(none)");
+            if (!doms.some(x => x === want || x === "www." + want)) { console.error("project " + p.name + " does not serve " + want + " — refusing"); process.exit(1); }
+            console.log("::add-mask::" + p.id);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "id=" + p.id + "\nname=" + p.name + "\n");
+            console.log("resolved:", p.name, "(serves " + want + ")");
           ' "${{ github.event.inputs.domain }}"
 
       - name: Inspect production env (names only)
