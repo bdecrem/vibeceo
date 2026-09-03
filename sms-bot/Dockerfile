@@ -18,7 +18,10 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install Node.js dependencies
-RUN npm install
+# npm ci, not npm install: install exactly the lockfile. `npm install` re-resolved
+# googleapis' google-auth-library to a newer nested copy on Railway and tsc failed on
+# the type mismatch (build FAILED 2026-09-02 and 2026-09-03); the lockfile set compiles.
+RUN npm ci
 
 # Install Claude Code CLI globally (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
