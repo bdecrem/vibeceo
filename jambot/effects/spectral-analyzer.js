@@ -11,7 +11,7 @@
  */
 
 import { execSync } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 
 /**
  * Clamp a dB value to a sane range, replacing NaN/Infinity with -120.
@@ -57,6 +57,67 @@ export function hzToNote(hz) {
     cents,
     midiNote,
   };
+}
+
+/**
+ * Read a WAV file as mono Float32 samples (16/24/32-bit PCM or 32-bit float).
+ * @param {string} path
+ * @returns {{ samples: Float32Array, sampleRate: number }}
+ */
+export function readWavMono(path) {
+  const b = readFileSync(path);
+  let p = 12, fmt = null, off = 0, len = 0;
+  while (p + 8 <= b.length) {
+    const id = b.toString('ascii', p, p + 4), n = b.readUInt32LE(p + 4);
+    if (id === 'fmt ') fmt = { tag: b.readUInt16LE(p + 8), ch: b.readUInt16LE(p + 10), sr: b.readUInt32LE(p + 12), bits: b.readUInt16LE(p + 22) };
+    if (id === 'data') { off = p + 8; len = Math.min(n, b.length - off); break; }
+    p += 8 + n + (n & 1);
+  }
+  if (!fmt || !off) throw new Error('Not a PCM WAV file');
+  const { tag, ch, sr, bits } = fmt;
+  const bps = bits / 8;
+  const frames = Math.floor(len / (bps * ch));
+  const out = new Float32Array(frames);
+  for (let i = 0; i < frames; i++) {
+    let sum = 0;
+    for (let c = 0; c < ch; c++) {
+      const o = off + (i * ch + c) * bps;
+      let v;
+      if (tag === 3 && bits === 32) v = b.readFloatLE(o);
+      else if (bits === 16) v = b.readInt16LE(o) / 32768;
+      else if (bits === 24) v = (((b[o] | (b[o + 1] << 8) | (b[o + 2] << 16)) << 8) >> 8) / 8388608;
+      else if (bits === 32) v = b.readInt32LE(o) / 2147483648;
+      else v = (b[o] - 128) / 128;
+      sum += v;
+    }
+    out[i] = sum / ch;
+  }
+  return { samples: out, sampleRate: sr };
+}
+
+function nextPow2(n) { let p = 1; while (p < n) p <<= 1; return p; }
+
+/** In-place iterative radix-2 FFT. re/im length must be a power of two. */
+export function fftRadix2(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1, ci = 0;
+      for (let k = 0; k < len / 2; k++) {
+        const p = i + k, q = i + k + len / 2;
+        const br = re[q] * cr - im[q] * ci, bi = re[q] * ci + im[q] * cr;
+        re[q] = re[p] - br; im[q] = im[p] - bi; re[p] += br; im[p] += bi;
+        const ncr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = ncr;
+      }
+    }
+  }
 }
 
 export class SpectralAnalyzer {
@@ -111,77 +172,81 @@ export class SpectralAnalyzer {
       maxFreq = 8000,
       minPeakDb = -40,
       maxPeaks = 10,
+      fftSize = 32768,
+      minPeakDistance = 10,
     } = options;
 
     if (!existsSync(wavPath)) {
       throw new Error(`File not found: ${wavPath}`);
     }
 
-    if (!this.checkSoxInstalled()) {
-      throw new Error('sox is not installed. Run: brew install sox');
+    // Native FFT (no sox): `sox stat -freq` only gave ~21.5 Hz bins and ranked
+    // low-bin leakage above the actual note. Here: Hann-windowed 32768-point
+    // frames averaged across the file, so bins are ~1.35 Hz at 44.1k, and each
+    // peak's frequency/amplitude is parabolically interpolated between bins.
+    // Amplitude is dBFS — a full-scale sine reads 0 dB.
+    const { samples, sampleRate } = readWavMono(wavPath);
+    const N = nextPow2(fftSize);
+    const window = new Float32Array(N);
+    let winSum = 0;
+    for (let i = 0; i < N; i++) { window[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1)); winSum += window[i]; }
+
+    const half = N / 2;
+    const power = new Float64Array(half + 1);
+    const total = samples.length;
+    // Frame starts: hop N/2, but never more than 64 frames (long files)
+    let hop = half;
+    if (total > N) hop = Math.max(half, Math.floor((total - N) / 63));
+    const starts = [];
+    if (total <= N) starts.push(0); else for (let s0 = 0; s0 + N <= total; s0 += hop) starts.push(s0);
+    const re = new Float64Array(N), im = new Float64Array(N);
+    let used = 0;
+    for (const s0 of starts) {
+      let energy = 0;
+      for (let i = 0; i < N; i++) { const v = s0 + i < total ? samples[s0 + i] : 0; re[i] = v * window[i]; im[i] = 0; energy += v * v; }
+      if (Math.sqrt(energy / N) < 1e-5) continue;   // skip silent frames
+      fftRadix2(re, im);
+      for (let k = 0; k <= half; k++) power[k] += re[k] * re[k] + im[k] * im[k];
+      used++;
     }
+    if (used === 0) return [];
 
-    // Get frequency spectrum using sox stat -freq
-    // This outputs frequency/amplitude pairs
-    const output = this.runSox(`"${wavPath}" -n stat -freq`);
+    // Averaged magnitude, normalized so a full-scale sine → 1.0 (0 dBFS)
+    const db = new Float64Array(half + 1);
+    for (let k = 0; k <= half; k++) { const mag = Math.sqrt(power[k] / used) * 2 / winSum; db[k] = mag > 0 ? 20 * Math.log10(mag) : -200; }
 
-    // Parse the frequency data
-    // sox stat -freq outputs lines like: "100.0 12345.6" (freq, linear magnitude)
-    // Convert linear magnitude to dB: 20 * log10(amplitude)
-    const lines = output.split('\n');
-    const spectrumData = [];
-
-    for (const line of lines) {
-      const match = line.trim().match(/^([\d.]+)\s+([-\d.eE+]+)/);
-      if (match) {
-        const freq = parseFloat(match[1]);
-        const linearAmp = parseFloat(match[2]);
-
-        // Convert linear magnitude to dB (spectral magnitude — can be 100+ dB for FFT bins)
-        const amplitudeDb = linearAmp > 0 ? clampDb(20 * Math.log10(linearAmp), 200) : -120;
-
-        if (freq >= minFreq && freq <= maxFreq && amplitudeDb >= minPeakDb && isFinite(amplitudeDb)) {
-          spectrumData.push({ freq, amplitude: amplitudeDb });
-        }
+    const binHz = sampleRate / N;
+    const kMin = Math.max(1, Math.ceil(minFreq / binHz));
+    const kMax = Math.min(half - 1, Math.floor(maxFreq / binHz));
+    const candidates = [];
+    for (let k = kMin; k <= kMax; k++) {
+      if (db[k] > db[k - 1] && db[k] >= db[k + 1] && db[k] >= minPeakDb) {
+        // Parabolic interpolation on the log-magnitude spectrum
+        const a = db[k - 1], b = db[k], c = db[k + 1];
+        const denom = a - 2 * b + c;
+        const delta = denom !== 0 ? 0.5 * (a - c) / denom : 0;
+        const freq = (k + delta) * binHz;
+        const amp = b - 0.25 * (a - c) * delta;
+        candidates.push({ freq, amplitudeDb: amp });
       }
     }
 
-    if (spectrumData.length < 3) {
-      return [];
-    }
-
-    // Sort by frequency for peak detection
-    spectrumData.sort((a, b) => a.freq - b.freq);
-
-    // Find local maxima (peaks)
+    // Loudest first, drop anything within minPeakDistance of an accepted peak
+    candidates.sort((x, y) => y.amplitudeDb - x.amplitudeDb);
     const peaks = [];
-    const minPeakDistance = 20; // Hz - minimum distance between peaks
-
-    for (let i = 1; i < spectrumData.length - 1; i++) {
-      const prev = spectrumData[i - 1];
-      const curr = spectrumData[i];
-      const next = spectrumData[i + 1];
-
-      // Local maximum: higher than both neighbors
-      if (curr.amplitude > prev.amplitude && curr.amplitude > next.amplitude) {
-        // Check if this peak is far enough from existing peaks
-        const tooClose = peaks.some(p => Math.abs(p.freq - curr.freq) < minPeakDistance);
-        if (!tooClose) {
-          const noteInfo = hzToNote(curr.freq);
-          peaks.push({
-            freq: curr.freq,
-            amplitudeDb: Math.round(clampDb(curr.amplitude, 200) * 10) / 10,
-            note: noteInfo.note,
-            midiNote: noteInfo.midiNote,
-            cents: noteInfo.cents,
-          });
-        }
-      }
+    for (const c of candidates) {
+      if (peaks.some(p => Math.abs(p.freq - c.freq) < minPeakDistance)) continue;
+      const noteInfo = hzToNote(c.freq);
+      peaks.push({
+        freq: Math.round(c.freq * 10) / 10,
+        amplitudeDb: Math.round(clampDb(c.amplitudeDb, 200) * 10) / 10,
+        note: noteInfo.note,
+        midiNote: noteInfo.midiNote,
+        cents: noteInfo.cents,
+      });
+      if (peaks.length >= maxPeaks) break;
     }
-
-    // Sort by amplitude (loudest first) and limit
-    peaks.sort((a, b) => b.amplitudeDb - a.amplitudeDb);
-    return peaks.slice(0, maxPeaks);
+    return peaks;
   }
 
   /**

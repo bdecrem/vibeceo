@@ -333,14 +333,15 @@ export class AnalyzeNode extends Node {
         }
       }
 
-      // Read samples (mono or first channel)
-      const samples = [];
-      const numSamples = Math.min(4096, (buffer.length - dataOffset) / (bytesPerSample * numChannels));
-
-      for (let i = 0; i < numSamples; i++) {
+      // Read up to 10 s of the first channel, then analyze the loudest 4096-sample
+      // window (skipping the first 10 ms). The old code took the first 93 ms of the
+      // file, which on a real synth render is the attack transient with the filter
+      // envelope still sweeping — not the oscillator's shape.
+      const all = [];
+      const maxSamples = Math.min(sampleRate * 10, Math.floor((buffer.length - dataOffset) / (bytesPerSample * numChannels)));
+      for (let i = 0; i < maxSamples; i++) {
         const offset = dataOffset + i * bytesPerSample * numChannels;
         if (offset + bytesPerSample > buffer.length) break;
-
         let sample;
         if (bitsPerSample === 16) {
           sample = buffer.readInt16LE(offset) / 32768;
@@ -349,8 +350,19 @@ export class AnalyzeNode extends Node {
         } else {
           sample = (buffer.readUInt8(offset) - 128) / 128;
         }
-        samples.push(sample);
+        all.push(sample);
       }
+      const WIN = 4096, BLOCK = 512;
+      const skip = Math.min(all.length, Math.round(sampleRate * 0.01));
+      let bestStart = skip, bestRms = -1;
+      for (let s0 = skip; s0 + WIN <= all.length; s0 += BLOCK) {
+        let e = 0;
+        for (let i = s0; i < s0 + WIN; i++) e += all[i] * all[i];
+        if (e > bestRms) { bestRms = e; bestStart = s0; }
+      }
+      const raw = all.slice(bestStart, Math.min(all.length, bestStart + WIN));
+      const dc = raw.reduce((x, y) => x + y, 0) / Math.max(1, raw.length);
+      const samples = raw.map(v => v - dc);
 
       if (samples.length < 256) {
         return { detected: 'unknown', confidence: 0, reason: 'Not enough samples' };
@@ -481,6 +493,14 @@ export class AnalyzeNode extends Node {
     }
     symmetryError /= halfN;
 
+    // Slope-sign imbalance: the one feature that cleanly separates a sawtooth
+    // (one long ramp, ~all slopes the same sign) from a triangle or sine
+    // (rising and falling halves balanced). 1 = pure ramp, 0 = balanced.
+    const eps = 0.002;
+    let pos = 0, neg = 0;
+    for (const sl of slopes) { if (sl > eps) pos++; else if (sl < -eps) neg++; }
+    const slopeImbalance = (pos + neg) > 0 ? Math.abs(pos - neg) / (pos + neg) : 0;
+
     return {
       rms,
       peakToPeak,
@@ -488,6 +508,7 @@ export class AnalyzeNode extends Node {
       slopeChanges,
       extremeRatio,
       symmetryError,
+      slopeImbalance,
     };
   }
 
@@ -518,7 +539,10 @@ export class AnalyzeNode extends Node {
     // Crest factor for sawtooth ~ 1.73
     score += 1 - Math.min(1, Math.abs(chars.crestFactor - 1.73) * 0.5);
 
-    return score / 2.5;
+    // One-directional ramp (weighted: this is what a triangle can't fake)
+    score += chars.slopeImbalance * 1.5;
+
+    return score / 4;
   }
 
   /**
@@ -570,7 +594,10 @@ export class AnalyzeNode extends Node {
     // Crest factor for triangle ~ 1.73
     score += 1 - Math.min(1, Math.abs(chars.crestFactor - 1.73) * 0.5);
 
-    return score / 4;
+    // Rising and falling halves balanced (a sawtooth scores ~0 here)
+    score += (1 - chars.slopeImbalance) * 1.5;
+
+    return score / 5.5;
   }
 
   /**

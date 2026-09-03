@@ -497,7 +497,7 @@ const analyzeTools = {
       const peaks = spectralAnalyzer.getSpectralPeaks(wavPath, {
         minFreq: minFreq || 20,
         maxFreq: maxFreq || 8000,
-        minPeakDb: minPeakDb || -40,
+        minPeakDb: minPeakDb ?? -40,
         maxPeaks: maxPeaks || 10,
       });
 
@@ -506,7 +506,7 @@ const analyzeTools = {
       }
 
       const lines = [
-        'SPECTRAL PEAKS (Dominant Frequencies):',
+        'SPECTRAL PEAKS (Dominant Frequencies, dBFS — full-scale sine = 0 dB):',
         '',
       ];
 

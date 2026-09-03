@@ -74,6 +74,12 @@ Checked 2026-09-02 in headless Chromium: page loads, every referenced asset 200,
 4. `add_jb200` renders silence (deprecated, but it should probably refuse loudly instead).
 5. JT90 web UI preset APIs return 500.
 
+## 2026-09-02, later: reconciled with the 2026-07-27 audit wave
+
+This file was first written against a stale checkout. Re-run on origin/main (b67cc9d02): 84/85 checks pass out of the box — upstream already had the `fx.*` param fix, JP9000 headroom, the JB200 retirement, and effect correctness. Still needed and applied here: per-voice channel inserts (bare `ch`/`kick` targets now namespace to `jb01.<voice>` in `canonicalTargetId`), the native-FFT spectral analyzer + slope-imbalance waveform scoring.
+
+New finding from building `silt` (hilma `scripts/dub-tribal/`): **JB01's render cost grows with the square of its hit count** — it schedules Web Audio nodes per hit and the graph never sheds them: 16 bars of 16ths render in 0.3 s, 32 bars in 75 s, 64 bars in minutes. JT90, JT30, JB202, JP9000 and JB-S are linear (256 bars in 4–45 s). Workaround: render JB01 in ≤4-bar chunks and overlap-add. Also: a turned-down instrument still renders in full, so stem renders belong in separate sessions.
+
 ## Appendix — every check from the 2026-09-02 run
 
 | Group | Check | Result | Measurement |

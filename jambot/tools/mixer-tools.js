@@ -45,6 +45,8 @@ function ensureMixerState(session) {
  * @param {string} target
  * @returns {string} canonical target key
  */
+const JB01_VOICE_NAMES = ['kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];
+
 function canonicalTargetId(session, target) {
   if (!target || target === 'master') return target;
   const nodes = session?.params?.nodes;
@@ -55,6 +57,11 @@ function canonicalTargetId(session, target) {
   const tail = dot === -1 ? '' : target.slice(dot); // includes leading '.'
 
   if (CANONICAL_IDS.includes(head)) return target;
+
+  // A bare JB01 voice name ('ch', 'kick', ...) is a per-voice target: the render
+  // loop only matches chains keyed `${instrumentId}.${voice}`, so namespace it
+  // or the insert is stored under 'ch' and never applied.
+  if (dot === -1 && JB01_VOICE_NAMES.includes(head)) return `jb01.${head}`;
 
   const node = nodes.get(head);
   if (!node) return target; // unknown alias — leave as-is

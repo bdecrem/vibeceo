@@ -93,7 +93,7 @@ for (const kit of ['808', 'amber']) { for (const slot of ['s1', 's2', 's3', 's4'
 await safe('jbs', 'velocity', async () => { const jb = fresh(); await jb.tool('load_jbs_kit', { kit: '808' }); await jb.tool('add_jbs', { s1: [{ step: 0, vel: 1 }, { step: 8, vel: 0.25 }] }); const { w } = await render(jb, 'jbs-vel', 1); const x = mono(w); const a = rmsWindow(x, w.sr, 0, 0.2), b = rmsWindow(x, w.sr, 0.9375, 1.1375); rec('jbs', 'per-hit velocity', dB(a) - dB(b) > 6, `vel 1.0 hit ${dB(a).toFixed(1)} dB vs vel 0.25 hit ${dB(b).toFixed(1)} dB`); });
 
 // JB200 (deprecated alias) smoke
-await safe('jb200', 'deprecated alias renders', async () => { const jb = fresh(); const m = String(await jb.tool('add_jb200', { pattern: melodic('C2') })); const { w } = await render(jb, 'jb200', 1); const s = stats(w); rec('jb200', 'deprecated alias (expected: no audio)', true, `${hasSignal(s) ? 'STILL RENDERS AUDIO' : 'renders silence — deprecated, do not use'}; ${fmt(s)}; ${m.slice(0, 60)}`); });
+await safe('jb200', 'deprecated alias renders', async () => { const jb = fresh(); const m = String(await jb.tool('add_jb200', { pattern: melodic('C2') })); const { w } = await render(jb, 'jb200', 1); const s = stats(w); rec('jb200', 'retired: add_jb200 is not a tool any more', /unknown tool/i.test(m), `${m.slice(0, 60)}`); });
 
 // ---------- effects ----------
 async function singleNote(target = 'jt10') { const jb = fresh(); await jb.tool('add_jt10', { pattern: melodic('C3', [0]) }); return jb; }
