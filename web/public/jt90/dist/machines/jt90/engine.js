@@ -474,7 +474,11 @@ export class JT90Engine {
         ? baseStepDuration * (step % 2 === 1 ? 1 + swingFactor : 1 - swingFactor)
         : baseStepDuration;
 
-      const stepSamples = Math.floor(stepDuration * sampleRate);
+      // Step boundaries come from the ABSOLUTE time, not from flooring each step's
+      // own sample count: flooring dropped the fractional sample on every step and
+      // the truncation accumulated (~0.5-1 sample per step -> 30+ ms early by bar
+      // 180 at 126 BPM, drifting against jb202/jt30/jp9000 which keep a float clock).
+      const stepSamples = Math.round((currentTime + stepDuration) * sampleRate) - sampleIndex;
 
       // Process samples for this step
       for (let i = 0; i < stepSamples && sampleIndex < totalSamples; i++, sampleIndex++) {
