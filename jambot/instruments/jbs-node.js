@@ -248,7 +248,9 @@ export class JBSNode extends InstrumentNode {
     } = options;
 
     // Determine pattern length — support variable-length patterns
-    const patternLength = pattern.s1?.length || 16;
+    // Wrap at the LONGEST slot, not slot 1: a multi-bar pattern that leaves s1
+    // empty used to loop its first bar (hits past step 15 never played).
+    const patternLength = Math.max(16, ...Object.values(pattern || {}).map(t => (Array.isArray(t) ? t.length : 0)));
 
     // Check if pattern has any hits
     const hasHits = SLOTS.some(slot =>
@@ -333,7 +335,7 @@ export class JBSNode extends InstrumentNode {
    * @returns {number}
    */
   getPatternLength() {
-    return this._pattern.s1?.length || 16;
+    return Math.max(16, ...Object.values(this._pattern || {}).map(t => (Array.isArray(t) ? t.length : 0)));
   }
 
   /**
