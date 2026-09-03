@@ -61,7 +61,7 @@ Checked 2026-09-02 in headless Chromium: page loads, every referenced asset 200,
 | JT10 | https://webtoys.ai/jt10/ui/jt10/index.html | ✅ | Clean load. |
 | JT30 | https://webtoys.ai/jt30/ui/jt30/index.html | ✅ | Clean load. |
 | JB-S | https://webtoys.ai/jbs/ui/jbs/index.html | ✅ | Clean load. |
-| JT90 | https://webtoys.ai/jt90/ui/jt90/index.html | ⚠️ | UI renders, but `/api/synth-kits?machine=jt90` and `/api/synth-patterns?machine=jt90` return 500, so kit/pattern presets fail to load. |
+| JT90 | https://webtoys.ai/jt90/ui/jt90/index.html | ✅ | Fixed 2026-09-03: the Railway service `www.kochi.to` (which serves webtoys.ai) carried the pre-rotation Supabase service key; replaced via `railway variables --set`, redeployed, `/api/synth-kits` and `/api/synth-patterns` return 200 and the UI loads with no failed requests. |
 | SynthMachine index | https://webtoys.ai/synthmachine/index.html | ✅ | Landing page. |
 
 **The `kochi.to/...` URLs in CLAUDE.md and the DK docs are dead** (Vercel NOT_FOUND for every path but the root, as of 2026-09-02). The same deployment serves everything under `webtoys.ai`.
