@@ -21,6 +21,7 @@ globalThis.AudioContext = AudioContext;
 
 // Local modules
 import { audioBufferToWav } from './wav.js';
+import { coerceChoice } from './node.js';
 import { processDelay } from '../effects/delay.js';
 import { processEq } from '../effects/eq.js';
 import { processFilter } from '../effects/filter.js';
@@ -148,6 +149,27 @@ function mixVoiceBuffers(voiceBuffers, length, sampleRate) {
 }
 
 /**
+ * Saved-pattern params are raw engine values captured at save time. Older
+ * saves may hold invalid choice values (a waveform stored as 0); coerce
+ * them against the node's descriptors and fall back to the node's current
+ * value so a stale save can't silence an instrument.
+ */
+function sanitizeSavedParams(node, params) {
+  if (!params || typeof params !== 'object' || Array.isArray(params)) return params;
+  const out = {};
+  for (const [key, value] of Object.entries(params)) {
+    const d = typeof node.getDescriptor === 'function' ? node.getDescriptor(key) : undefined;
+    if (d && d.unit === 'choice') {
+      const v = coerceChoice(d, value);
+      out[key] = v === undefined ? (typeof node.getParam === 'function' ? node.getParam(key) : d.default) : v;
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+/**
  * Render an instrument with per-voice effect support
  * If instrument supports renderVoices() and has voice-level effects, uses that.
  * Otherwise falls back to renderPattern() with instrument-level effects only.
@@ -267,6 +289,7 @@ export async function renderSessionToBuffer(session, bars) {
 
   // === RENDER ALL INSTRUMENTS ===
   const instrumentBuffers = []; // { id, buffer, startBar, level }
+  const failures = [];          // { id, error } — surfaced in the render message
   const canonicalIds = ['jb01', 'jb200', 'jb202', 'jp9000', 'jbs', 'jt10', 'jt30', 'jt90'];
 
   // Build render context for effects that need session data (e.g., sidechain)
@@ -296,7 +319,7 @@ export async function renderSessionToBuffer(session, bars) {
               swing: session.clock.swing,
               sampleRate,
               pattern: savedPattern.pattern,
-              params: savedPattern.params,
+              params: sanitizeSavedParams(node, savedPattern.params),
               automation: savedPattern.automation,
             },
             session.mixer?.effectChains,
@@ -316,6 +339,7 @@ export async function renderSessionToBuffer(session, bars) {
           }
         } catch (e) {
           console.warn(`Failed to render ${id} section:`, e.message);
+          if (!failures.some(f => f.id === id)) failures.push({ id, error: e.message });
         }
       }
     } else {
@@ -357,6 +381,7 @@ export async function renderSessionToBuffer(session, bars) {
         }
       } catch (e) {
         console.warn(`Failed to render ${id}:`, e.message);
+        failures.push({ id, error: e.message });
       }
     }
   }
@@ -511,8 +536,11 @@ export async function renderSessionToBuffer(session, bars) {
   }
 
   if (trimDb < 0) message += ` — mix trimmed ${trimDb.toFixed(1)} dB to avoid clipping; lower some levels`;
+  if (failures.length) {
+    message += `. FAILED TO RENDER: ${failures.map(f => `${f.id} (${f.error})`).join('; ')} — fix the parameters and render again`;
+  }
 
-  return { buffer: outputBuffer, message, bars: renderBars, synths, hasArrangement, peak, trimDb };
+  return { buffer: outputBuffer, message, bars: renderBars, synths, hasArrangement, peak, trimDb, failures };
 }
 
 /**
