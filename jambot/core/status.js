@@ -104,6 +104,7 @@ export function describeSession(session) {
     const descriptors = safe(() => session.describe(id)) || {};
     const params = [];
     for (const [sub, descriptor] of Object.entries(descriptors)) {
+      if (sub === 'level') continue;   // node output level is reported separately (dB)
       const path = `${id}.${sub}`;
       const value = safe(() => readProducerValue(session, path));
       if (value === undefined) continue;
@@ -123,7 +124,15 @@ export function describeSession(session) {
   const effects = [];
   for (const [target, chain] of Object.entries(session.mixer?.effectChains || {})) {
     if (Array.isArray(chain) && chain.length > 0) {
-      effects.push({ target, chain: chain.map(e => ({ id: e.id, type: e.type, params: e._node ? e._node.getParams() : e.params })) });
+      effects.push({
+        target,
+        chain: chain.map(e => ({
+          id: e.id,
+          type: e.type,
+          params: e._node ? e._node.getParams() : e.params,
+          descriptors: safe(() => session.describe(`fx.${target}.${e.id}`)) || {},
+        })),
+      });
     }
   }
 
