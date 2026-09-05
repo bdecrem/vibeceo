@@ -32,6 +32,7 @@ const DEFAULT_PARAMS = {
   envMod: 0.75,              // Filter envelope amount (0-1) - aggressive for acid
   decay: 0.45,               // Envelope decay (0-1) - medium for "wow" sweep
   accent: 0.8,               // Accent intensity (0-1)
+  drive: 0.2,                // Output saturation (0-1); setParameter only accepts known keys
   level: 0.8,                // Output level (0-1)
   slideTime: 0.06,           // Portamento time in seconds
 };
@@ -92,7 +93,7 @@ class SynthVoice {
     this.filter.setParameters(baseCutoff, resonance);
 
     // Drive - 303 has subtle saturation
-    this.drive.setAmount(20);
+    this.drive.setAmount((params.drive ?? 0.2) * 100);
 
     this.slideDuration = params.slideTime;
   }
@@ -112,6 +113,16 @@ class SynthVoice {
    * - Accent boosts filter envelope amount
    * - Accent boosts resonance (crucial for squelch!)
    */
+  /**
+   * Accent intensity from the `accent` param (0-1). The fixed 303 boosts
+   * (+35 resonance, ×1.25 filter octaves, +20 drive) were tuned at the
+   * default of 0.8, so 0.8 → factor 1.0, 0 → no accent effect, 1 → +25%.
+   */
+  _accentFactor() {
+    const a = this.params?.accent;
+    return (typeof a === 'number' ? a : 0.8) / 0.8;
+  }
+
   triggerNote(freq, accent, slide = false) {
     if (slide && this.gateOpen) {
       // Slide: glide to new frequency with soft filter bump
@@ -120,7 +131,7 @@ class SynthVoice {
       // Soft envelope re-trigger — filter movement on slides
       this.filterEnv.trigger(accent ? 0.7 : 0.4);
       this.accentActive = accent;
-      if (accent) this.accentResonanceBoost = 35;
+      if (accent) this.accentResonanceBoost = 35 * this._accentFactor();
     } else {
       // New note: reset oscillator and envelopes
       this.currentFreq = freq;
@@ -151,7 +162,7 @@ class SynthVoice {
 
       this.accentActive = accent;
       // 303-style: accent boosts resonance for that squelch!
-      this.accentResonanceBoost = accent ? 35 : 0;
+      this.accentResonanceBoost = accent ? 35 * this._accentFactor() : 0;
     }
 
     this.gateOpen = true;
@@ -231,7 +242,7 @@ class SynthVoice {
     // which parked the resonant peak at 8-16kHz = the shrillness bug.
     const baseCutoff = normalizedToHz(params.cutoff);
     const envAmount = params.envMod;
-    const accentOctaveBoost = this.accentActive ? 1.25 : 1.0;
+    const accentOctaveBoost = this.accentActive ? 1.0 + 0.25 * this._accentFactor() : 1.0;
     const octaves = envAmount * 4.5 * filterEnvValue * accentOctaveBoost;
     const modCutoff = clamp(baseCutoff * Math.pow(2, octaves), 20, 5500);
 
@@ -253,12 +264,10 @@ class SynthVoice {
     // VCA
     sample *= ampValue;
 
-    // Drive — accent drives harder for grit
-    if (this.accentActive) {
-      this.drive.setAmount(40);
-    } else {
-      this.drive.setAmount(20);
-    }
+    // Drive — the `drive` param (0-1 → 0-100), accent drives harder for grit.
+    // Was hardcoded 20/40, which made the drive param a no-op.
+    const baseDrive = (params.drive ?? 0.2) * 100;
+    this.drive.setAmount(clamp(this.accentActive ? baseDrive + 20 * this._accentFactor() : baseDrive, 0, 100));
     sample = this.drive.processSample(sample);
 
     // Output level
