@@ -225,7 +225,7 @@ export const TR909_KITS = [
         description: 'E1 engine, medium decay for deep sub',
         engine: 'E1',
         voiceParams: {
-            kick: { decay: 55 },  // 0-100: medium-long decay
+            kick: { decay: 0.55 },  // engine units (0-1): medium-long decay
         },
     },
     {
