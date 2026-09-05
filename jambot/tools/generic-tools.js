@@ -40,6 +40,20 @@ function sessionParam(session, path, value, delta) {
   return `Set ${path} = ${def.get(session)} ${def.unit}`;
 }
 
+// In song mode the arrangement renders each section from the params captured
+// inside the saved patterns, so tweaking the live node changes nothing audible
+// until the pattern is re-saved. Say so in the tool result.
+function songModeNote(session, path) {
+  if (!Array.isArray(session.arrangement) || session.arrangement.length === 0) return '';
+  const inst = String(path).split('.')[0];
+  const saved = session.patterns?.[inst];
+  if (!saved || Object.keys(saved).length === 0) return '';
+  const segs = String(path).split('.');
+  if (segs.length === 2 && segs[1] === 'level') return '';   // node level applies at mix time
+  const names = Object.keys(saved).join(', ');
+  return ` (song mode: live pattern only — saved ${inst} patterns ${names} unchanged. To hear it in the arrangement: load_pattern → tweak → save_pattern for each)`;
+}
+
 const genericTools = {
   /**
    * Change tempo of the current track (keeps everything else).
@@ -173,7 +187,7 @@ const genericTools = {
       // Format the display value
       const displayValue = descriptor ? formatValue(finalProducerValue, descriptor) : JSON.stringify(finalProducerValue);
       const action = delta !== undefined ? `Adjusted ${path} by ${delta > 0 ? '+' : ''}${delta} →` : 'Set';
-      return `${action} ${path} = ${displayValue}`;
+      return `${action} ${path} = ${displayValue}${songModeNote(session, path)}`;
     } else {
       return `Error: Could not set ${path}`;
     }
@@ -208,7 +222,7 @@ const genericTools = {
       const success = session.set(path, engineValue);
       if (success) {
         const displayValue = descriptor ? formatValue(value, descriptor) : JSON.stringify(value);
-        results.push(`${path} = ${displayValue}`);
+        results.push(`${path} = ${displayValue}${songModeNote(session, path)}`);
       } else {
         results.push(`${path}: FAILED`);
       }
