@@ -23,6 +23,8 @@ import { createSession as createCoreSession } from './core/session.js';
 // Extracted modules
 import { renderSession } from './core/render.js';
 import { detectGenres, buildGenreContext } from './core/library.js';
+import { runAgent } from './core/agent.js';
+import { buildSessionContext } from './core/status.js';
 
 // Tool definitions (65 tools for Anthropic API)
 import { TOOLS } from './tools/tool-definitions.js';
@@ -316,180 +318,54 @@ export function buildMixOverview(session, project = null) {
   return lines.join('\n');
 }
 
-// === SESSION STATE CONTEXT ===
-// Builds a summary of current session state for the agent
-function buildSessionContext(session) {
-  const parts = [];
+// === SESSION STATE CONTEXT + AGENT LOOP ===
+// Both live in core/ now (core/status.js, core/agent.js) so the terminal UI,
+// the headless API and the web app run the exact same loop. This file keeps a
+// thin adapter that plugs the Anthropic SDK in as the `llm` function.
+export { buildSessionContext } from './core/status.js';
 
-  // BPM
-  if (session.bpm) {
-    parts.push(`BPM: ${session.bpm}`);
-  }
+export const JAMBOT_MODEL = process.env.JAMBOT_MODEL || "claude-opus-5";
 
-  // Swing
-  if (session.swing > 0) {
-    parts.push(`Swing: ${session.swing}%`);
-  }
-
-  // R9DS Kit - this is the critical one for kit creation workflow
-  if (session.samplerKit) {
-    const slotList = session.samplerKit.slots
-      .map(s => `${s.id}=${s.name} (${s.short})`)
-      .join(', ');
-    parts.push(`LOADED KIT: "${session.samplerKit.name}" with slots: ${slotList}`);
-  }
-
-  // Summary of what's programmed
-  const jb01Pattern = session.jb01Pattern || session.drumPattern || {};
-  const hasJB01 = Object.keys(jb01Pattern).some(k =>
-    jb01Pattern[k]?.some(s => s?.velocity > 0)
+/**
+ * Single Messages API call via the Anthropic SDK. Matches the `llm`
+ * contract of core/agent.js: ({ system, messages, tools, max_tokens, signal }).
+ */
+export async function anthropicLlm({ system, messages, tools, max_tokens, signal }) {
+  return getClient().messages.create(
+    { model: JAMBOT_MODEL, max_tokens, system, tools, messages },
+    signal ? { signal } : undefined
   );
-  const jb202Pattern = session.jb202Pattern || session.bassPattern || [];
-  const hasJB202 = jb202Pattern?.some(s => s?.gate);
-  const samplerPattern = session.samplerPattern || {};
-  const hasSamples = Object.keys(samplerPattern).some(k =>
-    samplerPattern[k]?.some(s => s?.velocity > 0)
-  );
-
-  const programmed = [];
-  if (hasJB01) programmed.push('JB01 drums');
-  if (hasJB202) programmed.push('JB202 bass');
-  if (hasSamples) programmed.push('Sampler');
-
-  if (programmed.length > 0) {
-    parts.push(`Programmed: ${programmed.join(', ')}`);
-  }
-
-  // Song mode: saved patterns
-  const savedPatterns = [];
-  if (session.patterns) {
-    for (const [instrument, patterns] of Object.entries(session.patterns)) {
-      const names = Object.keys(patterns);
-      if (names.length > 0) {
-        // Show pattern names and their key params
-        const patternDetails = names.map(name => {
-          const p = patterns[name];
-          if (instrument === 'drums' && p.params) {
-            const paramSummary = Object.entries(p.params)
-              .map(([voice, params]) => {
-                const vals = Object.entries(params).map(([k, v]) => `${k}=${v}`).join(',');
-                return `${voice}:{${vals}}`;
-              }).join(' ');
-            return paramSummary ? `${name}(${paramSummary})` : name;
-          }
-          return name;
-        });
-        savedPatterns.push(`${instrument}: ${patternDetails.join(', ')}`);
-      }
-    }
-  }
-  if (savedPatterns.length > 0) {
-    parts.push(`Saved patterns: ${savedPatterns.join('; ')}`);
-  }
-
-  // Song mode: arrangement
-  if (session.arrangement && session.arrangement.length > 0) {
-    const sections = session.arrangement.map((s, i) => {
-      const instruments = Object.entries(s.patterns || {}).map(([k, v]) => `${k}=${v}`).join(',');
-      return `${i + 1}:${s.bars}bars[${instruments}]`;
-    });
-    parts.push(`Arrangement: ${sections.join(' → ')}`);
-  }
-
-  if (parts.length === 0) {
-    return '';
-  }
-
-  return `\n\nCURRENT SESSION STATE:\n${parts.join('\n')}`;
 }
 
-// === AGENT LOOP ===
-// callbacks: { onStart, onTool, onToolResult, onResponse, onEnd }
-// context: { renderPath, onRender } - passed to executeTool
+// callbacks: { onStart, onTool, onToolResult, onAfterTool, onResponse, onEnd, onUsage }
+// context: { getRenderPath, onRender, ... } - passed to executeTool
 export async function runAgentLoop(task, session, messages, callbacks, context = {}) {
-  callbacks.onStart?.(task);
+  const toolContext = {
+    ...context,
+    renderSession,  // Pass renderSession function to tools
+  };
 
-  messages.push({ role: "user", content: task });
-
-  // Detect genres in the conversation for context injection
-  const conversationText = messages.map(m => typeof m.content === 'string' ? m.content : '').join(' ');
-  const detectedGenres = detectGenres(conversationText);
-  const genreContext = buildGenreContext(detectedGenres);
-
-  while (true) {
-    // Build system prompt with CURRENT session state (regenerated each iteration)
-    const sessionContext = buildSessionContext(session);
-    const systemPrompt = JAMBOT_PROMPT + genreContext + sessionContext;
-    const response = await getClient().messages.create({
-      model: process.env.JAMBOT_MODEL || "claude-opus-5",
-      max_tokens: 1024,
-      system: systemPrompt,
-      tools: TOOLS,
-      messages
-    });
-
-    if (response.stop_reason === "end_turn") {
-      messages.push({ role: "assistant", content: response.content });
-      for (const block of response.content) {
-        if (block.type === "text") {
-          callbacks.onResponse?.(block.text);
-        }
+  return runAgent({
+    task,
+    session,
+    messages,
+    llm: anthropicLlm,
+    tools: TOOLS,
+    systemPrompt: JAMBOT_PROMPT,
+    buildStateContext: buildSessionContext,
+    buildGenreContext: (text) => buildGenreContext(detectGenres(text)),
+    callbacks,
+    // render / test_tone write into the project folder when the UI provides one
+    executeTool: (name, input, sess, ctx) => {
+      const c = { ...ctx };
+      if ((name === 'render' || name === 'test_tone') && context.getRenderPath) {
+        c.renderPath = context.getRenderPath();
       }
-      callbacks.onEnd?.();
-      break;
-    }
-
-    if (response.stop_reason === "tool_use") {
-      messages.push({ role: "assistant", content: response.content });
-
-      const toolResults = [];
-      for (const block of response.content) {
-        if (block.type === "tool_use") {
-          callbacks.onTool?.(block.name, block.input);
-
-          // Build tool context with render capabilities
-          let toolContext = {
-            ...context,
-            renderSession,  // Pass renderSession function to tools
-          };
-          if ((block.name === 'render' || block.name === 'test_tone') && context.getRenderPath) {
-            toolContext.renderPath = context.getRenderPath();
-          }
-
-          let result = executeTool(block.name, block.input, session, toolContext);
-          if (result instanceof Promise) {
-            result = await result;
-          }
-
-          callbacks.onToolResult?.(result);
-
-          // AUTO-SAVE after every tool that modifies state
-          callbacks.onAfterTool?.(block.name, session);
-
-          toolResults.push({
-            type: "tool_result",
-            tool_use_id: block.id,
-            content: result
-          });
-        }
-      }
-
-      messages.push({ role: "user", content: toolResults });
-    }
-
-    // Any other stop reason (max_tokens, refusal, ...) used to fall through
-    // and re-send the identical request forever — terminate instead.
-    if (response.stop_reason !== "end_turn" && response.stop_reason !== "tool_use") {
-      messages.push({ role: "assistant", content: response.content });
-      callbacks.onResponse?.(response.stop_reason === "refusal"
-        ? "Request declined by safety classifiers."
-        : `(stopped: ${response.stop_reason})`);
-      callbacks.onEnd?.();
-      break;
-    }
-  }
-
-  return { session, messages };
+      return executeTool(name, input, sess, c);
+    },
+    context: toolContext,
+    signal: context.signal,
+  });
 }
 
 // === SPLASH SCREEN ===

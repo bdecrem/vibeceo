@@ -32,29 +32,41 @@ export function registerTools(tools) {
 }
 
 /**
- * Initialize all tools (must be called before using executeTool)
- * Uses dynamic imports to avoid circular dependency issues
+ * Default tool modules, as import thunks. Each module registers its own
+ * handlers on import. jb200-tools.js is retired: the JB200 node is no longer
+ * registered in the session, so its tools reported success while producing
+ * no audio or crashing. File left on disk; simply not loaded.
  */
-export async function initializeTools() {
+export const DEFAULT_TOOL_MODULES = [
+  () => import('./session-tools.js'),
+  () => import('./jbs-tools.js'),
+  () => import('./jb202-tools.js'),
+  () => import('./jb01-tools.js'),
+  () => import('./mixer-tools.js'),
+  () => import('./song-tools.js'),
+  () => import('./render-tools.js'),
+  () => import('./generic-tools.js'),
+  () => import('./analyze-tools.js'),
+  () => import('./jp9000-tools.js'),
+  () => import('./jt-tools.js'),
+  () => import('./automation-tools.js'),
+  () => import('./routing-tools.js'),
+];
+
+/**
+ * Initialize tools (must be called before using executeTool).
+ * Uses dynamic imports to avoid circular dependency issues.
+ *
+ * @param {Array<() => Promise>} [modules] - Which tool modules to load.
+ *   Defaults to everything. A browser bundle passes only the modules that
+ *   don't need the file system / sox, and registers its own `render`.
+ */
+export async function initializeTools(modules = DEFAULT_TOOL_MODULES) {
   if (initialized) return;
 
-  // Dynamic imports ensure toolHandlers is initialized first
-  await import('./session-tools.js');
-  await import('./jbs-tools.js');
-  // jb200-tools.js retired: the JB200 node is no longer registered in the
-  // session, so its tools (add_jb200/tweak_jb200/etc.) reported success while
-  // producing no audio or crashing. File left on disk; simply not loaded.
-  await import('./jb202-tools.js');
-  await import('./jb01-tools.js');
-  await import('./mixer-tools.js');
-  await import('./song-tools.js');
-  await import('./render-tools.js');
-  await import('./generic-tools.js');
-  await import('./analyze-tools.js');
-  await import('./jp9000-tools.js');
-  await import('./jt-tools.js');
-  await import('./automation-tools.js');
-  await import('./routing-tools.js');
+  for (const load of modules) {
+    await load();
+  }
 
   initialized = true;
 }

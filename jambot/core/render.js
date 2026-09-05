@@ -217,13 +217,15 @@ async function renderInstrumentWithEffects(node, renderOptions, effectChains, in
 }
 
 /**
- * Render a session to WAV file
+ * Render a session to an AudioBuffer (no file IO). This is the whole
+ * pipeline; renderSession() below is the thin "and write a WAV" wrapper
+ * the CLI uses. Browsers call this directly and play the buffer.
+ *
  * @param {Object} session - Jambot session object
  * @param {number} bars - Number of bars to render (ignored if arrangement is set)
- * @param {string} filename - Output filename
- * @returns {Promise<string>} Render result message
+ * @returns {Promise<{ buffer: AudioBuffer, message: string, bars: number, synths: string[] }>}
  */
-export async function renderSession(session, bars, filename) {
+export async function renderSessionToBuffer(session, bars) {
 
   // === ARRANGEMENT MODE ===
   const hasArrangement = session.arrangement && session.arrangement.length > 0;
@@ -475,18 +477,32 @@ export async function renderSession(session, bars, filename) {
     }
   }
 
-  // === WRITE WAV ===
-  const wav = audioBufferToWav(outputBuffer);
-  writeFileSync(filename, Buffer.from(wav));
-
   // Build output message
   const synths = instrumentBuffers
     .map(b => b.id.toUpperCase())
     .filter((v, i, a) => a.indexOf(v) === i);
 
+  let message;
   if (hasArrangement) {
     const sectionCount = session.arrangement.length;
-    return `Rendered ${renderBars} bars (${sectionCount} sections) at ${session.bpm} BPM (${synths.join('+') || 'empty'})`;
+    message = `Rendered ${renderBars} bars (${sectionCount} sections) at ${session.bpm} BPM (${synths.join('+') || 'empty'})`;
+  } else {
+    message = `Rendered ${renderBars} bars at ${session.bpm} BPM (${synths.join('+') || 'empty'})`;
   }
-  return `Rendered ${renderBars} bars at ${session.bpm} BPM (${synths.join('+') || 'empty'})`;
+
+  return { buffer: outputBuffer, message, bars: renderBars, synths, hasArrangement };
+}
+
+/**
+ * Render a session to a WAV file (CLI / headless path).
+ * @param {Object} session - Jambot session object
+ * @param {number} bars - Number of bars to render (ignored if arrangement is set)
+ * @param {string} filename - Output filename
+ * @returns {Promise<string>} Render result message
+ */
+export async function renderSession(session, bars, filename) {
+  const { buffer, message } = await renderSessionToBuffer(session, bars);
+  const wav = audioBufferToWav(buffer);
+  writeFileSync(filename, Buffer.from(wav));
+  return message;
 }
