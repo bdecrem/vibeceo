@@ -46,7 +46,7 @@ function normalizePath(path) {
 
 export class JB202Node extends InstrumentNode {
   constructor(config = {}) {
-    super('jb202', config);
+    super(config.id || 'jb202', config);
 
     this._voices = VOICES;
 

@@ -8,6 +8,7 @@
  */
 
 import { registerTools } from './index.js';
+import { resolveInstrument } from './targets.js';
 import { getParamDef, toEngine } from '../params/converters.js';
 
 // JT90 voices
@@ -42,6 +43,8 @@ const jtTools = {
    * Add JT10 lead pattern
    */
   add_jt10: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jt10');
+    if (inst.error) return inst.error;
     const pattern = input.pattern || [];
     const bars = input.bars || 1;
     const steps = bars * 16;
@@ -50,7 +53,7 @@ const jtTools = {
       return 'JT10: pattern must be an array of steps';
     }
 
-    session.jt10Pattern = Array(steps).fill(null).map((_, i) => {
+    inst.pattern = Array(steps).fill(null).map((_, i) => {
       const step = pattern[i] || {};
       return {
         note: step.note || 'C3',
@@ -60,7 +63,7 @@ const jtTools = {
       };
     });
 
-    const activeSteps = session.jt10Pattern.filter(s => s.gate).length;
+    const activeSteps = inst.pattern.filter(s => s.gate).length;
     const barsLabel = bars > 1 ? ` (${bars} bars)` : '';
     return `JT10: ${activeSteps} notes programmed${barsLabel}`;
   },
@@ -69,21 +72,23 @@ const jtTools = {
    * Tweak JT10 lead parameters
    */
   tweak_jt10: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jt10');
+    if (inst.error) return inst.error;
     const tweaks = [];
 
     // Level: sets NODE output level in dB (used by mixer for gain staging)
     // Routes through ParamSystem → InstrumentNode.setLevel()
     if (input.level !== undefined) {
-      session.set('jt10.level', input.level);
+      session.set(`${inst.id}.level`, input.level);
       tweaks.push(`level=${input.level}dB`);
     }
 
     // Mute/unmute via node output level (dB)
     if (input.mute === true) {
-      session.set('jt10.level', -60);
+      session.set(`${inst.id}.level`, -60);
       tweaks.push('muted');
     } else if (input.mute === false) {
-      session.set('jt10.level', 0);
+      session.set(`${inst.id}.level`, 0);
       tweaks.push('unmuted');
     }
 
@@ -123,7 +128,7 @@ const jtTools = {
           value = toEngine(value, def);
         }
 
-        session.set(`jt10.lead.${engineKey}`, value);
+        session.set(`${inst.id}.lead.${engineKey}`, value);
         tweaks.push(`${inputKey}=${input[inputKey]}`);
       }
     }
@@ -141,6 +146,8 @@ const jtTools = {
    * Add JT30 acid bass pattern
    */
   add_jt30: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jt30');
+    if (inst.error) return inst.error;
     const pattern = input.pattern;
 
     if (!pattern || !Array.isArray(pattern)) {
@@ -153,7 +160,7 @@ const jtTools = {
       normalized.push({ note: 'C2', gate: false, accent: false, slide: false });
     }
 
-    session.jt30Pattern = normalized;
+    inst.pattern = normalized;
 
     const activeSteps = normalized.filter(s => s.gate).length;
     return `JT30: ${activeSteps} notes programmed`;
@@ -163,21 +170,23 @@ const jtTools = {
    * Tweak JT30 acid bass parameters
    */
   tweak_jt30: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jt30');
+    if (inst.error) return inst.error;
     const tweaks = [];
 
     // Level: sets NODE output level in dB (used by mixer for gain staging)
     // Routes through ParamSystem → InstrumentNode.setLevel()
     if (input.level !== undefined) {
-      session.set('jt30.level', input.level);
+      session.set(`${inst.id}.level`, input.level);
       tweaks.push(`level=${input.level}dB`);
     }
 
     // Mute/unmute via node output level (dB)
     if (input.mute === true) {
-      session.set('jt30.level', -60);
+      session.set(`${inst.id}.level`, -60);
       tweaks.push('muted');
     } else if (input.mute === false) {
-      session.set('jt30.level', 0);
+      session.set(`${inst.id}.level`, 0);
       tweaks.push('unmuted');
     }
 
@@ -203,7 +212,7 @@ const jtTools = {
           value = toEngine(value, def);
         }
 
-        session.set(`jt30.bass.${engineKey}`, value);
+        session.set(`${inst.id}.bass.${engineKey}`, value);
         tweaks.push(`${inputKey}=${input[inputKey]}`);
       }
     }
@@ -221,6 +230,8 @@ const jtTools = {
    * Add JT90 drum pattern
    */
   add_jt90: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jt90');
+    if (inst.error) return inst.error;
     const bars = input.bars || 1;
     const steps = bars * 16;
     const added = [];
@@ -228,15 +239,15 @@ const jtTools = {
     // Clear all voices first if requested
     if (input.clear) {
       for (const voice of JT90_VOICES) {
-        session.jt90Pattern[voice] = stepsToPattern([], steps);
+        inst.pattern[voice] = stepsToPattern([], steps);
       }
     }
 
     // If bars > 1 and no existing pattern, resize first
     if (bars > 1) {
       for (const voice of JT90_VOICES) {
-        if (!session.jt90Pattern[voice] || session.jt90Pattern[voice].length < steps) {
-          session.jt90Pattern[voice] = stepsToPattern([], steps);
+        if (!inst.pattern[voice] || inst.pattern[voice].length < steps) {
+          inst.pattern[voice] = stepsToPattern([], steps);
         }
       }
     }
@@ -249,15 +260,15 @@ const jtTools = {
           // Check if it's a step array (numbers) or pattern array (objects)
           if (data.length > 0 && typeof data[0] === 'number') {
             // Step array: [0, 4, 8, 12]
-            session.jt90Pattern[voice] = stepsToPattern(data, steps);
+            inst.pattern[voice] = stepsToPattern(data, steps);
             added.push(`${voice}: ${data.length} hits`);
           } else {
             // Full pattern array - use as-is (pad if needed)
             if (data.length < steps) {
               const padded = [...data, ...Array(steps - data.length).fill({ velocity: 0, accent: false })];
-              session.jt90Pattern[voice] = padded;
+              inst.pattern[voice] = padded;
             } else {
-              session.jt90Pattern[voice] = data;
+              inst.pattern[voice] = data;
             }
             const activeSteps = data.filter(s => s && s.velocity > 0).length;
             added.push(`${voice}: ${activeSteps} hits`);
@@ -279,6 +290,8 @@ const jtTools = {
    * Tweak JT90 drum voice parameters
    */
   tweak_jt90: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jt90');
+    if (inst.error) return inst.error;
     const voice = input.voice;
     if (!voice || !JT90_VOICES.includes(voice)) {
       return `JT90: invalid voice. Use: ${JT90_VOICES.join(', ')}`;
@@ -289,11 +302,11 @@ const jtTools = {
     // Mute/unmute (sets voice level to silent/unity)
     if (input.mute === true) {
       const def = getParamDef('jt90', voice, 'level');
-      session.set(`jt90.${voice}.level`, def ? toEngine(-60, def) : 0);
+      session.set(`${inst.id}.${voice}.level`, def ? toEngine(-60, def) : 0);
       tweaks.push('muted');
     } else if (input.mute === false) {
       const def = getParamDef('jt90', voice, 'level');
-      session.set(`jt90.${voice}.level`, def ? toEngine(0, def) : 0.5);
+      session.set(`${inst.id}.${voice}.level`, def ? toEngine(0, def) : 0.5);
       tweaks.push('unmuted');
     }
 
@@ -301,7 +314,7 @@ const jtTools = {
     if (input.level !== undefined) {
       const def = getParamDef('jt90', voice, 'level');
       const value = def ? toEngine(input.level, def) : input.level / 100;
-      session.set(`jt90.${voice}.level`, value);
+      session.set(`${inst.id}.${voice}.level`, value);
       tweaks.push(`level=${input.level}dB`);
     }
 
@@ -309,7 +322,7 @@ const jtTools = {
     if (input.tune !== undefined) {
       const def = getParamDef('jt90', voice, 'tune');
       const value = def ? toEngine(input.tune, def) : input.tune;
-      session.set(`jt90.${voice}.tune`, value);
+      session.set(`${inst.id}.${voice}.tune`, value);
       tweaks.push(`tune=${input.tune}st`);
     }
 
@@ -317,7 +330,7 @@ const jtTools = {
     if (input.decay !== undefined) {
       const def = getParamDef('jt90', voice, 'decay');
       const value = def ? toEngine(input.decay, def) : input.decay / 100;
-      session.set(`jt90.${voice}.decay`, value);
+      session.set(`${inst.id}.${voice}.decay`, value);
       tweaks.push(`decay=${input.decay}`);
     }
 
@@ -325,7 +338,7 @@ const jtTools = {
     if (input.attack !== undefined && voice === 'kick') {
       const def = getParamDef('jt90', voice, 'attack');
       const value = def ? toEngine(input.attack, def) : input.attack / 100;
-      session.set(`jt90.${voice}.attack`, value);
+      session.set(`${inst.id}.${voice}.attack`, value);
       tweaks.push(`attack=${input.attack}`);
     }
 
@@ -333,7 +346,7 @@ const jtTools = {
     if (input.sweep !== undefined && voice === 'kick') {
       const def = getParamDef('jt90', voice, 'sweep');
       const value = def ? toEngine(input.sweep, def) : input.sweep / 100;
-      session.set(`jt90.${voice}.sweep`, value);
+      session.set(`${inst.id}.${voice}.sweep`, value);
       tweaks.push(`sweep=${input.sweep}`);
     }
 
@@ -341,7 +354,7 @@ const jtTools = {
     if (input.tone !== undefined) {
       const def = getParamDef('jt90', voice, 'tone');
       const value = def ? toEngine(input.tone, def) : input.tone / 100;
-      session.set(`jt90.${voice}.tone`, value);
+      session.set(`${inst.id}.${voice}.tone`, value);
       tweaks.push(`tone=${input.tone}`);
     }
 
@@ -349,7 +362,7 @@ const jtTools = {
     if (input.snappy !== undefined && voice === 'snare') {
       const def = getParamDef('jt90', voice, 'snappy');
       const value = def ? toEngine(input.snappy, def) : input.snappy / 100;
-      session.set(`jt90.${voice}.snappy`, value);
+      session.set(`${inst.id}.${voice}.snappy`, value);
       tweaks.push(`snappy=${input.snappy}`);
     }
 

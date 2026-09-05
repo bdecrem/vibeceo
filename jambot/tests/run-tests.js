@@ -18,6 +18,7 @@ const tests = [
   'test-oscillators.js',
   'test-audio-regression.js',
   'test-agent-loop.js',
+  'test-instances.js',
 ];
 
 let allPassed = true;

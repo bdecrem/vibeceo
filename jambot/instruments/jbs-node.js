@@ -19,7 +19,7 @@ export class JBSNode extends InstrumentNode {
    * @param {Object} config.kit - Loaded kit with sample buffers
    */
   constructor(config = {}) {
-    super('jbs', config);
+    super(config.id || 'jbs', config);
 
     this._voices = SLOTS;
 

@@ -11,6 +11,7 @@
  */
 
 import { registerTools } from './index.js';
+import { resolveInstrument } from './targets.js';
 import { getParamDef, toEngine } from '../params/converters.js';
 import { listKits, loadKit, listSequences, loadSequence } from '../presets/loader.js';
 
@@ -21,11 +22,13 @@ const jb202Tools = {
    * @param {number} [bars=1] - Pattern length in bars (16 steps per bar)
    */
   add_jb202: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jb202');
+    if (inst.error) return inst.error;
     const pattern = input.pattern || [];
     const bars = input.bars || 1;
     const steps = bars * 16;
 
-    session.jb202Pattern = Array(steps).fill(null).map((_, i) => {
+    inst.pattern = Array(steps).fill(null).map((_, i) => {
       const step = pattern[i] || {};
       return {
         note: step.note || 'C2',
@@ -36,11 +39,9 @@ const jb202Tools = {
     });
 
     // Also update the node's pattern
-    if (session._nodes?.jb202) {
-      session._nodes.jb202.setPattern(session.jb202Pattern);
-    }
+    inst.node.setPattern(inst.pattern);
 
-    const activeSteps = session.jb202Pattern.filter(s => s.gate).length;
+    const activeSteps = inst.pattern.filter(s => s.gate).length;
     const barsLabel = bars > 1 ? ` (${bars} bars)` : '';
     return `JB202 bass: ${activeSteps} notes${barsLabel}`;
   },
@@ -50,7 +51,7 @@ const jb202Tools = {
    *
    * Examples with generic tweak:
    *   tweak({ path: 'jb202.bass.filterCutoff', value: 800 })     -> 800Hz
-   *   tweak({ path: 'jb202.bass.level', delta: -5 })             -> Reduce level by 5
+   *   tweak({ path: `${inst.id}.bass.level`, delta: -5 })             -> Reduce level by 5
    *
    * This tool still works but is no longer the recommended approach.
    * The generic tweak() handles unit conversion automatically AND supports
@@ -59,6 +60,8 @@ const jb202Tools = {
    * @deprecated
    */
   tweak_jb202: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jb202');
+    if (inst.error) return inst.error;
     const tweaks = [];
     const { fromEngine } = await import('../params/converters.js');
 
@@ -66,14 +69,14 @@ const jb202Tools = {
     if (input.mute === true) {
       const def = getParamDef('jb202', 'bass', 'level');
       const engineLevel = def ? toEngine(-60, def) : 0; // -60dB = silent
-      session.set('jb202.bass.level', engineLevel);
-      session.jb202Params.level = engineLevel;
+      session.set(`${inst.id}.bass.level`, engineLevel);
+      inst.params.level = engineLevel;
       tweaks.push('muted (-60dB)');
     } else if (input.mute === false) {
       const def = getParamDef('jb202', 'bass', 'level');
       const engineLevel = def ? toEngine(0, def) : 0.91; // 0dB = unity
-      session.set('jb202.bass.level', engineLevel);
-      session.jb202Params.level = engineLevel;
+      session.set(`${inst.id}.bass.level`, engineLevel);
+      inst.params.level = engineLevel;
       tweaks.push('unmuted (0dB)');
     }
 
@@ -84,8 +87,8 @@ const jb202Tools = {
       const maxLevel = def?.max ?? 6;
       let newLevel;
       if (input.levelDelta !== undefined) {
-        // Relative adjustment - get current from NODE (not session.jb202Params)
-        const currentEngine = session.get('jb202.bass.level') ?? (def ? toEngine(def.default, def) : 0.5);
+        // Relative adjustment - get current from NODE (not inst.params)
+        const currentEngine = session.get(`${inst.id}.bass.level`) ?? (def ? toEngine(def.default, def) : 0.5);
         const currentProducer = def ? fromEngine(currentEngine, def) : 0;
         newLevel = Math.max(minLevel, Math.min(maxLevel, currentProducer + input.levelDelta));
         tweaks.push(`level=${Math.round(newLevel)}dB (was ${Math.round(currentProducer)}dB, ${input.levelDelta > 0 ? '+' : ''}${input.levelDelta})`);
@@ -94,68 +97,68 @@ const jb202Tools = {
         tweaks.push(`level=${input.level}dB`);
       }
       const engineLevel = def ? toEngine(newLevel, def) : (newLevel + 60) / 66; // Approximate if no def
-      // Update BOTH the node (via ParamSystem) and legacy session.jb202Params
-      session.set('jb202.bass.level', engineLevel);
-      session.jb202Params.level = engineLevel;
+      // Update BOTH the node (via ParamSystem) and legacy inst.params
+      session.set(`${inst.id}.bass.level`, engineLevel);
+      inst.params.level = engineLevel;
     }
 
     // Oscillator 1
     if (input.osc1Waveform !== undefined) {
-      session.jb202Params.osc1Waveform = input.osc1Waveform;
+      inst.params.osc1Waveform = input.osc1Waveform;
       tweaks.push(`osc1Waveform=${input.osc1Waveform}`);
     }
     if (input.osc1Octave !== undefined) {
       // Octave passes through as semitones (engine expects semitones, not cents)
-      session.jb202Params.osc1Octave = Math.max(-24, Math.min(24, input.osc1Octave));
+      inst.params.osc1Octave = Math.max(-24, Math.min(24, input.osc1Octave));
       tweaks.push(`osc1Octave=${input.osc1Octave > 0 ? '+' : ''}${input.osc1Octave}st`);
     }
     if (input.osc1Detune !== undefined) {
       const def = getParamDef('jb202', 'bass', 'osc1Detune');
-      session.jb202Params.osc1Detune = def ? toEngine(input.osc1Detune, def) : input.osc1Detune;
+      inst.params.osc1Detune = def ? toEngine(input.osc1Detune, def) : input.osc1Detune;
       tweaks.push(`osc1Detune=${input.osc1Detune > 0 ? '+' : ''}${input.osc1Detune}`);
     }
     if (input.osc1Level !== undefined) {
       const def = getParamDef('jb202', 'bass', 'osc1Level');
-      session.jb202Params.osc1Level = def ? toEngine(input.osc1Level, def) : input.osc1Level / 100;
+      inst.params.osc1Level = def ? toEngine(input.osc1Level, def) : input.osc1Level / 100;
       tweaks.push(`osc1Level=${input.osc1Level}`);
     }
 
     // Oscillator 2
     if (input.osc2Waveform !== undefined) {
-      session.jb202Params.osc2Waveform = input.osc2Waveform;
+      inst.params.osc2Waveform = input.osc2Waveform;
       tweaks.push(`osc2Waveform=${input.osc2Waveform}`);
     }
     if (input.osc2Octave !== undefined) {
       // Octave passes through as semitones (engine expects semitones, not cents)
-      session.jb202Params.osc2Octave = Math.max(-24, Math.min(24, input.osc2Octave));
+      inst.params.osc2Octave = Math.max(-24, Math.min(24, input.osc2Octave));
       tweaks.push(`osc2Octave=${input.osc2Octave > 0 ? '+' : ''}${input.osc2Octave}st`);
     }
     if (input.osc2Detune !== undefined) {
       const def = getParamDef('jb202', 'bass', 'osc2Detune');
-      session.jb202Params.osc2Detune = def ? toEngine(input.osc2Detune, def) : input.osc2Detune;
+      inst.params.osc2Detune = def ? toEngine(input.osc2Detune, def) : input.osc2Detune;
       tweaks.push(`osc2Detune=${input.osc2Detune > 0 ? '+' : ''}${input.osc2Detune}`);
     }
     if (input.osc2Level !== undefined) {
       const def = getParamDef('jb202', 'bass', 'osc2Level');
-      session.jb202Params.osc2Level = def ? toEngine(input.osc2Level, def) : input.osc2Level / 100;
+      inst.params.osc2Level = def ? toEngine(input.osc2Level, def) : input.osc2Level / 100;
       tweaks.push(`osc2Level=${input.osc2Level}`);
     }
 
     // Filter
     if (input.filterCutoff !== undefined) {
       const def = getParamDef('jb202', 'bass', 'filterCutoff');
-      session.jb202Params.filterCutoff = def ? toEngine(input.filterCutoff, def) : input.filterCutoff;
+      inst.params.filterCutoff = def ? toEngine(input.filterCutoff, def) : input.filterCutoff;
       const display = input.filterCutoff >= 1000 ? `${(input.filterCutoff/1000).toFixed(1)}kHz` : `${input.filterCutoff}Hz`;
       tweaks.push(`filterCutoff=${display}`);
     }
     if (input.filterResonance !== undefined) {
       const def = getParamDef('jb202', 'bass', 'filterResonance');
-      session.jb202Params.filterResonance = def ? toEngine(input.filterResonance, def) : input.filterResonance / 100;
+      inst.params.filterResonance = def ? toEngine(input.filterResonance, def) : input.filterResonance / 100;
       tweaks.push(`filterResonance=${input.filterResonance}`);
     }
     if (input.filterEnvAmount !== undefined) {
       const def = getParamDef('jb202', 'bass', 'filterEnvAmount');
-      session.jb202Params.filterEnvAmount = def ? toEngine(input.filterEnvAmount, def) : input.filterEnvAmount;
+      inst.params.filterEnvAmount = def ? toEngine(input.filterEnvAmount, def) : input.filterEnvAmount;
       tweaks.push(`filterEnvAmount=${input.filterEnvAmount > 0 ? '+' : ''}${input.filterEnvAmount}`);
     }
 
@@ -164,7 +167,7 @@ const jb202Tools = {
     for (const param of filterEnvParams) {
       if (input[param] !== undefined) {
         const def = getParamDef('jb202', 'bass', param);
-        session.jb202Params[param] = def ? toEngine(input[param], def) : input[param] / 100;
+        inst.params[param] = def ? toEngine(input[param], def) : input[param] / 100;
         tweaks.push(`${param}=${input[param]}`);
       }
     }
@@ -174,7 +177,7 @@ const jb202Tools = {
     for (const param of ampEnvParams) {
       if (input[param] !== undefined) {
         const def = getParamDef('jb202', 'bass', param);
-        session.jb202Params[param] = def ? toEngine(input[param], def) : input[param] / 100;
+        inst.params[param] = def ? toEngine(input[param], def) : input[param] / 100;
         tweaks.push(`${param}=${input[param]}`);
       }
     }
@@ -182,7 +185,7 @@ const jb202Tools = {
     // Drive
     if (input.drive !== undefined) {
       const def = getParamDef('jb202', 'bass', 'drive');
-      session.jb202Params.drive = def ? toEngine(input.drive, def) : input.drive / 100;
+      inst.params.drive = def ? toEngine(input.drive, def) : input.drive / 100;
       tweaks.push(`drive=${input.drive}`);
     }
 
@@ -206,6 +209,8 @@ const jb202Tools = {
    * Applies all params from the kit file
    */
   load_jb202_kit: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jb202');
+    if (inst.error) return inst.error;
     const kitId = input.kit || input.name || 'default';
     const result = loadKit('jb202', kitId, 'bass');
 
@@ -214,7 +219,7 @@ const jb202Tools = {
     }
 
     // Apply all params from kit
-    Object.assign(session.jb202Params, result.params);
+    Object.assign(inst.params, result.params);
 
     return `Loaded JB202 kit: ${result.name}${result.description ? ` - ${result.description}` : ''}`;
   },
@@ -236,6 +241,8 @@ const jb202Tools = {
    * Applies the pattern from the sequence file
    */
   load_jb202_sequence: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jb202');
+    if (inst.error) return inst.error;
     const seqId = input.sequence || input.name || 'default';
     const result = loadSequence('jb202', seqId);
 
@@ -244,7 +251,7 @@ const jb202Tools = {
     }
 
     // Apply pattern
-    session.jb202Pattern = result.pattern;
+    inst.pattern = result.pattern;
     const activeSteps = result.pattern.filter(s => s.gate).length;
 
     return `Loaded JB202 sequence: ${result.name} (${activeSteps} notes)${result.description ? ` - ${result.description}` : ''}`;

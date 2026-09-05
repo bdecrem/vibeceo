@@ -48,7 +48,7 @@ function normalizePath(path) {
 
 export class JT30Node extends InstrumentNode {
   constructor(config = {}) {
-    super('jt30', config);
+    super(config.id || 'jt30', config);
 
     this._voices = VOICES;
     this._pattern = createEmptyPattern();

@@ -27,7 +27,7 @@ function createEmptyPattern(steps = 16) {
 
 export class JP9000Node extends InstrumentNode {
   constructor(config = {}) {
-    super('jp9000', config);
+    super(config.id || 'jp9000', config);
 
     this._voices = ['modular'];
 

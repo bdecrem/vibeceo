@@ -76,7 +76,7 @@ function createEmptyPattern(steps = 16) {
 
 export class JT90Node extends InstrumentNode {
   constructor(config = {}) {
-    super('jt90', config);
+    super(config.id || 'jt90', config);
 
     this._voices = VOICES;
     this._pattern = createEmptyPattern();

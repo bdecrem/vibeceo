@@ -101,6 +101,89 @@ function flatParamTraps(node, prefix) {
   };
 }
 
+
+/**
+ * Instrument type registry — one entry per synth that can be instantiated.
+ * `kind` decides the pattern/params shape the tools use:
+ *   drums   → pattern { voice: [steps] }, params { voice: { param } }
+ *   mono    → pattern [steps], params { param } (flat, under `prefix`)
+ *   modular / sampler → single-instance only (their tools reach the node
+ *   directly); listed here so listInstruments() is complete.
+ */
+export const INSTRUMENT_TYPES = {
+  jb01:   { Node: JB01Node,   kind: 'drums' },
+  jt90:   { Node: JT90Node,   kind: 'drums' },
+  jb202:  { Node: JB202Node,  kind: 'mono', prefix: 'bass.' },
+  jt30:   { Node: JT30Node,   kind: 'mono', prefix: 'bass.' },
+  jt10:   { Node: JT10Node,   kind: 'mono', prefix: 'lead.' },
+  jp9000: { Node: JP9000Node, kind: 'modular', single: true },
+  jbs:    { Node: JBSNode,    kind: 'sampler', single: true },
+};
+
+const RESERVED_IDS = new Set(['fx', 'master', 'drums', 'bass', 'lead', 'synth', 'sampler', 'jb200']);
+const ID_RE = /^[a-z][a-z0-9_-]{0,23}$/;
+
+/** Per-voice params proxy: params.kick.decay (engine units). */
+function voiceParamsProxy(node) {
+  const voices = node._voices;
+  return new Proxy({}, {
+    get: (_, voice) => {
+      if (typeof voice !== 'string') return undefined;
+      return new Proxy({}, {
+        get: (__, param) => typeof param === 'string' ? node.getParam(`${voice}.${param}`) : undefined,
+        set: (__, param, value) => { node.setParam(`${voice}.${param}`, value); return true; },
+        ...flatParamTraps(node, `${voice}.`),
+      });
+    },
+    set: (_, voice, params) => {
+      for (const [param, value] of Object.entries(params)) node.setParam(`${voice}.${param}`, value);
+      return true;
+    },
+    ownKeys: () => voices,
+    getOwnPropertyDescriptor: (_, voice) => voices.includes(voice)
+      ? { enumerable: true, configurable: true, writable: true }
+      : undefined,
+  });
+}
+
+/** Flat params proxy: params.filterCutoff (engine units) under a voice prefix. */
+function flatParamsProxy(node, prefix) {
+  return new Proxy({}, {
+    get: (_, param) => typeof param === 'string' ? node.getParam(`${prefix}${param}`) : undefined,
+    set: (_, param, value) => { node.setParam(`${prefix}${param}`, value); return true; },
+    ...flatParamTraps(node, prefix),
+  });
+}
+
+function assignParams(node, kind, prefix, v) {
+  if (!v) return;
+  if (kind === 'drums') {
+    for (const [voice, params] of Object.entries(v)) {
+      for (const [param, value] of Object.entries(params || {})) node.setParam(`${voice}.${param}`, value);
+    }
+  } else {
+    for (const [param, value] of Object.entries(v)) node.setParam(`${prefix}${param}`, value);
+  }
+}
+
+/**
+ * Accessor for one instrument instance — what every tool works through.
+ * `pattern` / `params` get and set exactly like the legacy session.jb202Pattern
+ * / session.jb202Params proxies did, but for any instance id.
+ */
+function instrumentAccessor(id, type, node) {
+  const def = INSTRUMENT_TYPES[type];
+  const kind = def?.kind || 'mono';
+  const prefix = def?.prefix || '';
+  return {
+    id, type, kind, node,
+    get pattern() { return node.getPattern(); },
+    set pattern(v) { node.setPattern(v); },
+    get params() { return kind === 'drums' ? voiceParamsProxy(node) : flatParamsProxy(node, prefix); },
+    set params(v) { assignParams(node, kind, prefix, v); },
+  };
+}
+
 /**
  * Create a new session with ParamSystem integration
  * @param {Object} config - { bpm, swing, ... }
@@ -187,6 +270,82 @@ export function createSession(config = {}) {
       bass: jb202Node,
       lead: jb202Node,
       synth: jb202Node,
+    },
+
+    // === INSTRUMENT INSTANCES ===
+    // Every instrument that renders. The canonical seven have id === type;
+    // addInstrument() adds more of any non-single type ('jb202-2', 'bass2').
+    instruments: [
+      { id: 'jb01', type: 'jb01' }, { id: 'jb202', type: 'jb202' }, { id: 'jbs', type: 'jbs' },
+      { id: 'jt10', type: 'jt10' }, { id: 'jt30', type: 'jt30' }, { id: 'jt90', type: 'jt90' },
+      { id: 'jp9000', type: 'jp9000' },
+    ],
+
+    listInstruments() {
+      return this.instruments.map(i => ({ ...i }));
+    },
+
+    instrumentType(id) {
+      return this.instruments.find(i => i.id === id)?.type;
+    },
+
+    /** Accessor ({ id, type, kind, node, pattern, params }) or null. */
+    instrument(id) {
+      const entry = this.instruments.find(i => i.id === id);
+      if (!entry) return null;
+      return instrumentAccessor(entry.id, entry.type, this._nodes[entry.id]);
+    },
+
+    /** Public node lookup (tools must not touch _nodes). */
+    getNode(id) {
+      return this._nodes[id] || null;
+    },
+
+    /**
+     * Add another instance of an instrument type.
+     * @param {string} type - 'jb202', 'jt90', ...
+     * @param {string} [id] - defaults to '<type>-2', '<type>-3', ...
+     * @returns {Object} accessor, or { error }
+     */
+    addInstrument(type, id) {
+      const def = INSTRUMENT_TYPES[type];
+      if (!def) return { error: `Unknown instrument type "${type}". Types: ${Object.keys(INSTRUMENT_TYPES).join(', ')}` };
+      if (def.single) return { error: `${type} supports a single instance` };
+      if (!id) {
+        let n = 2;
+        while (this._nodes[`${type}-${n}`]) n++;
+        id = `${type}-${n}`;
+      }
+      if (!ID_RE.test(id)) return { error: `Invalid id "${id}" (lowercase letters, digits, - or _, max 24 chars)` };
+      if (RESERVED_IDS.has(id) || this._nodes[id] || params.nodes.has(id)) return { error: `Id "${id}" is already in use` };
+      const node = new def.Node({ id, sampleRate: config.sampleRate || 44100 });
+      node.setLevel(0);
+      params.register(id, node);
+      this._nodes[id] = node;
+      this.instruments.push({ id, type });
+      if (!this.patterns[id]) this.patterns[id] = {};
+      if (!this.currentPattern[id]) this.currentPattern[id] = 'A';
+      return instrumentAccessor(id, type, node);
+    },
+
+    /** Remove an added instance (the canonical seven can't be removed). */
+    removeInstrument(id) {
+      const entry = this.instruments.find(i => i.id === id);
+      if (!entry) return { error: `No instrument "${id}"` };
+      if (entry.id === entry.type) return { error: `${id} is built in; clear its pattern instead` };
+      params.unregister(id);
+      delete this._nodes[id];
+      this.instruments = this.instruments.filter(i => i.id !== id);
+      delete this.patterns[id];
+      delete this.currentPattern[id];
+      for (const key of Object.keys(this.mixer?.effectChains || {})) {
+        if (key === id || key.startsWith(id + '.')) delete this.mixer.effectChains[key];
+      }
+      for (const section of this.arrangement || []) {
+        if (section.patterns) delete section.patterns[id];
+      }
+      this.routing?.tracks?.delete?.(id);
+      return { ok: true };
     },
 
     // === UNIFIED PARAMETER ACCESS ===
@@ -311,47 +470,7 @@ export function createSession(config = {}) {
 
     // === PARAM ACCESS (proxies to nodes) ===
 
-    get drumParams() {
-      const voices = jb01Node._voices;
-      return new Proxy({}, {
-        get: (_, voice) => {
-          if (typeof voice !== 'string') return undefined;
-          const voiceDescriptors = jb01Node._descriptors;
-          return new Proxy({}, {
-            get: (__, param) => jb01Node.getParam(`${voice}.${param}`),
-            set: (__, param, value) => {
-              jb01Node.setParam(`${voice}.${param}`, value);
-              return true;
-            },
-            ownKeys: () => {
-              return Object.keys(voiceDescriptors)
-                .filter(path => path.startsWith(`${voice}.`))
-                .map(path => path.slice(voice.length + 1));
-            },
-            getOwnPropertyDescriptor: (__, prop) => {
-              const path = `${voice}.${prop}`;
-              if (voiceDescriptors[path] !== undefined || jb01Node.getParam(path) !== undefined) {
-                return { enumerable: true, configurable: true, writable: true };
-              }
-              return undefined;
-            },
-          });
-        },
-        set: (_, voice, params) => {
-          for (const [param, value] of Object.entries(params)) {
-            jb01Node.setParam(`${voice}.${param}`, value);
-          }
-          return true;
-        },
-        ownKeys: () => voices,
-        getOwnPropertyDescriptor: (_, voice) => {
-          if (voices.includes(voice)) {
-            return { enumerable: true, configurable: true, writable: true };
-          }
-          return undefined;
-        },
-      });
-    },
+    get drumParams() { return voiceParamsProxy(jb01Node); },
     set drumParams(v) {
       for (const [voice, params] of Object.entries(v)) {
         for (const [param, value] of Object.entries(params)) {
@@ -363,34 +482,7 @@ export function createSession(config = {}) {
     get jb01Params() { return this.drumParams; },
     set jb01Params(v) { this.drumParams = v; },
 
-    get bassParams() {
-      return new Proxy({}, {
-        get: (_, param) => jb202Node.getParam(`bass.${param}`),
-        set: (_, param, value) => {
-          jb202Node.setParam(`bass.${param}`, value);
-          return true;
-        },
-        ownKeys: () => {
-          return Object.keys(jb202Node.getParameterDescriptors())
-            .map(path => path.replace('bass.', ''));
-        },
-        getOwnPropertyDescriptor: (_, prop) => {
-          const path = `bass.${prop}`;
-          if (jb202Node.getParameterDescriptors()[path] !== undefined) {
-            return { enumerable: true, configurable: true, writable: true };
-          }
-          if (jb202Node.getParam(path) !== undefined) {
-            return { enumerable: true, configurable: true, writable: true };
-          }
-          return undefined;
-        },
-        has: (_, prop) => {
-          const path = `bass.${prop}`;
-          return jb202Node.getParameterDescriptors()[path] !== undefined ||
-                 jb202Node.getParam(path) !== undefined;
-        },
-      });
-    },
+    get bassParams() { return flatParamsProxy(jb202Node, 'bass.'); },
     set bassParams(v) {
       for (const [param, value] of Object.entries(v)) {
         jb202Node.setParam(`bass.${param}`, value);
@@ -434,16 +526,7 @@ export function createSession(config = {}) {
     set samplerParams(v) { this.jbsParams = v; },
 
     // JT10 params (lead synth - single voice 'lead')
-    get jt10Params() {
-      return new Proxy({}, {
-        get: (_, param) => typeof param === 'string' ? jt10Node.getParam(`lead.${param}`) : undefined,
-        set: (_, param, value) => {
-          jt10Node.setParam(`lead.${param}`, value);
-          return true;
-        },
-        ...flatParamTraps(jt10Node, 'lead.'),
-      });
-    },
+    get jt10Params() { return flatParamsProxy(jt10Node, 'lead.'); },
     set jt10Params(v) {
       for (const [param, value] of Object.entries(v)) {
         jt10Node.setParam(`lead.${param}`, value);
@@ -451,16 +534,7 @@ export function createSession(config = {}) {
     },
 
     // JT30 params (acid bass - single voice 'bass')
-    get jt30Params() {
-      return new Proxy({}, {
-        get: (_, param) => typeof param === 'string' ? jt30Node.getParam(`bass.${param}`) : undefined,
-        set: (_, param, value) => {
-          jt30Node.setParam(`bass.${param}`, value);
-          return true;
-        },
-        ...flatParamTraps(jt30Node, 'bass.'),
-      });
-    },
+    get jt30Params() { return flatParamsProxy(jt30Node, 'bass.'); },
     set jt30Params(v) {
       for (const [param, value] of Object.entries(v)) {
         jt30Node.setParam(`bass.${param}`, value);
@@ -468,35 +542,7 @@ export function createSession(config = {}) {
     },
 
     // JT90 params (drum machine - multi-voice)
-    get jt90Params() {
-      const voices = jt90Node._voices;
-      return new Proxy({}, {
-        get: (_, voice) => {
-          if (typeof voice !== 'string') return undefined;
-          return new Proxy({}, {
-            get: (__, param) => typeof param === 'string' ? jt90Node.getParam(`${voice}.${param}`) : undefined,
-            set: (__, param, value) => {
-              jt90Node.setParam(`${voice}.${param}`, value);
-              return true;
-            },
-            ...flatParamTraps(jt90Node, `${voice}.`),
-          });
-        },
-        set: (_, voice, params) => {
-          for (const [param, value] of Object.entries(params)) {
-            jt90Node.setParam(`${voice}.${param}`, value);
-          }
-          return true;
-        },
-        ownKeys: () => voices,
-        getOwnPropertyDescriptor: (_, voice) => {
-          if (voices.includes(voice)) {
-            return { enumerable: true, configurable: true, writable: true };
-          }
-          return undefined;
-        },
-      });
-    },
+    get jt90Params() { return voiceParamsProxy(jt90Node); },
     set jt90Params(v) {
       for (const [voice, params] of Object.entries(v)) {
         for (const [param, value] of Object.entries(params)) {
@@ -588,7 +634,20 @@ export function serializeSession(session) {
     patterns: session.patterns,
     currentPattern: session.currentPattern,
     arrangement: session.arrangement,
+    instruments: session.instruments.map(({ id, type }) => ({ id, type, level: session._nodes[id]?.getLevel?.() ?? 0 })),
   };
+}
+
+/** Recreate added instances (id !== type) and restore every instance level. */
+function restoreInstances(session, data) {
+  for (const inst of data.instruments || []) {
+    if (!inst || inst.id === inst.type) continue;
+    if (!session._nodes[inst.id]) {
+      const r = session.addInstrument(inst.type, inst.id);
+      if (r?.error) { console.warn('[session] could not restore instrument', inst.id, r.error); continue; }
+    }
+    session._nodes[inst.id]?.setLevel?.(inst.level ?? 0);
+  }
 }
 
 /**
@@ -611,6 +670,8 @@ export function deserializeSession(data) {
     jt90Level: data.jt90Level,
     jp9000Level: data.jp9000Level,
   });
+
+  restoreInstances(session, data);
 
   if (data.params) {
     session.params.deserialize(data.params);
@@ -656,6 +717,12 @@ export function restoreSessionInPlace(existingSession, data) {
   existingSession._nodes.jt30.setLevel(data.jt30Level ?? 0);
   existingSession._nodes.jt90.setLevel(data.jt90Level ?? 0);
   existingSession._nodes.jp9000.setLevel(data.jp9000Level ?? 0);
+
+  // Drop instances the saved state doesn't have, recreate the ones it does
+  for (const inst of [...existingSession.instruments]) {
+    if (inst.id !== inst.type && !(data.instruments || []).some(i => i.id === inst.id)) existingSession.removeInstrument(inst.id);
+  }
+  restoreInstances(existingSession, data);
 
   // Deserialize params into existing nodes
   if (data.params) {

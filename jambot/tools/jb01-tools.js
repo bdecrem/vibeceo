@@ -12,6 +12,7 @@
  */
 
 import { registerTools } from './index.js';
+import { resolveInstrument } from './targets.js';
 import { getParamDef, toEngine, fromEngine, formatValue } from '../params/converters.js';
 import { listKits, loadKit, listSequences, loadSequence } from '../presets/loader.js';
 
@@ -39,6 +40,8 @@ const jb01Tools = {
    * Accepts either step arrays (e.g., kick: [0, 4, 8, 12]) or full pattern objects
    */
   add_jb01: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jb01');
+    if (inst.error) return inst.error;
     const bars = input.bars || 1;
     const steps = bars * 16;
     const added = [];
@@ -46,15 +49,15 @@ const jb01Tools = {
     // Clear all voices first if requested (for creating fresh patterns in song mode)
     if (input.clear) {
       for (const voice of VOICES) {
-        session.jb01Pattern[voice] = stepsToPattern([], steps);
+        inst.pattern[voice] = stepsToPattern([], steps);
       }
     }
 
     // If bars > 1 and no existing pattern, resize first
     if (bars > 1) {
       for (const voice of VOICES) {
-        if (!session.jb01Pattern[voice] || session.jb01Pattern[voice].length < steps) {
-          session.jb01Pattern[voice] = stepsToPattern([], steps);
+        if (!inst.pattern[voice] || inst.pattern[voice].length < steps) {
+          inst.pattern[voice] = stepsToPattern([], steps);
         }
       }
     }
@@ -67,15 +70,15 @@ const jb01Tools = {
           // Check if it's a step array (numbers) or pattern array (objects)
           if (data.length > 0 && typeof data[0] === 'number') {
             // Step array: [0, 4, 8, 12]
-            session.jb01Pattern[voice] = stepsToPattern(data, steps);
+            inst.pattern[voice] = stepsToPattern(data, steps);
             added.push(`${voice}: ${data.length} hits`);
           } else {
             // Full pattern array - use as-is (pad if needed)
             if (data.length < steps) {
               const padded = [...data, ...Array(steps - data.length).fill({ velocity: 0, accent: false })];
-              session.jb01Pattern[voice] = padded;
+              inst.pattern[voice] = padded;
             } else {
-              session.jb01Pattern[voice] = data;
+              inst.pattern[voice] = data;
             }
             const activeSteps = data.filter(s => s && s.velocity > 0).length;
             added.push(`${voice}: ${activeSteps} hits`);
@@ -85,9 +88,7 @@ const jb01Tools = {
     }
 
     // Also update the node's pattern
-    if (session._nodes?.jb01) {
-      session._nodes.jb01.setPattern(session.jb01Pattern);
-    }
+    inst.node.setPattern(inst.pattern);
 
     if (added.length === 0) {
       return 'JB01: no pattern changes';
@@ -103,71 +104,73 @@ const jb01Tools = {
    * Accepts producer units: dB for level, semitones for tune, 0-100 for others
    */
   tweak_jb01: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jb01');
+    if (inst.error) return inst.error;
     const voice = input.voice;
     if (!voice || !VOICES.includes(voice)) {
       return `JB01: invalid voice. Use: ${VOICES.join(', ')}`;
     }
 
-    // Params are managed by JB01Node via session.jb01Params proxy
+    // Params are managed by JB01Node via inst.params proxy
     const tweaks = [];
 
     // Mute: convenience alias for level=-60dB, Unmute: restore to 0dB
     if (input.mute === true) {
       const def = getParamDef('jb01', voice, 'level');
-      session.jb01Params[voice].level = def ? toEngine(-60, def) : 0;
+      inst.params[voice].level = def ? toEngine(-60, def) : 0;
       tweaks.push('muted');
     } else if (input.mute === false) {
       const def = getParamDef('jb01', voice, 'level');
-      session.jb01Params[voice].level = def ? toEngine(0, def) : 1;  // 0dB = unity
+      inst.params[voice].level = def ? toEngine(0, def) : 1;  // 0dB = unity
       tweaks.push('unmuted');
     }
 
     // Level: dB → linear
     if (input.level !== undefined) {
       const def = getParamDef('jb01', voice, 'level');
-      session.jb01Params[voice].level = def ? toEngine(input.level, def) : input.level;
+      inst.params[voice].level = def ? toEngine(input.level, def) : input.level;
       tweaks.push(`level=${input.level}dB`);
     }
 
     // Tune: semitones → cents
     if (input.tune !== undefined) {
       // Store as cents (semitones * 100)
-      session.jb01Params[voice].tune = input.tune * 100;
+      inst.params[voice].tune = input.tune * 100;
       tweaks.push(`tune=${input.tune > 0 ? '+' : ''}${input.tune}st`);
     }
 
     // Decay: 0-100 → 0-1
     if (input.decay !== undefined) {
       const def = getParamDef('jb01', voice, 'decay');
-      session.jb01Params[voice].decay = def ? toEngine(input.decay, def) : input.decay / 100;
+      inst.params[voice].decay = def ? toEngine(input.decay, def) : input.decay / 100;
       tweaks.push(`decay=${input.decay}`);
     }
 
     // Attack (kick only): 0-100 → 0-1
     if (input.attack !== undefined && voice === 'kick') {
       const def = getParamDef('jb01', voice, 'attack');
-      session.jb01Params[voice].attack = def ? toEngine(input.attack, def) : input.attack / 100;
+      inst.params[voice].attack = def ? toEngine(input.attack, def) : input.attack / 100;
       tweaks.push(`attack=${input.attack}`);
     }
 
     // Sweep (kick only): 0-100 → 0-1
     if (input.sweep !== undefined && voice === 'kick') {
       const def = getParamDef('jb01', voice, 'sweep');
-      session.jb01Params[voice].sweep = def ? toEngine(input.sweep, def) : input.sweep / 100;
+      inst.params[voice].sweep = def ? toEngine(input.sweep, def) : input.sweep / 100;
       tweaks.push(`sweep=${input.sweep}`);
     }
 
     // Tone: 0-100 → 0-1
     if (input.tone !== undefined) {
       const def = getParamDef('jb01', voice, 'tone');
-      session.jb01Params[voice].tone = def ? toEngine(input.tone, def) : input.tone / 100;
+      inst.params[voice].tone = def ? toEngine(input.tone, def) : input.tone / 100;
       tweaks.push(`tone=${input.tone}`);
     }
 
     // Snappy (snare only): 0-100 → 0-1
     if (input.snappy !== undefined && voice === 'snare') {
       const def = getParamDef('jb01', voice, 'snappy');
-      session.jb01Params[voice].snappy = def ? toEngine(input.snappy, def) : input.snappy / 100;
+      inst.params[voice].snappy = def ? toEngine(input.snappy, def) : input.snappy / 100;
       tweaks.push(`snappy=${input.snappy}`);
     }
 
@@ -194,9 +197,11 @@ const jb01Tools = {
    * Load a JB01 kit (sound preset)
    */
   load_jb01_kit: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jb01');
+    if (inst.error) return inst.error;
     const kitId = input.kit || input.name || 'default';
 
-    // Params are managed by JB01Node via session.jb01Params proxy
+    // Params are managed by JB01Node via inst.params proxy
     let loaded = false;
     const loadedVoices = [];
 
@@ -204,7 +209,7 @@ const jb01Tools = {
       const result = loadKit('jb01', kitId, voice);
       if (!result.error && result.params) {
         // Object.assign works with proxy - triggers set for each param
-        Object.assign(session.jb01Params[voice], result.params);
+        Object.assign(inst.params[voice], result.params);
         loaded = true;
         loadedVoices.push(voice);
       }
@@ -233,6 +238,8 @@ const jb01Tools = {
    * Load a JB01 sequence (pattern preset)
    */
   load_jb01_sequence: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jb01');
+    if (inst.error) return inst.error;
     const seqId = input.sequence || input.name || 'default';
     const result = loadSequence('jb01', seqId);
 
@@ -240,12 +247,12 @@ const jb01Tools = {
       return result.error;
     }
 
-    // Pattern is managed by JB01Node via session.jb01Pattern proxy
+    // Pattern is managed by JB01Node via inst.pattern proxy
     // Apply pattern (result.pattern is a full pattern object)
     if (result.pattern) {
       for (const voice of VOICES) {
         if (result.pattern[voice]) {
-          session.jb01Pattern[voice] = result.pattern[voice];
+          inst.pattern[voice] = result.pattern[voice];
         }
       }
     }
@@ -253,7 +260,7 @@ const jb01Tools = {
     // Count total hits
     let totalHits = 0;
     for (const voice of VOICES) {
-      const pattern = session.jb01Pattern[voice] || [];
+      const pattern = inst.pattern[voice] || [];
       totalHits += pattern.filter(s => s && s.velocity > 0).length;
     }
 
@@ -264,12 +271,14 @@ const jb01Tools = {
    * Show current JB01 state
    */
   show_jb01: async (input, session, context) => {
+    const inst = resolveInstrument(session, input.instrument, 'jb01');
+    if (inst.error) return inst.error;
     const lines = ['JB01 Drum Machine:'];
 
     // Pattern
     lines.push('\nPattern:');
     for (const voice of VOICES) {
-      const pattern = session.jb01Pattern?.[voice] || [];
+      const pattern = inst.pattern?.[voice] || [];
       const hits = pattern.filter(s => s && s.velocity > 0).length;
       if (hits > 0) {
         const steps = pattern.map((s, i) => (s && s.velocity > 0) ? i : null).filter(i => i !== null);
@@ -278,10 +287,10 @@ const jb01Tools = {
     }
 
     // Params (convert engine units to producer-friendly units for display)
-    if (session.jb01Params) {
+    if (inst.params) {
       lines.push('\nParams:');
       for (const voice of VOICES) {
-        const engineParams = session.jb01Params[voice];
+        const engineParams = inst.params[voice];
         if (engineParams && Object.keys(engineParams).length > 0) {
           const paramParts = [];
           for (const [paramName, engineValue] of Object.entries(engineParams)) {

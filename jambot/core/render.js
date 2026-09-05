@@ -290,7 +290,11 @@ export async function renderSessionToBuffer(session, bars) {
   // === RENDER ALL INSTRUMENTS ===
   const instrumentBuffers = []; // { id, buffer, startBar, level }
   const failures = [];          // { id, error } — surfaced in the render message
-  const canonicalIds = ['jb01', 'jb200', 'jb202', 'jp9000', 'jbs', 'jt10', 'jt30', 'jt90'];
+  // Every instrument instance, canonical ones first (session.instruments);
+  // fall back to the fixed list for sessions built without the instance layer.
+  const canonicalIds = typeof session.listInstruments === 'function'
+    ? session.listInstruments().map(i => i.id)
+    : ['jb01', 'jb200', 'jb202', 'jp9000', 'jbs', 'jt10', 'jt30', 'jt90'];
 
   // Build render context for effects that need session data (e.g., sidechain)
   const renderContext = { session, stepDuration };

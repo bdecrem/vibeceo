@@ -39,7 +39,7 @@ function createEmptyPattern(steps = 16) {
 
 export class JB01Node extends InstrumentNode {
   constructor(config = {}) {
-    super('jb01', config);
+    super(config.id || 'jb01', config);
 
     this._voices = VOICES;
 
