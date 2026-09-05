@@ -118,7 +118,8 @@ export function describeSession(session) {
     // Node output level is not in the descriptors — expose it too.
     const level = typeof node.getLevel === 'function' ? node.getLevel() : 0;
 
-    instruments.push({ id, active, voices: activeVoices(pattern), pattern, level, params });
+    const type = typeof session.instrumentType === 'function' ? (session.instrumentType(id) || id) : id;
+    instruments.push({ id, type, active, voices: activeVoices(pattern), pattern, level, params });
   }
 
   const effects = [];

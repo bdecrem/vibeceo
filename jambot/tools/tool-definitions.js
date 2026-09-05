@@ -100,7 +100,7 @@ export const TOOLS = [
   },
   {
     name: "set_arrangement",
-    description: "Set the song arrangement. Each section specifies bars and which pattern each instrument plays. Patterns loop to fill the section. Omit an instrument to silence it for that section.",
+    description: "Set the song arrangement: an ordered list of sections, each with `bars` and one key per instrument instance naming the saved pattern it plays (jb01, jt90, jb202, jt30, jt10, or an added id like jb202-2). Omit an instrument to silence it for that section.",
     input_schema: {
       type: "object",
       properties: {
@@ -162,6 +162,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jb202 instance (default \"jb202\"). Extra instances come from add_instrument, e.g. \"jb202-2\"." },
         pattern: {
           type: "array",
           description: "Array of 16 steps. Each step: {note: 'C2', gate: true, accent: false, slide: false}. Bass range: C1-C3",
@@ -185,6 +186,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jb202 instance (default \"jb202\"). Extra instances come from add_instrument, e.g. \"jb202-2\"." },
         mute: { type: "boolean", description: "Mute bass (sets level to -60dB)" },
         level: { type: "number", description: "Output level in dB (-60 to +6, 0=unity gain)" },
         levelDelta: { type: "number", description: "Relative level adjustment in dB (e.g., -5 to reduce by 5dB, +3 to boost by 3dB)" },
@@ -227,6 +229,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jb202 instance (default \"jb202\"). Extra instances come from add_instrument, e.g. \"jb202-2\"." },
         kit: { type: "string", description: "Kit ID or name (e.g., 'default', 'acid', 'sub')" }
       },
       required: ["kit"]
@@ -247,6 +250,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jb202 instance (default \"jb202\"). Extra instances come from add_instrument, e.g. \"jb202-2\"." },
         sequence: { type: "string", description: "Sequence ID or name (e.g., 'default', 'minimal', 'busy')" }
       },
       required: ["sequence"]
@@ -259,6 +263,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jb01 instance (default \"jb01\"). Extra instances come from add_instrument, e.g. \"jb01-2\"." },
         clear: { type: "boolean", description: "Clear ALL voices first before adding. Use this when creating a fresh pattern for song mode." },
         bars: { type: "number", description: "Pattern length in bars (default 1). Use for multi-bar patterns." },
         kick: { type: "array", items: { type: "number" }, description: "Kick steps (0-15 for 1 bar)" },
@@ -279,6 +284,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jb01 instance (default \"jb01\"). Extra instances come from add_instrument, e.g. \"jb01-2\"." },
         voice: { type: "string", enum: ["kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Voice to tweak (required)" },
         mute: { type: "boolean", description: "Mute voice (sets level to -60dB)" },
         level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity" },
@@ -307,6 +313,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jb01 instance (default \"jb01\"). Extra instances come from add_instrument, e.g. \"jb01-2\"." },
         kit: { type: "string", description: "Kit ID to load" }
       },
       required: ["kit"]
@@ -327,6 +334,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jb01 instance (default \"jb01\"). Extra instances come from add_instrument, e.g. \"jb01-2\"." },
         sequence: { type: "string", description: "Sequence ID to load" }
       },
       required: ["sequence"]
@@ -338,6 +346,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {},
+        instrument: { type: "string", description: "Which jb01 instance (default \"jb01\"). Extra instances come from add_instrument, e.g. \"jb01-2\"." },
       required: []
     }
   },
@@ -348,6 +357,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jt10 instance (default \"jt10\"). Extra instances come from add_instrument, e.g. \"jt10-2\"." },
         pattern: {
           type: "array",
           description: "Array of steps. Each step: {note: 'C3', gate: true, accent: false, slide: false}. Lead range: C2-C5",
@@ -372,6 +382,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jt10 instance (default \"jt10\"). Extra instances come from add_instrument, e.g. \"jt10-2\"." },
         mute: { type: "boolean", description: "Mute lead (sets level to -60dB)" },
         level: { type: "number", description: "Output level in dB (-60 to +6, 0=unity gain)" },
         sawLevel: { type: "number", description: "Sawtooth oscillator level 0-100" },
@@ -407,6 +418,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jt30 instance (default \"jt30\"). Extra instances come from add_instrument, e.g. \"jt30-2\"." },
         pattern: {
           type: "array",
           description: "Array of 16 steps. Each step: {note: 'C2', gate: true, accent: false, slide: false}. Bass range: C1-C3",
@@ -430,6 +442,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jt30 instance (default \"jt30\"). Extra instances come from add_instrument, e.g. \"jt30-2\"." },
         mute: { type: "boolean", description: "Mute bass (sets level to -60dB)" },
         level: { type: "number", description: "Output level in dB (-60 to +6, 0=unity gain)" },
         waveform: { type: "string", enum: ["sawtooth", "square"], description: "Oscillator waveform" },
@@ -450,6 +463,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jt90 instance (default \"jt90\"). Extra instances come from add_instrument, e.g. \"jt90-2\"." },
         clear: { type: "boolean", description: "Clear ALL voices first before adding" },
         bars: { type: "number", description: "Pattern length in bars (default 1)" },
         kick: { type: "array", items: { type: "number" }, description: "Kick steps (0-15 for 1 bar)" },
@@ -473,6 +487,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
+        instrument: { type: "string", description: "Which jt90 instance (default \"jt90\"). Extra instances come from add_instrument, e.g. \"jt90-2\"." },
         voice: { type: "string", enum: ["kick", "snare", "clap", "rimshot", "lowtom", "midtom", "hitom", "ch", "oh", "crash", "ride"], description: "Voice to tweak (required)" },
         mute: { type: "boolean", description: "Mute voice (sets level to -60dB)" },
         level: { type: "number", description: "Volume in dB (-60 to +6, 0=unity)" },
@@ -1330,5 +1345,31 @@ export const TOOLS = [
       },
       required: ["track"]
     }
-  }
+  },
+  {
+    name: "add_instrument",
+    description: "Add another instance of an instrument so the same synth can play two parts (e.g. two JB202s: a sub and a lead). Returns the new id (default '<type>-2'); every tool then takes it as `instrument`, param paths start with it (jb202-2.filterCutoff), effects target it, arrangements key on it.",
+    input_schema: {
+      type: "object",
+      properties: {
+        type: { type: "string", description: "Instrument type: jb01, jt90, jb202, jt30, jt10" },
+        id: { type: "string", description: "Optional id (lowercase, e.g. 'lead2'). Default: type-2, type-3, ..." }
+      },
+      required: ["type"]
+    }
+  },
+  {
+    name: "remove_instrument",
+    description: "Remove an added instrument instance (not the built-in ones). Drops its patterns, effects and arrangement slots.",
+    input_schema: {
+      type: "object",
+      properties: { id: { type: "string", description: "Instance id, e.g. 'jb202-2'" } },
+      required: ["id"]
+    }
+  },
+  {
+    name: "list_instruments",
+    description: "List every instrument instance in the session with its type, whether it is programmed, and its level.",
+    input_schema: { type: "object", properties: {} }
+  },
 ];

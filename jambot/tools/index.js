@@ -51,6 +51,7 @@ export const DEFAULT_TOOL_MODULES = [
   () => import('./jt-tools.js'),
   () => import('./automation-tools.js'),
   () => import('./routing-tools.js'),
+  () => import('./instrument-tools.js'),
 ];
 
 /**

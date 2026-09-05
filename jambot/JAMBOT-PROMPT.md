@@ -127,6 +127,17 @@ Rigs: `save_jp9000_rig` / `load_jp9000_rig` / `list_jp9000_rigs`.
    chromatic pitch), `jbs.s1.decay`, `jbs.s1.pan`
 4. `create_jbs_kit` scans a folder to build a new kit (then auto-loads)
 
+## MULTIPLE INSTANCES
+
+One of each instrument exists by default. For two parts on the same synth
+(two JB202s, two JT90 kits, a second acid line) call
+`add_instrument({ type: 'jb202' })` → id `jb202-2` (or pass `id: 'lead2'`).
+Then use that id everywhere: `add_jb202({ instrument: 'jb202-2', pattern })`,
+`tweak({ path: 'jb202-2.filterCutoff', value: 900 })`, `add_effect({ target:
+'jb202-2', ... })`, `save_pattern({ instrument: 'jb202-2', name: 'A' })`,
+`set_arrangement({ sections: [{ bars: 4, jb202: 'A', 'jb202-2': 'A' }] })`.
+`list_instruments` shows what exists. jp9000 and jbs are single-instance.
+
 ## SONG MODE
 
 - `save_pattern` / `load_pattern`: named slots (A, B, C) per instrument — captures pattern + params + automation

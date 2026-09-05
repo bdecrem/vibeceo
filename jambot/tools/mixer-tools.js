@@ -55,6 +55,7 @@ function canonicalTargetId(session, target) {
   const tail = dot === -1 ? '' : target.slice(dot); // includes leading '.'
 
   if (CANONICAL_IDS.includes(head)) return target;
+  if (session?.instrument?.(head)) return target;   // added instance, e.g. 'jb202-2'
 
   const node = nodes.get(head);
   if (!node) return target; // unknown alias — leave as-is
