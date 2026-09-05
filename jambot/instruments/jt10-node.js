@@ -11,7 +11,7 @@
  * Produces identical output in Web Audio (browser) and WAV rendering (Node.js).
  */
 
-import { InstrumentNode } from '../core/node.js';
+import { InstrumentNode, coerceChoice } from '../core/node.js';
 import { OfflineAudioContext } from 'node-web-audio-api';
 import { toEngine } from '../params/converters.js';
 
@@ -39,7 +39,7 @@ function createEmptyPattern(steps = 16) {
 // takes any path the agent invents; before this, an unknown name such as
 // 'lead.filterCutoff' was stored under a key no engine reads and
 // reported success — the classic "I changed the filter and nothing happened".
-const PARAM_ALIASES = {"filterCutoff": "cutoff", "filterResonance": "resonance", "filterEnvAmount": "envMod", "envAmount": "envMod"};
+const PARAM_ALIASES = {"filterCutoff": "cutoff", "filterResonance": "resonance", "filterEnvAmount": "envMod", "envAmount": "envMod", "ampAttack": "attack", "ampDecay": "decay", "ampSustain": "sustain", "ampRelease": "release"};
 function normalizePath(path) {
   let p = path.startsWith('lead.') ? path.slice(5) : path;
   p = PARAM_ALIASES[p] || p;
@@ -124,6 +124,15 @@ export class JT10Node extends InstrumentNode {
     if (!this._descriptors[normalizedPath]) {
       console.warn(`${this.id}: unknown parameter "${path}" (valid: ${Object.keys(this._descriptors).map(k => k.split('.').pop()).join(', ')})`);
       return false;
+    }
+    const descriptor = this._descriptors[normalizedPath];
+    if (descriptor.unit === 'choice') {
+      const v = coerceChoice(descriptor, value);
+      if (v === undefined) {
+        console.warn(`${this.id}: "${path}" must be one of ${(descriptor.options || []).join('|')}, got ${JSON.stringify(value)}`);
+        return false;
+      }
+      value = v;
     }
     this._params[normalizedPath] = value;
     return true;

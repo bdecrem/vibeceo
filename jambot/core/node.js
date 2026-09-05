@@ -14,6 +14,27 @@
  * Base Node class
  * Implements parameter access for any component
  */
+/**
+ * Validate / coerce a value for a 'choice' descriptor.
+ * Accepts the option name, or a numeric index into options (agents often
+ * send 0 for "sawtooth"). Returns undefined when the value is not a valid
+ * choice — callers must refuse the write, never store it: a bad waveform
+ * silently killed every JB202 render in song mode.
+ */
+export function coerceChoice(descriptor, value) {
+  const options = descriptor?.options || descriptor?.choices;
+  if (!Array.isArray(options) || options.length === 0) return value;
+  if (options.includes(value)) return value;
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < options.length) {
+    return options[value];
+  }
+  if (typeof value === 'string') {
+    const hit = options.find(o => String(o).toLowerCase() === value.toLowerCase());
+    if (hit !== undefined) return hit;
+  }
+  return undefined;
+}
+
 export class Node {
   /**
    * @param {string} id - Unique identifier for this node
@@ -52,6 +73,14 @@ export class Node {
 
     // Validate against descriptor if present
     if (descriptor) {
+      if (descriptor.unit === 'choice') {
+        const v = coerceChoice(descriptor, value);
+        if (v === undefined) {
+          console.warn(`${this.id}: "${path}" must be one of ${(descriptor.options || []).join('|')}, got ${JSON.stringify(value)}`);
+          return false;
+        }
+        value = v;
+      }
       if (descriptor.min !== undefined && value < descriptor.min) {
         value = descriptor.min;
       }

@@ -21,9 +21,9 @@ export class DelayNode extends EffectNode {
 
     // Register all delay parameters
     this.registerParams({
-      mode: { min: 0, max: 1, default: 0, unit: 'choice', choices: ['analog', 'pingpong'], description: 'Delay type (0=analog, 1=pingpong)' },
+      mode: { default: 'analog', unit: 'choice', options: ['analog', 'pingpong'], description: 'Delay type' },
       time: { min: 1, max: 2000, default: 375, unit: 'ms', description: 'Delay time' },
-      sync: { min: 0, max: 5, default: 0, unit: 'choice', choices: ['off', '8th', 'dotted8th', 'triplet8th', '16th', 'quarter'], description: 'Tempo sync mode' },
+      sync: { default: 'off', unit: 'choice', options: ['off', '8th', 'dotted8th', 'triplet8th', '16th', 'quarter'], description: 'Tempo sync mode' },
       feedback: { min: 0, max: 100, default: 50, unit: '0-100', description: 'Feedback amount' },
       mix: { min: 0, max: 100, default: 30, unit: '0-100', description: 'Wet/dry balance' },
       lowcut: { min: 20, max: 500, default: 80, unit: 'Hz', description: 'Remove mud from feedback' },

@@ -12,7 +12,7 @@
  * Supports variable pattern lengths (default 16 steps = 1 bar).
  */
 
-import { InstrumentNode } from '../core/node.js';
+import { InstrumentNode, coerceChoice } from '../core/node.js';
 import { JB202_PARAMS, toEngine, fromEngine } from '../params/converters.js';
 import { JB202Engine } from '../../web/public/jb202/dist/machines/jb202/engine.js';
 import { OfflineAudioContext } from 'node-web-audio-api';
@@ -144,6 +144,15 @@ export class JB202Node extends InstrumentNode {
     if (!this._descriptors[normalizedPath]) {
       console.warn(`${this.id}: unknown parameter "${path}" (valid: ${Object.keys(this._descriptors).map(k => k.split('.').pop()).join(', ')})`);
       return false;
+    }
+    const descriptor = this._descriptors[normalizedPath];
+    if (descriptor.unit === 'choice') {
+      const v = coerceChoice(descriptor, value);
+      if (v === undefined) {
+        console.warn(`${this.id}: "${path}" must be one of ${(descriptor.options || []).join('|')}, got ${JSON.stringify(value)}`);
+        return false;
+      }
+      value = v;
     }
     this._params[normalizedPath] = value;
     return true;
