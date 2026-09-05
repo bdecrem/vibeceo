@@ -24,7 +24,7 @@ function nodeStoresProducerUnits(session, path) {
 const SESSION_PARAMS = {
   bpm:   { min: 40, max: 300, unit: 'BPM',   get: s => s.bpm,   set: (s, v) => { s.bpm = v; } },
   swing: { min: 0,  max: 100, unit: '%',     get: s => s.swing, set: (s, v) => { s.swing = v; } },
-  bars:  { min: 1,  max: 64,  unit: 'bars',  get: s => s.bars,  set: (s, v) => { s.bars = Math.round(v); } },
+  bars:  { min: 1,  max: 128, unit: 'bars',  get: s => s.bars,  set: (s, v) => { s.bars = Math.round(v); } },
 };
 
 function sessionParam(session, path, value, delta) {
