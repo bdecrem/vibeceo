@@ -153,7 +153,14 @@ export class Node {
    */
   deserialize(data) {
     if (data.params) {
-      this._params = { ...data.params };
+      const params = { ...data.params };
+      // Saved state may predate choice validation (a waveform stored as 0).
+      for (const [path, d] of Object.entries(this._descriptors)) {
+        if (d?.unit !== 'choice' || !(path in params)) continue;
+        const v = coerceChoice(d, params[path]);
+        params[path] = v === undefined ? d.default : v;
+      }
+      this._params = params;
     }
   }
 }
