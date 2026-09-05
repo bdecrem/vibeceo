@@ -33,6 +33,17 @@ function createEmptyPattern(steps = 16) {
   }));
 }
 
+// Producer-facing aliases → canonical param names. The generic `tweak` tool
+// takes any path the agent invents; before this, an unknown name such as
+// 'bass.cutoff' was stored under a key no engine reads and
+// reported success — the classic "I changed the filter and nothing happened".
+const PARAM_ALIASES = {"cutoff": "filterCutoff", "resonance": "filterResonance", "envMod": "filterEnvAmount", "envAmount": "filterEnvAmount"};
+function normalizePath(path) {
+  let p = path.startsWith('bass.') ? path.slice(5) : path;
+  p = PARAM_ALIASES[p] || p;
+  return `bass.${p}`;
+}
+
 export class JB202Node extends InstrumentNode {
   constructor(config = {}) {
     super('jb202', config);
@@ -83,7 +94,7 @@ export class JB202Node extends InstrumentNode {
    */
   getDescriptor(path) {
     if (path === 'level') return super.getDescriptor(path);
-    const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
+    const normalizedPath = normalizePath(path);
     return this._descriptors[normalizedPath] || super.getDescriptor(path);
   }
 
@@ -98,7 +109,7 @@ export class JB202Node extends InstrumentNode {
       return super.getParam(path);
     }
     // Normalize path - add 'bass.' prefix if missing
-    const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
+    const normalizedPath = normalizePath(path);
     return this._params[normalizedPath];
   }
 
@@ -116,7 +127,7 @@ export class JB202Node extends InstrumentNode {
     }
 
     // Normalize path
-    const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
+    const normalizedPath = normalizePath(path);
 
     // Handle mute — set node level to minimum dB
     if (normalizedPath === 'bass.mute' || path === 'mute') {
@@ -130,6 +141,10 @@ export class JB202Node extends InstrumentNode {
     // The descriptors have producer-friendly ranges (Hz, dB, etc.)
     // but we store engine units (0-1), so clamping against those ranges would be wrong.
     // Tools are responsible for validation before conversion.
+    if (!this._descriptors[normalizedPath]) {
+      console.warn(`${this.id}: unknown parameter "${path}" (valid: ${Object.keys(this._descriptors).map(k => k.split('.').pop()).join(', ')})`);
+      return false;
+    }
     this._params[normalizedPath] = value;
     return true;
   }
@@ -141,7 +156,7 @@ export class JB202Node extends InstrumentNode {
    * @returns {number}
    */
   getEngineParam(path) {
-    const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
+    const normalizedPath = normalizePath(path);
     return this._params[normalizedPath];
   }
 

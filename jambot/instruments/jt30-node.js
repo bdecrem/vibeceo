@@ -35,6 +35,17 @@ function createEmptyPattern(steps = 16) {
   }));
 }
 
+// Producer-facing aliases → canonical param names. The generic `tweak` tool
+// takes any path the agent invents; before this, an unknown name such as
+// 'bass.filterCutoff' was stored under a key no engine reads and
+// reported success — the classic "I changed the filter and nothing happened".
+const PARAM_ALIASES = {"filterCutoff": "cutoff", "filterResonance": "resonance", "filterEnvAmount": "envMod", "filterDecay": "decay", "envAmount": "envMod"};
+function normalizePath(path) {
+  let p = path.startsWith('bass.') ? path.slice(5) : path;
+  p = PARAM_ALIASES[p] || p;
+  return `bass.${p}`;
+}
+
 export class JT30Node extends InstrumentNode {
   constructor(config = {}) {
     super('jt30', config);
@@ -77,7 +88,7 @@ export class JT30Node extends InstrumentNode {
    */
   getDescriptor(path) {
     if (path === 'level') return super.getDescriptor(path);
-    const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
+    const normalizedPath = normalizePath(path);
     return this._descriptors[normalizedPath] || super.getDescriptor(path);
   }
 
@@ -86,7 +97,7 @@ export class JT30Node extends InstrumentNode {
    */
   getParam(path) {
     if (path === 'level') return super.getParam(path);
-    const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
+    const normalizedPath = normalizePath(path);
     return this._params[normalizedPath];
   }
 
@@ -96,7 +107,7 @@ export class JT30Node extends InstrumentNode {
   setParam(path, value) {
     if (path === 'level') return super.setParam(path, value);
 
-    const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
+    const normalizedPath = normalizePath(path);
 
     if (normalizedPath === 'bass.mute' || path === 'mute') {
       if (value) {
@@ -105,6 +116,10 @@ export class JT30Node extends InstrumentNode {
       return true;
     }
 
+    if (!this._descriptors[normalizedPath]) {
+      console.warn(`${this.id}: unknown parameter "${path}" (valid: ${Object.keys(this._descriptors).map(k => k.split('.').pop()).join(', ')})`);
+      return false;
+    }
     this._params[normalizedPath] = value;
     return true;
   }
@@ -113,7 +128,7 @@ export class JT30Node extends InstrumentNode {
    * Get engine param
    */
   getEngineParam(path) {
-    const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
+    const normalizedPath = normalizePath(path);
     return this._params[normalizedPath];
   }
 

@@ -477,6 +477,26 @@ export async function renderSessionToBuffer(session, bars) {
     }
   }
 
+  // === PEAK SAFETY ===
+  // Instruments are summed with no limiter; three loud sources easily push
+  // past 0 dBFS and the WAV/MP3 would clip. Scale the whole mix down to
+  // -0.2 dBFS when it exceeds it — a gain change, so dynamics are untouched.
+  let peak = 0;
+  for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {
+    const d = outputBuffer.getChannelData(ch);
+    for (let i = 0; i < d.length; i++) { const v = d[i] < 0 ? -d[i] : d[i]; if (v > peak) peak = v; }
+  }
+  const CEILING = 0.977; // -0.2 dBFS
+  let trimDb = 0;
+  if (peak > CEILING) {
+    const g = CEILING / peak;
+    trimDb = 20 * Math.log10(g);
+    for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {
+      const d = outputBuffer.getChannelData(ch);
+      for (let i = 0; i < d.length; i++) d[i] *= g;
+    }
+  }
+
   // Build output message
   const synths = instrumentBuffers
     .map(b => b.id.toUpperCase())
@@ -490,7 +510,9 @@ export async function renderSessionToBuffer(session, bars) {
     message = `Rendered ${renderBars} bars at ${session.bpm} BPM (${synths.join('+') || 'empty'})`;
   }
 
-  return { buffer: outputBuffer, message, bars: renderBars, synths, hasArrangement };
+  if (trimDb < 0) message += ` — mix trimmed ${trimDb.toFixed(1)} dB to avoid clipping; lower some levels`;
+
+  return { buffer: outputBuffer, message, bars: renderBars, synths, hasArrangement, peak, trimDb };
 }
 
 /**

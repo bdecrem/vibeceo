@@ -35,6 +35,17 @@ function createEmptyPattern(steps = 16) {
   }));
 }
 
+// Producer-facing aliases → canonical param names. The generic `tweak` tool
+// takes any path the agent invents; before this, an unknown name such as
+// 'lead.filterCutoff' was stored under a key no engine reads and
+// reported success — the classic "I changed the filter and nothing happened".
+const PARAM_ALIASES = {"filterCutoff": "cutoff", "filterResonance": "resonance", "filterEnvAmount": "envMod", "envAmount": "envMod"};
+function normalizePath(path) {
+  let p = path.startsWith('lead.') ? path.slice(5) : path;
+  p = PARAM_ALIASES[p] || p;
+  return `lead.${p}`;
+}
+
 export class JT10Node extends InstrumentNode {
   constructor(config = {}) {
     super('jt10', config);
@@ -82,7 +93,7 @@ export class JT10Node extends InstrumentNode {
    */
   getDescriptor(path) {
     if (path === 'level') return super.getDescriptor(path);
-    const normalizedPath = path.startsWith('lead.') ? path : `lead.${path}`;
+    const normalizedPath = normalizePath(path);
     return this._descriptors[normalizedPath] || super.getDescriptor(path);
   }
 
@@ -91,7 +102,7 @@ export class JT10Node extends InstrumentNode {
    */
   getParam(path) {
     if (path === 'level') return super.getParam(path);
-    const normalizedPath = path.startsWith('lead.') ? path : `lead.${path}`;
+    const normalizedPath = normalizePath(path);
     return this._params[normalizedPath];
   }
 
@@ -101,7 +112,7 @@ export class JT10Node extends InstrumentNode {
   setParam(path, value) {
     if (path === 'level') return super.setParam(path, value);
 
-    const normalizedPath = path.startsWith('lead.') ? path : `lead.${path}`;
+    const normalizedPath = normalizePath(path);
 
     if (normalizedPath === 'lead.mute' || path === 'mute') {
       if (value) {
@@ -110,6 +121,10 @@ export class JT10Node extends InstrumentNode {
       return true;
     }
 
+    if (!this._descriptors[normalizedPath]) {
+      console.warn(`${this.id}: unknown parameter "${path}" (valid: ${Object.keys(this._descriptors).map(k => k.split('.').pop()).join(', ')})`);
+      return false;
+    }
     this._params[normalizedPath] = value;
     return true;
   }
@@ -118,7 +133,7 @@ export class JT10Node extends InstrumentNode {
    * Get engine param
    */
   getEngineParam(path) {
-    const normalizedPath = path.startsWith('lead.') ? path : `lead.${path}`;
+    const normalizedPath = normalizePath(path);
     return this._params[normalizedPath];
   }
 

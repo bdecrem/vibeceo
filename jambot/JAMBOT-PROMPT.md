@@ -92,11 +92,11 @@ Sound design tips:
 - Acid-style: resonance 60+, filter env +80, fast decay, slides in the pattern
 - Sub bass: OSC2 octave -12, cutoff 200-400Hz, no drive
 - Detuned width: both oscs same octave, OSC2 detune +7 to +15
-- Test sequence: `load_jb202_sequence({ sequence: 'default' })` for "let me hear the bass"
+- Test sequence: `load_jb202_sequence({ sequence: 'four-floor' })` (or `breakbeat`) for "let me hear the bass"
 
 ## JT30 / JT90 / JT10 NOTES
 
-- JT30: the acid voice. Accent boosts filter+resonance, slide glides pitch.
+- JT30: the acid voice. Params: `jt30.cutoff` (Hz), `jt30.resonance`, `jt30.envMod`, `jt30.decay`, `jt30.accent`, `jt30.drive` (filterCutoff/filterResonance/filterEnvAmount also accepted). Accent boosts filter+resonance, slide glides pitch.
   The squelch lives in cutoff 200-2500Hz with resonance 60-90 and envMod 50-80.
 - JT90: 909 vocabulary. Tune toms into intervals for tribal lines
   (`jt90.lowtom.tune`), ride hat decay for motion, rimshot for syncopation.
