@@ -18,7 +18,41 @@ function nodeStoresProducerUnits(session, path) {
   return !!(resolved && resolved.node && resolved.node.producerUnitStorage);
 }
 
+// Session-level "parameters" that aren't on any node. Agents reach for
+// tweak({ path: 'bpm' }) naturally; without this they fall back to
+// create_session, which wipes the whole track.
+const SESSION_PARAMS = {
+  bpm:   { min: 40, max: 300, unit: 'BPM',   get: s => s.bpm,   set: (s, v) => { s.bpm = v; } },
+  swing: { min: 0,  max: 100, unit: '%',     get: s => s.swing, set: (s, v) => { s.swing = v; } },
+  bars:  { min: 1,  max: 64,  unit: 'bars',  get: s => s.bars,  set: (s, v) => { s.bars = Math.round(v); } },
+};
+
+function sessionParam(session, path, value, delta) {
+  const def = SESSION_PARAMS[path];
+  if (!def) return null;
+  if (value === undefined && delta === undefined) {
+    return `${path} = ${def.get(session)} ${def.unit}`;
+  }
+  let v = delta !== undefined ? (def.get(session) || 0) + delta : value;
+  if (typeof v !== 'number' || !isFinite(v)) return `Error: ${path} needs a number`;
+  v = Math.max(def.min, Math.min(def.max, v));
+  def.set(session, v);
+  return `Set ${path} = ${def.get(session)} ${def.unit}`;
+}
+
 const genericTools = {
+  /**
+   * Change tempo of the current track (keeps everything else).
+   * Same as tweak({ path: 'bpm' }); exists so the agent never reaches for
+   * create_session (which wipes the track) to change tempo.
+   */
+  set_bpm: async (input, session, context) => {
+    const bpm = Number(input.bpm);
+    if (!isFinite(bpm) || bpm < 40 || bpm > 300) return 'Error: bpm must be 40-300';
+    session.bpm = bpm;
+    return `Tempo set to ${session.bpm} BPM`;
+  },
+
   /**
    * Get any parameter value (returns producer-friendly units)
    *
@@ -33,6 +67,8 @@ const genericTools = {
     if (!path) {
       return 'Error: path required (e.g., "drums.kick.decay")';
     }
+
+    if (SESSION_PARAMS[path]) return sessionParam(session, path);
 
     const value = session.get(path);
 
@@ -93,6 +129,8 @@ const genericTools = {
     if (value === undefined && delta === undefined) {
       return 'Error: value or delta required';
     }
+
+    if (SESSION_PARAMS[path]) return sessionParam(session, path, value, delta);
 
     // Validate node exists — use the resolver, node ids can be multi-segment
     // (effect nodes register as 'fx.<target>.<id>')
@@ -156,6 +194,7 @@ const genericTools = {
 
     const results = [];
     for (const [path, value] of Object.entries(params)) {
+      if (SESSION_PARAMS[path]) { results.push(sessionParam(session, path, value)); continue; }
       // Get descriptor for unit conversion
       const descriptor = session.getDescriptor(path);
 

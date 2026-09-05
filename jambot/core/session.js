@@ -142,8 +142,11 @@ export function createSession(config = {}) {
     get bpm() { return clock.bpm; },
     set bpm(v) { clock.bpm = v; },
 
-    get swing() { return clock.swing; },
-    set swing(v) { clock.swing = v; },
+    // Producer-facing swing is 0-100 (%); the clock stores 0-1. set_swing,
+    // tweak('swing'), status and the UI all speak percent — without this
+    // conversion any amount >= 1 clamped to full shuffle inside the clock.
+    get swing() { return Math.round(clock.swing * 100); },
+    set swing(v) { clock.swing = (Number(v) || 0) / 100; },
 
     // Bars for render length
     bars: config.bars || 2,

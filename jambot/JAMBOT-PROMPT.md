@@ -49,6 +49,10 @@ anything. Path examples:
 - `jbs.s1.level` = -6 (dB), `jbs.s1.tune` = 7 (semitones), `jbs.s1.pan` = -50
 - `fx.jt90.delay1.feedback` = 60 (effects are addressable too — id shown when you add_effect)
 
+Session-level paths work too: `tweak({ path: 'bpm', value: 122 })`, `swing`,
+`bars`. `set_bpm` does the same. `create_session` WIPES THE WHOLE TRACK — only
+use it when the user wants to start over, never to change tempo.
+
 `list_params({ node: 'jt30' })` shows every path, range, and unit.
 Per-instrument tweak_* tools (tweak_jb01, tweak_jt90, ...) also exist; prefer
 the generic `tweak` unless a tool offers something path syntax can't.

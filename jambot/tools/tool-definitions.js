@@ -8,11 +8,22 @@
 export const TOOLS = [
   {
     name: "create_session",
-    description: "Create a new music session with a specific BPM",
+    description: "Start over: reset EVERY instrument, pattern, effect and arrangement and begin a new empty session at the given BPM. Never use this to change the tempo of an existing track — use set_bpm (or tweak with path 'bpm') for that.",
     input_schema: {
       type: "object",
       properties: {
         bpm: { type: "number", description: "Beats per minute (60-200)" }
+      },
+      required: ["bpm"]
+    }
+  },
+  {
+    name: "set_bpm",
+    description: "Change the tempo of the current track. Keeps all patterns, sounds and effects.",
+    input_schema: {
+      type: "object",
+      properties: {
+        bpm: { type: "number", description: "Beats per minute (40-300)" }
       },
       required: ["bpm"]
     }
