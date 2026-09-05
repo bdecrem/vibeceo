@@ -38,6 +38,15 @@ node jambot/tests/run-tests.js
 
 If any test fails, fix the issue before committing. Do not skip or ignore failures.
 
+## Browser bundle (hilma /jam)
+
+`hilma/scripts/jam/build-jambot.mjs` esbuilds this folder for the browser (`hilma/public/jam/jambot-web.js`, committed there). It works because the only Node-specific code is file IO around presets/kits and sox; `fs`/`path`/`os` are shimmed and `node-web-audio-api` maps to the browser's own `OfflineAudioContext`. Keep it that way:
+
+- Don't add Node builtins to `core/`, `instruments/`, `effects/*.js` (the pure processors), `params/`, `presets/loader.js`, or the tool modules other than jbs/sampler/analyze/render-tools. If a tool genuinely needs the file system, put it in one of those excluded modules or a new one and add it to `EXCLUDED_TOOL_MODULES` in the hilma build script.
+- `renderSessionToBuffer(session, bars)` is the file-free render; `renderSession(session, bars, filename)` wraps it for the CLI.
+- `initializeTools(modules)` takes a module list so the bundle can skip fs/sox tools.
+- After a jambot change that the web app should pick up: commit here, then in hilma run `pnpm jam:build` and commit the bundle.
+
 ## Headless API (For Other Agents)
 
 `headless.js` exposes Jambot's full tool layer without the Claude agent loop or TUI. Use this when driving Jambot programmatically from another agent or script.
@@ -71,7 +80,9 @@ jb.load(state);
 ## Architecture
 
 Core files:
-- `jambot.js` — Agent loop, tools, WAV encoder, synth integration
+- `core/agent.js` — **The agent loop.** Platform-agnostic: takes an `llm` function (one Messages call), a tool executor, tool defs and a system prompt. Same loop for the terminal UI, headless callers and the hilma web app (`hilma/src/app/jam`). Prompt caching on the static system block + tool schemas, 8192 max_tokens, iteration cap, tool exceptions → `is_error` tool_results, clean stop on every stop_reason. Tests: `tests/test-agent-loop.js` (mock LLM).
+- `core/status.js` — session context for the agent (`buildSessionContext`, generic over every registered instrument) and `describeSession()` (JSON model UIs build controls from).
+- `jambot.js` — CLI adapter: API key handling, Anthropic SDK plugged into `runAgent`, guides/help text
 - `headless.js` — Headless API for programmatic access (no agent loop)
 - `ui.tsx` — Ink-based terminal UI
 - `project.js` — Project persistence
