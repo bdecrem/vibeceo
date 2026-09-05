@@ -21,7 +21,9 @@ export const CANONICAL_INSTRUMENTS = ['jb01', 'jt90', 'jb202', 'jt30', 'jt10', '
  */
 export function patternHasContent(pattern) {
   if (!pattern) return false;
-  const stepHit = s => !!s && (s.gate === true || (typeof s.velocity === 'number' && s.velocity > 0));
+  // Mono-synth steps carry a gate (velocity is just accent weight); drum /
+  // sampler steps carry only a velocity.
+  const stepHit = s => !!s && ('gate' in s ? s.gate === true : (typeof s.velocity === 'number' && s.velocity > 0));
   if (Array.isArray(pattern)) return pattern.some(stepHit);
   if (typeof pattern === 'object') {
     return Object.values(pattern).some(v => Array.isArray(v) && v.some(stepHit));
@@ -88,14 +90,14 @@ export function formatProducerValue(value, descriptor) {
  */
 export function describeSession(session) {
   const instruments = [];
-  const seen = new Set();
+  const seenNodes = new Set();   // aliases (drums→jb01, bass→jb202) share a node
   const ids = [...CANONICAL_INSTRUMENTS, ...Object.keys(session._nodes || {})];
 
   for (const id of ids) {
-    if (seen.has(id)) continue;
     const node = session._nodes?.[id];
     if (!node || typeof node.getPattern !== 'function') continue;
-    seen.add(id);
+    if (seenNodes.has(node)) continue;
+    seenNodes.add(node);
 
     const pattern = safe(() => node.getPattern());
     const active = patternHasContent(pattern);
@@ -106,9 +108,10 @@ export function describeSession(session) {
       const value = safe(() => readProducerValue(session, path));
       if (value === undefined) continue;
       const isDefault = descriptor.default === undefined
-        || descriptor.unit === 'choice'
-        ? value === descriptor.default
-        : Math.abs(value - descriptor.default) < 0.5;
+        ? true
+        : descriptor.unit === 'choice' || typeof value !== 'number'
+          ? value === descriptor.default
+          : Math.abs(value - descriptor.default) < 0.5;
       params.push({ path, sub, value, descriptor, isDefault });
     }
     // Node output level is not in the descriptors — expose it too.
