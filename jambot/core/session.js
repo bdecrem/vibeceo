@@ -50,7 +50,10 @@ function serializeEffectChains(effectChains) {
     result[target] = chain.map(e => ({
       id: e.id,
       type: e.type,
-      params: { ...e.params },
+      // The node holds the live values; the static `params` object is whatever
+      // add_effect received (often {}). Saving the static one reset every
+      // delay/reverb to defaults on reload.
+      params: e._node && typeof e._node.getParams === 'function' ? { ...e._node.getParams() } : { ...e.params },
     }));
   }
   return result;
