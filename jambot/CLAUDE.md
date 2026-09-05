@@ -109,6 +109,8 @@ Core files:
 | **JT30** | `jt30` | Acid bass synth (303-style) with saw/square oscillators, Moog ladder filter, classic acid sound |
 | **JT90** | `jt90` | Drum machine (909-style) with 11 voices: kick, snare, clap, rimshot, lowtom, midtom, hitom, ch, oh, crash, ride |
 
+**Multiple instances:** `add_instrument({ type })` adds another copy of any instrument except jp9000/jbs (ids `jb202-2`, or a chosen id). `session.instrument(id)` returns `{ pattern, params, node, type, kind }` — tools go through that accessor (`tools/targets.js` → `resolveInstrument`), never through the legacy `session.jb202Params`-style proxies, which now only exist for the canonical instance. Render, status, song mode, effects and serialization all key on the instance id. Tests: `tests/test-instances.js`.
+
 **Agent guidance for user intent:**
 - User says "drum" / "drums" / "beat" → suggest **JB01** or **JT90**
 - User says "bass" / "bassline" / "synth" → suggest **JB202** or **JT30**

@@ -184,7 +184,8 @@ const genericTools = {
     const success = session.set(path, engineValue);
 
     if (success) {
-      // Format the display value
+      // Show what was actually stored — choice params coerce (0 → 'sawtooth')
+      if (descriptor?.unit === 'choice') finalProducerValue = session.get(path);
       const displayValue = descriptor ? formatValue(finalProducerValue, descriptor) : JSON.stringify(finalProducerValue);
       const action = delta !== undefined ? `Adjusted ${path} by ${delta > 0 ? '+' : ''}${delta} →` : 'Set';
       return `${action} ${path} = ${displayValue}${songModeNote(session, path)}`;
@@ -221,7 +222,8 @@ const genericTools = {
 
       const success = session.set(path, engineValue);
       if (success) {
-        const displayValue = descriptor ? formatValue(value, descriptor) : JSON.stringify(value);
+        const shown = descriptor?.unit === 'choice' ? session.get(path) : value;
+        const displayValue = descriptor ? formatValue(shown, descriptor) : JSON.stringify(shown);
         results.push(`${path} = ${displayValue}${songModeNote(session, path)}`);
       } else {
         results.push(`${path}: FAILED`);
