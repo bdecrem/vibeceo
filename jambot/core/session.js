@@ -83,6 +83,24 @@ function reconstructEffectNodes(effectChains, params) {
   return result;
 }
 
+
+// Enumerability traps for the flat single-voice param proxies (jt10/jt30):
+// keys are the node's descriptor paths with the voice prefix stripped, so
+// JSON.stringify(session.jt30Params) captures every param in engine units.
+// Without these, save_pattern stored {} for JT10/JT30/JT90 and song-mode
+// renders silently ignored every tweak.
+function flatParamTraps(node, prefix) {
+  const keys = () => Object.keys(node.getParameterDescriptors())
+    .filter(k => k.startsWith(prefix))
+    .map(k => k.slice(prefix.length));
+  return {
+    ownKeys: () => keys(),
+    getOwnPropertyDescriptor: (_, prop) => keys().includes(prop)
+      ? { enumerable: true, configurable: true, writable: true }
+      : undefined,
+  };
+}
+
 /**
  * Create a new session with ParamSystem integration
  * @param {Object} config - { bpm, swing, ... }
@@ -418,11 +436,12 @@ export function createSession(config = {}) {
     // JT10 params (lead synth - single voice 'lead')
     get jt10Params() {
       return new Proxy({}, {
-        get: (_, param) => jt10Node.getParam(`lead.${param}`),
+        get: (_, param) => typeof param === 'string' ? jt10Node.getParam(`lead.${param}`) : undefined,
         set: (_, param, value) => {
           jt10Node.setParam(`lead.${param}`, value);
           return true;
         },
+        ...flatParamTraps(jt10Node, 'lead.'),
       });
     },
     set jt10Params(v) {
@@ -434,11 +453,12 @@ export function createSession(config = {}) {
     // JT30 params (acid bass - single voice 'bass')
     get jt30Params() {
       return new Proxy({}, {
-        get: (_, param) => jt30Node.getParam(`bass.${param}`),
+        get: (_, param) => typeof param === 'string' ? jt30Node.getParam(`bass.${param}`) : undefined,
         set: (_, param, value) => {
           jt30Node.setParam(`bass.${param}`, value);
           return true;
         },
+        ...flatParamTraps(jt30Node, 'bass.'),
       });
     },
     set jt30Params(v) {
@@ -454,11 +474,12 @@ export function createSession(config = {}) {
         get: (_, voice) => {
           if (typeof voice !== 'string') return undefined;
           return new Proxy({}, {
-            get: (__, param) => jt90Node.getParam(`${voice}.${param}`),
+            get: (__, param) => typeof param === 'string' ? jt90Node.getParam(`${voice}.${param}`) : undefined,
             set: (__, param, value) => {
               jt90Node.setParam(`${voice}.${param}`, value);
               return true;
             },
+            ...flatParamTraps(jt90Node, `${voice}.`),
           });
         },
         set: (_, voice, params) => {
