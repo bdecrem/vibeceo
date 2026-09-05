@@ -259,7 +259,7 @@ export class JB202Node extends InstrumentNode {
    */
   deserialize(data) {
     if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
-    if (data.params) this._params = { ...data.params };
+    super.deserialize(data);   // base class validates choice params
   }
 
   /**
