@@ -386,12 +386,19 @@ export async function renderSessionToBuffer(session, bars) {
     return !!tr && Object.entries(tr.sends || {}).some(([sendId, lvl]) => sends.has(sendId) && lvl);
   };
 
+  // A muted track — or, while anything is soloed, any track that isn't —
+  // contributes nothing: not to the master, and not to the send buses it
+  // feeds either (a muted lead used to keep playing through its reverb
+  // send). Instruments with no track at all count as un-soloed.
+  const silenced = (id) => {
+    const tr = trackFor.get(id);
+    return !!tr?.mute || (anySolo && !tr?.solo);
+  };
+
   // Mix one rendered buffer into the master at its bar offset.
   const mixIntoMaster = (id, buffer, startBar, level) => {
     const tr = trackFor.get(id);
-    // Solo: anything without a soloed track is silent — including instruments
-    // that have no track at all (instances added after routing was set up).
-    if (tr?.mute || (anySolo && !tr?.solo)) return;
+    if (silenced(id)) return;
 
     const trackGain = tr ? Math.pow(10, (tr.volume || 0) / 20) : 1;
     // Equal-power pan: -100 (hard L) .. +100 (hard R); 0 = unity both sides
@@ -417,13 +424,37 @@ export async function renderSessionToBuffer(session, bars) {
   // dropped. Holding every instrument's full-length buffer until the end cost
   // ~85 MB per instrument on a 128-bar song. Buffers are kept only for
   // instruments routed to a send bus (the send needs the dry signal).
+  // Would this instrument have played anything? Only those are worth naming
+  // as silenced in the message (an idle synth with no pattern is not news).
+  const hasMaterial = (id) => {
+    if (hasArrangement) return arrangementPlan.some(sec => sec.patterns[id] && session.patterns[id]?.[sec.patterns[id]]);
+    const p = session._nodes[id].getPattern?.();
+    if (p == null) return true; // unknown shape — say it rather than hide it
+    const liveStep = (st) => {
+      if (st == null) return false;
+      if (typeof st !== 'object') return true;      // lists of step indices
+      if ('gate' in st) return !!st.gate;           // mono synths, jp9000
+      if ('velocity' in st) return st.velocity > 0; // drum steps
+      return !!(st.on || st.hit);
+    };
+    const live = (v) => Array.isArray(v) && v.some(liveStep);
+    return Array.isArray(p) ? live(p) : Object.values(p).some(live);
+  };
+
   const keptBuffers = []; // { id, buffer, startBar, level } — send feeds only
   const renderedIds = []; // instruments that produced at least one buffer
+  const silencedIds = []; // muted / not-soloed instruments, skipped entirely
   const failures = [];    // { id, error } — surfaced in the render message
 
   for (const id of instrumentIds) {
     const node = session._nodes[id];
     if (!node) continue;
+
+    // Silenced instruments are not rendered at all: nothing of theirs may
+    // reach the master or a send, and skipping the synthesis is the only way
+    // to be sure of that (it also saves the CPU on long songs). Their drum
+    // patterns still key sidechains — that reads patterns, not audio.
+    if (silenced(id)) { if (hasMaterial(id)) silencedIds.push(id); continue; }
 
     const linearLevel = node.getOutputGain();
     const keep = feedsSend(id);
@@ -632,6 +663,7 @@ export async function renderSessionToBuffer(session, bars) {
     message = `Rendered ${renderBars} bars at ${session.bpm} BPM (${synths.join('+') || 'empty'})`;
   }
 
+  if (silencedIds.length) message += ` — silent: ${silencedIds.join(', ')} (${anySolo ? 'not soloed' : 'muted'})`;
   if (trimDb < 0) message += ` — mix trimmed ${trimDb.toFixed(1)} dB to avoid clipping; lower some levels`;
   if (failures.length) {
     message += `. FAILED TO RENDER: ${failures.map(f => `${f.id} (${f.error})`).join('; ')} — fix the parameters and render again`;

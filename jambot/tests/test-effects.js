@@ -278,6 +278,30 @@ console.log('\n[describe mix]');
   await t('mute_track', { track: 'jt90', mute: true }, s);
   const after = await render(s, 1);
   ok('muting the drums removes the kick from the render', () => assert.ok(rms(after.L) < rms(before.L) * 0.9));
+
+  // A silenced instrument must not reach a send bus either. Bart's "Bd"
+  // (2026-09-06): every synth muted, the lead kept playing through its 45%
+  // reverb send — the send loop read the dry buffers the master had skipped.
+  const kickOnly = createSession({ bpm: 128 }); await t('add_jb01', { kick: [0, 4, 8, 12] }, kickOnly);
+  const ref = Float32Array.from((await render(kickOnly, 1)).L);
+  const sx = createSession({ bpm: 128 });
+  await t('add_jb01', { kick: [0, 4, 8, 12] }, sx);
+  await t('add_jb202', { pattern: mono('E3') }, sx);
+  await t('add_send', { id: 'verb', effect: 'reverb', decay: 4, size: 80 }, sx);
+  await t('route', { track: 'jb202', send: 'verb', level: 0.8 }, sx);
+  const wet = await render(sx, 1);
+  ok('the routed bass is audible with its send (setup)', () => assert.ok(diffRms(wet.L, ref) > rms(ref) * 0.2));
+  await t('mute_track', { track: 'jb202', mute: true }, sx);
+  const mutedSend = await render(sx, 1);
+  ok('a muted instrument is silent on its send bus too', () => assert.ok(diffRms(mutedSend.L, ref) < rms(ref) * 0.01));
+  ok('the render message says what was silenced', () => assert.match(mutedSend.message, /silent: jb202 \(muted\)/));
+  await t('mute_track', { track: 'jb202', mute: false }, sx);
+  await t('solo_track', { track: 'jb01' }, sx);
+  const soloSend = await render(sx, 1);
+  ok('solo keeps un-soloed instruments off the send buses', () => { assert.ok(diffRms(soloSend.L, ref) < rms(ref) * 0.01); assert.match(soloSend.message, /silent: jb202 \(not soloed\)/); });
+  await t('solo_track', { track: 'jb01', solo: false }, sx);
+  const back = await render(sx, 1);
+  ok('unmute / unsolo brings the send back', () => assert.ok(diffRms(back.L, wet.L) < rms(wet.L) * 0.01));
 }
 
 console.log(`\n${passed} effects/routing checks passed${process.exitCode ? ' (with failures)' : ''}`);
