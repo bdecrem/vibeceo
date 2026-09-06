@@ -71,11 +71,41 @@ function writeThroughSavedPatterns(session, path) {
   return n;
 }
 
+// === mirror of Studio.writeThroughSavedInserts ===================================
+// Effect faders ('fx.<key>.<effectId>.<param>'): the live chain renders, but
+// load_pattern restores each pattern's insert snapshot — so the live effect's
+// params are copied onto the same effect inside every saved pattern of that
+// instrument, and a later load_pattern keeps the fader value.
+function writeThroughSavedInserts(session, path) {
+  const segs = path.split('.');
+  if (segs[0] !== 'fx' || segs.length < 4) return 0;
+  if (!Array.isArray(session.arrangement) || session.arrangement.length === 0) return 0;
+  const effectId = segs[segs.length - 2];
+  const key = segs.slice(1, -2).join('.');
+  const inst = key.split('.')[0];
+  if (inst === 'master') return 0;
+  const live = session.mixer?.effectChains?.[key]?.find((e) => e.id === effectId);
+  if (!live?._node) return 0;
+  const params = { ...live._node.getParams() };
+  const saved = session.patterns?.[inst];
+  if (!saved) return 0;
+  let n = 0;
+  for (const entry of Object.values(saved)) {
+    const snap = entry?.channelInserts;
+    if (!snap || typeof snap !== 'object') continue;
+    const e = snap[key]?.find((x) => x.id === effectId);
+    if (!e) continue;
+    e.params = params;
+    n++;
+  }
+  return n;
+}
+
 // Studio.onParam, as shipped now: tweak the live node, then write through.
 async function applyParam(session, path, value) {
   const r = await executeTool('tweak', { path, value }, session, {});
   if (/^Error/.test(r)) return { r, n: 0 };
-  return { r, n: writeThroughSavedPatterns(session, path) };
+  return { r, n: path.startsWith('fx.') ? writeThroughSavedInserts(session, path) : writeThroughSavedPatterns(session, path) };
 }
 // =============================================================================
 
@@ -182,7 +212,7 @@ console.log('\nsong-mode write-through');
   ok('node level is not a pattern param', () => { assert.equal(res.n, 0); assert.equal(snap(), before); });
   const fxPath = `fx.jt90.kick.${s.mixer.effectChains['jt90.kick'][0].id}.mix`;
   res = await applyParam(s, fxPath, 45);
-  ok('effect params are not pattern params', () => { assert.equal(res.n, 0); assert.equal(snap(), before); });
+  ok('effect added after the saves is in no snapshot: nothing written', () => { assert.equal(res.n, 0); assert.equal(snap(), before); });
   res = await quiet(() => applyParam(s, 'jt90.kick.nope', 1));
   ok('unknown param: tweak errors, nothing written', () => { assert.match(res.r, /^Error/); assert.equal(snap(), before); });
 
@@ -194,6 +224,36 @@ console.log('\nsong-mode write-through');
   ok('loop mode (no arrangement): live only, saved patterns untouched', () => {
     assert.equal(res.n, 0); assert.equal(JSON.stringify(loop.patterns), saved); assert.equal(loop.get('jt90.kick.decay'), 0.8);
   });
+}
+
+// --- 5. effect faders write through to the saved insert snapshots ------------------
+{
+  const s = createSession({ bpm: 128 });
+  await executeTool('add_jt90', { kick: [0, 4, 8, 12], ch: [2, 6, 10, 14] }, s, {});
+  await executeTool('add_effect', { target: 'jt90.ch', effect: 'delay', mode: 'pingpong', mix: 20 }, s, {});
+  await executeTool('save_pattern', { instrument: 'jt90', name: 'A' }, s, {});
+  await executeTool('save_pattern', { instrument: 'jt90', name: 'B' }, s, {});
+  await executeTool('set_arrangement', { sections: [{ bars: 1, jt90: 'A' }, { bars: 1, jt90: 'B' }] }, s, {});
+  const id = s.mixer.effectChains['jt90.ch'][0].id;
+  const a = Float32Array.from((await renderSessionToBuffer(s, 2)).buffer.getChannelData(0));
+  const res = await applyParam(s, `fx.jt90.ch.${id}.mix`, 90);
+  ok('fx fader: both saved jt90 patterns updated', () => assert.equal(res.n, 2));
+  ok('saved snapshots carry the live effect params', () => {
+    for (const name of ['A', 'B']) assert.equal(s.patterns.jt90[name].channelInserts['jt90.ch'][0].params.mix, 90);
+    assert.deepEqual(s.patterns.jt90.A.channelInserts['jt90.ch'][0].params, s.mixer.effectChains['jt90.ch'][0]._node.getParams());
+  });
+  const b = Float32Array.from((await renderSessionToBuffer(s, 2)).buffer.getChannelData(0));
+  let diff = 0; let ref = 0;
+  for (let i = 0; i < Math.min(a.length, b.length); i++) { diff += (a[i] - b[i]) ** 2; ref += a[i] ** 2; }
+  ok('arrangement render reflects the fx fader (delay mix 20 → 90)', () => assert.ok(diff / Math.max(ref, 1e-9) > 1e-3, `relative diff ${diff / ref}`));
+  // …and load_pattern keeps the fader value instead of restoring mix 20
+  await executeTool('load_pattern', { instrument: 'jt90', name: 'A' }, s, {});
+  ok('load_pattern after the fader move restores mix 90, not the pre-move 20', () => assert.equal(s.mixer.effectChains['jt90.ch'][0]._node.getParams().mix, 90));
+  // an effect added after the saves is in no snapshot: live only
+  await executeTool('add_effect', { target: 'jt90', effect: 'reverb', mix: 30 }, s, {});
+  const rid = s.mixer.effectChains.jt90[0].id;
+  const res2 = await applyParam(s, `fx.jt90.${rid}.mix`, 60);
+  ok('effect not in the snapshots: live only', () => { assert.equal(res2.n, 0); assert.equal(s.patterns.jt90.A.channelInserts.jt90, undefined); });
 }
 
 console.log(`\n${passed} checks passed${process.exitCode ? ', some FAILED' : ''}`);

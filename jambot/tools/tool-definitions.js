@@ -680,7 +680,7 @@ export const TOOLS = [
       type: "object",
       properties: {
         effect: { type: "string", enum: ["delay", "eq", "filter", "sidechain", "reverb"], description: "Type of effect" },
-        preset: { type: "string", description: "Preset — eq and filter only, ignored by delay/reverb/sidechain (pass params instead). eq: master, acidBass, crispHats, warmPad, punchyKick, cleanSnare. filter: dubDelay, telephone, lofi, darkRoom, airFilter, thinOut." },
+        preset: { type: "string", description: "Named starting point (explicit params win over it; sidechain has none). delay: tape, dub, slapback, pingpong, widePong, stereoWidth. reverb: plate, room, hall, chamber, cathedral, ambient. eq: master, acidBass, crispHats, warmPad, punchyKick, cleanSnare. filter: dubDelay, telephone, lofi, darkRoom, airFilter, thinOut. Unknown names are an Error." },
         params: { type: "object", description: "Effect parameters (delay: mode, time, sync, feedback, mix; reverb: decay, damping, predelay, mix; eq: highpass, lowGain, midGain, midFreq, highGain; filter: mode, cutoff, resonance)" }
       },
       required: ["effect"]

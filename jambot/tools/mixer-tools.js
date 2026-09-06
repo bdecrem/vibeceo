@@ -164,24 +164,6 @@ function applyPreset(node, effect, preset) {
   return null;
 }
 
-/**
- * Song mode: each arrangement section renders through the inserts captured in
- * its saved pattern (channelInserts), the way it uses the pattern's own params.
- * A live effect change is loop-only until the patterns are saved again, so say
- * so — the same note `tweak` gives for params. Patterns saved before snapshots
- * existed (channelInserts null) still render the live chains: no note.
- */
-function songModeFxNote(session, key) {
-  if (!Array.isArray(session.arrangement) || session.arrangement.length === 0) return '';
-  const inst = String(key).split('.')[0];
-  if (inst === 'master') return '';
-  const saved = session.patterns?.[inst];
-  if (!saved) return '';
-  const names = Object.keys(saved).filter(n => saved[n]?.channelInserts && typeof saved[n].channelInserts === 'object');
-  if (names.length === 0) return '';
-  return ` (song mode: live chain only — saved ${inst} patterns ${names.join(', ')} keep their own inserts. To hear it in the arrangement: load_pattern → change the effect → save_pattern for each)`;
-}
-
 /** Does any drum instrument's current pattern hit this voice? (advisory for sidechain messages) */
 function triggerCurrentlyPlays(session, trigger) {
   return drumInstruments(session).some(d => voiceHasHits(d.node.getPattern(), trigger));
@@ -228,14 +210,14 @@ const mixerTools = {
       context
     );
     if (typeof result === 'string' && result.startsWith('Error')) return result;
-    if (!old.length) return result;   // add_effect already appended the song-mode note
+    if (!old.length) return result;
     for (const id of old) {
       await mixerTools.remove_effect({ target: key, effect: id }, session, context);
     }
     const added = session.mixer.effectChains[key].find(e => e.type === effect);
     const p = added._node.getParams();
     const paramStr = Object.entries(p).filter(([k]) => k !== 'mode').map(([k, v]) => `${k}=${v}`).join(', ');
-    return `Replaced ${effect}${preset ? ` (${preset})` : (p.mode ? ` (${p.mode})` : '')} on ${key} [${paramStr}] (addressable as fx.${key}.${added.id})${songModeFxNote(session, key)}`;
+    return `Replaced ${effect}${preset ? ` (${preset})` : (p.mode ? ` (${p.mode})` : '')} on ${key} [${paramStr}] (addressable as fx.${key}.${added.id})`;
   },
 
   /**
@@ -259,7 +241,7 @@ const mixerTools = {
       }
       const count = chain.length;
       delete session.mixer.effectChains[channel];
-      return `Removed all ${count} insert(s) from ${channel}${songModeFxNote(session, channel)}`;
+      return `Removed all ${count} insert(s) from ${channel}`;
     } else {
       const toRemove = chain.filter(e => e.type === effect || e.id === effect);
       if (toRemove.length === 0) {
@@ -272,7 +254,7 @@ const mixerTools = {
       if (session.mixer.effectChains[channel].length === 0) {
         delete session.mixer.effectChains[channel];
       }
-      return `Removed ${effect} insert from ${channel}${songModeFxNote(session, channel)}`;
+      return `Removed ${effect} insert from ${channel}`;
     }
   },
 
@@ -462,7 +444,7 @@ const mixerTools = {
     const flavour = preset ? ` (${preset})` : (p.mode ? ` (${p.mode})` : '');
     const paramStr = applied.filter(a => !a.startsWith('mode=')).join(', ');
     const positionStr = after ? ` after ${after}` : '';
-    return `Added ${effect}${flavour} to ${target}${positionStr}${paramStr ? ` [${paramStr}]` : ''} (addressable as ${paramPath})${songModeFxNote(session, target)}`;
+    return `Added ${effect}${flavour} to ${target}${positionStr}${paramStr ? ` [${paramStr}]` : ''} (addressable as ${paramPath})`;
   },
 
   /**
@@ -491,7 +473,7 @@ const mixerTools = {
       }
       const count = chain.length;
       delete session.mixer.effectChains[target];
-      return `Removed all ${count} effect(s) from ${target}${songModeFxNote(session, target)}`;
+      return `Removed all ${count} effect(s) from ${target}`;
     }
 
     // Find effects to remove (by type or ID)
@@ -511,7 +493,7 @@ const mixerTools = {
       delete session.mixer.effectChains[target];
     }
 
-    return `Removed ${toRemove.map(e => e.id).join(', ')} from ${target}${songModeFxNote(session, target)}`;
+    return `Removed ${toRemove.map(e => e.id).join(', ')} from ${target}`;
   },
 
   /**
@@ -603,7 +585,7 @@ const mixerTools = {
     }
     const applied = applyEffectParams(node, wanted);
 
-    return `Tweaked ${label}: ${applied.join(', ')}${chain ? songModeFxNote(session, resolved.key) : ''}`;
+    return `Tweaked ${label}: ${applied.join(', ')}`;
   },
 };
 

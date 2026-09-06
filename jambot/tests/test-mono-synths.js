@@ -409,4 +409,17 @@ console.log('\n[11] kochi.to engine defaults unchanged: renderPattern() with no 
   });
 }
 
+// =============================================================================
+console.log('\n[12] generic tweak: jt10 glideTime takes seconds or a 0-100 knob position');
+{
+  const s = createSession({ bpm: 128 });
+  await tool(s, 'add_jt10', { pattern: mono('C4') });
+  const r1 = await tool(s, 'tweak', { path: 'jt10.lead.glideTime', value: 50 });
+  ok('tweak glideTime 50 → 0.5 s (was clamped to 1 s)', () => { assert.equal(s.get('jt10.lead.glideTime'), 0.5); assert.match(r1, /0\.5/); });
+  await tool(s, 'tweak', { path: 'jt10.lead.glideTime', value: 0.2 });
+  ok('tweak glideTime 0.2 stays 0.2 s', () => assert.ok(Math.abs(s.get('jt10.lead.glideTime') - 0.2) < 1e-9));
+  const r3 = await tool(s, 'tweak_multi', { params: { 'jt10.lead.glideTime': 25 } });
+  ok('tweak_multi glideTime 25 → 0.25 s', () => { assert.equal(s.get('jt10.lead.glideTime'), 0.25); assert.match(r3, /0\.25/); });
+}
+
 console.log(`\n${passed} mono-synth checks passed${process.exitCode ? ' (with failures)' : ''}`);

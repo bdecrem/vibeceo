@@ -254,13 +254,46 @@ ok('channel insert tools document <instrument>.<voice> targets, no bare voices',
   }
   assert.match(byName.add_effect.input_schema.properties.target.description, /jt90\.kick/);
 });
-ok('insert presets are documented as eq/filter only', () => {
-  for (const n of ['add_channel_insert', 'add_master_insert']) assert.match(byName[n].input_schema.properties.preset.description, /eq and filter only/);
+ok('insert presets are documented for all four effect types (delay/reverb presets load too)', () => {
+  for (const n of ['add_channel_insert', 'add_master_insert', 'add_effect']) {
+    const d = byName[n].input_schema.properties.preset.description;
+    for (const p of ['tape', 'cathedral', 'acidBass', 'telephone']) assert.match(d, new RegExp(p), `${n}: ${p}`);
+  }
 });
 ok('set_arrangement schema allows added ids and says bars is a whole number', () => {
   const items = byName.set_arrangement.input_schema.properties.sections.items;
   assert.equal(items.additionalProperties?.type, 'string');
   assert.match(items.properties.bars.description, /whole number/);
 });
+
+// ---------------------------------------------------------------------------
+console.log('song mode: effects are global, unsaved section patterns are reported');
+{
+  // The live chains render in every section (render.js), whatever each saved
+  // pattern's channelInserts snapshot holds — the snapshot is what load_pattern
+  // restores, not what the arrangement plays.
+  const s = createSession({ bpm: 128 });
+  await t('add_jb202', { pattern: mono('C2') }, s);
+  await t('save_pattern', { instrument: 'jb202', name: 'B' }, s);                       // no inserts
+  await t('add_channel_insert', { channel: 'jb202', effect: 'filter', params: { cutoff: 300 } }, s);
+  await t('save_pattern', { instrument: 'jb202', name: 'A' }, s);                       // filter snapshot
+  await t('set_arrangement', { sections: [{ bars: 1, jb202: 'A' }, { bars: 1, jb202: 'B' }] }, s);
+  const barRms = async (sess) => {
+    const r = await renderSessionToBuffer(sess, 2);
+    const d = r.buffer.getChannelData(0); const spb = sess.clock.samplesPerBar;
+    const seg = (a, b) => { let x = 0; for (let i = a; i < b; i++) x += d[i] * d[i]; return Math.sqrt(x / (b - a)); };
+    return { a: seg(0, spb), b: seg(spb, 2 * spb), msg: r.message };
+  };
+  const filtered = await barRms(s);   // live chain = the filter (A was saved last)
+  ok(`live filter applies to both sections (${filtered.a.toFixed(4)} / ${filtered.b.toFixed(4)})`, () => assert.ok(Math.abs(filtered.a - filtered.b) < 1e-3));
+  const add = await t('remove_effect', { target: 'jb202', effect: 'all' }, s);
+  ok('no song-mode note on effect tools (effects are not per pattern at render time)', () => assert.doesNotMatch(add, /song mode/));
+  const open = await barRms(s);
+  ok(`removing the live filter opens both sections (${open.a.toFixed(4)} / ${open.b.toFixed(4)})`, () => assert.ok(open.a > filtered.a * 1.2 && open.b > filtered.b * 1.2));
+  // A section naming a pattern that was never saved is reported, not skipped in silence
+  s.arrangement = [{ bars: 1, patterns: { jb202: 'Z' } }];
+  const r = await renderSessionToBuffer(s, 1);
+  ok('unsaved section pattern shows up in the render message', () => assert.match(r.message, /FAILED TO RENDER: jb202 \(section 1: pattern "Z" not saved\)/));
+}
 
 console.log(`\n${passed} song-tool checks passed${process.exitCode ? ' (with failures)' : ''}`);

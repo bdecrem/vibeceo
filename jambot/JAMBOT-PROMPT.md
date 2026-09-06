@@ -165,12 +165,12 @@ Don't add mixer processing by default — use it when the user asks for polish.
   (dB), `mute_track`, `solo_track` — applied in the render mix.
 - Sends: `add_send` + `route` for shared reverb/delay buses. Tweak a bus with
   `tweak_effect({ target: '<sendId>', effect })` or `tweak({ path: 'send.<id>.<param>' })`.
-- Channel inserts (EQ/filter/delay/reverb) are saved with patterns and each
-  section renders through its own — for per-section processing: load_pattern →
-  `add_channel_insert({ channel: 'jt90.kick', effect: 'filter', params: {...} })`
-  → save_pattern. Channels are instrument ids or `<instrument>.<voice>`, never a
-  bare voice name. In song mode an effect changed live is loop-only until the
-  patterns are saved again (the tool result says so).
+- Channel inserts (EQ/filter/delay/reverb): `add_channel_insert({ channel:
+  'jt90.kick', effect: 'filter', params: {...} })`. Channels are instrument ids
+  or `<instrument>.<voice>`, never a bare voice name. Effects apply to every
+  section of the arrangement (the live chains render); save_pattern stores the
+  instrument's inserts with the pattern and load_pattern restores them, so
+  save the pattern after adding an insert or the next load_pattern drops it.
   Filter presets: dubDelay, telephone, lofi, darkRoom, airFilter, thinOut.
   EQ presets: acidBass, crispHats, warmPad, punchyKick, cleanSnare, master.
 
