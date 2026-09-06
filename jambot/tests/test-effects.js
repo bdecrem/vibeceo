@@ -18,6 +18,7 @@ import { strict as assert } from 'node:assert';
 import { createSession, serializeSession, deserializeSession } from '../core/session.js';
 import { renderSessionToBuffer } from '../core/render.js';
 import { initializeTools, executeTool } from '../tools/index.js';
+import { describeSession, buildSessionContext } from '../core/status.js';
 
 await initializeTools();
 let passed = 0;
@@ -254,6 +255,29 @@ console.log('\n[tracks]');
   const d = deserializeSession({ ...JSON.parse(JSON.stringify(serializeSession(jb01Only))), routing: { tracks: { jb01: { nodeId: 'jb01', volume: 0, mute: false, solo: false, pan: 0, sends: {}, inserts: [] }, drums: { nodeId: 'drums', volume: 0, mute: true, solo: false, pan: 0, sends: {}, inserts: [] } }, sends: {}, master: { volume: 0.8, inserts: [] } } });
   const legacy = (await render(d, 1)).L;
   ok('a stale legacy alias track (drums muted) is shadowed by the instrument track', () => assert.ok(diffRms(legacy, ref) < rms(ref) * 0.01));
+}
+
+console.log('\n[describe mix]');
+{
+  const s = createSession({ bpm: 128 });
+  await t('add_jt90', { kick: [0, 4, 8, 12] }, s);
+  await t('add_jb202', { pattern: mono('C2') }, s);
+  ok('no routing yet → tracks empty, anySolo false', () => { const d = describeSession(s); assert.deepEqual(d.tracks, {}); assert.equal(d.anySolo, false); });
+  await t('mute_track', { track: 'jb202', mute: true }, s);
+  ok('mute_track shows in describeSession', () => { const d = describeSession(s); assert.equal(d.tracks.jb202.mute, true); assert.equal(d.tracks.jt90?.mute ?? false, false); });
+  ok('context tells the agent', () => assert.match(buildSessionContext(s), /Mix: jb202 muted/));
+  await t('solo_track', { track: 'jt90', solo: true }, s);
+  ok('solo_track (exclusive) shows, anySolo true', () => { const d = describeSession(s); assert.equal(d.tracks.jt90.solo, true); assert.equal(d.anySolo, true); });
+  await t('solo_track', { track: 'jb202', solo: true, exclusive: false }, s);
+  ok('exclusive:false stacks solos', () => { const d = describeSession(s); assert.equal(d.tracks.jt90.solo, true); assert.equal(d.tracks.jb202.solo, true); });
+  await t('solo_track', { track: 'jt30', solo: true }, s);
+  ok('default solo is exclusive', () => { const d = describeSession(s); assert.equal(d.tracks.jt30.solo, true); assert.equal(d.tracks.jt90.solo, false); assert.equal(d.tracks.jb202.solo, false); });
+  await t('solo_track', { track: 'jt30', solo: false }, s);
+  ok('unsolo clears anySolo', () => assert.equal(describeSession(s).anySolo, false));
+  const before = await render(s, 1);
+  await t('mute_track', { track: 'jt90', mute: true }, s);
+  const after = await render(s, 1);
+  ok('muting the drums removes the kick from the render', () => assert.ok(rms(after.L) < rms(before.L) * 0.9));
 }
 
 console.log(`\n${passed} effects/routing checks passed${process.exitCode ? ' (with failures)' : ''}`);

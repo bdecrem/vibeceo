@@ -1346,7 +1346,8 @@ export const TOOLS = [
       type: "object",
       properties: {
         track: { type: "string", description: "Track ID" },
-        solo: { type: "boolean", description: "true=solo, false=unsolo" }
+        solo: { type: "boolean", description: "true=solo, false=unsolo" },
+        exclusive: { type: "boolean", description: "Default true: soloing this track un-solos the others. false adds it to the current solo set." }
       },
       required: ["track"]
     }

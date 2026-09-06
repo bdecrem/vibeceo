@@ -149,6 +149,22 @@ export function describeSession(session) {
 
   const automation = session.params?.automation ? Array.from(session.params.automation.keys()) : [];
 
+  // Mixer state per instrument (mute_track / solo_track): a track keyed by the
+  // instrument id, or one whose nodeId points at it. Render-time semantics live
+  // in render.js resolveTracks(); this is the UI/agent view of the same state.
+  const tracks = {};
+  let anySolo = false;
+  const rt = session.routing?.tracks;
+  if (rt) {
+    for (const inst of instruments) {
+      let tr = rt.get(inst.id) || null;
+      if (!tr) for (const [, cand] of rt) if (cand.nodeId === inst.id) { tr = cand; break; }
+      if (!tr) continue;
+      tracks[inst.id] = { mute: !!tr.mute, solo: !!tr.solo, volume: Number(tr.volume) || 0 };
+      if (tr.solo) anySolo = true;
+    }
+  }
+
   return {
     bpm: session.bpm,
     swing: session.swing || 0,
@@ -158,6 +174,8 @@ export function describeSession(session) {
     patterns,
     arrangement: session.arrangement || [],
     automation,
+    tracks,
+    anySolo,
   };
 }
 
@@ -191,6 +209,8 @@ export function buildSessionContext(session) {
     parts.push('Effects: ' + d.effects.map(e => `${e.target}: ${e.chain.map(c => `${c.type}(${c.id})`).join(' → ')}`).join('; '));
   }
   if (d.automation.length) parts.push(`Automation: ${d.automation.join(', ')}`);
+  const mixed = Object.entries(d.tracks || {}).filter(([, t]) => t.mute || t.solo).map(([id, t]) => `${id}${t.mute ? ' muted' : ''}${t.solo ? ' solo' : ''}`);
+  if (mixed.length) parts.push(`Mix: ${mixed.join('; ')}${d.anySolo ? ' (solo: everything else is silent)' : ''}`);
 
   const saved = Object.entries(d.patterns).map(([inst, names]) => `${inst}: ${names.join(', ')}`);
   if (saved.length) parts.push(`Saved patterns: ${saved.join('; ')}`);

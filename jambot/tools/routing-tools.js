@@ -375,10 +375,14 @@ const routingTools = {
       return noTrack(routing, track);
     }
 
-    // If turning solo on, turn off other solos
+    // Solo on is exclusive by default (this track only); exclusive:false adds
+    // it to the current solo set, the way a mixer's solo buttons stack.
+    const exclusive = input.exclusive !== false;
     if (solo !== false) {
-      for (const tr of routing.tracks.values()) {
-        tr.solo = (tr === t);
+      if (exclusive) {
+        for (const tr of routing.tracks.values()) tr.solo = (tr === t);
+      } else {
+        t.solo = true;
       }
     } else {
       t.solo = false;
