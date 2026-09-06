@@ -192,17 +192,74 @@ export function loadKit(synth, kitId, voice = 'bass') {
   // Bundled/user kits: load from file and convert
   try {
     const data = JSON.parse(readFileSync(kit.path, 'utf-8'));
+    const rawParams = data.params || {};
+
+    // Drum-machine kits are nested per voice:
+    //   { params: { kick: { level, tune, decay }, snare: {...}, ... } }
+    // Before this branch existed the flat loop below treated each voice object
+    // as one "unknown param" and passed it through — load_jb01_kit then wrote
+    // 64 object-valued keys (kick.kick, kick.snare, ...) into the node and
+    // applied none of the kit. Convert voice by voice, keep only descriptor-
+    // backed numeric values, and report what was skipped.
+    const isNested = Object.values(rawParams).some(v => v && typeof v === 'object' && !Array.isArray(v));
+    if (isNested) {
+      const convertVoice = (voiceName, src) => {
+        const out = {};
+        const skipped = [];
+        for (const [param, value] of Object.entries(src || {})) {
+          const def = getParamDef(synth, voiceName, param);
+          if (!def) { skipped.push(`${voiceName}.${param}`); continue; }
+          if (def.unit === 'choice') { out[param] = value; continue; }
+          if (typeof value !== 'number' || !Number.isFinite(value)) { skipped.push(`${voiceName}.${param}`); continue; }
+          // toEngine handles every unit, semitones included: drum voices pitch
+          // in cents (JB01/JT90 voices do 2^(tune/1200)), matching tweak_jb01.
+          out[param] = toEngine(value, def);
+        }
+        return { out, skipped };
+      };
+
+      // Caller asked for one voice (legacy per-voice call shape)
+      if (voice && rawParams[voice] && typeof rawParams[voice] === 'object') {
+        const { out, skipped } = convertVoice(voice, rawParams[voice]);
+        return {
+          id: kit.id,
+          name: data.name,
+          description: data.description,
+          voice,
+          params: out,
+          skipped,
+          source: kit.source,
+        };
+      }
+
+      const params = {};
+      const skipped = [];
+      for (const [voiceName, src] of Object.entries(rawParams)) {
+        if (!src || typeof src !== 'object' || Array.isArray(src)) { skipped.push(voiceName); continue; }
+        const r = convertVoice(voiceName, src);
+        skipped.push(...r.skipped);
+        if (Object.keys(r.out).length > 0) params[voiceName] = r.out;
+        else if (Object.keys(src).length > 0) skipped.push(voiceName);
+      }
+      return {
+        id: kit.id,
+        name: data.name,
+        description: data.description,
+        nested: true,
+        params,
+        skipped,
+        source: kit.source,
+      };
+    }
+
     const engineParams = {};
 
     // Convert producer values to engine values
-    for (const [param, value] of Object.entries(data.params || {})) {
+    for (const [param, value] of Object.entries(rawParams)) {
       const def = getParamDef(synth, voice, param);
       if (def) {
         // Use converter for most params
-        if (def.unit === 'semitones') {
-          // Semitones pass through (engine expects semitones, not cents)
-          engineParams[param] = value;
-        } else if (def.unit === 'choice') {
+        if (def.unit === 'choice') {
           // Choices pass through
           engineParams[param] = value;
         } else {

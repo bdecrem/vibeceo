@@ -76,7 +76,47 @@ function getTriggerPositions(pattern, trigger, stepDuration, sampleRate, totalLe
 }
 
 /**
+ * True when a drum pattern has at least one hit on `voice`.
+ * Steps are {velocity, accent} objects (drum nodes) or 0/1 gates.
+ */
+function voiceHasHits(pattern, voice) {
+  const steps = pattern?.[voice];
+  return Array.isArray(steps) && steps.some(s =>
+    (typeof s === 'object' && s !== null) ? s.velocity > 0 : !!s);
+}
+
+/**
+ * Pick the pattern to read trigger hits from. Prefers one whose trigger voice
+ * actually HAS hits — jb01's default pattern exists with all-zero velocities
+ * and used to shadow the real trigger instrument (e.g. a jt90 kick).
+ * @param {Object|Object[]} patterns - { drumId: pattern } map or a list
+ * @param {string} trigger - voice name
+ * @returns {Object|null}
+ */
+function pickTriggerPattern(patterns, trigger) {
+  const list = Array.isArray(patterns) ? patterns : Object.values(patterns || {});
+  let fallback = null;
+  for (const pattern of list) {
+    if (!pattern || !pattern[trigger]) continue;
+    if (voiceHasHits(pattern, trigger)) return pattern;
+    if (!fallback) fallback = pattern;
+  }
+  return fallback;
+}
+
+/**
  * Process audio through sidechain ducking
+ *
+ * The trigger timing comes from the drum pattern that is actually playing
+ * against this buffer, handed in by the renderer:
+ *   - context.triggerPatterns: { drumId: pattern } for the whole buffer
+ *     (loop mode: the live patterns; song mode: one section's saved patterns)
+ *   - context.triggerSections: [{ offsetSamples, lengthSamples, triggerPatterns }]
+ *     for whole-mix buffers (master chain, send returns) in song mode
+ * Without either, falls back to the live jb01/jt90 patterns (legacy callers).
+ * Every drum instance (jb01, jt90, jt90-2, …) is a candidate; the one whose
+ * trigger voice has hits wins.
+ *
  * @param {Object} inputBuffer - Audio buffer with getChannelData()
  * @param {Object} params - Sidechain parameters from SidechainNode
  * @param {string} params.trigger - Trigger voice name (e.g., 'kick')
@@ -86,9 +126,11 @@ function getTriggerPositions(pattern, trigger, stepDuration, sampleRate, totalLe
  * @param {number} params.hold - Hold time in ms
  * @param {number} sampleRate - Audio sample rate
  * @param {number} bpm - Tempo (unused, timing comes from context)
- * @param {Object} context - Render context with session data
- * @param {Object} context.session - Session object for pattern lookup
+ * @param {Object} context - Render context
+ * @param {Object} [context.session] - Session (legacy pattern lookup)
  * @param {number} context.stepDuration - Seconds per step
+ * @param {Object} [context.triggerPatterns] - { drumId: pattern }
+ * @param {Array} [context.triggerSections] - per-section patterns with offsets
  * @returns {Object} Processed buffer
  */
 export function processSidechain(inputBuffer, params, sampleRate, bpm, context) {
@@ -103,37 +145,35 @@ export function processSidechain(inputBuffer, params, sampleRate, bpm, context) 
   const numChannels = inputBuffer.numberOfChannels || 1;
   const length = inputBuffer.length;
 
-  // If no context or session, pass through (can't determine trigger timing)
-  if (!context?.session || !context?.stepDuration) {
-    return inputBuffer;
-  }
+  // Without step timing (or any pattern source) we can't place the hits: pass through
+  if (!context?.stepDuration) return inputBuffer;
+  if (!context.triggerPatterns && !context.triggerSections && !context.session) return inputBuffer;
 
-  // Find the trigger instrument's pattern via public session API
-  // The trigger voice (e.g., 'kick') typically belongs to a drum machine
-  const session = context.session;
-  let triggerPattern = null;
+  const stepDuration = context.stepDuration;
+  let positions = [];
 
-  // Prefer a pattern whose trigger voice actually HAS hits — jb01's default
-  // pattern exists with all-zero velocities and used to shadow the real
-  // trigger instrument (e.g. a jt90 kick).
-  for (const pattern of [session.jb01Pattern, session.jt90Pattern]) {
-    if (pattern && pattern[trigger]) {
-      const steps = pattern[trigger];
-      const hasHits = Array.isArray(steps) && steps.some(s =>
-        (typeof s === 'object' && s !== null) ? s.velocity > 0 : !!s);
-      if (hasHits) { triggerPattern = pattern; break; }
-      if (!triggerPattern) triggerPattern = pattern;
+  if (Array.isArray(context.triggerSections)) {
+    // Whole-mix buffer in song mode: each section ducks to its own drum
+    // patterns, placed at the section's offset. The last section's length may
+    // be Infinity so the release tail keeps the groove.
+    for (const section of context.triggerSections) {
+      const pattern = pickTriggerPattern(section.triggerPatterns, trigger);
+      if (!pattern) continue;
+      const offset = Math.max(0, Math.floor(section.offsetSamples || 0));
+      const sectionLength = Math.min(section.lengthSamples ?? Infinity, length - offset);
+      if (!(sectionLength > 0)) continue;
+      for (const pos of getTriggerPositions(pattern, trigger, stepDuration, sampleRate, sectionLength)) {
+        positions.push(pos + offset);
+      }
+    }
+  } else {
+    const patterns = context.triggerPatterns
+      ?? [context.session?.jb01Pattern, context.session?.jt90Pattern]; // legacy: live canonical drums
+    const pattern = pickTriggerPattern(patterns, trigger);
+    if (pattern) {
+      positions = getTriggerPositions(pattern, trigger, stepDuration, sampleRate, length);
     }
   }
-
-  if (!triggerPattern) {
-    return inputBuffer; // No trigger pattern found, pass through
-  }
-
-  // Get trigger hit positions in samples
-  const positions = getTriggerPositions(
-    triggerPattern, trigger, context.stepDuration, sampleRate, length
-  );
 
   if (positions.length === 0) {
     return inputBuffer; // No hits, pass through

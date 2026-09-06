@@ -13,12 +13,7 @@
 
 import { InstrumentNode, coerceChoice } from '../core/node.js';
 import { OfflineAudioContext } from 'node-web-audio-api';
-import { toEngine } from '../params/converters.js';
-
-// Load params definition
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const JT10_PARAMS = require('../params/jt10-params.json');
+import { toEngine, JT10_PARAMS } from '../params/converters.js';
 
 // Voice (monophonic)
 const VOICES = ['lead'];
@@ -44,6 +39,12 @@ function normalizePath(path) {
   let p = path.startsWith('lead.') ? path.slice(5) : path;
   p = PARAM_ALIASES[p] || p;
   return `lead.${p}`;
+}
+
+/** Mute pseudo-param: true/1/'true'/'on' mute, anything else unmutes. */
+function muteFlag(value) {
+  if (typeof value === 'string') return !['false', '0', 'off', 'no', ''].includes(value.toLowerCase());
+  return !!value;
 }
 
 export class JT10Node extends InstrumentNode {
@@ -114,9 +115,15 @@ export class JT10Node extends InstrumentNode {
 
     const normalizedPath = normalizePath(path);
 
+    // Mute → -60 dB; unmute restores the pre-mute level (a falsy value used to
+    // be accepted and leave the instrument muted).
     if (normalizedPath === 'lead.mute' || path === 'mute') {
-      if (value) {
+      if (muteFlag(value)) {
+        if (this.getLevel() > -60) this._preMuteLevel = this.getLevel();
         this.setLevel(-60);
+      } else {
+        this.setLevel(this._preMuteLevel ?? 0);
+        this._preMuteLevel = undefined;
       }
       return true;
     }
@@ -283,11 +290,31 @@ export class JT10Node extends InstrumentNode {
         // Legacy full format
         this._pattern = JSON.parse(JSON.stringify(data.pattern));
       }
+    } else if (data.patternLength) {
+      // All-rest pattern: serialize() omits the (empty) sparse array but keeps
+      // the length — a 4-bar rest pattern used to come back as 16 steps.
+      this._pattern = createEmptyPattern(data.patternLength);
     }
 
     if (data.params) {
-      Object.assign(this._params, data.params);
+      // Same choice coercion as the base class: saved state may predate choice
+      // validation (lfoWaveform stored as 0 silently killed the LFO).
+      const params = { ...data.params };
+      for (const [path, d] of Object.entries(this._descriptors)) {
+        if (d?.unit !== 'choice' || !(path in params)) continue;
+        const v = coerceChoice(d, params[path]);
+        params[path] = v === undefined ? d.default : v;
+      }
+      Object.assign(this._params, params);
     }
+  }
+
+  /**
+   * Get automation data for rendering (populated by render.js)
+   * Returns automation in producer units with node-relative paths
+   */
+  _getAutomationForRender() {
+    return this._renderAutomation || null;
   }
 
   /**
@@ -297,9 +324,11 @@ export class JT10Node extends InstrumentNode {
     const {
       bars,
       stepDuration,
+      swing = 0,
       sampleRate = 44100,
       pattern = this._pattern,
       params = null,
+      automation = null,
     } = options;
 
     // Skip if no active notes
@@ -323,11 +352,31 @@ export class JT10Node extends InstrumentNode {
     // Set pattern on engine
     engine.setPattern(pattern);
 
+    // Convert automation from producer units to engine units (same block as
+    // jt30 — jt10 used to drop the lane on the floor while `automate`
+    // reported success). Paths: 'lead.cutoff', 'cutoff' or an alias.
+    const rawAutomation = automation || this._getAutomationForRender();
+    let engineAutomation = undefined;
+    if (rawAutomation && Object.keys(rawAutomation).length > 0) {
+      engineAutomation = {};
+      for (const [path, values] of Object.entries(rawAutomation)) {
+        const paramName = normalizePath(path).slice(5);
+        const paramDef = JT10_PARAMS.lead?.[paramName];
+        if (paramDef && Array.isArray(values)) {
+          engineAutomation[paramName] = values.map(v =>
+            v !== null && v !== undefined ? toEngine(v, paramDef) : null
+          );
+        }
+      }
+    }
+
     // Render
     const buffer = await engine.renderPattern({
       bars,
       stepDuration,
+      swing,
       sampleRate,
+      automation: engineAutomation,
     });
 
     return buffer;

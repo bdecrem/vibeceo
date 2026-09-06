@@ -40,18 +40,23 @@ const automationTools = {
       return 'Error: values array or pattern required';
     }
 
-    // Validate the path exists
-    const [nodeId] = path.split('.');
-    if (!session._nodes[nodeId]) {
-      return `Error: unknown instrument "${nodeId}"`;
+    // Validate the path the same way tweak does: alias heads (drums.*, bass.*)
+    // resolve to their node, a voice or param the node doesn't have is refused
+    // instead of becoming a lane nothing ever reads.
+    const check = session.params.checkPath(path);
+    if (!check.ok) return check.error;
+    if (check.mute) return `Error: ${path} can't be automated — automate the level instead`;
+    if (check.resolved.nodeId.startsWith('fx.')) {
+      return `Error: effect parameters can't be automated per step — only instrument parameters (e.g. "jb01.ch.decay")`;
     }
 
-    // Store automation in ParamSystem (producer units, full path)
+    // Store automation in ParamSystem (producer units, canonical path)
     session.automate(path, automationValues);
+    const stored = session.params.canonicalPath(path);
+    const [nodeId, ...rest] = stored.split('.');
 
     const activeSteps = automationValues.filter(v => v !== null && v !== undefined).length;
-    const paramName = path.split('.').slice(1).join('.');
-    return `${nodeId} ${paramName} automation set: ${activeSteps}/${automationValues.length} steps`;
+    return `${nodeId} ${rest.join('.')} automation set: ${activeSteps}/${automationValues.length} steps`;
   },
 
   /**
@@ -66,19 +71,22 @@ const automationTools = {
       return 'Cleared all automation';
     }
 
-    // Check if it's an exact automation path
-    if (session.params.hasAutomation(path)) {
-      session.clearAutomation(path);
-      return `Cleared automation on ${path}`;
+    // Lanes are stored under canonical ids ('jb01.kick.decay'), so resolve
+    // aliases ('drums.kick.decay', 'drums') the way automate/tweak do. The raw
+    // path is tried too for lanes older saves stored under an alias. Report
+    // what was actually removed — "cleared" with the lane still there sent
+    // the agent on to save a pattern it believed was clean.
+    const canon = session.params.canonicalPath(path);
+    const before = session.params.listAutomation().length;
+    for (const p of new Set([path, canon])) {
+      if (session.params.hasAutomation(p)) session.clearAutomation(p);   // exact lane
+      clearNodeAutomation(session, p);                                   // every lane under an instrument/voice prefix
     }
-
-    // Check if it's an instrument prefix — clear all automation for that instrument
-    clearNodeAutomation(session, path);
-    const remaining = session.params.listAutomation().filter(p => p.startsWith(path + '.'));
-    if (remaining.length === 0) {
-      return `Cleared all automation for ${path}`;
-    }
-    return `No automation found for "${path}"`;
+    const removed = before - session.params.listAutomation().length;
+    if (removed === 0) return `No automation found for "${path}"`;
+    return removed === 1
+      ? `Cleared automation on ${canon}`
+      : `Cleared ${removed} automation lanes under ${canon}`;
   },
 
   /**

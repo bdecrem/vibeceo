@@ -5,6 +5,10 @@
  *   - JT10 (101-style lead synth)
  *   - JT30 (303-style acid bass)
  *   - JT90 (909-style drum machine)
+ *
+ * Also exports the shared pattern builders used by jb01-tools.js:
+ *   buildMonoPattern()   — step-object patterns (jt10/jt30)
+ *   programDrumPattern() — per-voice step arrays (jt90/jb01)
  */
 
 import { registerTools } from './index.js';
@@ -14,26 +18,218 @@ import { getParamDef, toEngine } from '../params/converters.js';
 // JT90 voices
 const JT90_VOICES = ['kick', 'snare', 'clap', 'rimshot', 'lowtom', 'midtom', 'hitom', 'ch', 'oh', 'crash', 'ride'];
 
+const STEPS_PER_BAR = 16;
+const NOTE_RE = /^[A-Ga-g][#b]?-?\d+$/;
+
+const barsFor = (steps) => Math.max(1, Math.ceil(steps / STEPS_PER_BAR));
+const emptyDrumStep = () => ({ velocity: 0, accent: false });
+
 /**
- * Convert step array to melodic pattern
+ * In loop mode (no arrangement) a pattern longer than the session loop would
+ * be cut off at render time — grow the loop to fit and say so.
+ * @returns {string|null} note for the tool result
  */
-function createMelodicPattern(steps = 16) {
-  return Array(steps).fill(null).map(() => ({
-    note: 'C2',
-    gate: false,
-    accent: false,
-    slide: false,
-  }));
+function fitSessionBars(session, bars) {
+  const hasArrangement = Array.isArray(session.arrangement) && session.arrangement.length > 0;
+  if (hasArrangement) return null;
+  if (bars > (session.bars || 0)) {
+    session.bars = bars;
+    return `loop length set to ${bars} bars`;
+  }
+  return null;
 }
 
 /**
- * Convert step array to drum pattern
+ * Build a step-object pattern for the mono synths (jt10 / jt30 / jb202-style).
+ *
+ *  - `bars` sets the length; without it the array length decides (a 32-step
+ *    array is 2 bars, never silently cut to 16).
+ *  - a step without `note` takes the previous step's note (or `defaultNote`),
+ *    so `{ gate: true }` can't reach the engine as `note: undefined` and kill
+ *    the render.
+ *  - invalid note names are refused with the offending steps listed.
+ *
+ * @returns {{ pattern, bars, steps, truncated }|{ error }}
  */
-function stepsToPattern(steps, length = 16, velocity = 1, accent = false) {
-  return Array(length).fill(null).map((_, i) => ({
-    velocity: steps.includes(i) ? velocity : 0,
-    accent: steps.includes(i) ? accent : false,
-  }));
+export function buildMonoPattern(input, defaultNote, label) {
+  const src = input.pattern;
+  if (!Array.isArray(src)) {
+    return { error: `${label}: pattern must be an array of steps like { note: '${defaultNote}', gate: true }` };
+  }
+  if (input.bars !== undefined && (!Number.isInteger(input.bars) || input.bars < 1)) {
+    return { error: `${label}: bars must be a whole number >= 1` };
+  }
+
+  const bars = input.bars || barsFor(src.length);
+  const steps = bars * STEPS_PER_BAR;
+  const bad = [];
+  let prevNote = defaultNote;
+
+  const pattern = Array(steps).fill(null).map((_, i) => {
+    const step = (src[i] && typeof src[i] === 'object') ? src[i] : {};
+    let note = step.note;
+    if (note === undefined || note === null || note === '') {
+      note = prevNote;
+    } else if (typeof note === 'string') {
+      if (!NOTE_RE.test(note.trim())) bad.push(`step ${i}: ${JSON.stringify(note)}`);
+      else note = note.trim();
+    } else if (typeof note !== 'number' || !Number.isFinite(note)) {
+      bad.push(`step ${i}: ${JSON.stringify(note)}`);
+    }
+    prevNote = note;
+    return {
+      note,
+      gate: !!step.gate,
+      accent: !!step.accent,
+      slide: !!step.slide,
+    };
+  });
+
+  if (bad.length > 0) {
+    return { error: `${label}: invalid note at ${bad.join(', ')} — use names like C2, F#1, Bb2 (or a MIDI number)` };
+  }
+
+  return { pattern, bars, steps, truncated: src.length > steps };
+}
+
+/** Repeat (wrap) a drum track's content to `steps`; missing/empty → silence. */
+function tileTrack(track, steps) {
+  const src = Array.isArray(track) && track.length > 0 ? track : null;
+  return Array.from({ length: steps }, (_, i) => {
+    const s = src ? src[i % src.length] : null;
+    if (!s || typeof s !== 'object') return emptyDrumStep();
+    return { ...s, velocity: s.velocity > 0 ? s.velocity : 0, accent: !!s.accent };
+  });
+}
+
+const countHits = (track) => track.filter(s => s && s.velocity > 0).length;
+
+/**
+ * Program drum voices for add_jt90 / add_jb01. Mutates `pattern` in place
+ * (it is the node's own pattern object) and leaves every voice at one length.
+ *
+ *  - length = max(bars*16, longest existing voice unless clear:true, what the
+ *    step data needs). A step >= bars*16 grows the pattern; it never vanishes.
+ *  - voices not named in the call are kept and stretched to the new length by
+ *    repeating their content, so a 1-bar hat keeps ticking through bar 2.
+ *  - a voice given shorter than the result (steps 0-15 on a 2-bar pattern) is
+ *    repeated the same way.
+ *  - clear:true wipes every voice first and is the only way to shrink.
+ *
+ * @param {Object} o
+ * @param {Object} o.input - tool input ({ bars, clear, kick: [...], ... })
+ * @param {string[]} o.voices - voice names in order
+ * @param {Object} o.pattern - node pattern { voice: [{ velocity, accent }] }
+ * @param {string} o.label - 'JT90' / 'JB01' for messages
+ * @returns {{ steps, bars, added: string[], notes: string[] }|{ error }}
+ */
+export function programDrumPattern({ input, voices, pattern, label }) {
+  if (input.bars !== undefined && (!Number.isInteger(input.bars) || input.bars < 1)) {
+    return { error: `${label}: bars must be a whole number >= 1` };
+  }
+
+  // --- parse the requested voices
+  const requested = {};
+  const errors = [];
+  for (const voice of voices) {
+    const data = input[voice];
+    if (data === undefined || data === null) continue;
+    if (!Array.isArray(data)) { errors.push(`${voice}: expected an array of step numbers like [0, 4, 8, 12]`); continue; }
+    if (data.length === 0) { requested[voice] = { steps: [] }; continue; }
+    if (data.every(x => typeof x === 'number')) {
+      const bad = data.filter(x => !Number.isInteger(x) || x < 0);
+      if (bad.length) { errors.push(`${voice}: steps must be whole numbers >= 0 (got ${bad.join(', ')})`); continue; }
+      requested[voice] = { steps: data };
+    } else if (data.every(x => x === null || typeof x === 'object')) {
+      requested[voice] = { track: data };
+    } else {
+      errors.push(`${voice}: mixed numbers and objects — pass step numbers like [0, 4, 8, 12]`);
+    }
+  }
+  if (errors.length > 0) return { error: `${label}: ${errors.join('; ')}` };
+
+  // --- how long does the pattern have to be?
+  let needed = 0;          // steps the data itself needs
+  for (const r of Object.values(requested)) {
+    if (r.steps) needed = Math.max(needed, r.steps.length ? Math.max(...r.steps) + 1 : 0);
+    else needed = Math.max(needed, r.track.length);
+  }
+  const neededBars = needed > 0 ? barsFor(needed) : 0;
+  const existingLen = input.clear ? 0 : Math.max(0, ...voices.map(v => pattern[v]?.length || 0));
+  const existingBars = existingLen > 0 ? barsFor(existingLen) : 0;
+  const requestedBars = input.bars || 0;
+  const base = Math.max(1, requestedBars, existingBars);
+  const bars = Math.max(base, neededBars);
+  const steps = bars * STEPS_PER_BAR;
+
+  const notes = [];
+  if (bars > base) notes.push(`grown to ${bars} bars to fit step ${needed - 1}`);
+  if (requestedBars && !input.clear && existingBars > requestedBars) {
+    notes.push(`kept the existing ${existingBars}-bar length (use clear:true to shrink)`);
+  }
+
+  // --- clear / stretch voices not named in the call
+  for (const voice of voices) {
+    if (requested[voice]) continue;
+    if (input.clear || !pattern[voice] || pattern[voice].length !== steps) {
+      pattern[voice] = input.clear ? tileTrack(null, steps) : tileTrack(pattern[voice], steps);
+    }
+  }
+
+  // --- place the requested voices
+  const added = [];
+  for (const voice of voices) {
+    const r = requested[voice];
+    if (!r) continue;
+
+    let own;
+    if (r.steps) {
+      const ownLen = Math.max(requestedBars * STEPS_PER_BAR, (r.steps.length ? barsFor(Math.max(...r.steps) + 1) : 1) * STEPS_PER_BAR);
+      own = Array.from({ length: ownLen }, emptyDrumStep);
+      for (const s of r.steps) own[s] = { velocity: 1, accent: false };
+    } else {
+      const ownLen = Math.max(requestedBars * STEPS_PER_BAR, barsFor(r.track.length) * STEPS_PER_BAR);
+      own = tileTrack([...r.track, ...Array(Math.max(0, ownLen - r.track.length)).fill(null)], ownLen);
+    }
+
+    const repeated = own.length < steps;
+    const track = repeated ? tileTrack(own, steps) : own;
+    pattern[voice] = track;
+    const hits = countHits(track);
+    added.push(`${voice}: ${hits} hit${hits === 1 ? '' : 's'}${repeated ? ` (${own.length / STEPS_PER_BAR}-bar part repeated)` : ''}`);
+  }
+
+  return { steps, bars, added, notes };
+}
+
+/** Shared tail for add_jt90 / add_jb01: apply, fit the loop, format. */
+export function finishDrumProgram(res, input, session, inst, label) {
+  inst.node.setPattern(inst.pattern);
+
+  if (res.added.length === 0) {
+    return `${label}: no pattern changes`;
+  }
+
+  const fit = fitSessionBars(session, res.bars);
+  if (fit) res.notes.push(fit);
+
+  const barsLabel = res.bars > 1 ? ` (${res.bars} bars)` : '';
+  const clearLabel = input.clear ? ' (cleared first)' : '';
+  const notesLabel = res.notes.length ? ` — ${res.notes.join('; ')}` : '';
+  return `${label}: ${res.added.join(', ')}${barsLabel}${clearLabel}${notesLabel}`;
+}
+
+/** Shared tail for add_jt10 / add_jt30. */
+function finishMonoProgram(r, session, inst, label) {
+  inst.pattern = r.pattern;
+  const activeSteps = r.pattern.filter(s => s.gate).length;
+  const notes = [];
+  if (r.truncated) notes.push(`array longer than ${r.bars} bar${r.bars > 1 ? 's' : ''}, extra steps dropped — pass bars to keep them`);
+  const fit = fitSessionBars(session, r.bars);
+  if (fit) notes.push(fit);
+  const barsLabel = r.bars > 1 ? ` (${r.bars} bars)` : '';
+  const notesLabel = notes.length ? ` — ${notes.join('; ')}` : '';
+  return `${label}: ${activeSteps} notes programmed${barsLabel}${notesLabel}`;
 }
 
 const jtTools = {
@@ -45,27 +241,9 @@ const jtTools = {
   add_jt10: async (input, session, context) => {
     const inst = resolveInstrument(session, input.instrument, 'jt10');
     if (inst.error) return inst.error;
-    const pattern = input.pattern || [];
-    const bars = input.bars || 1;
-    const steps = bars * 16;
-
-    if (!Array.isArray(pattern)) {
-      return 'JT10: pattern must be an array of steps';
-    }
-
-    inst.pattern = Array(steps).fill(null).map((_, i) => {
-      const step = pattern[i] || {};
-      return {
-        note: step.note || 'C3',
-        gate: step.gate || false,
-        accent: step.accent || false,
-        slide: step.slide || false,
-      };
-    });
-
-    const activeSteps = inst.pattern.filter(s => s.gate).length;
-    const barsLabel = bars > 1 ? ` (${bars} bars)` : '';
-    return `JT10: ${activeSteps} notes programmed${barsLabel}`;
+    const r = buildMonoPattern(input, 'C3', 'JT10');
+    if (r.error) return r.error;
+    return finishMonoProgram(r, session, inst, 'JT10');
   },
 
   /**
@@ -122,14 +300,22 @@ const jtTools = {
       if (input[inputKey] !== undefined) {
         const def = getParamDef('jt10', 'lead', engineKey);
         let value = input[inputKey];
+        let shown = `${inputKey}=${input[inputKey]}`;
 
-        // Convert producer units to engine units (skip choice params — no min/max)
-        if (def && typeof value === 'number' && def.unit !== 'choice') {
+        if (inputKey === 'glideTime' && typeof value === 'number') {
+          // Documented as 0-100; the engine wants seconds (0-1). Values above 1
+          // are knob positions (50 → 0.5 s); 0-1 are already seconds. Before
+          // this, toEngine clamped 50 to 1 s — every glide became the maximum.
+          const seconds = Math.max(0, Math.min(1, value > 1 ? value / 100 : value));
+          value = seconds;
+          shown = `glideTime=${+seconds.toFixed(3)}s`;
+        } else if (def && typeof value === 'number' && def.unit !== 'choice') {
+          // Convert producer units to engine units (skip choice params — no min/max)
           value = toEngine(value, def);
         }
 
         session.set(`${inst.id}.lead.${engineKey}`, value);
-        tweaks.push(`${inputKey}=${input[inputKey]}`);
+        tweaks.push(shown);
       }
     }
 
@@ -148,22 +334,9 @@ const jtTools = {
   add_jt30: async (input, session, context) => {
     const inst = resolveInstrument(session, input.instrument, 'jt30');
     if (inst.error) return inst.error;
-    const pattern = input.pattern;
-
-    if (!pattern || !Array.isArray(pattern)) {
-      return 'JT30: pattern must be an array of 16 steps';
-    }
-
-    // Normalize pattern to 16 steps
-    const normalized = pattern.slice(0, 16);
-    while (normalized.length < 16) {
-      normalized.push({ note: 'C2', gate: false, accent: false, slide: false });
-    }
-
-    inst.pattern = normalized;
-
-    const activeSteps = normalized.filter(s => s.gate).length;
-    return `JT30: ${activeSteps} notes programmed`;
+    const r = buildMonoPattern(input, 'A1', 'JT30');
+    if (r.error) return r.error;
+    return finishMonoProgram(r, session, inst, 'JT30');
   },
 
   /**
@@ -228,62 +401,16 @@ const jtTools = {
 
   /**
    * Add JT90 drum pattern
+   * @param {number} [bars] - Pattern length in bars (16 steps per bar); grows to fit the steps given
+   * @param {boolean} [clear=false] - Clear all voices before adding (the only way to shrink)
+   * Accepts either step arrays (e.g., kick: [0, 4, 8, 12]) or full pattern objects
    */
   add_jt90: async (input, session, context) => {
     const inst = resolveInstrument(session, input.instrument, 'jt90');
     if (inst.error) return inst.error;
-    const bars = input.bars || 1;
-    const steps = bars * 16;
-    const added = [];
-
-    // Clear all voices first if requested
-    if (input.clear) {
-      for (const voice of JT90_VOICES) {
-        inst.pattern[voice] = stepsToPattern([], steps);
-      }
-    }
-
-    // If bars > 1 and no existing pattern, resize first
-    if (bars > 1) {
-      for (const voice of JT90_VOICES) {
-        if (!inst.pattern[voice] || inst.pattern[voice].length < steps) {
-          inst.pattern[voice] = stepsToPattern([], steps);
-        }
-      }
-    }
-
-    for (const voice of JT90_VOICES) {
-      if (input[voice] !== undefined) {
-        const data = input[voice];
-
-        if (Array.isArray(data)) {
-          // Check if it's a step array (numbers) or pattern array (objects)
-          if (data.length > 0 && typeof data[0] === 'number') {
-            // Step array: [0, 4, 8, 12]
-            inst.pattern[voice] = stepsToPattern(data, steps);
-            added.push(`${voice}: ${data.length} hits`);
-          } else {
-            // Full pattern array - use as-is (pad if needed)
-            if (data.length < steps) {
-              const padded = [...data, ...Array(steps - data.length).fill({ velocity: 0, accent: false })];
-              inst.pattern[voice] = padded;
-            } else {
-              inst.pattern[voice] = data;
-            }
-            const activeSteps = data.filter(s => s && s.velocity > 0).length;
-            added.push(`${voice}: ${activeSteps} hits`);
-          }
-        }
-      }
-    }
-
-    if (added.length === 0) {
-      return 'JT90: no pattern changes';
-    }
-
-    const barsLabel = bars > 1 ? ` (${bars} bars)` : '';
-    const clearLabel = input.clear ? ' (cleared first)' : '';
-    return `JT90: ${added.join(', ')}${barsLabel}${clearLabel}`;
+    const res = programDrumPattern({ input, voices: JT90_VOICES, pattern: inst.pattern, label: 'JT90' });
+    if (res.error) return res.error;
+    return finishDrumProgram(res, input, session, inst, 'JT90');
   },
 
   /**

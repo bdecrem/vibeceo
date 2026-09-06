@@ -6,7 +6,7 @@
  *   - CH, OH, crash, ride: WAV sample playback (loaded from disk in Node.js)
  */
 
-import { InstrumentNode } from '../core/node.js';
+import { InstrumentNode, coerceChoice } from '../core/node.js';
 import { OfflineAudioContext } from 'node-web-audio-api';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -74,6 +74,44 @@ function createEmptyPattern(steps = 16) {
   return pattern;
 }
 
+const STEPS_PER_BAR = 16;
+
+/** Longest voice in a pattern, rounded up to whole bars (at least one bar). */
+function patternLengthOf(pattern) {
+  let max = 0;
+  for (const track of Object.values(pattern || {})) {
+    if (Array.isArray(track) && track.length > max) max = track.length;
+  }
+  if (max === 0) return STEPS_PER_BAR;
+  return Math.ceil(max / STEPS_PER_BAR) * STEPS_PER_BAR;
+}
+
+/**
+ * Bring every voice to the same length — the longest one — by repeating
+ * shorter voices. The JT90 engine reads `track[step]` for step < longest
+ * voice, so a 16-step hat next to a 32-step kick used to fall silent in bar 2
+ * (JB01's engine wraps per voice; the two machines disagreed). Normalising
+ * here keeps the fix in the node layer and off the kochi.to UI's engine.
+ * Voices missing from the object are added as silence.
+ */
+function normalizePattern(pattern) {
+  const src = pattern && typeof pattern === 'object' ? pattern : {};
+  const length = patternLengthOf(src);
+  const out = {};
+  const keys = [...VOICES, ...Object.keys(src).filter(k => !VOICES.includes(k))];
+  for (const voice of keys) {
+    const track = Array.isArray(src[voice]) && src[voice].length > 0 ? src[voice] : null;
+    if (track && track.length === length) { out[voice] = track; continue; }
+    out[voice] = Array(length).fill(null).map((_, i) => {
+      const s = track ? track[i % track.length] : null;
+      return s && typeof s === 'object'
+        ? { ...s, velocity: s.velocity > 0 ? s.velocity : 0, accent: !!s.accent }
+        : { velocity: 0, accent: false };
+    });
+  }
+  return out;
+}
+
 export class JT90Node extends InstrumentNode {
   constructor(config = {}) {
     super(config.id || 'jt90', config);
@@ -131,10 +169,42 @@ export class JT90Node extends InstrumentNode {
     // Handle mute for any voice
     if (path.endsWith('.mute')) {
       const voice = path.split('.')[0];
+      if (!VOICES.includes(voice)) {
+        console.warn(`${this.id}: unknown voice "${voice}" (voices: ${VOICES.join(', ')})`);
+        return false;
+      }
       if (value) {
         this._params[`${voice}.level`] = 0;
       }
       return true;
+    }
+
+    // Refuse unknown keys instead of storing them: "jt90.kick.decayy" used to
+    // report "Set …" and silently change nothing (jb202/jt10/jt30 already refuse).
+    const descriptor = this._descriptors[path];
+    if (!descriptor) {
+      const voice = path.split('.')[0];
+      const hint = VOICES.includes(voice)
+        ? `valid for ${voice}: ${Object.keys(JT90_PARAMS[voice] || {}).join(', ')}`
+        : `voices: ${VOICES.join(', ')}`;
+      // warn once per path — a saved track with stray keys replays them on every load
+      this._warnedUnknown ??= new Set();
+      if (!this._warnedUnknown.has(path)) {
+        this._warnedUnknown.add(path);
+        console.warn(`${this.id}: unknown parameter "${path}" (${hint})`);
+      }
+      return false;
+    }
+    if (descriptor.unit === 'choice') {
+      const v = coerceChoice(descriptor, value);
+      if (v === undefined) {
+        console.warn(`${this.id}: "${path}" must be one of ${(descriptor.options || []).join('|')}, got ${JSON.stringify(value)}`);
+        return false;
+      }
+      value = v;
+    } else if (typeof value !== 'number' || !Number.isFinite(value)) {
+      console.warn(`${this.id}: "${path}" expects a number, got ${JSON.stringify(value)}`);
+      return false;
     }
 
     this._params[path] = value;
@@ -226,7 +296,7 @@ export class JT90Node extends InstrumentNode {
    * Set the full pattern
    */
   setPattern(pattern) {
-    this._pattern = pattern;
+    this._pattern = normalizePattern(pattern);
   }
 
   /**
@@ -235,6 +305,7 @@ export class JT90Node extends InstrumentNode {
   setTrackPattern(voiceId, trackPattern) {
     if (VOICES.includes(voiceId)) {
       this._pattern[voiceId] = trackPattern;
+      this._pattern = normalizePattern(this._pattern);
     }
   }
 
@@ -254,8 +325,9 @@ export class JT90Node extends InstrumentNode {
    * Get pattern length in steps
    */
   getPatternLength() {
-    const firstTrack = this._pattern[VOICES[0]];
-    return firstTrack ? firstTrack.length : 16;
+    // Longest voice, not the kick's: serialize() used the kick length and a
+    // longer hat lost its bar-2+ hits on every autosave/reload.
+    return patternLengthOf(this._pattern);
   }
 
   /**
@@ -322,7 +394,7 @@ export class JT90Node extends InstrumentNode {
     return {
       id: this.id,
       pattern: Object.keys(sparsePattern).length > 0 ? sparsePattern : undefined,
-      patternLength: this._pattern[VOICES[0]]?.length || 16,
+      patternLength: this.getPatternLength(),
       params: Object.keys(sparseParams).length > 0 ? sparseParams : undefined,
       swing: this._swing !== 0 ? this._swing : undefined,
       accentLevel: this._accentLevel !== 1.0 ? this._accentLevel : undefined,
@@ -336,12 +408,24 @@ export class JT90Node extends InstrumentNode {
    */
   deserialize(data) {
     if (data.pattern) {
-      const length = data.patternLength || 16;
       // Check if sparse format (array of {i, v, a}) or legacy full format
       const firstVoice = Object.values(data.pattern)[0];
       const isSparse = Array.isArray(firstVoice) && firstVoice[0]?.i !== undefined;
 
       if (isSparse) {
+        // Older saves wrote patternLength = kick length, so a voice longer than
+        // the kick kept its hits in the sparse list but they were dropped here
+        // (step.i >= length). Grow to whatever the saved steps need — the hits
+        // are still in the JSON, so existing tracks get them back.
+        let maxStep = -1;
+        for (const steps of Object.values(data.pattern)) {
+          for (const step of steps || []) {
+            if (Number.isInteger(step?.i) && step.i > maxStep) maxStep = step.i;
+          }
+        }
+        const needed = maxStep >= 0 ? Math.ceil((maxStep + 1) / STEPS_PER_BAR) * STEPS_PER_BAR : 0;
+        const length = Math.max(data.patternLength || 16, needed);
+
         // Expand sparse pattern to full
         this._pattern = createEmptyPattern(length);
         for (const [voice, steps] of Object.entries(data.pattern)) {
@@ -357,13 +441,24 @@ export class JT90Node extends InstrumentNode {
           }
         }
       } else {
-        // Legacy full format
-        this._pattern = JSON.parse(JSON.stringify(data.pattern));
+        // Legacy full format (per-voice arrays, possibly of mixed lengths)
+        this._pattern = normalizePattern(JSON.parse(JSON.stringify(data.pattern)));
       }
     }
 
     if (data.params) {
-      Object.assign(this._params, data.params);
+      // Only descriptor-backed values: saved tracks may carry keys written
+      // before setParam validated (typos, or objects from the old kit loader).
+      for (const [path, value] of Object.entries(data.params)) {
+        const d = this._descriptors[path];
+        if (!d) continue;
+        if (d.unit === 'choice') {
+          const v = coerceChoice(d, value);
+          this._params[path] = v === undefined ? d.default : v;
+        } else if (typeof value === 'number' && Number.isFinite(value)) {
+          this._params[path] = value;
+        }
+      }
     }
     if (data.swing !== undefined) this._swing = data.swing;
     if (data.accentLevel !== undefined) this._accentLevel = data.accentLevel;
@@ -378,10 +473,12 @@ export class JT90Node extends InstrumentNode {
       stepDuration,
       swing = 0,
       sampleRate = 44100,
-      pattern = this._pattern,
       params = null,
       automation = null,
     } = options;
+    // Saved song-mode patterns can still hold voices of different lengths;
+    // the engine only wraps at the longest, so even them out first.
+    const pattern = normalizePattern(options.pattern ?? this._pattern);
 
     // Check if any track has active steps
     const hasActiveSteps = VOICES.some(voice =>
@@ -473,10 +570,10 @@ export class JT90Node extends InstrumentNode {
       stepDuration,
       swing = 0,
       sampleRate = 44100,
-      pattern = this._pattern,
       params = null,
       automation = null,
     } = options;
+    const pattern = normalizePattern(options.pattern ?? this._pattern);
 
     const { JT90Engine } = await import('../../web/public/jt90/dist/machines/jt90/engine.js');
     const voiceBuffers = {};

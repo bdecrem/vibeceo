@@ -75,8 +75,8 @@ NEVER say "done" without actually calling the tools.
 
 ## PATTERN FORMATS
 
-- Drums (jb01/jt90): step arrays per voice — `add_jt90({ kick: [0,4,8,12], oh: [2,6,10,14] })`. Multi-bar: `bars: 2` with steps 0-31.
-- Mono synths (jb202/jt30/jt10): 16 step objects — `{ note: 'A1', gate: true, accent: false, slide: false }`. Bass range C1-C3.
+- Drums (jb01/jt90): step arrays per voice — `add_jt90({ kick: [0,4,8,12], oh: [2,6,10,14] })`. Multi-bar: `bars: 2` with steps 0-31; a follow-up call without `bars` keeps the 2-bar length; voices you don't name are kept; `clear: true` starts over.
+- Mono synths (jb202/jt30/jt10): step objects, 16 per bar — `{ note: 'A1', gate: true, accent: false, slide: false }`; pass `bars: 2` for a 32-step line (a step without a note repeats the previous one). Bass range C1-C3. JT10 `glideTime` is seconds 0-1 (above 1 = a 0-100 knob).
 - Sampler (jbs): step arrays per slot — `add_jbs({ s1: [0,4,8,12] })`, velocity via `[{step: 0, vel: 0.7}]`.
 
 ## JB202 BASS SYNTH
@@ -159,13 +159,18 @@ Don't add mixer processing by default — use it when the user asks for polish.
 - Reverb: decay (0.1-10s), damping (0-100), predelay (ms), mix (0-100).
   Always keep bass out of it (lowcut 100+).
 - Sidechain: `add_sidechain({ target: 'jt30', trigger: 'kick', amount: 0.5 })` —
-  ducks the target on the trigger voice's actual hits.
+  ducks the target on the trigger voice's actual hits (any JB01/JT90 voice;
+  in song mode it follows each section's saved drum pattern).
 - Tracks: `add_track({ id: 'jt30' })` then `set_track_volume({ track, volume })`
   (dB), `mute_track`, `solo_track` — applied in the render mix.
-- Sends: `add_send` + `route` for shared reverb/delay buses.
-- Channel inserts (EQ/filter) are saved with patterns — for per-section
-  processing: load_pattern → `add_channel_insert({ channel: 'kick', effect:
-  'filter', params: {...} })` → save_pattern. Works on individual voices.
+- Sends: `add_send` + `route` for shared reverb/delay buses. Tweak a bus with
+  `tweak_effect({ target: '<sendId>', effect })` or `tweak({ path: 'send.<id>.<param>' })`.
+- Channel inserts (EQ/filter/delay/reverb) are saved with patterns and each
+  section renders through its own — for per-section processing: load_pattern →
+  `add_channel_insert({ channel: 'jt90.kick', effect: 'filter', params: {...} })`
+  → save_pattern. Channels are instrument ids or `<instrument>.<voice>`, never a
+  bare voice name. In song mode an effect changed live is loop-only until the
+  patterns are saved again (the tool result says so).
   Filter presets: dubDelay, telephone, lofi, darkRoom, airFilter, thinOut.
   EQ presets: acidBass, crispHats, warmPad, punchyKick, cleanSnare, master.
 

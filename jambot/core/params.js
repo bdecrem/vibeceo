@@ -51,6 +51,63 @@ export class ParamSystem {
   }
 
   /**
+   * Canonical storage form of a path: alias heads (drums.*, bass.*, sampler.*)
+   * are rewritten to the node's own id ('jb01.kick.decay'). Effect nodes
+   * resolve via multi-segment 'fx.*' keys and keep their path. Unresolvable
+   * paths come back unchanged.
+   * @param {string} path
+   * @returns {string}
+   */
+  canonicalPath(path) {
+    const resolved = this._resolveNode(path);
+    if (!resolved) return path;
+    const firstSegment = path.split('.')[0];
+    if (firstSegment !== resolved.node.id && this.nodes.get(resolved.node.id) === resolved.node) {
+      return resolved.paramPath ? `${resolved.node.id}.${resolved.paramPath}` : resolved.node.id;
+    }
+    return path;
+  }
+
+  /**
+   * Validate that a path names a real parameter before a tool writes to it.
+   * Instrument nodes accept any key in setParam (`this._params[path] = value`),
+   * so a typo such as 'jt90.hat.level' or 'jb01.kick.pitch' used to be stored
+   * as a dead key and reported as "Set …". Nodes that publish no parameter
+   * descriptors beyond 'level' (the jp9000 rack) can't be validated and pass.
+   *
+   * @param {string} path
+   * @returns {{ ok: true, resolved: Object, descriptor: Object|null, mute: boolean } | { ok: false, error: string }}
+   */
+  checkPath(path) {
+    const resolved = this._resolveNode(path);
+    if (!resolved) {
+      return { ok: false, error: `Error: No node for "${path}". Available: ${this.listNodes().join(', ')}` };
+    }
+    const { node, nodeId, paramPath } = resolved;
+    if (!paramPath) {
+      return { ok: false, error: `Error: "${path}" is a node, not a parameter. Use list_params({ node: '${nodeId}' }) to see its parameters.` };
+    }
+    const descriptor = (typeof node.getDescriptor === 'function' ? node.getDescriptor(paramPath) : null) || null;
+    const mute = paramPath === 'mute' || paramPath.endsWith('.mute');
+    if (descriptor || mute) return { ok: true, resolved, descriptor, mute };
+
+    const descriptors = typeof node.getParameterDescriptors === 'function' ? node.getParameterDescriptors() : {};
+    const keys = Object.keys(descriptors).filter(k => k !== 'level');
+    if (keys.length === 0) return { ok: true, resolved, descriptor: null, mute: false };   // dynamic params (jp9000 rack)
+
+    const voices = typeof node.getVoices === 'function' ? node.getVoices() : [];
+    const segs = paramPath.split('.');
+    if (voices.length > 1 && segs.length >= 2 && !voices.includes(segs[0])) {
+      return { ok: false, error: `Error: unknown voice "${segs[0]}" on ${nodeId}. Voices: ${voices.join(', ')}` };
+    }
+    const scope = voices.length > 1 && voices.includes(segs[0]) ? `${segs[0]}.` : null;
+    const valid = [...new Set(
+      keys.filter(k => !scope || k.startsWith(scope)).map(k => scope ? k.slice(scope.length) : k.split('.').pop())
+    )];
+    return { ok: false, error: `Error: unknown parameter "${path}". Valid for ${nodeId}${scope ? '.' + segs[0] : ''}: ${valid.join(', ')}` };
+  }
+
+  /**
    * Register a node (instrument, effect, mixer section)
    * @param {string} id - Node identifier (e.g., 'drums', 'bass', 'mixer')
    * @param {Node} node - Node instance implementing getParam/setParam
@@ -177,14 +234,7 @@ export class ParamSystem {
     // Store under the CANONICAL node id. Render collects automation by
     // canonical-id prefix, so lanes stored under alias paths (drums.*,
     // bass.*, sampler.*) were accepted here and then silently dropped.
-    // Only rewrite when the node's own id is a registered single key —
-    // effect nodes resolve via multi-segment 'fx.*' ids and keep their path.
-    let storePath = path;
-    const firstSegment = path.split('.')[0];
-    if (firstSegment !== resolved.node.id && this.nodes.get(resolved.node.id) === resolved.node) {
-      storePath = `${resolved.node.id}.${resolved.paramPath}`;
-    }
-    this.automation.set(storePath, values);
+    this.automation.set(this.canonicalPath(path), values);
     return true;
   }
 
@@ -243,11 +293,20 @@ export class ParamSystem {
    * @returns {Object} Serialized state
    */
   serialize() {
-    const nodes = {};
+    // One entry per node, under its canonical key. Aliases (drums→jb01,
+    // bass/lead/synth→jb202, sampler→jbs) point at the same instance; writing
+    // each of them repeated the whole JB202 pattern four times in every save
+    // (~0.5 MB for a 128-bar bass line). Effect nodes are registered under
+    // multi-segment 'fx.*' keys that never equal node.id — they keep the first
+    // key they were registered under.
+    const keyFor = new Map();
     for (const [id, node] of this.nodes) {
-      if (typeof node.serialize === 'function') {
-        nodes[id] = node.serialize();
-      }
+      if (typeof node.serialize !== 'function') continue;
+      if (!keyFor.has(node) || id === node.id) keyFor.set(node, id);
+    }
+    const nodes = {};
+    for (const [node, id] of keyFor) {
+      nodes[id] = node.serialize();
     }
 
     return {

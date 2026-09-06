@@ -19,6 +19,9 @@ export class DelayNode extends EffectNode {
   constructor(id = 'delay', config = {}) {
     super(id, config);
 
+    // Track preset
+    this._preset = null;
+
     // Register all delay parameters
     this.registerParams({
       mode: { default: 'analog', unit: 'choice', options: ['analog', 'pingpong'], description: 'Delay type' },
@@ -31,6 +34,35 @@ export class DelayNode extends EffectNode {
       saturation: { min: 0, max: 100, default: 20, unit: '0-100', description: 'Analog warmth (analog mode only)' },
       spread: { min: 0, max: 100, default: 100, unit: '0-100', description: 'Stereo width (pingpong mode only)' },
     });
+
+    if (config.preset) this.loadPreset(config.preset);
+  }
+
+  /**
+   * Load a preset by name (DELAY_PRESETS). Presets store mode as 0/1 (the
+   * engine's numeric mode); the node stores the choice name.
+   * @param {string} presetName
+   * @returns {boolean} false when the preset does not exist
+   */
+  loadPreset(presetName) {
+    const preset = DELAY_PRESETS[presetName];
+    if (!preset) return false;
+    this._preset = presetName;
+    for (const [param, value] of Object.entries(preset)) {
+      const v = param === 'mode' ? (value === 1 ? 'pingpong' : value === 0 ? 'analog' : value) : value;
+      this.setParam(param, v);
+    }
+    return true;
+  }
+
+  /** @returns {string|null} current preset name */
+  getPreset() {
+    return this._preset;
+  }
+
+  /** @returns {string[]} available preset names */
+  listPresets() {
+    return Object.keys(DELAY_PRESETS);
   }
 
   /**

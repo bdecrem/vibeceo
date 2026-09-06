@@ -73,6 +73,10 @@ export function getParamDef(synth, voice, param) {
  * @returns {number} - Normalized 0-1 value for engine (cents for semitones)
  */
 export function toEngine(value, paramDef) {
+  // null means "unset / use the engine fallback" (jt10's filter ADSR follows
+  // the amp envelope while null). It must survive conversion as null — the
+  // arithmetic below turned it into 0 (or -Infinity for Hz) and stored that.
+  if (value === null || value === undefined) return value;
   const { unit, min, max } = paramDef;
 
   // Clamp to valid range first. Choice descriptors have no min/max —
@@ -136,6 +140,7 @@ export function toEngine(value, paramDef) {
  * @returns {number} - Producer-friendly value
  */
 export function fromEngine(value, paramDef) {
+  if (value === null || value === undefined) return value;
   const { unit, min, max } = paramDef;
 
   switch (unit) {
@@ -184,7 +189,7 @@ export function fromEngine(value, paramDef) {
  * @returns {number} - New engine value
  */
 export function applyRelative(currentEngineValue, delta, paramDef) {
-  const currentProducer = fromEngine(currentEngineValue, paramDef);
+  const currentProducer = fromEngine(currentEngineValue, paramDef) ?? 0;
   const newProducer = currentProducer + delta;
   const clamped = Math.max(paramDef.min, Math.min(paramDef.max, newProducer));
   return toEngine(clamped, paramDef);
@@ -194,6 +199,8 @@ export function applyRelative(currentEngineValue, delta, paramDef) {
  * Format a value for display
  */
 export function formatValue(value, paramDef) {
+  // null = unset, the engine uses its fallback (e.g. jt10 filter env follows amp)
+  if (value === null || value === undefined) return 'auto';
   const { unit } = paramDef;
 
   switch (unit) {

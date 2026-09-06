@@ -15,88 +15,25 @@ import { registerTools } from './index.js';
 import { resolveInstrument } from './targets.js';
 import { getParamDef, toEngine, fromEngine, formatValue } from '../params/converters.js';
 import { listKits, loadKit, listSequences, loadSequence } from '../presets/loader.js';
+import { programDrumPattern, finishDrumProgram } from './jt-tools.js';
 
 const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];
-
-/**
- * Convert step array (e.g., [0, 4, 8, 12]) to pattern array
- * @param {number[]} steps - Step positions
- * @param {number} length - Total pattern length in steps
- * @param {number} velocity - Hit velocity (default 1)
- * @param {boolean} accent - Accent flag (default false)
- */
-function stepsToPattern(steps, length = 16, velocity = 1, accent = false) {
-  return Array(length).fill(null).map((_, i) => ({
-    velocity: steps.includes(i) ? velocity : 0,
-    accent: steps.includes(i) ? accent : false,
-  }));
-}
 
 const jb01Tools = {
   /**
    * Add JB01 drum pattern
-   * @param {number} [bars=1] - Pattern length in bars (16 steps per bar)
-   * @param {boolean} [clear=false] - Clear all voices before adding (for creating fresh patterns)
-   * Accepts either step arrays (e.g., kick: [0, 4, 8, 12]) or full pattern objects
+   * @param {number} [bars] - Pattern length in bars (16 steps per bar); grows to fit the steps given
+   * @param {boolean} [clear=false] - Clear all voices before adding (the only way to shrink)
+   * Accepts either step arrays (e.g., kick: [0, 4, 8, 12]) or full pattern objects.
+   * Voices not named in the call are kept (stretched by repetition if the
+   * pattern grows). See programDrumPattern() in jt-tools.js for the rules.
    */
   add_jb01: async (input, session, context) => {
     const inst = resolveInstrument(session, input.instrument, 'jb01');
     if (inst.error) return inst.error;
-    const bars = input.bars || 1;
-    const steps = bars * 16;
-    const added = [];
-
-    // Clear all voices first if requested (for creating fresh patterns in song mode)
-    if (input.clear) {
-      for (const voice of VOICES) {
-        inst.pattern[voice] = stepsToPattern([], steps);
-      }
-    }
-
-    // If bars > 1 and no existing pattern, resize first
-    if (bars > 1) {
-      for (const voice of VOICES) {
-        if (!inst.pattern[voice] || inst.pattern[voice].length < steps) {
-          inst.pattern[voice] = stepsToPattern([], steps);
-        }
-      }
-    }
-
-    for (const voice of VOICES) {
-      if (input[voice] !== undefined) {
-        const data = input[voice];
-
-        if (Array.isArray(data)) {
-          // Check if it's a step array (numbers) or pattern array (objects)
-          if (data.length > 0 && typeof data[0] === 'number') {
-            // Step array: [0, 4, 8, 12]
-            inst.pattern[voice] = stepsToPattern(data, steps);
-            added.push(`${voice}: ${data.length} hits`);
-          } else {
-            // Full pattern array - use as-is (pad if needed)
-            if (data.length < steps) {
-              const padded = [...data, ...Array(steps - data.length).fill({ velocity: 0, accent: false })];
-              inst.pattern[voice] = padded;
-            } else {
-              inst.pattern[voice] = data;
-            }
-            const activeSteps = data.filter(s => s && s.velocity > 0).length;
-            added.push(`${voice}: ${activeSteps} hits`);
-          }
-        }
-      }
-    }
-
-    // Also update the node's pattern
-    inst.node.setPattern(inst.pattern);
-
-    if (added.length === 0) {
-      return 'JB01: no pattern changes';
-    }
-
-    const barsLabel = bars > 1 ? ` (${bars} bars)` : '';
-    const clearLabel = input.clear ? ' (cleared first)' : '';
-    return `JB01: ${added.join(', ')}${barsLabel}${clearLabel}`;
+    const res = programDrumPattern({ input, voices: VOICES, pattern: inst.pattern, label: 'JB01' });
+    if (res.error) return res.error;
+    return finishDrumProgram(res, input, session, inst, 'JB01');
   },
 
   /**
@@ -201,25 +138,38 @@ const jb01Tools = {
     if (inst.error) return inst.error;
     const kitId = input.kit || input.name || 'default';
 
-    // Params are managed by JB01Node via inst.params proxy
-    let loaded = false;
-    const loadedVoices = [];
+    // JB01 kits are nested per voice ({ params: { kick: {...}, snare: {...} } }).
+    // loadKit() converts them to engine units; only descriptor-backed numeric
+    // values are written — a malformed kit gets an error, never stray keys.
+    const result = loadKit('jb01', kitId);
+    if (result.error) return `Error: ${result.error}`;
+    if (!result.nested || !result.params) {
+      return `Error: kit '${kitId}' has no per-voice params (expected { params: { kick: { level, tune, decay, ... }, ... } })`;
+    }
 
+    const applied = [];
+    const skipped = [...(result.skipped || [])];
     for (const voice of VOICES) {
-      const result = loadKit('jb01', kitId, voice);
-      if (!result.error && result.params) {
-        // Object.assign works with proxy - triggers set for each param
-        Object.assign(inst.params[voice], result.params);
-        loaded = true;
-        loadedVoices.push(voice);
+      const params = result.params[voice];
+      if (!params) continue;
+      let n = 0;
+      for (const [param, value] of Object.entries(params)) {
+        if (!getParamDef('jb01', voice, param) || typeof value !== 'number' || !Number.isFinite(value)) {
+          skipped.push(`${voice}.${param}`);
+          continue;
+        }
+        if (inst.node.setParam(`${voice}.${param}`, value)) n++;
+        else skipped.push(`${voice}.${param}`);
       }
+      if (n > 0) applied.push(voice);
     }
 
-    if (!loaded) {
-      return `Kit '${kitId}' not found or empty`;
+    if (applied.length === 0) {
+      return `Error: kit '${kitId}' had no usable JB01 params${skipped.length ? ` (skipped: ${skipped.join(', ')})` : ''}`;
     }
 
-    return `Loaded JB01 kit: ${kitId} (${loadedVoices.length} voices)`;
+    const skippedLabel = skipped.length ? `; skipped ${skipped.join(', ')}` : '';
+    return `Loaded JB01 kit: ${result.name || kitId} (${applied.length} voices: ${applied.join(', ')}${skippedLabel})`;
   },
 
   /**

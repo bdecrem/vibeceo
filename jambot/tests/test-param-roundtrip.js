@@ -160,6 +160,53 @@ test('session alias resolves to canonical node (drums → jb01)', () => {
   assert.strictEqual(s.get('jb01.kick.decay'), 0.42, 'alias writes reach canonical node');
 });
 
+// ============================================================
+// ParamSystem.serialize writes each node ONCE, under its canonical id.
+// drums/bass/lead/synth/sampler are the same nodes as jb01/jb202/jbs; writing
+// them too put the whole JB202 pattern in every save four times. Old saves
+// that still carry the alias keys must keep loading.
+// ============================================================
+test('serialize: one entry per node, canonical ids only', () => {
+  const s = createSession();
+  const nodes = s.params.serialize().nodes;
+  assert.deepEqual(Object.keys(nodes).sort(), ['jb01', 'jb202', 'jbs', 'jp9000', 'jt10', 'jt30', 'jt90']);
+  for (const alias of ['drums', 'bass', 'lead', 'synth', 'sampler']) assert.ok(!(alias in nodes), `${alias} written`);
+});
+
+test('serialize: an added instance and an effect node are written under their own keys', () => {
+  const s = createSession();
+  s.addInstrument('jb202');
+  s.params.register('fx.jb202.delay1', { id: 'delay1', serialize: () => ({ id: 'delay1', params: { mix: 30 } }), getParam() {}, setParam() { return true; }, getParameterDescriptors: () => ({}) });
+  const nodes = s.params.serialize().nodes;
+  assert.ok('jb202-2' in nodes, 'instance missing');
+  assert.deepEqual(nodes['fx.jb202.delay1'], { id: 'delay1', params: { mix: 30 } });
+});
+
+test('deserialize: a legacy save carrying alias keys (bass/drums/lead/synth/sampler) still restores', () => {
+  const src = createSession();
+  src.set('jb202.filterCutoff', 0.77);
+  src.set('jb01.kick.decay', 0.33);
+  src.instrument('jb202').pattern = Array.from({ length: 16 }, (_, i) => ({ note: 'E2', gate: i % 4 === 0, accent: false, slide: false }));
+  const data = JSON.parse(JSON.stringify(src.params.serialize()));
+  // What every save looked like before the fix: the same node under every alias
+  for (const [alias, canon] of [['drums', 'jb01'], ['bass', 'jb202'], ['lead', 'jb202'], ['synth', 'jb202'], ['sampler', 'jbs']]) {
+    data.nodes[alias] = data.nodes[canon];
+  }
+  const dst = createSession();
+  dst.params.deserialize(data);
+  assert.equal(dst.get('jb202.filterCutoff'), 0.77);
+  assert.equal(dst.get('jb01.kick.decay'), 0.33);
+  assert.equal(dst.instrument('jb202').pattern.filter(st => st.gate).length, 4);
+});
+
+test('serialize: dropping the alias copies shrinks the payload', () => {
+  const s = createSession();
+  s.instrument('jb202').pattern = Array.from({ length: 16 * 128 }, (_, i) => ({ note: 'C2', gate: i % 4 === 0, accent: false, slide: false }));
+  const json = JSON.stringify(s.params.serialize());
+  const one = JSON.stringify(s.params.serialize().nodes.jb202);
+  assert.ok(json.length < one.length * 1.6, `payload ${json.length} vs one jb202 copy ${one.length} — the pattern is stored more than once`);
+});
+
 // Regression: No local toEngine in instrument files
 test('No local toEngine in instrument nodes', () => {
   const instrumentDir = join(__dirname, '..', 'instruments');

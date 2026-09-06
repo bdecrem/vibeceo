@@ -5,7 +5,7 @@
  */
 
 import { registerTools } from './index.js';
-import { TR909_KITS } from '../../web/public/909/dist/machines/tr909/presets.js';
+import { resetSession } from '../core/session.js';
 import { fromEngine, JB200_PARAMS, JB01_PARAMS, JT10_PARAMS, JT30_PARAMS, JT90_PARAMS } from '../params/converters.js';
 
 // Param definitions by instrument
@@ -73,7 +73,7 @@ function formatMonoPattern(pattern) {
  * Show JB200 state
  */
 function showJB200(session) {
-  const node = session._nodes.jb200;
+  const node = session.getNode('jb200');
   const params = node._params;
   const defs = JB200_PARAMS.bass;
   const pattern = node.getPattern();
@@ -165,7 +165,7 @@ function showJBS(session) {
  * Show JB01 (reference drum machine) state
  */
 function showJB01(session) {
-  const node = session._nodes.jb01;
+  const node = session.getNode('jb01');
   const pattern = node.getPattern();
   const voices = node._voices;
 
@@ -200,125 +200,21 @@ function showJB01(session) {
   return lines.join('\n');
 }
 
-// Default kit to load on session creation
-const DEFAULT_DRUM_KIT = 'bart-deep';
-
-// Helper: Create empty bass pattern (16 steps)
-export function createEmptyBassPattern() {
-  return Array(16).fill(null).map(() => ({
-    note: 'C2',
-    gate: false,
-    accent: false,
-    slide: false,
-  }));
-}
-
-// Helper: Create empty lead pattern (16 steps)
-export function createEmptyLeadPattern() {
-  return Array(16).fill(null).map(() => ({
-    note: 'C3',
-    gate: false,
-    accent: false,
-    slide: false,
-  }));
-}
-
-// Helper: Create empty JB200 pattern (16 steps)
-export function createEmptyJB200Pattern() {
-  return Array(16).fill(null).map(() => ({
-    note: 'C2',
-    gate: false,
-    accent: false,
-    slide: false,
-  }));
-}
-
 // Tool handlers
 const sessionTools = {
   /**
-   * Create a new session with specified BPM
+   * Start over at the given BPM. Resets the session IN PLACE (the web Studio
+   * holds a reference to the session object): every instrument's pattern and
+   * params back to factory defaults, added instances removed, saved patterns,
+   * arrangement, automation, effect chains and routing cleared, 2 bars, no
+   * swing. See resetSession() in core/session.js. To change tempo without
+   * losing the track, use set_bpm.
    */
   create_session: async (input, session, context) => {
-    session.bpm = input.bpm;
-    session.swing = 0;
-
-    // Reset JB01 drums - load default kit with its parameters
-    session.drumKit = DEFAULT_DRUM_KIT;
-    session.drumPattern = {};
-    session.drumParams = {};
-    session.drumFlam = 0;
-
-    // Load default kit's voice parameters so agent knows the values
-    const kit = TR909_KITS.find(k => k.id === DEFAULT_DRUM_KIT);
-    if (kit?.voiceParams) {
-      for (const [voice, params] of Object.entries(kit.voiceParams)) {
-        session.drumParams[voice] = { ...params };
-      }
-    }
-    session.drumPatternLength = 16;
-    session.drumScale = '16th';
-    session.drumGlobalAccent = 1;
-    session.drumVoiceEngines = {};
-    session.drumUseSample = {};
-    session.drumAutomation = {};
-
-    // Reset bass (legacy pattern)
-    session.bassPattern = createEmptyBassPattern();
-    session.bassParams = {
-      waveform: 'sawtooth',
-      cutoff: 0.5,
-      resonance: 0.5,
-      envMod: 0.5,
-      decay: 0.5,
-      accent: 0.8,
-      level: 0.25  // -6dB for proper gain staging
-    };
-
-    // Reset lead (legacy pattern)
-    session.leadPreset = null;
-    session.leadPattern = createEmptyLeadPattern();
-    session.leadParams = {
-      vcoSaw: 0.5, vcoPulse: 0.5, pulseWidth: 0.5,
-      subLevel: 0, subMode: 0,
-      cutoff: 0.5, resonance: 0.3, envMod: 0.5,
-      attack: 0.01, decay: 0.3, sustain: 0.7, release: 0.3,
-      lfoRate: 0.3, lfoWaveform: 'triangle', lfoToPitch: 0, lfoToFilter: 0, lfoToPW: 0,
-      level: 0.25  // -6dB for proper gain staging
-    };
-
-    // Reset JB-S - keep kit loaded, just clear pattern
-    session.jbsPattern = {};
-    session.jbsParams = {};
-
-    // Reset JB200 (bass monosynth)
-    // Uses the node-based proxy system - values are in engine units (0-1)
-    session.jb200Pattern = createEmptyJB200Pattern();
-    // Reset to default engine values via the proxy (which writes to JB200Node)
-    session.jb200Params = {
-      osc1Waveform: 'sawtooth',
-      osc1Octave: 0,
-      osc1Detune: 0.5,    // 0-1 (0.5 = 0 cents)
-      osc1Level: 1.0,     // 0-1 (100%)
-      osc2Waveform: 'sawtooth',
-      osc2Octave: -12,
-      osc2Detune: 0.57,   // 0-1 (7 cents)
-      osc2Level: 0.8,     // 0-1 (80%)
-      filterCutoff: 0.55, // 0-1 (800Hz on log scale)
-      filterResonance: 0.4,
-      filterEnvAmount: 0.8,
-      filterAttack: 0,
-      filterDecay: 0.4,
-      filterSustain: 0.2,
-      filterRelease: 0.3,
-      ampAttack: 0,
-      ampDecay: 0.3,
-      ampSustain: 0.6,
-      ampRelease: 0.2,
-      drive: 0.2,
-      level: 0.25,        // 0-1 (-6dB for proper gain staging)
-    };
-
-    return `Session created at ${input.bpm} BPM`;
+    const bpm = Number(input?.bpm);
+    if (!isFinite(bpm) || bpm < 40 || bpm > 300) return 'Error: bpm must be 40-300';
+    resetSession(session, { bpm });
+    return `Session created at ${bpm} BPM — every instrument, pattern, effect, automation lane and the arrangement were cleared (2 bars, no swing)`;
   },
 
   /**

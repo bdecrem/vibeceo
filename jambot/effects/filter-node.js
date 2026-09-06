@@ -86,6 +86,11 @@ export class FilterNode extends EffectNode {
     return this._preset;
   }
 
+  /** @returns {string[]} available preset names */
+  listPresets() {
+    return Object.keys(FILTER_PRESETS);
+  }
+
   serialize() {
     return {
       ...super.serialize(),

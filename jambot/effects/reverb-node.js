@@ -18,6 +18,9 @@ export class ReverbNode extends EffectNode {
   constructor(id = 'reverb', config = {}) {
     super(id, config);
 
+    // Track preset
+    this._preset = null;
+
     this.registerParams({
       decay:    { min: 0.1, max: 10, default: 2.0, unit: 'seconds', description: 'Reverb tail length' },
       damping:  { min: 0, max: 100, default: 50, unit: '0-100', description: 'High-frequency rolloff (0=bright, 100=dark)' },
@@ -28,6 +31,33 @@ export class ReverbNode extends EffectNode {
       highcut:  { min: 1000, max: 20000, default: 10000, unit: 'Hz', description: 'Tame harshness' },
       size:     { min: 0, max: 100, default: 50, unit: '0-100', description: 'Room size' },
     });
+
+    if (config.preset) this.loadPreset(config.preset);
+  }
+
+  /**
+   * Load a preset by name (REVERB_PRESETS)
+   * @param {string} presetName
+   * @returns {boolean} false when the preset does not exist
+   */
+  loadPreset(presetName) {
+    const preset = REVERB_PRESETS[presetName];
+    if (!preset) return false;
+    this._preset = presetName;
+    for (const [param, value] of Object.entries(preset)) {
+      this.setParam(param, value);
+    }
+    return true;
+  }
+
+  /** @returns {string|null} current preset name */
+  getPreset() {
+    return this._preset;
+  }
+
+  /** @returns {string[]} available preset names */
+  listPresets() {
+    return Object.keys(REVERB_PRESETS);
   }
 }
 

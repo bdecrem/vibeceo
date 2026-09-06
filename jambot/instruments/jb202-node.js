@@ -44,6 +44,39 @@ function normalizePath(path) {
   return `bass.${p}`;
 }
 
+// osc1Octave / osc2Octave are stored in CENTS (the 'semitones' unit's engine
+// form: toEngine(-12) = -1200 — what tweak, automation, status and the web
+// knobs all assume). The JB202 engine transposes in SEMITONES, so the value
+// is divided by 100 at the engine boundary — every path that reaches
+// engine.setParameter goes through octaveToEngine(). Before this, -1200
+// reached the engine as -1200 semitones: the "sub bass: osc2Octave -12"
+// recipe produced a DC thump instead of a sub octave.
+const OCTAVE_PARAMS = new Set(['osc1Octave', 'osc2Octave']);
+
+/**
+ * Older writers (tweak_jb202, kit loaders, saved patterns/tracks from before
+ * the fix) stored raw semitones (-12). Cents from integer semitones are
+ * multiples of 100, so a non-zero integer within ±24 can only be legacy
+ * semitones: scale it up. Fractional-cent values in (0, 24] are left alone.
+ */
+function normalizeStoredOctave(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return value;
+  if (value !== 0 && Number.isInteger(value) && Math.abs(value) <= 24) return value * 100;
+  return value;
+}
+
+/** Stored cents → engine semitones. */
+function octaveToEngine(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return value;
+  return normalizeStoredOctave(value) / 100;
+}
+
+/** Mute pseudo-param: true/1/'true'/'on' mute, anything else unmutes. */
+function muteFlag(value) {
+  if (typeof value === 'string') return !['false', '0', 'off', 'no', ''].includes(value.toLowerCase());
+  return !!value;
+}
+
 export class JB202Node extends InstrumentNode {
   constructor(config = {}) {
     super(config.id || 'jb202', config);
@@ -129,10 +162,15 @@ export class JB202Node extends InstrumentNode {
     // Normalize path
     const normalizedPath = normalizePath(path);
 
-    // Handle mute — set node level to minimum dB
+    // Handle mute — node level to -60 dB; unmute restores the pre-mute level
+    // (a falsy value used to be accepted and silently do nothing).
     if (normalizedPath === 'bass.mute' || path === 'mute') {
-      if (value) {
+      if (muteFlag(value)) {
+        if (this.getLevel() > -60) this._preMuteLevel = this.getLevel();
         this.setLevel(-60);
+      } else {
+        this.setLevel(this._preMuteLevel ?? 0);
+        this._preMuteLevel = undefined;
       }
       return true;
     }
@@ -153,6 +191,10 @@ export class JB202Node extends InstrumentNode {
         return false;
       }
       value = v;
+    }
+    if (OCTAVE_PARAMS.has(normalizedPath.slice(5))) {
+      // load_pattern / presets may carry legacy raw semitones — store cents
+      value = normalizeStoredOctave(value);
     }
     this._params[normalizedPath] = value;
     return true;
@@ -185,8 +227,9 @@ export class JB202Node extends InstrumentNode {
       const value = this._params[path];
 
       if (value !== undefined) {
-        // Values already in engine units - return directly
-        result[paramName] = value;
+        // Values already in engine units — except the octaves: stored cents,
+        // engine wants semitones
+        result[paramName] = OCTAVE_PARAMS.has(paramName) ? octaveToEngine(value) : value;
       }
     }
 
@@ -259,6 +302,15 @@ export class JB202Node extends InstrumentNode {
    */
   deserialize(data) {
     if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
+    if (data.params) {
+      // Tracks saved by tweak_jb202 / kit loads before the cents fix hold raw
+      // semitones for the octaves; migrate so they keep their pitch.
+      const params = { ...data.params };
+      for (const key of ['bass.osc1Octave', 'bass.osc2Octave']) {
+        if (key in params) params[key] = normalizeStoredOctave(params[key]);
+      }
+      data = { ...data, params };
+    }
     super.deserialize(data);   // base class validates choice params
   }
 
@@ -276,6 +328,7 @@ export class JB202Node extends InstrumentNode {
     const {
       bars,
       stepDuration,
+      swing = 0,
       sampleRate = 44100,
       pattern = this._pattern,
       params = null,
@@ -292,8 +345,14 @@ export class JB202Node extends InstrumentNode {
     const engine = new JB202Engine({ context });
 
     // Apply node's registered params (converted from jb202-params.json defaults)
-    // If explicit params override provided, use those instead
-    const engineParams = params || this.getEngineParams();
+    // If explicit params override provided (saved pattern, raw stored values),
+    // use those instead — octaves are stored cents, the engine takes semitones.
+    const engineParams = params ? { ...params } : this.getEngineParams();
+    if (params) {
+      for (const key of OCTAVE_PARAMS) {
+        if (key in engineParams) engineParams[key] = octaveToEngine(engineParams[key]);
+      }
+    }
     Object.entries(engineParams).forEach(([key, value]) => {
       engine.setParameter(key, value);
     });
@@ -302,20 +361,23 @@ export class JB202Node extends InstrumentNode {
     engine.setPattern(pattern);
 
     // Convert automation from producer units to engine units
-    // Automation uses node-relative paths: 'bass.filterCutoff' or 'filterCutoff'
+    // Automation uses node-relative paths: 'bass.filterCutoff', 'filterCutoff'
+    // or an alias ('cutoff') — resolve them the same way tweak does.
     // Use node's own automation if no explicit automation passed
     const rawAutomation = automation || this._getAutomationForRender();
     let engineAutomation = undefined;
     if (rawAutomation && Object.keys(rawAutomation).length > 0) {
       engineAutomation = {};
       for (const [path, values] of Object.entries(rawAutomation)) {
-        // Normalize path — strip 'bass.' prefix if present
-        const paramName = path.startsWith('bass.') ? path.slice(5) : path;
+        const paramName = normalizePath(path).slice(5);
         const paramDef = JB202_PARAMS.bass?.[paramName];
         if (paramDef && Array.isArray(values)) {
-          engineAutomation[paramName] = values.map(v =>
-            v !== null && v !== undefined ? toEngine(v, paramDef) : null
-          );
+          const isOctave = OCTAVE_PARAMS.has(paramName);
+          engineAutomation[paramName] = values.map(v => {
+            if (v === null || v === undefined) return null;
+            const e = toEngine(v, paramDef);
+            return isOctave ? e / 100 : e;   // cents → semitones for the engine
+          });
         }
       }
     }
@@ -324,6 +386,7 @@ export class JB202Node extends InstrumentNode {
     const buffer = await engine.renderPattern({
       bars,
       stepDuration,
+      swing,
       sampleRate,
       automation: engineAutomation,
     });

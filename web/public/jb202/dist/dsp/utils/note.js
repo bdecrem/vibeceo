@@ -28,6 +28,7 @@ export function freqToMidi(freq) {
 // Convert note name to MIDI number (e.g., 'C4' -> 60)
 export function noteToMidi(noteName) {
   if (typeof noteName === 'number') return noteName;
+  if (typeof noteName !== 'string') return 60; // a note-less step must never kill a render
 
   const match = noteName.match(/^([A-Ga-g][#b]?)(-?\d+)$/);
   if (!match) return 60; // Default to C4

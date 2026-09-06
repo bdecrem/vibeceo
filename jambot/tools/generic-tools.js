@@ -6,7 +6,16 @@
  */
 
 import { registerTools } from './index.js';
-import { toEngine, fromEngine, formatValue } from '../params/converters.js';
+import { toEngine as toEngineUnits, fromEngine, formatValue } from '../params/converters.js';
+
+// Producer value → engine value. 'seconds' descriptors (jt10 glideTime, 0-1 s)
+// also take a 0-100 knob position: anything above 1 is knob/100, the same rule
+// tweak_jt10 applies. Before this, tweak({ path: 'jt10.lead.glideTime', value: 50 })
+// clamped to 1 s — every glide became the slowest one.
+function toEngine(value, descriptor) {
+  if (descriptor?.unit === 'seconds' && typeof value === 'number' && value > 1) value = value / 100;
+  return toEngineUnits(value, descriptor);
+}
 
 /**
  * Nodes that store/consume producer units directly (effects, jbs sampler)
@@ -54,6 +63,35 @@ function songModeNote(session, path) {
   return ` (song mode: live pattern only — saved ${inst} patterns ${names} unchanged. To hear it in the arrangement: load_pattern → tweak → save_pattern for each)`;
 }
 
+// `<voice>.mute` is not a stored parameter. Nodes implement `mute = true` as
+// "level to the floor" and ignore `false`, so "unmute" used to report success
+// and change nothing. Both directions are handled here, at the tool boundary:
+// unmute puts the level back where a fresh session has it.
+function isOn(value) {
+  return !(value === false || value === 0 || value == null || value === 'false' || value === 'off');
+}
+
+function setMute(session, path, value, resolved) {
+  const { node, nodeId, paramPath } = resolved;
+  if (typeof node.setLevel !== 'function') {
+    return `Error: ${path}: effects have no mute — use remove_effect, or set its mix to 0`;
+  }
+  const voice = paramPath.includes('.') ? paramPath.split('.')[0] : null;
+  const label = voice ? `${nodeId}.${voice}` : nodeId;
+  if (isOn(value)) {
+    return session.set(path, true) ? `Muted ${label}` : `Error: Could not mute ${path}`;
+  }
+  const voiceLevelPath = voice ? `${nodeId}.${voice}.level` : null;
+  const d = voiceLevelPath ? session.getDescriptor(voiceLevelPath) : null;
+  if (d) {
+    const engine = nodeStoresProducerUnits(session, voiceLevelPath) ? d.default : toEngine(d.default, d);
+    session.set(voiceLevelPath, engine);
+    return `Unmuted ${label} (level back to ${formatValue(d.default, d)})`;
+  }
+  session.set(`${nodeId}.level`, 0);
+  return `Unmuted ${label} (level back to 0dB)`;
+}
+
 const genericTools = {
   /**
    * Change tempo of the current track (keeps everything else).
@@ -84,18 +122,24 @@ const genericTools = {
 
     if (SESSION_PARAMS[path]) return sessionParam(session, path);
 
+    // Unknown node, or a typo'd voice/param on a node that publishes
+    // descriptors, is an error — not "undefined".
+    const check = session.params.checkPath(path);
+    if (!check.ok) return check.error;
+    if (check.mute) {
+      const { nodeId, paramPath } = check.resolved;
+      const voice = paramPath.includes('.') ? paramPath.split('.')[0] : null;
+      return `Error: mute is write-only — read ${voice ? `${nodeId}.${voice}.level` : `${nodeId}.level`} instead`;
+    }
+
     const value = session.get(path);
 
     if (value === undefined) {
-      // Check if node exists — resolver handles multi-segment ids ('fx.*')
-      if (!session.params?._resolveNode?.(path)) {
-        return `Error: No node for "${path}". Available: ${session.listNodes().join(', ')}`;
-      }
       return `${path} is not set (undefined)`;
     }
 
     // Get descriptor for unit conversion
-    const descriptor = session.getDescriptor(path);
+    const descriptor = check.descriptor;
 
     if (descriptor) {
       // Node-level 'level' already returns dB from getLevel(); producer-unit
@@ -146,14 +190,19 @@ const genericTools = {
 
     if (SESSION_PARAMS[path]) return sessionParam(session, path, value, delta);
 
-    // Validate node exists — use the resolver, node ids can be multi-segment
-    // (effect nodes register as 'fx.<target>.<id>')
-    if (!session.params?._resolveNode?.(path)) {
-      return `Error: No node for "${path}". Available: ${session.listNodes().join(', ')}`;
+    // Validate the path: the resolver handles multi-segment ids ('fx.<target>.<id>')
+    // and alias heads (bass.cutoff → jb202); a voice or param the node doesn't
+    // have ('jt90.hat.level', 'jb01.kick.pitch') is refused instead of being
+    // stored as a dead key and reported as "Set …".
+    const check = session.params.checkPath(path);
+    if (!check.ok) return check.error;
+    if (check.mute) {
+      if (delta !== undefined) return `Error: ${path} takes value true/false, not a delta`;
+      return setMute(session, path, value, check.resolved);
     }
 
     // Get descriptor for unit conversion
-    const descriptor = session.getDescriptor(path);
+    const descriptor = check.descriptor;
 
     // Node-level 'level' (e.g. 'jt10.level') — setLevel() works in dB directly,
     // so skip toEngine/fromEngine to avoid double-conversion
@@ -184,8 +233,10 @@ const genericTools = {
     const success = session.set(path, engineValue);
 
     if (success) {
-      // Show what was actually stored — choice params coerce (0 → 'sawtooth')
+      // Show what was actually stored — choice params coerce (0 → 'sawtooth'),
+      // seconds knob positions (50) became seconds (0.5)
       if (descriptor?.unit === 'choice') finalProducerValue = session.get(path);
+      if (descriptor?.unit === 'seconds' && typeof finalProducerValue === 'number' && finalProducerValue > 1) finalProducerValue = finalProducerValue / 100;
       const displayValue = descriptor ? formatValue(finalProducerValue, descriptor) : JSON.stringify(finalProducerValue);
       const action = delta !== undefined ? `Adjusted ${path} by ${delta > 0 ? '+' : ''}${delta} →` : 'Set';
       return `${action} ${path} = ${displayValue}${songModeNote(session, path)}`;
@@ -210,8 +261,11 @@ const genericTools = {
     const results = [];
     for (const [path, value] of Object.entries(params)) {
       if (SESSION_PARAMS[path]) { results.push(sessionParam(session, path, value)); continue; }
+      const check = session.params.checkPath(path);
+      if (!check.ok) { results.push(`${path}: ${check.error}`); continue; }
+      if (check.mute) { results.push(setMute(session, path, value, check.resolved)); continue; }
       // Get descriptor for unit conversion
-      const descriptor = session.getDescriptor(path);
+      const descriptor = check.descriptor;
 
       // Node-level 'level' (e.g. 'jt10.level') goes straight to setLevel(dB);
       // producer-unit nodes (effects, jbs) take producer values raw
@@ -222,7 +276,8 @@ const genericTools = {
 
       const success = session.set(path, engineValue);
       if (success) {
-        const shown = descriptor?.unit === 'choice' ? session.get(path) : value;
+        let shown = descriptor?.unit === 'choice' ? session.get(path) : value;
+        if (descriptor?.unit === 'seconds' && typeof shown === 'number' && shown > 1) shown = shown / 100;
         const displayValue = descriptor ? formatValue(shown, descriptor) : JSON.stringify(shown);
         results.push(`${path} = ${displayValue}${songModeNote(session, path)}`);
       } else {

@@ -19,6 +19,14 @@ const tests = [
   'test-audio-regression.js',
   'test-agent-loop.js',
   'test-instances.js',
+  'test-web-entry.js',
+  'test-song-tools.js',
+  'test-session-reset.js',
+  'test-mono-synths.js',
+  'test-drum-tools.js',
+  'test-web-history.js',
+  'test-web-writethrough.js',
+  'test-effects.js',
 ];
 
 let allPassed = true;

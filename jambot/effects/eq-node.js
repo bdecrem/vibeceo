@@ -110,6 +110,11 @@ export class EQNode extends EffectNode {
     return this._preset;
   }
 
+  /** @returns {string[]} available preset names */
+  listPresets() {
+    return Object.keys(EQ_PRESETS);
+  }
+
   serialize() {
     return {
       ...super.serialize(),

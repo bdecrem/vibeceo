@@ -10,11 +10,61 @@ import { EQNode } from '../effects/eq-node.js';
 import { FilterNode } from '../effects/filter-node.js';
 import { ReverbNode } from '../effects/reverb-node.js';
 import { SidechainNode } from '../effects/sidechain-node.js';
+import { coerceChoice } from './node.js';
+
+/** Effect types a send bus can host. */
+export const SEND_EFFECT_CLASSES = {
+  delay: DelayNode,
+  reverb: ReverbNode,
+  eq: EQNode,
+  filter: FilterNode,
+  sidechain: SidechainNode,
+};
+
+/**
+ * Check producer-unit params against an effect node's descriptors WITHOUT
+ * writing them. Returns one message per refused key: unknown params and
+ * invalid choice values. (Numbers outside min/max are clamped by setParam and
+ * are not refused.)
+ * @param {EffectNode} node
+ * @param {Object} params
+ * @returns {string[]} rejection messages (empty when everything is valid)
+ */
+export function checkEffectParams(node, params = {}) {
+  const descriptors = node.getParameterDescriptors();
+  const rejected = [];
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined) continue;
+    const d = descriptors[key];
+    if (!d) {
+      rejected.push(`unknown param "${key}" (has: ${Object.keys(descriptors).join(', ')})`);
+    } else if (d.unit === 'choice' && coerceChoice(d, value) === undefined) {
+      rejected.push(`"${key}" must be one of ${(d.options || []).join('|')}, got ${JSON.stringify(value)}`);
+    } else if (d.unit !== 'choice' && typeof value !== 'number') {
+      rejected.push(`"${key}" must be a number (${d.unit}), got ${JSON.stringify(value)}`);
+    }
+  }
+  return rejected;
+}
+
+/**
+ * Write producer-unit params to an effect node. Callers validate with
+ * checkEffectParams first so a rejected key never leaves the node half-set.
+ * @returns {string[]} "key=storedValue" for every applied param (clamped values show as stored)
+ */
+export function applyEffectParams(node, params = {}) {
+  const applied = [];
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined) continue;
+    if (node.setParam(key, value)) applied.push(`${key}=${node.getParam(key)}`);
+  }
+  return applied;
+}
 
 /**
  * Create a new track
  * @param {string} id - Track identifier
- * @param {Object} config - { nodeId, volume, mute }
+ * @param {Object} config - { nodeId, volume, mute, solo, pan, sends }
  * @returns {Object} Track config
  */
 export function createTrack(id, config = {}) {
@@ -26,46 +76,35 @@ export function createTrack(id, config = {}) {
     solo: config.solo ?? false,
     pan: config.pan ?? 0,          // -100 to +100
     inserts: [],                   // Channel inserts
-    sends: {},                     // { sendId: level }
+    // { sendId: level } — restored from saved state; deserialize used to
+    // rebuild every track with empty sends, dropping all routes on reload.
+    sends: { ...(config.sends || {}) },
   };
 }
 
 /**
  * Create a new send bus
  * @param {string} id - Send identifier
- * @param {string} effectType - 'delay', 'eq', etc.
- * @param {Object} params - Effect parameters
- * @returns {Object} Send config
+ * @param {string} effectType - 'delay', 'reverb', 'eq', 'filter'
+ * @param {Object} params - Effect parameters (producer units) plus optional `level`
+ * @returns {Object} Send config { id, effectType, effectNode, params (live), level }
  */
 export function createSend(id, effectType, params = {}) {
-  // Create appropriate effect node
-  let effectNode;
-  switch (effectType) {
-    case 'delay':
-      effectNode = new DelayNode(id, params);
-      break;
-    case 'reverb':
-      effectNode = new ReverbNode(id, params);
-      break;
-    case 'eq':
-      effectNode = new EQNode(id, params);
-      break;
-    case 'filter':
-      effectNode = new FilterNode(id, params);
-      break;
-    case 'sidechain':
-      effectNode = new SidechainNode(id, params);
-      break;
-    default:
-      effectNode = new DelayNode(id, params);  // Default to delay
-  }
+  const NodeClass = SEND_EFFECT_CLASSES[effectType] || DelayNode;  // Default to delay
+  const { level, ...effectParams } = params || {};
+  const effectNode = new NodeClass(id);
+  // The constructors only register defaults — the requested values must be
+  // written explicitly, or every send is a stock 375 ms / 2 s effect.
+  applyEffectParams(effectNode, effectParams);
 
   return {
     id,
     effectType,
     effectNode,
-    params: effectNode.getParams(),
-    level: params.level ?? 1,  // Send bus output level
+    // Live view of the node — the single source of truth (a creation-time
+    // snapshot here went stale on every tweak and was what got serialized).
+    get params() { return effectNode.getParams(); },
+    level: level ?? 1,  // Send bus output level
   };
 }
 
@@ -149,6 +188,36 @@ export class RoutingManager {
       volume: 0.8,
       inserts: [],
     };
+    // ParamSystem the send effect nodes are registered in (see attachParams)
+    this.params = null;
+  }
+
+  /**
+   * Register every send's effect node in a ParamSystem as `send.<id>`, so
+   * `tweak({ path: 'send.verb.decay' })` and tweak_effect reach the bus.
+   * Idempotent; also applies to sends added or restored later.
+   * @param {ParamSystem} params
+   */
+  attachParams(params) {
+    if (!params) return;
+    this.params = params;
+    for (const [id, send] of this.sends) this._registerSend(id, send);
+  }
+
+  /** ParamSystem path of a send's effect node. */
+  static sendPath(id) {
+    return `send.${id}`;
+  }
+
+  _registerSend(id, send) {
+    if (!this.params) return;
+    const path = RoutingManager.sendPath(id);
+    if (this.params.nodes.get(path) !== send.effectNode) this.params.register(path, send.effectNode);
+  }
+
+  _unregisterSend(id) {
+    if (!this.params) return;
+    this.params.unregister(RoutingManager.sendPath(id));
   }
 
   // === TRACKS ===
@@ -176,6 +245,7 @@ export class RoutingManager {
   addSend(id, effectType = 'delay', params = {}) {
     const send = createSend(id, effectType, params);
     this.sends.set(id, send);
+    this._registerSend(id, send);
     return send;
   }
 
@@ -184,6 +254,7 @@ export class RoutingManager {
     for (const track of this.tracks.values()) {
       delete track.sends[id];
     }
+    this._unregisterSend(id);
     return this.sends.delete(id);
   }
 
@@ -269,7 +340,7 @@ export class RoutingManager {
     for (const [id, send] of this.sends) {
       sends[id] = {
         effectType: send.effectType,
-        params: send.params,
+        params: { ...send.effectNode.getParams() },  // live values, not the creation snapshot
         level: send.level,
       };
     }
@@ -289,6 +360,7 @@ export class RoutingManager {
 
   deserialize(data) {
     this.tracks.clear();
+    for (const id of this.sends.keys()) this._unregisterSend(id);
     this.sends.clear();
 
     if (data.tracks) {
@@ -304,7 +376,8 @@ export class RoutingManager {
 
     if (data.sends) {
       for (const [id, sendData] of Object.entries(data.sends)) {
-        this.addSend(id, sendData.effectType, sendData.params);
+        // level lives beside params in the saved shape; addSend reads it from params
+        this.addSend(id, sendData.effectType, { ...(sendData.params || {}), level: sendData.level });
       }
     }
 
@@ -351,7 +424,9 @@ export class RoutingManager {
     if (this.sends.size > 0) {
       lines.push('SENDS:');
       for (const [id, send] of this.sends) {
-        lines.push(`  ${id}: ${send.effectType}`);
+        const p = send.effectNode.getParams();
+        const summary = Object.entries(p).slice(0, 4).map(([k, v]) => `${k}=${v}`).join(', ');
+        lines.push(`  ${id}: ${send.effectType} [${summary}] level=${send.level} (tweak via send.${id}.<param>)`);
       }
       lines.push('');
     }

@@ -6,7 +6,7 @@
  * Supports variable pattern lengths (default 16 steps = 1 bar).
  */
 
-import { InstrumentNode } from '../core/node.js';
+import { InstrumentNode, coerceChoice } from '../core/node.js';
 import { JB01_PARAMS, toEngine, fromEngine } from '../params/converters.js';
 import { JB01Engine } from '../../web/public/jb01/dist/machines/jb01/engine.js';
 import { OfflineAudioContext } from 'node-web-audio-api';
@@ -35,6 +35,42 @@ function createEmptyPattern(steps = 16) {
     pattern[voice] = createEmptyVoicePattern(steps);
   }
   return pattern;
+}
+
+const STEPS_PER_BAR = 16;
+
+/** Longest voice, rounded up to whole bars (at least one bar). */
+function patternLengthOf(pattern) {
+  let max = 0;
+  for (const track of Object.values(pattern || {})) {
+    if (Array.isArray(track) && track.length > max) max = track.length;
+  }
+  if (max === 0) return STEPS_PER_BAR;
+  return Math.ceil(max / STEPS_PER_BAR) * STEPS_PER_BAR;
+}
+
+/**
+ * Bring every voice to the longest length by repeating shorter ones. The
+ * JB01 engine already wraps per voice, so this changes nothing audible; it
+ * keeps getPatternLength()/automation looping consistent with JT90 and
+ * gives missing voices an explicit (silent) track.
+ */
+function normalizePattern(pattern) {
+  const src = pattern && typeof pattern === 'object' ? pattern : {};
+  const length = patternLengthOf(src);
+  const out = {};
+  const keys = [...VOICES, ...Object.keys(src).filter(k => !VOICES.includes(k))];
+  for (const voice of keys) {
+    const track = Array.isArray(src[voice]) && src[voice].length > 0 ? src[voice] : null;
+    if (track && track.length === length) { out[voice] = track; continue; }
+    out[voice] = Array(length).fill(null).map((_, i) => {
+      const s = track ? track[i % track.length] : null;
+      return s && typeof s === 'object'
+        ? { ...s, velocity: s.velocity > 0 ? s.velocity : 0, accent: !!s.accent }
+        : { velocity: 0, accent: false };
+    });
+  }
+  return out;
 }
 
 export class JB01Node extends InstrumentNode {
@@ -122,13 +158,43 @@ export class JB01Node extends InstrumentNode {
       return true;
     }
 
+    // Refuse unknown keys instead of storing them: "jb01.kik.decay" and
+    // "jb01.kick.decayy" used to report "Set …" and change nothing.
+    const descriptor = this._descriptors[path];
+    if (!descriptor) {
+      const voice = parts[0];
+      const hint = VOICES.includes(voice)
+        ? `valid for ${voice}: ${Object.keys(JB01_PARAMS[voice] || {}).join(', ')}`
+        : `voices: ${VOICES.join(', ')}`;
+      // warn once per path — a saved track with stray keys replays them on every load
+      this._warnedUnknown ??= new Set();
+      if (!this._warnedUnknown.has(path)) {
+        this._warnedUnknown.add(path);
+        console.warn(`${this.id}: unknown parameter "${path}" (${hint})`);
+      }
+      return false;
+    }
+    if (descriptor.unit === 'choice') {
+      const v = coerceChoice(descriptor, value);
+      if (v === undefined) {
+        console.warn(`${this.id}: "${path}" must be one of ${(descriptor.options || []).join('|')}, got ${JSON.stringify(value)}`);
+        return false;
+      }
+      this._params[path] = v;
+      return true;
+    }
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      console.warn(`${this.id}: "${path}" expects a number, got ${JSON.stringify(value)}`);
+      return false;
+    }
+
     // setParam takes ENGINE units (0-1) as its contract. Do NOT guess units by
     // magnitude and silently convert — that was a second conversion path beside
     // converters.js that misclassified legitimate small producer values and made
     // read/write asymmetric (set 55 -> read 0.55). Producer->engine conversion
     // belongs at the tool boundary. Fail loudly on clearly out-of-range input
     // instead of guessing; store the value as given so read == write.
-    if (typeof value === 'number' && parts.length === 2) {
+    if (parts.length === 2) {
       const [voice, paramName] = parts;
       const paramDef = JB01_PARAMS[voice]?.[paramName];
       if (paramDef && (paramDef.unit === '0-100' || paramDef.unit === 'dB') && (value < -1.5 || value > 1.5)) {
@@ -186,7 +252,7 @@ export class JB01Node extends InstrumentNode {
    * @param {Object} pattern - { kick: [...], snare: [...], ... }
    */
   setPattern(pattern) {
-    this._pattern = pattern;
+    this._pattern = normalizePattern(pattern);
   }
 
   /**
@@ -214,7 +280,7 @@ export class JB01Node extends InstrumentNode {
    * @returns {number}
    */
   getPatternLength() {
-    return this._pattern.kick?.length || 16;
+    return patternLengthOf(this._pattern);
   }
 
   /**
@@ -261,10 +327,10 @@ export class JB01Node extends InstrumentNode {
       stepDuration,
       swing = 0,
       sampleRate = 44100,
-      pattern = this._pattern,
       params = null,
       automation = null,
     } = options;
+    const pattern = normalizePattern(options.pattern ?? this._pattern);
 
     // Check if pattern has any hits
     const hasHits = VOICES.some(voice =>
@@ -343,10 +409,10 @@ export class JB01Node extends InstrumentNode {
       stepDuration,
       swing = 0,
       sampleRate = 44100,
-      pattern = this._pattern,
       params = null,
       automation = null,
     } = options;
+    const pattern = normalizePattern(options.pattern ?? this._pattern);
 
     const voiceBuffers = {};
 
@@ -434,11 +500,23 @@ export class JB01Node extends InstrumentNode {
    * @param {Object} data
    */
   deserialize(data) {
-    if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
+    if (data.pattern) this._pattern = normalizePattern(JSON.parse(JSON.stringify(data.pattern)));
     if (data.params) {
       // Validate and convert params - handle legacy data with producer values
       const migratedParams = {};
       for (const [path, value] of Object.entries(data.params)) {
+        // Drop keys with no descriptor and non-numeric values: saved tracks
+        // may carry the old kit loader's object-valued keys (kick.kick, …) or
+        // typos stored before setParam validated.
+        const descriptor = this._descriptors[path];
+        if (!descriptor) continue;
+        if (descriptor.unit === 'choice') {
+          const v = coerceChoice(descriptor, value);
+          migratedParams[path] = v === undefined ? descriptor.default : v;
+          continue;
+        }
+        if (typeof value !== 'number' || !Number.isFinite(value)) continue;
+
         const [voice, paramName] = path.split('.');
         const paramDef = JB01_PARAMS[voice]?.[paramName];
 

@@ -67,10 +67,16 @@ const LIBRARY_ALIASES = {
   'drumnbass': 'drum_and_bass',
   'jungle': 'jungle',
   'trance': 'trance',
+  // Bare 'minimal' / 'breaks' / 'plug' / 'wave' are NOT aliases: they are
+  // everyday synth vocabulary ("keep it minimal", "a square wave for the
+  // bass", "plug the hats into the delay", "add some breaks") and each hit
+  // injected an unrelated genre brief — with a target BPM — into the system
+  // prompt for the rest of the track. Multi-word genre names stay.
   'minimal techno': 'minimal_techno',
-  'minimal': 'minimal_techno',
   'breakbeat': 'breakbeat',
-  'breaks': 'breakbeat',
+  'nu skool breaks': 'breakbeat',
+  'nu breaks': 'breakbeat',
+  'uk breaks': 'breakbeat',
   'big beat': 'breakbeat',
   'ambient': 'ambient',
   'idm': 'idm',
@@ -120,14 +126,14 @@ const LIBRARY_ALIASES = {
   'neurofunk': 'neurofunk',
   'neuro': 'neurofunk',
   'pluggnb': 'pluggnb',
-  'plug': 'pluggnb',
+  'plugg': 'pluggnb',
   'rawstyle': 'rawstyle',
   'raw hardstyle': 'rawstyle',
   'sigilkore': 'sigilkore',
   'stutterhouse': 'stutterhouse',
   'stutter house': 'stutterhouse',
-  'wave': 'wave',
   'trap wave': 'wave',
+  'wave music': 'wave',
 
   // === GENERIC TERMS → sensible defaults ===
   'techno': 'berlin_techno',
@@ -145,18 +151,23 @@ const LIBRARY_ALIASES = {
  * @returns {string[]} Array of library keys found
  */
 export function detectLibraryKeys(text) {
-  const lower = text.toLowerCase();
+  let lower = String(text || '').toLowerCase();
   const found = new Set();
 
-  // Sort aliases by length (longest first) to match "detroit techno" before "detroit"
+  // Longest alias first, and each match is blanked out of the text before the
+  // shorter aliases run: "minimal techno" is minimal_techno only — the generic
+  // 'techno' inside it must not also pull in berlin_techno, and "tech house"
+  // must not also fire 'house'. Whole words/phrases only ('wave' never matches
+  // inside 'vaporwave').
   const sortedAliases = Object.keys(LIBRARY_ALIASES).sort((a, b) => b.length - a.length);
 
   for (const alias of sortedAliases) {
-    // Word boundary match to prevent "wave" matching inside "vaporwave"
     const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const re = new RegExp(`(?:^|\\W)${escaped}(?:$|\\W)`);
-    if (re.test(lower)) {
+    const re = new RegExp(`(?:^|\\W)${escaped}(?:$|\\W)`, 'g');
+    const consumed = lower.replace(re, m => ' '.repeat(m.length));
+    if (consumed !== lower) {
       found.add(LIBRARY_ALIASES[alias]);
+      lower = consumed;
     }
   }
 

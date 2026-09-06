@@ -3,63 +3,169 @@
  *
  * Tools for song mode: save_pattern, load_pattern, copy_pattern, list_patterns,
  * set_arrangement, clear_arrangement, show_arrangement
+ *
+ * A saved pattern captures one instrument instance's step pattern, params,
+ * automation and channel inserts (its effect chains). The arrangement names a
+ * saved pattern per instrument per section. Everything keys on the instance
+ * id (jb01, jt90, jb202, jt30, jt10, jbs, or an added id such as jb202-2).
  */
 
 import { registerTools } from './index.js';
 import { clearNodeAutomation } from '../core/automation.js';
+import { DelayNode } from '../effects/delay-node.js';
+import { EQNode } from '../effects/eq-node.js';
+import { FilterNode } from '../effects/filter-node.js';
+import { SidechainNode } from '../effects/sidechain-node.js';
+import { ReverbNode } from '../effects/reverb-node.js';
 
-// JB01 voices
-const JB01_VOICES = ['jb01', 'kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];
-// JT90 voices (user-facing names)
-const JT90_VOICES = ['jt90', 'kick', 'snare', 'clap', 'rimshot', 'lowtom', 'midtom', 'hitom', 'ch', 'oh', 'crash', 'ride'];
-// Legacy drums = jb01
-const DRUM_VOICES = ['drums', 'kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];
+// Effect type → node class, for rebuilding a pattern's inserts on load
+// (same table as mixer-tools.js / core/session.js).
+const EFFECT_NODE_CLASSES = {
+  delay: DelayNode,
+  eq: EQNode,
+  filter: FilterNode,
+  sidechain: SidechainNode,
+  reverb: ReverbNode,
+};
 
-// Helper: get channel inserts for an instrument
-function getInsertsForInstrument(session, inst) {
-  const inserts = session.mixer?.channelInserts || {};
-  // For jb01, include 'jb01' channel + all voice channels
-  if (inst === 'jb01') {
-    const result = {};
-    if (inserts['jb01']) result['jb01'] = JSON.parse(JSON.stringify(inserts['jb01']));
-    for (const v of JB01_VOICES) {
-      if (inserts[v]) result[v] = JSON.parse(JSON.stringify(inserts[v]));
-    }
-    return Object.keys(result).length > 0 ? result : null;
+// Names that are not instrument ids. The pattern tools and the arrangement
+// name the canonical id instead of guessing — a 'drums' key in a section was
+// accepted and then never rendered.
+const LEGACY_ALIASES = { drums: 'jb01', bass: 'jb202', lead: 'jb202', synth: 'jb202', sampler: 'jbs' };
+
+// Same cap as the session `bars` param (generic-tools SESSION_PARAMS) and the
+// product promise ("up to 128 bars").
+const MAX_ARRANGEMENT_BARS = 128;
+
+const deep = (v) => JSON.parse(JSON.stringify(v));
+
+/**
+ * Resolve the instrument a pattern tool acts on.
+ * @returns {Object} accessor ({ id, kind, node, pattern, params }) or { error }
+ */
+function resolvePatternInstrument(session, instrument) {
+  const ids = (session.listInstruments?.() || []).map(i => i.id);
+  if (typeof instrument !== 'string' || !instrument) {
+    return { error: `Error: instrument is required. Instruments: ${ids.join(', ')}` };
   }
-  // For jt90, include 'jt90' channel + all voice channels
-  if (inst === 'jt90') {
-    const result = {};
-    for (const v of JT90_VOICES) {
-      if (inserts[v]) result[v] = JSON.parse(JSON.stringify(inserts[v]));
-    }
-    return Object.keys(result).length > 0 ? result : null;
+  if (LEGACY_ALIASES[instrument]) {
+    return { error: `Error: "${instrument}" is a legacy alias, not an instrument id — use "${LEGACY_ALIASES[instrument]}"` };
   }
-  // For legacy drums, include 'drums' channel + all voice channels
-  if (inst === 'drums') {
-    const result = {};
-    if (inserts['drums']) result['drums'] = JSON.parse(JSON.stringify(inserts['drums']));
-    for (const v of DRUM_VOICES) {
-      if (inserts[v]) result[v] = JSON.parse(JSON.stringify(inserts[v]));
-    }
-    return Object.keys(result).length > 0 ? result : null;
+  if (instrument === 'jb200') {
+    return { error: 'Error: jb200 is retired — use "jb202"' };
   }
-  // For bass/lead/sampler/jb200, just the instrument channel
-  if (inserts[inst]) return { [inst]: JSON.parse(JSON.stringify(inserts[inst])) };
-  return null;
+  const acc = session.instrument?.(instrument);
+  if (!acc) {
+    return { error: `Error: no instrument "${instrument}". Instruments: ${ids.join(', ')}` };
+  }
+  if (acc.kind === 'modular') {
+    return { error: `Error: ${instrument} has no song patterns — use save_jp9000_rig / load_jp9000_rig` };
+  }
+  return acc;
 }
 
-// Helper: restore channel inserts for an instrument
-function restoreInserts(session, inserts) {
-  if (!inserts) return;
-  if (!session.mixer) session.mixer = { sends: {}, voiceRouting: {}, channelInserts: {}, masterInserts: [], masterVolume: 0.8 };
-  if (!session.mixer.channelInserts) session.mixer.channelInserts = {};
-  for (const [channel, insertList] of Object.entries(inserts)) {
-    session.mixer.channelInserts[channel] = JSON.parse(JSON.stringify(insertList));
-  }
+// ---------------------------------------------------------------------------
+// Channel inserts (effect chains) per pattern
+//
+// The mixer tools write session.mixer.effectChains, keyed '<inst>' or
+// '<inst>.<voice>'. save_pattern snapshots the chains that belong to the
+// instrument into the saved pattern's `channelInserts` as plain data
+// ({ key: [{ id, type, params }] }); load_pattern drops the instrument's live
+// chains and rebuilds them from the snapshot. A pattern saved before this
+// existed carries `channelInserts: null` and leaves the live effects alone.
+// ---------------------------------------------------------------------------
+
+function ownsChainKey(inst, key) {
+  return key === inst || key.startsWith(inst + '.');
 }
 
-// Helper: collect automation for an instrument from ParamSystem
+function instrumentChainKeys(effectChains, inst) {
+  return Object.keys(effectChains || {}).filter(k => ownsChainKey(inst, k));
+}
+
+/** Plain-data snapshot of the instrument's live effect chains ({} when none). */
+function snapshotInserts(session, inst) {
+  const chains = session.mixer?.effectChains || {};
+  const out = {};
+  for (const key of instrumentChainKeys(chains, inst)) {
+    const chain = chains[key];
+    if (!Array.isArray(chain) || chain.length === 0) continue;
+    out[key] = chain.map(e => ({
+      id: e.id,
+      type: e.type,
+      params: e._node && typeof e._node.getParams === 'function' ? { ...e._node.getParams() } : { ...(e.params || {}) },
+    }));
+  }
+  return out;
+}
+
+/** Remove the instrument's live chains (and their fx.* param paths). */
+function dropInserts(session, inst) {
+  const chains = session.mixer?.effectChains;
+  if (!chains) return [];
+  const dropped = [];
+  for (const key of instrumentChainKeys(chains, inst)) {
+    for (const e of chains[key] || []) {
+      session.params.unregister(`fx.${key}.${e.id}`);
+      dropped.push(`${key}/${e.id}`);
+    }
+    delete chains[key];
+  }
+  return dropped;
+}
+
+/** Rebuild the instrument's chains from a snapshot. */
+function restoreInserts(session, inst, snapshot) {
+  if (!session.mixer) session.mixer = { masterVolume: 0.8, effectChains: {} };
+  if (!session.mixer.effectChains) session.mixer.effectChains = {};
+  const restored = [];
+  const skipped = [];
+  for (const [key, list] of Object.entries(snapshot || {})) {
+    if (!ownsChainKey(inst, key)) { skipped.push(key); continue; }   // never touch another instrument's chain
+    if (!Array.isArray(list) || list.length === 0) continue;
+    const chain = [];
+    list.forEach((e, i) => {
+      const NodeClass = EFFECT_NODE_CLASSES[e?.type];
+      if (!NodeClass) { skipped.push(`${key}/${e?.type ?? '?'}`); return; }
+      const id = e.id || `${e.type}${i + 1}`;
+      const node = new NodeClass(id);
+      for (const [k, v] of Object.entries(e.params || {})) node.setParam(k, v);
+      session.params.register(`fx.${key}.${id}`, node);
+      chain.push({ id, type: e.type, _node: node });
+      restored.push(`${key}/${id}`);
+    });
+    if (chain.length) session.mixer.effectChains[key] = chain;
+  }
+  return { restored, skipped };
+}
+
+/**
+ * Apply a saved pattern's inserts to the live session.
+ * @returns {string} suffix for the tool result ('' for legacy saves)
+ */
+function applySavedInserts(session, inst, saved) {
+  const snapshot = saved.channelInserts;
+  if (snapshot === null || snapshot === undefined || typeof snapshot !== 'object') return '';
+  const dropped = dropInserts(session, inst);
+  const { restored, skipped } = restoreInserts(session, inst, snapshot);
+  const lost = dropped.filter(d => !restored.includes(d));
+  const parts = [];
+  if (restored.length) parts.push(`inserts restored: ${restored.join(', ')}`);
+  if (lost.length) parts.push(`dropped live inserts not saved in this pattern: ${lost.join(', ')}`);
+  if (skipped.length) parts.push(`could not restore: ${skipped.join(', ')}`);
+  return parts.length ? ` — ${parts.join('; ')}` : '';
+}
+
+function describeInserts(snapshot) {
+  const names = [];
+  for (const [key, list] of Object.entries(snapshot || {})) for (const e of list) names.push(`${key}/${e.id}`);
+  return names.length ? ` (with inserts: ${names.join(', ')})` : '';
+}
+
+// ---------------------------------------------------------------------------
+// Automation per pattern
+// ---------------------------------------------------------------------------
+
 function getAutomationForInstrument(session, inst) {
   const automation = {};
   for (const [path, values] of session.params.automation) {
@@ -71,7 +177,6 @@ function getAutomationForInstrument(session, inst) {
   return Object.keys(automation).length > 0 ? automation : undefined;
 }
 
-// Helper: restore automation for an instrument into ParamSystem
 function restoreAutomation(session, inst, automation) {
   if (!automation) return;
   for (const [path, values] of Object.entries(automation)) {
@@ -79,18 +184,23 @@ function restoreAutomation(session, inst, automation) {
   }
 }
 
-// Helper: clear channel inserts for an instrument
-function clearInsertsForInstrument(session, inst) {
-  if (!session.mixer?.channelInserts) return;
-  if (inst === 'jb01') {
-    for (const v of JB01_VOICES) delete session.mixer.channelInserts[v];
-  } else if (inst === 'jt90') {
-    for (const v of JT90_VOICES) delete session.mixer.channelInserts[v];
-  } else if (inst === 'drums') {
-    for (const v of DRUM_VOICES) delete session.mixer.channelInserts[v];
-  } else {
-    delete session.mixer.channelInserts[inst];
+/** Length of a saved step pattern in bars (16 steps per bar); 0 if unknown. */
+function patternBars(pattern) {
+  let len = 0;
+  if (Array.isArray(pattern)) {
+    len = pattern.length;
+  } else if (pattern && typeof pattern === 'object') {
+    for (const v of Object.values(pattern)) if (Array.isArray(v) && v.length > len) len = v.length;
   }
+  return len ? Math.ceil(len / 16) : 0;
+}
+
+/** Saved-pattern names per instrument: live instances first, then anything else in session.patterns. */
+function patternOwners(session) {
+  const known = (session.listInstruments?.() || []).map(i => i.id);
+  const extra = Object.keys(session.patterns || {})
+    .filter(id => !known.includes(id) && Object.keys(session.patterns[id] || {}).length > 0);
+  return { known, extra };
 }
 
 const songTools = {
@@ -99,154 +209,38 @@ const songTools = {
    */
   save_pattern: async (input, session, context) => {
     const { instrument, name: patternName } = input;
+    if (typeof patternName !== 'string' || !patternName) return 'Error: save_pattern needs a pattern name (A, B, C, ...)';
+    const acc = resolvePatternInstrument(session, instrument);
+    if (acc.error) return acc.error;
+    const id = acc.id;
 
-    // Any instrument instance (canonical or added) with a pattern/params
-    // accessor — one code path for jb01/jb202/jt10/jt30/jt90 and every
-    // extra instance ('jb202-2'). jbs/jp9000 keep their own branches below.
-    const acc = session.instrument?.(instrument);
-    if (acc && acc.kind !== 'sampler' && acc.kind !== 'modular') {
-      if (!session.patterns[instrument]) session.patterns[instrument] = {};
+    if (!session.patterns[id]) session.patterns[id] = {};
+    if (!session.currentPattern) session.currentPattern = {};
+
+    if (acc.kind === 'sampler') {
+      // jbs keeps its legacy pattern/params accessors (single instance)
       const entry = {
-        pattern: JSON.parse(JSON.stringify(acc.pattern || (acc.kind === 'drums' ? {} : []))),
-        params: JSON.parse(JSON.stringify(acc.params || {})),
-        automation: getAutomationForInstrument(session, instrument),
-        channelInserts: getInsertsForInstrument(session, instrument),
+        pattern: deep(session.jbsPattern),
+        params: deep(session.jbsParams),
+        channelInserts: snapshotInserts(session, id),
       };
-      if (typeof acc.node.getSwing === 'function') entry.swing = acc.node.getSwing() || 0;
-      if (typeof acc.node.getAccentLevel === 'function') entry.accentLevel = acc.node.getAccentLevel() ?? 1.0;
-      session.patterns[instrument][patternName] = entry;
-      if (!session.currentPattern) session.currentPattern = {};
-      session.currentPattern[instrument] = patternName;
-      return `Saved ${instrument} pattern "${patternName}"`;
+      session.patterns[id][patternName] = entry;
+      session.currentPattern[id] = patternName;
+      return `Saved ${id} pattern "${patternName}"${describeInserts(entry.channelInserts)}`;
     }
 
-    if (instrument === 'drums') {
-      session.patterns.drums[patternName] = {
-        pattern: JSON.parse(JSON.stringify(session.drumPattern)),
-        params: JSON.parse(JSON.stringify(session.drumParams)),
-        automation: JSON.parse(JSON.stringify(session.drumAutomation)),
-        flam: session.drumFlam,
-        length: session.drumPatternLength,
-        scale: session.drumScale,
-        accent: session.drumGlobalAccent,
-        engines: JSON.parse(JSON.stringify(session.drumVoiceEngines)),
-        useSample: JSON.parse(JSON.stringify(session.drumUseSample)),
-        channelInserts: getInsertsForInstrument(session, 'drums'),
-      };
-      session.currentPattern.drums = patternName;
-      return `Saved drums pattern "${patternName}"`;
-    }
-
-    if (instrument === 'bass') {
-      session.patterns.bass[patternName] = {
-        pattern: JSON.parse(JSON.stringify(session.bassPattern)),
-        params: JSON.parse(JSON.stringify(session.bassParams)),
-        channelInserts: getInsertsForInstrument(session, 'bass'),
-      };
-      session.currentPattern.bass = patternName;
-      return `Saved bass pattern "${patternName}"`;
-    }
-
-    if (instrument === 'lead') {
-      session.patterns.lead[patternName] = {
-        pattern: JSON.parse(JSON.stringify(session.leadPattern)),
-        params: JSON.parse(JSON.stringify(session.leadParams)),
-        arp: JSON.parse(JSON.stringify(session.leadArp)),
-        channelInserts: getInsertsForInstrument(session, 'lead'),
-      };
-      session.currentPattern.lead = patternName;
-      return `Saved lead pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jbs' || instrument === 'sampler') {
-      if (!session.patterns.jbs) session.patterns.jbs = {};
-      session.patterns.jbs[patternName] = {
-        pattern: JSON.parse(JSON.stringify(session.jbsPattern)),
-        params: JSON.parse(JSON.stringify(session.jbsParams)),
-        channelInserts: getInsertsForInstrument(session, 'jbs'),
-      };
-      session.currentPattern.jbs = patternName;
-      return `Saved jbs pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jb01') {
-      if (!session.patterns.jb01) session.patterns.jb01 = {};
-      session.patterns.jb01[patternName] = {
-        pattern: JSON.parse(JSON.stringify(session.jb01Pattern || {})),
-        params: JSON.parse(JSON.stringify(session.jb01Params || {})),
-        automation: getAutomationForInstrument(session, 'jb01'),
-        channelInserts: getInsertsForInstrument(session, 'jb01'),
-      };
-      if (!session.currentPattern) session.currentPattern = {};
-      session.currentPattern.jb01 = patternName;
-      return `Saved jb01 pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jb200') {
-      session.patterns.jb200[patternName] = {
-        pattern: JSON.parse(JSON.stringify(session.jb200Pattern)),
-        params: JSON.parse(JSON.stringify(session.jb200Params)),
-        channelInserts: getInsertsForInstrument(session, 'jb200'),
-      };
-      session.currentPattern.jb200 = patternName;
-      return `Saved jb200 pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jb202') {
-      if (!session.patterns.jb202) session.patterns.jb202 = {};
-      session.patterns.jb202[patternName] = {
-        pattern: JSON.parse(JSON.stringify(session.jb202Pattern || [])),
-        params: JSON.parse(JSON.stringify(session.jb202Params || {})),
-        automation: getAutomationForInstrument(session, 'jb202'),
-        channelInserts: getInsertsForInstrument(session, 'jb202'),
-      };
-      if (!session.currentPattern) session.currentPattern = {};
-      session.currentPattern.jb202 = patternName;
-      return `Saved jb202 pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jt10') {
-      if (!session.patterns.jt10) session.patterns.jt10 = {};
-      session.patterns.jt10[patternName] = {
-        pattern: JSON.parse(JSON.stringify(session.jt10Pattern || [])),
-        params: JSON.parse(JSON.stringify(session.jt10Params || {})),
-        automation: getAutomationForInstrument(session, 'jt10'),
-        channelInserts: getInsertsForInstrument(session, 'jt10'),
-      };
-      if (!session.currentPattern) session.currentPattern = {};
-      session.currentPattern.jt10 = patternName;
-      return `Saved jt10 pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jt30') {
-      if (!session.patterns.jt30) session.patterns.jt30 = {};
-      session.patterns.jt30[patternName] = {
-        pattern: JSON.parse(JSON.stringify(session.jt30Pattern || [])),
-        params: JSON.parse(JSON.stringify(session.jt30Params || {})),
-        automation: getAutomationForInstrument(session, 'jt30'),
-        channelInserts: getInsertsForInstrument(session, 'jt30'),
-      };
-      if (!session.currentPattern) session.currentPattern = {};
-      session.currentPattern.jt30 = patternName;
-      return `Saved jt30 pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jt90') {
-      if (!session.patterns.jt90) session.patterns.jt90 = {};
-      session.patterns.jt90[patternName] = {
-        pattern: JSON.parse(JSON.stringify(session.jt90Pattern || {})),
-        params: JSON.parse(JSON.stringify(session.jt90Params || {})),
-        automation: getAutomationForInstrument(session, 'jt90'),
-        channelInserts: getInsertsForInstrument(session, 'jt90'),
-        swing: session.jt90Swing || 0,
-        accentLevel: session.jt90AccentLevel || 1.0,
-      };
-      if (!session.currentPattern) session.currentPattern = {};
-      session.currentPattern.jt90 = patternName;
-      return `Saved jt90 pattern "${patternName}"`;
-    }
-
-    return `Unknown instrument: ${instrument}`;
+    // One code path for jb01/jb202/jt10/jt30/jt90 and every added instance.
+    const entry = {
+      pattern: deep(acc.pattern || (acc.kind === 'drums' ? {} : [])),
+      params: deep(acc.params || {}),
+      automation: getAutomationForInstrument(session, id),
+      channelInserts: snapshotInserts(session, id),
+    };
+    if (typeof acc.node.getSwing === 'function') entry.swing = acc.node.getSwing() || 0;
+    if (typeof acc.node.getAccentLevel === 'function') entry.accentLevel = acc.node.getAccentLevel() ?? 1.0;
+    session.patterns[id][patternName] = entry;
+    session.currentPattern[id] = patternName;
+    return `Saved ${id} pattern "${patternName}"${describeInserts(entry.channelInserts)}`;
   },
 
   /**
@@ -254,163 +248,34 @@ const songTools = {
    */
   load_pattern: async (input, session, context) => {
     const { instrument, name: patternName } = input;
+    const acc = resolvePatternInstrument(session, instrument);
+    if (acc.error) return acc.error;
+    const id = acc.id;
 
-    const acc = session.instrument?.(instrument);
-    if (acc && acc.kind !== 'sampler' && acc.kind !== 'modular') {
-      const saved = session.patterns[instrument]?.[patternName];
-      if (!saved) {
-        const have = Object.keys(session.patterns[instrument] || {});
-        return `No ${instrument} pattern "${patternName}" found${have.length ? ` (saved: ${have.join(', ')})` : ''}`;
-      }
-      acc.pattern = JSON.parse(JSON.stringify(saved.pattern));
-      if (saved.params) acc.params = JSON.parse(JSON.stringify(saved.params));
-      if (saved.swing !== undefined && typeof acc.node.setSwing === 'function') acc.node.setSwing(saved.swing);
-      if (saved.accentLevel !== undefined && typeof acc.node.setAccentLevel === 'function') acc.node.setAccentLevel(saved.accentLevel);
-      clearNodeAutomation(session, instrument);
-      restoreAutomation(session, instrument, saved.automation);
-      clearInsertsForInstrument(session, instrument);
-      restoreInserts(session, saved.channelInserts);
-      if (!session.currentPattern) session.currentPattern = {};
-      session.currentPattern[instrument] = patternName;
-      return `Loaded ${instrument} pattern "${patternName}"`;
+    const saved = session.patterns[id]?.[patternName];
+    if (!saved) {
+      const have = Object.keys(session.patterns[id] || {});
+      return `No ${id} pattern "${patternName}" found${have.length ? ` (saved: ${have.join(', ')})` : ' (none saved)'}`;
+    }
+    if (!session.currentPattern) session.currentPattern = {};
+
+    if (acc.kind === 'sampler') {
+      session.jbsPattern = deep(saved.pattern);
+      if (saved.params) session.jbsParams = deep(saved.params);
+      const insertNote = applySavedInserts(session, id, saved);
+      session.currentPattern[id] = patternName;
+      return `Loaded ${id} pattern "${patternName}"${insertNote}`;
     }
 
-    if (instrument === 'drums') {
-      const saved = session.patterns.drums[patternName];
-      if (!saved) return `No drums pattern "${patternName}" found`;
-      session.drumPattern = JSON.parse(JSON.stringify(saved.pattern));
-      session.drumParams = JSON.parse(JSON.stringify(saved.params));
-      session.drumAutomation = JSON.parse(JSON.stringify(saved.automation || {}));
-      session.drumFlam = saved.flam || 0;
-      session.drumPatternLength = saved.length || 16;
-      session.drumScale = saved.scale || '16th';
-      session.drumGlobalAccent = saved.accent || 1;
-      session.drumVoiceEngines = JSON.parse(JSON.stringify(saved.engines || {}));
-      session.drumUseSample = JSON.parse(JSON.stringify(saved.useSample || {}));
-      clearInsertsForInstrument(session, 'drums');
-      restoreInserts(session, saved.channelInserts);
-      session.currentPattern.drums = patternName;
-      return `Loaded drums pattern "${patternName}"`;
-    }
-
-    if (instrument === 'bass') {
-      const saved = session.patterns.bass[patternName];
-      if (!saved) return `No bass pattern "${patternName}" found`;
-      session.bassPattern = JSON.parse(JSON.stringify(saved.pattern));
-      session.bassParams = JSON.parse(JSON.stringify(saved.params));
-      clearInsertsForInstrument(session, 'bass');
-      restoreInserts(session, saved.channelInserts);
-      session.currentPattern.bass = patternName;
-      return `Loaded bass pattern "${patternName}"`;
-    }
-
-    if (instrument === 'lead') {
-      const saved = session.patterns.lead[patternName];
-      if (!saved) return `No lead pattern "${patternName}" found`;
-      session.leadPattern = JSON.parse(JSON.stringify(saved.pattern));
-      session.leadParams = JSON.parse(JSON.stringify(saved.params));
-      session.leadArp = JSON.parse(JSON.stringify(saved.arp || { mode: 'off', octaves: 1, hold: false }));
-      clearInsertsForInstrument(session, 'lead');
-      restoreInserts(session, saved.channelInserts);
-      session.currentPattern.lead = patternName;
-      return `Loaded lead pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jbs' || instrument === 'sampler') {
-      const saved = session.patterns.jbs?.[patternName];
-      if (!saved) return `No jbs pattern "${patternName}" found`;
-      session.jbsPattern = JSON.parse(JSON.stringify(saved.pattern));
-      session.jbsParams = JSON.parse(JSON.stringify(saved.params));
-      clearInsertsForInstrument(session, 'jbs');
-      restoreInserts(session, saved.channelInserts);
-      session.currentPattern.jbs = patternName;
-      return `Loaded jbs pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jb01') {
-      const saved = session.patterns.jb01?.[patternName];
-      if (!saved) return `No jb01 pattern "${patternName}" found`;
-      session.jb01Pattern = JSON.parse(JSON.stringify(saved.pattern));
-      session.jb01Params = JSON.parse(JSON.stringify(saved.params));
-      clearNodeAutomation(session, 'jb01');
-      restoreAutomation(session, 'jb01', saved.automation);
-      clearInsertsForInstrument(session, 'jb01');
-      restoreInserts(session, saved.channelInserts);
-      if (!session.currentPattern) session.currentPattern = {};
-      session.currentPattern.jb01 = patternName;
-      return `Loaded jb01 pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jb200') {
-      const saved = session.patterns.jb200[patternName];
-      if (!saved) return `No jb200 pattern "${patternName}" found`;
-      session.jb200Pattern = JSON.parse(JSON.stringify(saved.pattern));
-      session.jb200Params = JSON.parse(JSON.stringify(saved.params));
-      clearInsertsForInstrument(session, 'jb200');
-      restoreInserts(session, saved.channelInserts);
-      session.currentPattern.jb200 = patternName;
-      return `Loaded jb200 pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jb202') {
-      const saved = session.patterns.jb202?.[patternName];
-      if (!saved) return `No jb202 pattern "${patternName}" found`;
-      session.jb202Pattern = JSON.parse(JSON.stringify(saved.pattern));
-      session.jb202Params = JSON.parse(JSON.stringify(saved.params));
-      clearNodeAutomation(session, 'jb202');
-      restoreAutomation(session, 'jb202', saved.automation);
-      clearInsertsForInstrument(session, 'jb202');
-      restoreInserts(session, saved.channelInserts);
-      if (!session.currentPattern) session.currentPattern = {};
-      session.currentPattern.jb202 = patternName;
-      return `Loaded jb202 pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jt10') {
-      const saved = session.patterns.jt10?.[patternName];
-      if (!saved) return `No jt10 pattern "${patternName}" found`;
-      session.jt10Pattern = JSON.parse(JSON.stringify(saved.pattern));
-      if (saved.params) session.jt10Params = JSON.parse(JSON.stringify(saved.params));
-      clearNodeAutomation(session, 'jt10');
-      restoreAutomation(session, 'jt10', saved.automation);
-      clearInsertsForInstrument(session, 'jt10');
-      restoreInserts(session, saved.channelInserts);
-      if (!session.currentPattern) session.currentPattern = {};
-      session.currentPattern.jt10 = patternName;
-      return `Loaded jt10 pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jt30') {
-      const saved = session.patterns.jt30?.[patternName];
-      if (!saved) return `No jt30 pattern "${patternName}" found`;
-      session.jt30Pattern = JSON.parse(JSON.stringify(saved.pattern));
-      if (saved.params) session.jt30Params = JSON.parse(JSON.stringify(saved.params));
-      clearNodeAutomation(session, 'jt30');
-      restoreAutomation(session, 'jt30', saved.automation);
-      clearInsertsForInstrument(session, 'jt30');
-      restoreInserts(session, saved.channelInserts);
-      if (!session.currentPattern) session.currentPattern = {};
-      session.currentPattern.jt30 = patternName;
-      return `Loaded jt30 pattern "${patternName}"`;
-    }
-
-    if (instrument === 'jt90') {
-      const saved = session.patterns.jt90?.[patternName];
-      if (!saved) return `No jt90 pattern "${patternName}" found`;
-      session.jt90Pattern = JSON.parse(JSON.stringify(saved.pattern));
-      if (saved.params) session.jt90Params = JSON.parse(JSON.stringify(saved.params));
-      if (saved.swing !== undefined) session.jt90Swing = saved.swing;
-      if (saved.accentLevel !== undefined) session.jt90AccentLevel = saved.accentLevel;
-      clearNodeAutomation(session, 'jt90');
-      restoreAutomation(session, 'jt90', saved.automation);
-      clearInsertsForInstrument(session, 'jt90');
-      restoreInserts(session, saved.channelInserts);
-      if (!session.currentPattern) session.currentPattern = {};
-      session.currentPattern.jt90 = patternName;
-      return `Loaded jt90 pattern "${patternName}"`;
-    }
-
-    return `Unknown instrument: ${instrument}`;
+    acc.pattern = deep(saved.pattern);
+    if (saved.params) acc.params = deep(saved.params);
+    if (saved.swing !== undefined && typeof acc.node.setSwing === 'function') acc.node.setSwing(saved.swing);
+    if (saved.accentLevel !== undefined && typeof acc.node.setAccentLevel === 'function') acc.node.setAccentLevel(saved.accentLevel);
+    clearNodeAutomation(session, id);
+    restoreAutomation(session, id, saved.automation);
+    const insertNote = applySavedInserts(session, id, saved);
+    session.currentPattern[id] = patternName;
+    return `Loaded ${id} pattern "${patternName}"${insertNote}`;
   },
 
   /**
@@ -418,14 +283,19 @@ const songTools = {
    */
   copy_pattern: async (input, session, context) => {
     const { instrument, from, to } = input;
-    const patterns = session.patterns[instrument];
-    if (!patterns) return `Unknown instrument: ${instrument}`;
-    if (!patterns[from]) return `No ${instrument} pattern "${from}" found`;
+    const acc = resolvePatternInstrument(session, instrument);
+    if (acc.error) return acc.error;
+    if (typeof to !== 'string' || !to) return 'Error: copy_pattern needs a destination name (`to`)';
+    const patterns = session.patterns[acc.id] || (session.patterns[acc.id] = {});
+    if (!patterns[from]) {
+      const have = Object.keys(patterns);
+      return `No ${acc.id} pattern "${from}" found${have.length ? ` (saved: ${have.join(', ')})` : ' (none saved)'}`;
+    }
 
-    patterns[to] = JSON.parse(JSON.stringify(patterns[from]));
+    patterns[to] = deep(patterns[from]);
     // Load the copy into the live node so subsequent tweaks apply to it
-    await songTools.load_pattern({ instrument, name: to }, session, context);
-    return `Copied ${instrument} pattern "${from}" to "${to}" (now active)`;
+    await songTools.load_pattern({ instrument: acc.id, name: to }, session, context);
+    return `Copied ${acc.id} pattern "${from}" to "${to}" (now active)`;
   },
 
   /**
@@ -433,29 +303,17 @@ const songTools = {
    */
   list_patterns: async (input, session, context) => {
     const lines = [];
-    // Active instruments first
-    const knownIds = (session.listInstruments?.() || []).map(i => i.id);
-    for (const instrument of [...new Set([...knownIds, 'jb200'])]) {
-      const patterns = session.patterns?.[instrument] || {};
-      const names = Object.keys(patterns);
-      const current = session.currentPattern?.[instrument];
-      if (names.length > 0) {
-        const list = names.map(n => n === current ? `[${n}]` : n).join(', ');
-        lines.push(`${instrument}: ${list}`);
-      } else {
-        lines.push(`${instrument}: (none saved)`);
-      }
-    }
-    // Dormant instruments (only show if they have patterns)
-    for (const instrument of ['drums', 'bass', 'lead']) {
-      const patterns = session.patterns?.[instrument] || {};
-      const names = Object.keys(patterns);
-      if (names.length > 0) {
-        const current = session.currentPattern?.[instrument];
-        const list = names.map(n => n === current ? `[${n}]` : n).join(', ');
-        lines.push(`${instrument}: ${list}`);
-      }
-    }
+    const { known, extra } = patternOwners(session);
+    const line = (id) => {
+      const names = Object.keys(session.patterns?.[id] || {});
+      const current = session.currentPattern?.[id];
+      return names.length
+        ? `${id}: ${names.map(n => n === current ? `[${n}]` : n).join(', ')}`
+        : `${id}: (none saved)`;
+    };
+    for (const id of known) lines.push(line(id));
+    // Patterns saved under ids that are not live instruments (legacy sessions)
+    for (const id of extra) lines.push(`${line(id)} (not an instrument in this session)`);
     return lines.join('\n');
   },
 
@@ -463,29 +321,74 @@ const songTools = {
    * Set the song arrangement (sections with bar counts and pattern assignments)
    */
   set_arrangement: async (input, session, context) => {
+    const sections = input?.sections;
+    const ids = (session.listInstruments?.() || []).map(i => i.id);
+    if (!Array.isArray(sections) || sections.length === 0) {
+      return 'Error: set_arrangement needs a non-empty `sections` array, e.g. [{ bars: 4, jt90: "A", jb202: "A" }]. Arrangement unchanged.';
+    }
+
     // Any key other than `bars` names an instrument instance (jb01, jt90,
-    // jb202-2, ...) and the saved pattern it plays in that section.
-    const unknown = [];
-    const next = input.sections.map(sec => {
+    // jb202-2, ...) and the saved pattern it plays in that section. Validate
+    // everything, report everything, change nothing on error.
+    const problems = [];
+    const notes = [];
+    const next = [];
+    let total = 0;
+
+    sections.forEach((sec, i) => {
+      const n = i + 1;
+      if (!sec || typeof sec !== 'object' || Array.isArray(sec)) {
+        problems.push(`section ${n}: must be an object like { bars: 4, jt90: 'A' }`);
+        return;
+      }
+      const raw = sec.bars;
+      const bars = typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : raw;
+      const barsOk = typeof bars === 'number' && Number.isInteger(bars) && bars >= 1;
+      if (!barsOk) problems.push(`section ${n}: bars must be a whole number ≥ 1 (got ${JSON.stringify(raw)})`);
+      else total += bars;
+
       const patterns = {};
       for (const [key, value] of Object.entries(sec)) {
         if (key === 'bars' || value === undefined || value === null) continue;
-        const id = key === 'sampler' ? 'jbs' : key;
-        const known = session.instrument?.(id) || ['jb200', 'drums', 'bass', 'lead', 'jbs', 'jp9000'].includes(id);
-        if (!known && !unknown.includes(id)) unknown.push(id);
-        patterns[id] = value;
+        if (LEGACY_ALIASES[key]) {
+          problems.push(`section ${n}: "${key}" is a legacy alias — key the section on "${LEGACY_ALIASES[key]}"`);
+          continue;
+        }
+        if (key === 'jb200') {
+          problems.push(`section ${n}: jb200 is retired — use "jb202"`);
+          continue;
+        }
+        if (!session.instrument?.(key)) {
+          problems.push(`section ${n}: unknown instrument "${key}"`);
+          continue;
+        }
+        const name = String(value);
+        const saved = session.patterns?.[key]?.[name];
+        if (!saved) {
+          const have = Object.keys(session.patterns?.[key] || {});
+          problems.push(`section ${n}: no saved ${key} pattern "${name}"${have.length ? ` (saved: ${have.join(', ')})` : ' (none saved — save_pattern first)'}`);
+          continue;
+        }
+        patterns[key] = name;
+        const pb = patternBars(saved.pattern);
+        if (barsOk && pb > bars) {
+          notes.push(`section ${n}: ${key} "${name}" is ${pb} bars but the section is ${bars} — only its first ${bars} bar${bars === 1 ? '' : 's'} play`);
+        }
       }
-      return { bars: sec.bars, patterns };
+      next.push({ bars, patterns });
     });
-    if (unknown.length) {
-      const ids = (session.listInstruments?.() || []).map(i => i.id).join(', ');
-      return `Error: unknown instrument(s) in arrangement: ${unknown.join(', ')}. Instruments: ${ids}. Arrangement unchanged.`;
-    }
-    session.arrangement = next;
 
-    const totalBars = session.arrangement.reduce((sum, s) => sum + s.bars, 0);
-    const sectionCount = session.arrangement.length;
-    return `Arrangement set: ${sectionCount} sections, ${totalBars} bars total`;
+    if (!problems.length && total > MAX_ARRANGEMENT_BARS) {
+      problems.push(`arrangement is ${total} bars; max ${MAX_ARRANGEMENT_BARS}`);
+    }
+    if (problems.length) {
+      return `Error: arrangement not set — ${problems.join('; ')}. Instruments: ${ids.join(', ')}. Arrangement unchanged.`;
+    }
+
+    session.arrangement = next;
+    let msg = `Arrangement set: ${next.length} sections, ${total} bars total`;
+    if (notes.length) msg += `. Note: ${notes.join('; ')}`;
+    return msg;
   },
 
   /**
@@ -502,42 +405,22 @@ const songTools = {
   show_arrangement: async (input, session, context) => {
     const lines = [];
 
-    // Show patterns (active instruments first)
     lines.push('PATTERNS:');
-    for (const instrument of ['jb01', 'jb200', 'jb202', 'jt10', 'jt30', 'jt90', 'jbs']) {
-      const patterns = session.patterns?.[instrument] || {};
-      const names = Object.keys(patterns);
-      if (names.length > 0) {
-        lines.push(`  ${instrument}: ${names.join(', ')}`);
-      }
-    }
-    // Dormant instruments (only show if they have patterns)
-    for (const instrument of ['drums', 'bass', 'lead']) {
-      const patterns = session.patterns?.[instrument] || {};
-      const names = Object.keys(patterns);
-      if (names.length > 0) {
-        lines.push(`  ${instrument}: ${names.join(', ')}`);
-      }
+    const { known, extra } = patternOwners(session);
+    for (const id of [...known, ...extra]) {
+      const names = Object.keys(session.patterns?.[id] || {});
+      if (names.length > 0) lines.push(`  ${id}: ${names.join(', ')}`);
     }
 
-    // Show arrangement
     if (session.arrangement && session.arrangement.length > 0) {
       lines.push('\nARRANGEMENT:');
       session.arrangement.forEach((section, i) => {
-        const parts = [];
-        if (section.patterns.jb01) parts.push(`jb01:${section.patterns.jb01}`);
-        if (section.patterns.jb200) parts.push(`jb200:${section.patterns.jb200}`);
-        if (section.patterns.jb202) parts.push(`jb202:${section.patterns.jb202}`);
-        if (section.patterns.jt10) parts.push(`jt10:${section.patterns.jt10}`);
-        if (section.patterns.jt30) parts.push(`jt30:${section.patterns.jt30}`);
-        if (section.patterns.jt90) parts.push(`jt90:${section.patterns.jt90}`);
-        if (section.patterns.jbs) parts.push(`jbs:${section.patterns.jbs}`);
-        if (section.patterns.drums) parts.push(`drums:${section.patterns.drums}`);
-        if (section.patterns.bass) parts.push(`bass:${section.patterns.bass}`);
-        if (section.patterns.lead) parts.push(`lead:${section.patterns.lead}`);
+        const parts = Object.entries(section.patterns || {})
+          .filter(([, name]) => name !== undefined && name !== null)
+          .map(([id, name]) => `${id}:${name}`);
         lines.push(`  ${i + 1}. ${section.bars} bars — ${parts.join(', ') || '(silent)'}`);
       });
-      const totalBars = session.arrangement.reduce((sum, s) => sum + s.bars, 0);
+      const totalBars = session.arrangement.reduce((sum, s) => sum + (Number(s.bars) || 0), 0);
       lines.push(`\nTotal: ${totalBars} bars`);
     } else {
       lines.push('\nARRANGEMENT: (not set - single pattern mode)');

@@ -227,7 +227,10 @@ class SynthVoice {
     const envAmount = (params.filterEnvAmount - 0.5) * 2;
     const accentOctaveBoost = this.accentActive ? 1.25 : 1.0;
     const octaves = envAmount * 4.5 * filterEnvValue * accentOctaveBoost;
-    const modCutoff = clamp(baseCutoff * Math.pow(2, octaves), 20, 5500);
+    // The envelope excursion is capped at 5.5kHz (screech fix), but the knob
+    // itself goes to 16kHz: let a deliberately open filter open. The ladder's
+    // own frequency-dependent damping keeps resonance tame up there.
+    const modCutoff = clamp(baseCutoff * Math.pow(2, octaves), 20, Math.max(5500, baseCutoff));
     this.filter.setCutoff(modCutoff);
 
     // Filter
@@ -438,7 +441,8 @@ export class JB202Engine {
       sampleRate = this.sampleRate,
       pattern = null,
       params = null,
-      automation = null
+      automation = null,
+      swing = 0
     } = options;
 
     const renderPattern = pattern ?? this.sequencer.getPattern();
@@ -452,6 +456,25 @@ export class JB202Engine {
 
     const output = new Float32Array(totalSamples);
 
+    // Sample-accurate step grid. Bars are exactly round(16 * stepDur * sr)
+    // samples (the master clock's samplesPerBar) and step ends are rounded
+    // cumulatively inside the bar — flooring each step separately lost ~1
+    // sample per step (16/bar at 128 BPM), so sections stumbled at every
+    // boundary and 128-bar loops ended 46 ms early. Swing (0-1) lengthens the
+    // odd 16ths and shortens the even ones by the same factor the drum
+    // machines use, so a swung pair still sums to two straight steps.
+    const barSamples = Math.round(stepsPerBar * stepDur * sampleRate);
+    const swingFactor = (swing > 0 ? Math.min(1, swing) : 0) * 0.5;
+    const stepEndSample = (stepNum) => {
+      const elapsed = stepNum + 1;
+      const bar = Math.floor(elapsed / stepsPerBar);
+      const inBar = elapsed % stepsPerBar;
+      const pairs = Math.floor(inBar / 2);
+      const odd = inBar % 2;
+      const t = pairs * 2 * stepDur + odd * stepDur * (1 - swingFactor);
+      return bar * barSamples + Math.round(t * sampleRate);
+    };
+
     // Create voice - SAME CLASS as real-time
     const voice = new SynthVoice(sampleRate, renderParams);
 
@@ -463,11 +486,13 @@ export class JB202Engine {
       const nextPatternStep = (patternStep + 1) % steps;
       const nextStepData = renderPattern[nextPatternStep];
 
-      // Apply per-step automation (values already in engine units)
+      // Apply per-step automation (values already in engine units). Lanes are
+      // indexed by the absolute render step so a 32/64-value lane sweeps
+      // across bars instead of replaying its first 16 values every bar.
       if (automation) {
         let paramsChanged = false;
         for (const [paramId, values] of Object.entries(automation)) {
-          const val = values[patternStep % values.length];
+          const val = values[stepNum % values.length];
           if (val !== null && val !== undefined) {
             renderParams[paramId] = val;
             paramsChanged = true;
@@ -481,7 +506,7 @@ export class JB202Engine {
       // Use the SAME method as real-time
       voice.processStepEvent(stepData, nextStepData);
 
-      const stepSamples = Math.floor(stepDur * sampleRate);
+      const stepSamples = Math.max(0, stepEndSample(stepNum) - sampleIndex);
       const shouldRelease = voice.shouldReleaseAfterStep(stepData, nextStepData);
       const releaseSample = shouldRelease ? Math.floor(stepSamples * 0.9) : stepSamples;
 
@@ -493,6 +518,14 @@ export class JB202Engine {
           voice.releaseNote();
         }
       }
+    }
+
+    // Release tail: let the last note ring out into the reserved 2 s instead
+    // of hard-cutting it at the pattern end (a click at every song-mode
+    // section boundary). The mixer sums overlapping tails into the next section.
+    if (voice.gateOpen) voice.releaseNote();
+    while (sampleIndex < totalSamples && voice.ampEnv.isActive()) {
+      output[sampleIndex++] = voice.processSample(this.masterVolume);
     }
 
     return {

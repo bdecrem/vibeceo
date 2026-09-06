@@ -12,12 +12,7 @@
 
 import { InstrumentNode, coerceChoice } from '../core/node.js';
 import { OfflineAudioContext } from 'node-web-audio-api';
-import { toEngine } from '../params/converters.js';
-
-// Load params definition
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const JT30_PARAMS = require('../params/jt30-params.json');
+import { toEngine, JT30_PARAMS } from '../params/converters.js';
 
 // Voice (monophonic)
 const VOICES = ['bass'];
@@ -39,11 +34,20 @@ function createEmptyPattern(steps = 16) {
 // takes any path the agent invents; before this, an unknown name such as
 // 'bass.filterCutoff' was stored under a key no engine reads and
 // reported success — the classic "I changed the filter and nothing happened".
-const PARAM_ALIASES = {"filterCutoff": "cutoff", "filterResonance": "resonance", "filterEnvAmount": "envMod", "filterDecay": "decay", "envAmount": "envMod", "ampDecay": "decay"};
+// No `ampDecay` alias: the JT30 amp envelope is fixed in the engine (303-style
+// gate), `decay` is the FILTER decay. Aliasing ampDecay onto it lengthened the
+// filter sweep when the agent asked for a longer note — now it errors instead.
+const PARAM_ALIASES = {"filterCutoff": "cutoff", "filterResonance": "resonance", "filterEnvAmount": "envMod", "filterDecay": "decay", "envAmount": "envMod"};
 function normalizePath(path) {
   let p = path.startsWith('bass.') ? path.slice(5) : path;
   p = PARAM_ALIASES[p] || p;
   return `bass.${p}`;
+}
+
+/** Mute pseudo-param: true/1/'true'/'on' mute, anything else unmutes. */
+function muteFlag(value) {
+  if (typeof value === 'string') return !['false', '0', 'off', 'no', ''].includes(value.toLowerCase());
+  return !!value;
 }
 
 export class JT30Node extends InstrumentNode {
@@ -109,9 +113,15 @@ export class JT30Node extends InstrumentNode {
 
     const normalizedPath = normalizePath(path);
 
+    // Mute → -60 dB; unmute restores the pre-mute level (a falsy value used to
+    // be accepted and leave the instrument muted).
     if (normalizedPath === 'bass.mute' || path === 'mute') {
-      if (value) {
+      if (muteFlag(value)) {
+        if (this.getLevel() > -60) this._preMuteLevel = this.getLevel();
         this.setLevel(-60);
+      } else {
+        this.setLevel(this._preMuteLevel ?? 0);
+        this._preMuteLevel = undefined;
       }
       return true;
     }
@@ -273,10 +283,22 @@ export class JT30Node extends InstrumentNode {
         // Legacy full format
         this._pattern = JSON.parse(JSON.stringify(data.pattern));
       }
+    } else if (data.patternLength) {
+      // All-rest pattern: serialize() omits the (empty) sparse array but keeps
+      // the length — a 4-bar rest pattern used to come back as 16 steps.
+      this._pattern = createEmptyPattern(data.patternLength);
     }
 
     if (data.params) {
-      Object.assign(this._params, data.params);
+      // Same choice coercion as the base class: saved state may predate choice
+      // validation (waveform stored as 0 → 'Unknown oscillator type' forever).
+      const params = { ...data.params };
+      for (const [path, d] of Object.entries(this._descriptors)) {
+        if (d?.unit !== 'choice' || !(path in params)) continue;
+        const v = coerceChoice(d, params[path]);
+        params[path] = v === undefined ? d.default : v;
+      }
+      Object.assign(this._params, params);
     }
   }
 
@@ -295,6 +317,7 @@ export class JT30Node extends InstrumentNode {
     const {
       bars,
       stepDuration,
+      swing = 0,
       sampleRate = 44100,
       pattern = this._pattern,
       params = null,
@@ -328,7 +351,9 @@ export class JT30Node extends InstrumentNode {
     if (rawAutomation && Object.keys(rawAutomation).length > 0) {
       engineAutomation = {};
       for (const [path, values] of Object.entries(rawAutomation)) {
-        const paramName = path.startsWith('bass.') ? path.slice(5) : path;
+        // Resolve aliases ('filterCutoff' → 'cutoff') the same way tweak does;
+        // alias lanes used to be accepted and then dropped here.
+        const paramName = normalizePath(path).slice(5);
         const paramDef = JT30_PARAMS.bass?.[paramName];
         if (paramDef && Array.isArray(values)) {
           engineAutomation[paramName] = values.map(v =>
@@ -342,6 +367,7 @@ export class JT30Node extends InstrumentNode {
     const buffer = await engine.renderPattern({
       bars,
       stepDuration,
+      swing,
       sampleRate,
       automation: engineAutomation,
     });

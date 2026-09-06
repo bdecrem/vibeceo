@@ -52,7 +52,9 @@ function nodeStoresProducerUnits(session, path) {
  */
 export function readProducerValue(session, path) {
   const value = session.get(path);
-  if (value === undefined) return undefined;
+  // null = unset (engine fallback, e.g. jt10 filter ADSR follows the amp env);
+  // fromEngine(null) used to read as 0 and grow a phantom "filterDecay 0" fader.
+  if (value === undefined || value === null) return value;
   const descriptor = session.getDescriptor(path);
   if (!descriptor) return value;
   const segs = path.split('.');
@@ -67,6 +69,7 @@ export function formatProducerValue(value, descriptor) {
   if (!descriptor || descriptor.unit === 'choice') return String(value);
   const r = Math.round(value * 10) / 10;
   switch (descriptor.unit) {
+    case 'seconds': return `${(Math.round(value * 100) / 100).toFixed(2)}s`;
     case 'dB': return `${r > 0 ? '+' : ''}${r}dB`;
     case 'Hz': return `${Math.round(value)}Hz`;
     case 'semitones': return `${r > 0 ? '+' : ''}${r}st`;
@@ -107,12 +110,13 @@ export function describeSession(session) {
       if (sub === 'level') continue;   // node output level is reported separately (dB)
       const path = `${id}.${sub}`;
       const value = safe(() => readProducerValue(session, path));
-      if (value === undefined) continue;
+      // null = unset, the engine uses its fallback — nothing to show or slide
+      if (value === undefined || value === null) continue;
       const isDefault = descriptor.default === undefined
         ? true
         : descriptor.unit === 'choice' || typeof value !== 'number'
           ? value === descriptor.default
-          : Math.abs(value - descriptor.default) < 0.5;
+          : Math.abs(value - descriptor.default) < defaultTolerance(descriptor);
       params.push({ path, sub, value, descriptor, isDefault });
     }
     // Node output level is not in the descriptors — expose it too.
@@ -204,4 +208,19 @@ export function buildSessionContext(session) {
 
 function safe(fn) {
   try { return fn(); } catch { return undefined; }
+}
+
+/**
+ * How far a producer value may sit from its default and still count as
+ * "default" (hidden from the session context). Half a knob step for 0-100
+ * knobs; Hz within a rounding error; for small-range units (seconds) half a
+ * percent of the range — a fixed 0.5 hid every glideTime change under 0.5 s.
+ */
+function defaultTolerance(descriptor) {
+  if (descriptor.unit === 'Hz') return 1;
+  const { min, max } = descriptor;
+  if (typeof min === 'number' && typeof max === 'number' && max > min) {
+    return Math.min(0.5, (max - min) * 0.005);
+  }
+  return 0.5;
 }

@@ -239,6 +239,47 @@ async function renderInstrumentWithEffects(node, renderOptions, effectChains, in
 }
 
 /**
+ * Is this instrument a drum machine whose pattern can trigger a sidechain?
+ */
+function isDrumInstrument(session, id) {
+  const acc = typeof session.instrument === 'function' ? session.instrument(id) : null;
+  if (acc) return acc.kind === 'drums';
+  return id === 'jb01' || id === 'jt90';
+}
+
+/**
+ * Resolve which track drives each rendered instrument. A track's nodeId may be
+ * an instrument id, an added instance ('jb202-2') or an alias ('drums',
+ * 'lead'); all resolve to the instrument they point at, so mute / solo /
+ * volume / pan / sends actually apply. When several tracks point at one
+ * instrument, the one keyed on the instrument's own id wins — the legacy
+ * auto-created alias tracks never applied and must not start to.
+ * @returns {{ trackFor: Map<string, Object>, anySolo: boolean }}
+ */
+function resolveTracks(session, instrumentIds) {
+  const trackFor = new Map();
+  let anySolo = false;
+  const tracks = session.routing?.tracks;
+  if (!tracks) return { trackFor, anySolo };
+
+  const nodeOf = (id) => (typeof session.getNode === 'function' ? session.getNode(id) : session._nodes?.[id]) || null;
+  const instrumentOf = (nodeId) => {
+    if (instrumentIds.includes(nodeId)) return nodeId;
+    const node = nodeOf(nodeId);
+    return node ? (instrumentIds.find(id => nodeOf(id) === node) || null) : null;
+  };
+
+  for (const [, tr] of tracks) {
+    const target = instrumentOf(tr.nodeId || tr.id);
+    if (!target) continue;
+    const current = trackFor.get(target);
+    if (!current || (tr.id === target && current.id !== target)) trackFor.set(target, tr);
+  }
+  for (const tr of trackFor.values()) if (tr.solo) anySolo = true;
+  return { trackFor, anySolo };
+}
+
+/**
  * Render a session to an AudioBuffer (no file IO). This is the whole
  * pipeline; renderSession() below is the thin "and write a WAV" wrapper
  * the CLI uses. Browsers call this directly and play the buffer.
@@ -287,32 +328,137 @@ export async function renderSessionToBuffer(session, bars) {
   // Render the silent base buffer
   const outputBuffer = await context.startRendering();
 
-  // === RENDER ALL INSTRUMENTS ===
-  const instrumentBuffers = []; // { id, buffer, startBar, level }
-  const failures = [];          // { id, error } — surfaced in the render message
   // Every instrument instance, canonical ones first (session.instruments);
   // fall back to the fixed list for sessions built without the instance layer.
-  const canonicalIds = typeof session.listInstruments === 'function'
+  const instrumentIds = typeof session.listInstruments === 'function'
     ? session.listInstruments().map(i => i.id)
     : ['jb01', 'jb200', 'jb202', 'jp9000', 'jbs', 'jt10', 'jt30', 'jt90'];
+  const drumIds = instrumentIds.filter(id => session._nodes[id] && isDrumInstrument(session, id));
 
-  // Build render context for effects that need session data (e.g., sidechain)
-  const renderContext = { session, stepDuration };
+  // === SIDECHAIN TRIGGER CONTEXT ===
+  // The sidechain reads drum hits from the pattern that actually plays against
+  // the buffer it processes. In song mode that is each section's SAVED drum
+  // pattern — not whatever happens to be loaded on the live node — and every
+  // drum instance (jb01, jt90, jt90-2 …) is a candidate trigger source.
+  const livePatterns = () => {
+    const out = {};
+    for (const id of drumIds) {
+      const p = session._nodes[id].getPattern?.();
+      if (p) out[id] = p;
+    }
+    return out;
+  };
+  let sectionContexts = null; // one per arrangement section (instrument/voice chains)
+  let renderContext;          // whole-mix buffers (master chain, send returns)
+  if (hasArrangement) {
+    sectionContexts = arrangementPlan.map(section => {
+      const triggerPatterns = {};
+      for (const id of drumIds) {
+        const name = section.patterns[id];
+        const saved = name ? session.patterns[id]?.[name] : null;
+        if (saved?.pattern) triggerPatterns[id] = saved.pattern;
+      }
+      return { session, stepDuration, triggerPatterns };
+    });
+    renderContext = {
+      session,
+      stepDuration,
+      triggerSections: arrangementPlan.map((section, i) => ({
+        offsetSamples: Math.floor(section.barStart * samplesPerBar),
+        // the last section runs on into the release tail
+        lengthSamples: i === arrangementPlan.length - 1
+          ? Infinity
+          : Math.floor(section.barEnd * samplesPerBar) - Math.floor(section.barStart * samplesPerBar),
+        triggerPatterns: sectionContexts[i].triggerPatterns,
+      })),
+    };
+  } else {
+    renderContext = { session, stepDuration, triggerPatterns: livePatterns() };
+  }
 
-  for (const id of canonicalIds) {
+  // === TRACKS (volume/mute/solo/pan/sends from RoutingManager) ===
+  const { trackFor, anySolo } = resolveTracks(session, instrumentIds);
+  const sends = session.routing?.sends?.size ? session.routing.sends : null;
+  // Only instruments that feed a send need their dry buffer after the mix.
+  const feedsSend = (id) => {
+    if (!sends) return false;
+    const tr = trackFor.get(id);
+    return !!tr && Object.entries(tr.sends || {}).some(([sendId, lvl]) => sends.has(sendId) && lvl);
+  };
+
+  // Mix one rendered buffer into the master at its bar offset.
+  const mixIntoMaster = (id, buffer, startBar, level) => {
+    const tr = trackFor.get(id);
+    // Solo: anything without a soloed track is silent — including instruments
+    // that have no track at all (instances added after routing was set up).
+    if (tr?.mute || (anySolo && !tr?.solo)) return;
+
+    const trackGain = tr ? Math.pow(10, (tr.volume || 0) / 20) : 1;
+    // Equal-power pan: -100 (hard L) .. +100 (hard R); 0 = unity both sides
+    const pan = tr ? Math.max(-100, Math.min(100, tr.pan || 0)) / 100 : 0;
+    const theta = (pan + 1) * Math.PI / 4;
+    const panGain = [Math.cos(theta) * Math.SQRT2, Math.sin(theta) * Math.SQRT2];
+
+    const startSample = Math.floor(startBar * samplesPerBar);
+    const mixLength = Math.min(outputBuffer.length - startSample, buffer.length);
+
+    for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {
+      const mainData = outputBuffer.getChannelData(ch);
+      const instData = buffer.getChannelData(ch % buffer.numberOfChannels);
+      const g = level * trackGain * (outputBuffer.numberOfChannels > 1 ? panGain[ch % 2] : 1);
+      for (let i = 0; i < mixLength; i++) {
+        mainData[startSample + i] += instData[i] * g;
+      }
+    }
+  };
+
+  // === RENDER AND MIX EACH INSTRUMENT ===
+  // Each buffer is mixed into the master as soon as it renders and then
+  // dropped. Holding every instrument's full-length buffer until the end cost
+  // ~85 MB per instrument on a 128-bar song. Buffers are kept only for
+  // instruments routed to a send bus (the send needs the dry signal).
+  const keptBuffers = []; // { id, buffer, startBar, level } — send feeds only
+  const renderedIds = []; // instruments that produced at least one buffer
+  const failures = [];    // { id, error } — surfaced in the render message
+
+  for (const id of instrumentIds) {
     const node = session._nodes[id];
     if (!node) continue;
 
     const linearLevel = node.getOutputGain();
+    const keep = feedsSend(id);
+    const finish = (buffer, startBar) => {
+      if (!buffer) return;
+      if (!renderedIds.includes(id)) renderedIds.push(id);
+      mixIntoMaster(id, buffer, startBar, linearLevel);
+      if (keep) keptBuffers.push({ id, buffer, startBar, level: linearLevel });
+    };
 
     if (hasArrangement) {
       // Render each section where this instrument has a pattern
-      for (const section of arrangementPlan) {
+      for (let i = 0; i < arrangementPlan.length; i++) {
+        const section = arrangementPlan[i];
         const patternName = section.patterns[id];
         if (!patternName) continue;
 
         const savedPattern = session.patterns[id]?.[patternName];
-        if (!savedPattern) continue;
+        if (!savedPattern) {
+          // set_arrangement refuses unsaved names now; a deserialized older
+          // arrangement can still name one. Say so instead of skipping in silence.
+          const err = `section ${i + 1}: pattern "${patternName}" not saved`;
+          if (!failures.some(f => f.id === id && f.error === err)) failures.push({ id, error: err });
+          continue;
+        }
+
+        // Effects are global: every section renders through the LIVE chains
+        // (session.mixer.effectChains). save_pattern also snapshots the
+        // instrument's chains into the pattern (channelInserts) and
+        // load_pattern restores them, which is how per-section processing is
+        // authored (load → add_channel_insert → save) — but rendering from the
+        // snapshot instead would silently strip any effect added after a
+        // pattern was saved (a sidechain added after save_pattern, a reverb
+        // added late in a song build), so the snapshot is never rendered directly.
+        const sectionChains = session.mixer?.effectChains;
 
         try {
           const buffer = await renderInstrumentWithEffects(
@@ -326,21 +472,13 @@ export async function renderSessionToBuffer(session, bars) {
               params: sanitizeSavedParams(node, savedPattern.params),
               automation: savedPattern.automation,
             },
-            session.mixer?.effectChains,
+            sectionChains,
             id,
             sampleRate,
             session.bpm,
-            renderContext
+            sectionContexts[i]
           );
-
-          if (buffer) {
-            instrumentBuffers.push({
-              id,
-              buffer,
-              startBar: section.barStart,
-              level: linearLevel,
-            });
-          }
+          finish(buffer, section.barStart);
         } catch (e) {
           console.warn(`Failed to render ${id} section:`, e.message);
           if (!failures.some(f => f.id === id)) failures.push({ id, error: e.message });
@@ -374,15 +512,7 @@ export async function renderSessionToBuffer(session, bars) {
           session.bpm,
           renderContext
         );
-
-        if (buffer) {
-          instrumentBuffers.push({
-            id,
-            buffer,
-            startBar: 0,
-            level: linearLevel,
-          });
-        }
+        finish(buffer, 0);
       } catch (e) {
         console.warn(`Failed to render ${id}:`, e.message);
         failures.push({ id, error: e.message });
@@ -390,56 +520,21 @@ export async function renderSessionToBuffer(session, bars) {
     }
   }
 
-  // === MIX ALL BUFFERS ===
-  // Track state (volume/mute/solo/pan from RoutingManager) is applied here —
-  // it used to be data-only, making the whole mixer tool surface a no-op.
-  const tracksByNode = new Map();
-  let anySolo = false;
-  if (session.routing?.tracks) {
-    for (const [, tr] of session.routing.tracks) {
-      tracksByNode.set(tr.nodeId || tr.id, tr);
-      if (tr.solo) anySolo = true;
-    }
-  }
-
-  for (const { id, buffer, startBar, level } of instrumentBuffers) {
-    const tr = tracksByNode.get(id);
-    if (tr && (tr.mute || (anySolo && !tr.solo))) continue;
-
-    const trackGain = tr ? Math.pow(10, (tr.volume || 0) / 20) : 1;
-    // Equal-power pan: -100 (hard L) .. +100 (hard R); 0 = unity both sides
-    const pan = tr ? Math.max(-100, Math.min(100, tr.pan || 0)) / 100 : 0;
-    const theta = (pan + 1) * Math.PI / 4;
-    const panGain = [Math.cos(theta) * Math.SQRT2, Math.sin(theta) * Math.SQRT2];
-
-    const startSample = Math.floor(startBar * samplesPerBar);
-    const mixLength = Math.min(outputBuffer.length - startSample, buffer.length);
-
-    for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {
-      const mainData = outputBuffer.getChannelData(ch);
-      const instData = buffer.getChannelData(ch % buffer.numberOfChannels);
-      const g = level * trackGain * (outputBuffer.numberOfChannels > 1 ? panGain[ch % 2] : 1);
-      for (let i = 0; i < mixLength; i++) {
-        mainData[startSample + i] += instData[i] * g;
-      }
-    }
-  }
-
   // === PROCESS SEND BUSES ===
-  if (session.routing && session.routing.sends.size > 0) {
-    for (const [sendId, send] of session.routing.sends) {
+  if (sends) {
+    for (const [sendId, send] of sends) {
       // Create empty send buffer
       const sendL = new Float32Array(outputBuffer.length);
       const sendR = new Float32Array(outputBuffer.length);
 
       // Accumulate contributions from all tracks routed to this send
-      for (const [trackId, track] of session.routing.tracks) {
+      for (const [, track] of session.routing.tracks) {
         const sendLevel = track.sends[sendId];
         if (sendLevel === undefined || sendLevel === 0) continue;
 
-        // Find matching instrument buffers for this track
-        for (const { id, buffer, startBar, level } of instrumentBuffers) {
-          if (id !== track.nodeId) continue;
+        // The instruments this track drives (resolved above, one track per instrument)
+        for (const { id, buffer, startBar, level } of keptBuffers) {
+          if (trackFor.get(id) !== track) continue;
 
           const startSample = Math.floor(startBar * samplesPerBar);
           const mixLen = Math.min(outputBuffer.length - startSample, buffer.length);
@@ -480,10 +575,10 @@ export async function renderSessionToBuffer(session, bars) {
       }
     }
   }
+  keptBuffers.length = 0;
 
   // === APPLY MASTER EFFECT CHAIN ===
   const masterChain = session.mixer?.effectChains?.master;
-  let finalBuffer = outputBuffer;
 
   if (masterChain && masterChain.length > 0) {
     // Wrap outputBuffer to match our buffer interface
@@ -527,9 +622,7 @@ export async function renderSessionToBuffer(session, bars) {
   }
 
   // Build output message
-  const synths = instrumentBuffers
-    .map(b => b.id.toUpperCase())
-    .filter((v, i, a) => a.indexOf(v) === i);
+  const synths = renderedIds.map(id => id.toUpperCase());
 
   let message;
   if (hasArrangement) {

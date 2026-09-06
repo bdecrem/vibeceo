@@ -54,11 +54,11 @@ export const TOOLS = [
   // SONG MODE (patterns + arrangement)
   {
     name: "save_pattern",
-    description: "Save the current working pattern for an instrument to a named slot (A, B, C, etc). This captures the current pattern, params, and automation.",
+    description: "Save the current working pattern for an instrument instance to a named slot (A, B, C, etc). Captures the current step pattern, params, automation and that instrument's channel inserts (effect chains on it or its voices).",
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "jbs", "jt10", "jt30", "jt90"], description: "Which instrument's pattern to save" },
+        instrument: { type: "string", description: "Instrument instance id: jb01, jt90, jb202, jt30, jt10, jbs, or an added id such as jb202-2 (see list_instruments). Legacy names (drums, bass, lead) are rejected." },
         name: { type: "string", description: "Pattern name (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -66,11 +66,11 @@ export const TOOLS = [
   },
   {
     name: "load_pattern",
-    description: "Load a saved pattern into the current working pattern for an instrument. This replaces the current pattern with the saved one.",
+    description: "Load a saved pattern into the current working pattern for an instrument instance. Replaces the current step pattern, params, automation and that instrument's channel inserts with the saved ones (a pattern saved without inserts clears the instrument's live inserts).",
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "jbs", "jt10", "jt30", "jt90"], description: "Which instrument's pattern to load" },
+        instrument: { type: "string", description: "Instrument instance id: jb01, jt90, jb202, jt30, jt10, jbs, or an added id such as jb202-2 (see list_instruments)." },
         name: { type: "string", description: "Pattern name to load (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -78,11 +78,11 @@ export const TOOLS = [
   },
   {
     name: "copy_pattern",
-    description: "Copy a saved pattern to a new name. Useful for creating variations.",
+    description: "Copy a saved pattern to a new name and make the copy active. Useful for creating variations.",
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb202", "jbs", "jt10", "jt30", "jt90"], description: "Which instrument" },
+        instrument: { type: "string", description: "Instrument instance id: jb01, jt90, jb202, jt30, jt10, jbs, or an added id such as jb202-2 (see list_instruments)." },
         from: { type: "string", description: "Source pattern name (A, B, etc)" },
         to: { type: "string", description: "Destination pattern name" }
       },
@@ -100,24 +100,25 @@ export const TOOLS = [
   },
   {
     name: "set_arrangement",
-    description: "Set the song arrangement: an ordered list of sections, each with `bars` and one key per instrument instance naming the saved pattern it plays (jb01, jt90, jb202, jt30, jt10, or an added id like jb202-2). Omit an instrument to silence it for that section.",
+    description: "Set the song arrangement: an ordered, non-empty list of sections, each with `bars` (whole number ≥ 1; all sections together max 128) and one key per instrument instance naming a pattern already saved with save_pattern for that instrument (jb01, jt90, jb202, jt30, jt10, or an added id like jb202-2). Omit an instrument to silence it for that section. Unknown ids, legacy names (drums/bass/lead) or unsaved pattern names are rejected and the previous arrangement is kept.",
     input_schema: {
       type: "object",
       properties: {
         sections: {
           type: "array",
-          description: "Array of sections. Each section: {bars: 4, jb01: 'A', jb202: 'A', jbs: 'A', jt10: 'A', jt30: 'A', jt90: 'A'}",
+          description: "Array of sections. Each section: {bars: 4, jb01: 'A', jb202: 'A', jt10: 'A', jt30: 'A', jt90: 'A', 'jb202-2': 'B'}",
           items: {
             type: "object",
             properties: {
-              bars: { type: "number", description: "Number of bars for this section" },
-              jb01: { type: "string", description: "JB01 drum pattern name (or omit to silence)" },
-              jb202: { type: "string", description: "JB202 bass pattern name (or omit to silence)" },
-              jbs: { type: "string", description: "JB-S sampler pattern name (or omit to silence)" },
-              jt10: { type: "string", description: "JT10 lead pattern name (or omit to silence)" },
-              jt30: { type: "string", description: "JT30 acid bass pattern name (or omit to silence)" },
-              jt90: { type: "string", description: "JT90 drum pattern name (or omit to silence)" }
+              bars: { type: "number", description: "Number of bars for this section (whole number ≥ 1)" },
+              jb01: { type: "string", description: "Saved JB01 drum pattern name (or omit to silence)" },
+              jb202: { type: "string", description: "Saved JB202 bass pattern name (or omit to silence)" },
+              jbs: { type: "string", description: "Saved JB-S sampler pattern name (or omit to silence)" },
+              jt10: { type: "string", description: "Saved JT10 lead pattern name (or omit to silence)" },
+              jt30: { type: "string", description: "Saved JT30 acid bass pattern name (or omit to silence)" },
+              jt90: { type: "string", description: "Saved JT90 drum pattern name (or omit to silence)" }
             },
+            additionalProperties: { type: "string", description: "Any other key is an added instrument id (e.g. jb202-2) naming its saved pattern" },
             required: ["bars"]
           }
         }
@@ -158,14 +159,15 @@ export const TOOLS = [
   // JB202 (Modular Bass Synth with Custom DSP)
   {
     name: "add_jb202",
-    description: "Add a bass pattern using JB202 (modular bass synth with custom DSP). Uses PolyBLEP oscillators, 24dB cascaded biquad filter, and soft-clip drive. Produces identical output in browser and Node.js.",
+    description: "Add a bass pattern using JB202 (modular bass synth with custom DSP). Uses PolyBLEP oscillators, 24dB cascaded biquad filter, and soft-clip drive. Produces identical output in browser and Node.js. Pass bars: 2 with 32 steps for a two-bar phrase.",
     input_schema: {
       type: "object",
       properties: {
         instrument: { type: "string", description: "Which jb202 instance (default \"jb202\"). Extra instances come from add_instrument, e.g. \"jb202-2\"." },
+        bars: { type: "number", description: "Pattern length in bars, 16 steps per bar. Optional: defaults to what the pattern needs (32 steps → 2 bars). A value smaller than the pattern is an error, not a truncation." },
         pattern: {
           type: "array",
-          description: "Array of 16 steps. Each step: {note: 'C2', gate: true, accent: false, slide: false}. Bass range: C1-C3",
+          description: "Array of 16 × bars steps (16 for one bar). Each step: {note: 'C2', gate: true, accent: false, slide: false}; a step without note repeats the previous note. Bass range: C1-C3",
           items: {
             type: "object",
             properties: {
@@ -259,21 +261,21 @@ export const TOOLS = [
   // JB01 (Reference Drum Machine)
   {
     name: "add_jb01",
-    description: "Add JB01 drum pattern (reference drum machine). 8 voices: kick, snare, clap, ch (closed hat), oh (open hat), lowtom, hitom, cymbal. Pass step arrays [0,4,8,12] for each voice. Use clear:true when creating a fresh pattern (e.g., for song mode variations).",
+    description: "Add JB01 drum pattern (reference drum machine). 8 voices: kick, snare, clap, ch (closed hat), oh (open hat), lowtom, hitom, cymbal. Pass step arrays [0,4,8,12] for each voice. Voices you don't name are kept (repeated if the pattern grows); steps beyond bars*16 grow the pattern; clear:true is the only way to shrink — use it when creating a fresh pattern (e.g., for song mode variations).",
     input_schema: {
       type: "object",
       properties: {
         instrument: { type: "string", description: "Which jb01 instance (default \"jb01\"). Extra instances come from add_instrument, e.g. \"jb01-2\"." },
         clear: { type: "boolean", description: "Clear ALL voices first before adding. Use this when creating a fresh pattern for song mode." },
-        bars: { type: "number", description: "Pattern length in bars (default 1). Use for multi-bar patterns." },
-        kick: { type: "array", items: { type: "number" }, description: "Kick steps (0-15 for 1 bar)" },
-        snare: { type: "array", items: { type: "number" }, description: "Snare steps (0-15 for 1 bar)" },
-        clap: { type: "array", items: { type: "number" }, description: "Clap steps (0-15 for 1 bar)" },
-        ch: { type: "array", items: { type: "number" }, description: "Closed hi-hat steps (0-15 for 1 bar)" },
-        oh: { type: "array", items: { type: "number" }, description: "Open hi-hat steps (0-15 for 1 bar)" },
-        lowtom: { type: "array", items: { type: "number" }, description: "Low tom steps (0-15 for 1 bar)" },
-        hitom: { type: "array", items: { type: "number" }, description: "Hi tom steps (0-15 for 1 bar)" },
-        cymbal: { type: "array", items: { type: "number" }, description: "Cymbal steps (0-15 for 1 bar)" }
+        bars: { type: "number", description: "Pattern length in bars. With bars, step numbers are absolute (bars: 2, ch [0..14] = hats in bar 1 only). Without it the pattern keeps its current length (or grows to fit the steps) and a shorter part is repeated to fill it." },
+        kick: { type: "array", items: { type: "number" }, description: "Kick steps (0-15 per bar; 16-31 = bar 2, …)" },
+        snare: { type: "array", items: { type: "number" }, description: "Snare steps (0-15 per bar; 16-31 = bar 2, …)" },
+        clap: { type: "array", items: { type: "number" }, description: "Clap steps (0-15 per bar; 16-31 = bar 2, …)" },
+        ch: { type: "array", items: { type: "number" }, description: "Closed hi-hat steps (0-15 per bar; 16-31 = bar 2, …)" },
+        oh: { type: "array", items: { type: "number" }, description: "Open hi-hat steps (0-15 per bar; 16-31 = bar 2, …)" },
+        lowtom: { type: "array", items: { type: "number" }, description: "Low tom steps (0-15 per bar; 16-31 = bar 2, …)" },
+        hitom: { type: "array", items: { type: "number" }, description: "Hi tom steps (0-15 per bar; 16-31 = bar 2, …)" },
+        cymbal: { type: "array", items: { type: "number" }, description: "Cymbal steps (0-15 per bar; 16-31 = bar 2, …)" }
       },
       required: []
     }
@@ -309,7 +311,7 @@ export const TOOLS = [
   },
   {
     name: "load_jb01_kit",
-    description: "Load a JB01 sound preset (kit).",
+    description: "Load a JB01 sound preset (kit) — applies every voice's level/tune/decay/tone from the kit. Returns an Error for an unknown or malformed kit (list_jb01_kits shows the ids).",
     input_schema: {
       type: "object",
       properties: {
@@ -345,8 +347,9 @@ export const TOOLS = [
     description: "Show current JB01 state (pattern and parameters).",
     input_schema: {
       type: "object",
-      properties: {},
-        instrument: { type: "string", description: "Which jb01 instance (default \"jb01\"). Extra instances come from add_instrument, e.g. \"jb01-2\"." },
+      properties: {
+        instrument: { type: "string", description: "Which jb01 instance (default \"jb01\"). Extra instances come from add_instrument, e.g. \"jb01-2\"." }
+      },
       required: []
     }
   },
@@ -360,7 +363,7 @@ export const TOOLS = [
         instrument: { type: "string", description: "Which jt10 instance (default \"jt10\"). Extra instances come from add_instrument, e.g. \"jt10-2\"." },
         pattern: {
           type: "array",
-          description: "Array of steps. Each step: {note: 'C3', gate: true, accent: false, slide: false}. Lead range: C2-C5",
+          description: "Array of steps, 16 per bar. Each step: {note: 'C3', gate: true, accent: false, slide: false}; a step without note repeats the previous note. Lead range: C2-C5",
           items: {
             type: "object",
             properties: {
@@ -371,14 +374,14 @@ export const TOOLS = [
             }
           }
         },
-        bars: { type: "number", description: "Pattern length in bars (default 1). Use for multi-bar patterns." }
+        bars: { type: "number", description: "Pattern length in bars (whole number ≥ 1, 16 steps per bar). Optional: defaults to what the pattern needs (32 steps → 2 bars)." }
       },
       required: ["pattern"]
     }
   },
   {
     name: "tweak_jt10",
-    description: "Adjust JT10 lead synth parameters. UNITS: level in dB (-60 to +6, 0=unity), filterCutoff in Hz (20-16000), all others 0-100. Use mute:true to silence.",
+    description: "Adjust JT10 lead synth parameters. UNITS: level in dB (-60 to +6, 0=unity), filterCutoff in Hz (20-16000), glideTime in seconds (0-1; above 1 is taken as a 0-100 knob), all others 0-100. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {
@@ -406,7 +409,7 @@ export const TOOLS = [
         lfoToPitch: { type: "number", description: "LFO to pitch depth 0-100" },
         lfoToFilter: { type: "number", description: "LFO to filter depth 0-100" },
         lfoToPW: { type: "number", description: "LFO to pulse width depth 0-100" },
-        glideTime: { type: "number", description: "Portamento/glide time 0-100" }
+        glideTime: { type: "number", description: "Portamento/glide time in SECONDS, 0-1 (default 0.05): 0.1 = quick slide, 0.3 = lazy, 1 = slowest. A value above 1 is read as a 0-100 knob position and mapped to seconds (50 → 0.5 s)." }
       },
       required: []
     }
@@ -414,14 +417,15 @@ export const TOOLS = [
   // JT30 (Acid Bass - 303-style)
   {
     name: "add_jt30",
-    description: "Add an acid bass pattern using JT30 (303-style acid synth). Features saw/square oscillators, Moog ladder filter, classic acid sound.",
+    description: "Add an acid bass pattern using JT30 (303-style acid synth). Features saw/square oscillators, Moog ladder filter, classic acid sound. Pass bars: 2 with 32 steps for a two-bar phrase.",
     input_schema: {
       type: "object",
       properties: {
         instrument: { type: "string", description: "Which jt30 instance (default \"jt30\"). Extra instances come from add_instrument, e.g. \"jt30-2\"." },
+        bars: { type: "number", description: "Pattern length in bars (whole number ≥ 1, 16 steps per bar). Optional: defaults to what the pattern needs (32 steps → 2 bars)." },
         pattern: {
           type: "array",
-          description: "Array of 16 steps. Each step: {note: 'C2', gate: true, accent: false, slide: false}. Bass range: C1-C3",
+          description: "Array of 16 × bars steps (16 for one bar). Each step: {note: 'C2', gate: true, accent: false, slide: false}; a step without note repeats the previous note. Bass range: C1-C3",
           items: {
             type: "object",
             properties: {
@@ -459,24 +463,24 @@ export const TOOLS = [
   // JT90 (Drum Machine - 909-style)
   {
     name: "add_jt90",
-    description: "Add JT90 drum pattern (909-style drum machine). 11 voices: kick, snare, clap, rimshot, lowtom, midtom, hitom, ch (closed hat), oh (open hat), crash, ride. Pass step arrays [0,4,8,12] for each voice.",
+    description: "Add JT90 drum pattern (909-style drum machine). 11 voices: kick, snare, clap, rimshot, lowtom, midtom, hitom, ch (closed hat), oh (open hat), crash, ride. Pass step arrays [0,4,8,12] for each voice. Voices you don't name are kept (repeated if the pattern grows); steps beyond bars*16 grow the pattern; clear:true is the only way to shrink.",
     input_schema: {
       type: "object",
       properties: {
         instrument: { type: "string", description: "Which jt90 instance (default \"jt90\"). Extra instances come from add_instrument, e.g. \"jt90-2\"." },
         clear: { type: "boolean", description: "Clear ALL voices first before adding" },
-        bars: { type: "number", description: "Pattern length in bars (default 1)" },
-        kick: { type: "array", items: { type: "number" }, description: "Kick steps (0-15 for 1 bar)" },
-        snare: { type: "array", items: { type: "number" }, description: "Snare steps (0-15 for 1 bar)" },
-        clap: { type: "array", items: { type: "number" }, description: "Clap steps (0-15 for 1 bar)" },
-        rimshot: { type: "array", items: { type: "number" }, description: "Rimshot steps (0-15 for 1 bar)" },
-        lowtom: { type: "array", items: { type: "number" }, description: "Low tom steps (0-15 for 1 bar)" },
-        midtom: { type: "array", items: { type: "number" }, description: "Mid tom steps (0-15 for 1 bar)" },
-        hitom: { type: "array", items: { type: "number" }, description: "Hi tom steps (0-15 for 1 bar)" },
-        ch: { type: "array", items: { type: "number" }, description: "Closed hi-hat steps (0-15 for 1 bar)" },
-        oh: { type: "array", items: { type: "number" }, description: "Open hi-hat steps (0-15 for 1 bar)" },
-        crash: { type: "array", items: { type: "number" }, description: "Crash cymbal steps (0-15 for 1 bar)" },
-        ride: { type: "array", items: { type: "number" }, description: "Ride cymbal steps (0-15 for 1 bar)" }
+        bars: { type: "number", description: "Pattern length in bars. With bars, step numbers are absolute (bars: 2, ch [0..14] = hats in bar 1 only). Without it the pattern keeps its current length (or grows to fit the steps) and a shorter part is repeated to fill it." },
+        kick: { type: "array", items: { type: "number" }, description: "Kick steps (0-15 per bar; 16-31 = bar 2, …)" },
+        snare: { type: "array", items: { type: "number" }, description: "Snare steps (0-15 per bar; 16-31 = bar 2, …)" },
+        clap: { type: "array", items: { type: "number" }, description: "Clap steps (0-15 per bar; 16-31 = bar 2, …)" },
+        rimshot: { type: "array", items: { type: "number" }, description: "Rimshot steps (0-15 per bar; 16-31 = bar 2, …)" },
+        lowtom: { type: "array", items: { type: "number" }, description: "Low tom steps (0-15 per bar; 16-31 = bar 2, …)" },
+        midtom: { type: "array", items: { type: "number" }, description: "Mid tom steps (0-15 per bar; 16-31 = bar 2, …)" },
+        hitom: { type: "array", items: { type: "number" }, description: "Hi tom steps (0-15 per bar; 16-31 = bar 2, …)" },
+        ch: { type: "array", items: { type: "number" }, description: "Closed hi-hat steps (0-15 per bar; 16-31 = bar 2, …)" },
+        oh: { type: "array", items: { type: "number" }, description: "Open hi-hat steps (0-15 per bar; 16-31 = bar 2, …)" },
+        crash: { type: "array", items: { type: "number" }, description: "Crash cymbal steps (0-15 per bar; 16-31 = bar 2, …)" },
+        ride: { type: "array", items: { type: "number" }, description: "Ride cymbal steps (0-15 per bar; 16-31 = bar 2, …)" }
       },
       required: []
     }
@@ -629,16 +633,16 @@ export const TOOLS = [
   // === MIXER TOOLS ===
   {
     name: "add_channel_insert",
-    description: "Add an insert effect to a channel or individual drum voice. Supports per-voice filtering on drums (kick, snare, ch, etc).",
+    description: "Add an insert effect to an instrument channel or to one drum voice, replacing an existing insert of the same type on that channel. Channels are instrument ids (jt90, jb01, jb202, jt30, jt10, jbs, added ids like jb202-2) or '<instrument>.<voice>' for one drum voice (jt90.kick, jb01.ch) — a bare voice name like 'kick' is not a channel. Inserts are saved into patterns by save_pattern and restored by load_pattern (per-section processing: load_pattern → add_channel_insert → save_pattern).",
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["jb01", "jb202", "jbs", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to add effect to" },
+        channel: { type: "string", description: "Instrument id (jt90, jb01, jb202, jt30, jt10, jbs, or an added id like jb202-2) or one drum voice as '<instrument>.<voice>' (jt90.kick, jb01.ch, jt90.oh). Never a bare voice name." },
         effect: { type: "string", enum: ["delay", "eq", "filter", "sidechain", "reverb"], description: "Type of effect" },
-        preset: { type: "string", description: "Effect preset (eq: 'acidBass'/'crispHats'/'warmPad'; filter: 'dubDelay'/'telephone'/'lofi')" },
+        preset: { type: "string", description: "Named starting point (explicit params win over it; sidechain has none). delay: tape, dub, slapback, pingpong, widePong, stereoWidth. reverb: plate, room, hall, chamber, cathedral, ambient. eq: master, acidBass, crispHats, warmPad, punchyKick, cleanSnare. filter: dubDelay, telephone, lofi, darkRoom, airFilter, thinOut. Unknown names are an Error." },
         params: {
           type: "object",
-          description: "Effect parameters (eq: highpass, lowGain, midGain, midFreq, highGain; filter: mode, cutoff, resonance; sidechain: amount, trigger)"
+          description: "Effect parameters (eq: highpass, lowGain, midGain, midFreq, highGain; filter: mode, cutoff, resonance; delay: mode, time, sync, feedback, mix; reverb: decay, damping, predelay, mix; sidechain: amount, trigger)"
         }
       },
       required: ["channel", "effect"]
@@ -646,11 +650,11 @@ export const TOOLS = [
   },
   {
     name: "remove_channel_insert",
-    description: "Remove a channel insert effect (delay, eq, filter, sidechain, reverb). Use to clear effects from a pattern before saving.",
+    description: "Remove a channel insert effect (delay, eq, filter, sidechain, reverb) from an instrument channel or one drum voice. To take an insert out of one saved pattern: load_pattern → remove_channel_insert → save_pattern.",
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["jb01", "jb202", "jbs", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to remove effect from" },
+        channel: { type: "string", description: "Instrument id (jt90, jb01, jb202, jt30, jt10, jbs, or an added id like jb202-2) or one drum voice as '<instrument>.<voice>' (jt90.kick, jb01.ch). Never a bare voice name." },
         effect: { type: "string", enum: ["delay", "eq", "filter", "sidechain", "reverb", "all"], description: "Type of effect to remove, or 'all' to clear all inserts" }
       },
       required: ["channel"]
@@ -662,8 +666,8 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        target: { type: "string", description: "What to duck (e.g., 'jb202', 'jbs')" },
-        trigger: { type: "string", description: "What triggers the duck (e.g., 'kick')" },
+        target: { type: "string", description: "What to duck: an instrument id (jb202, jt30, jt10-2, …) or a drum voice as '<instrument>.<voice>'" },
+        trigger: { type: "string", description: "Drum voice whose hits trigger the duck — any JB01/JT90 voice: kick, snare, clap, rimshot, lowtom, midtom, hitom, ch, oh, crash, ride, cymbal. In song mode it follows each section's saved drum pattern." },
         amount: { type: "number", description: "How much to duck (0-1, default 0.5)" }
       },
       required: ["target", "trigger"]
@@ -676,8 +680,8 @@ export const TOOLS = [
       type: "object",
       properties: {
         effect: { type: "string", enum: ["delay", "eq", "filter", "sidechain", "reverb"], description: "Type of effect" },
-        preset: { type: "string", description: "Effect preset (eq: 'master')" },
-        params: { type: "object", description: "Effect parameters" }
+        preset: { type: "string", description: "Preset — eq and filter only, ignored by delay/reverb/sidechain (pass params instead). eq: master, acidBass, crispHats, warmPad, punchyKick, cleanSnare. filter: dubDelay, telephone, lofi, darkRoom, airFilter, thinOut." },
+        params: { type: "object", description: "Effect parameters (delay: mode, time, sync, feedback, mix; reverb: decay, damping, predelay, mix; eq: highpass, lowGain, midGain, midFreq, highGain; filter: mode, cutoff, resonance)" }
       },
       required: ["effect"]
     }
@@ -836,8 +840,9 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        target: { type: "string", description: "Target for effect: instrument (jb01, jb202), voice (jb01.ch, jb01.kick, jb01.snare), or 'master'" },
+        target: { type: "string", description: "Target for effect: an instrument id (jt90, jb01, jb202, jt30, jt10, or an added id like jb202-2), one drum voice as '<instrument>.<voice>' (jt90.kick, jb01.ch — never a bare voice name), or 'master'" },
         effect: { type: "string", enum: ["delay", "eq", "filter", "sidechain", "reverb"], description: "Type of effect to add" },
+        preset: { type: "string", description: "Named starting point (explicit params win over it; sidechain has none). delay: tape, dub, slapback, pingpong, widePong, stereoWidth. reverb: plate, room, hall, chamber, cathedral, ambient. eq: master, acidBass, crispHats, warmPad, punchyKick, cleanSnare. filter: dubDelay, telephone, lofi, darkRoom, airFilter, thinOut. Unknown names are an Error." },
         after: { type: "string", description: "Insert after this effect type/ID (for ordering). Omit to append." },
         // Delay params
         mode: { type: "string", enum: ["analog", "pingpong"], description: "Delay mode: analog (mono+saturation) or pingpong (stereo bounce)" },
@@ -882,11 +887,11 @@ export const TOOLS = [
   },
   {
     name: "tweak_effect",
-    description: "Modify parameters on an existing effect in a target's chain.",
+    description: "Modify parameters on an existing effect in a target's chain, or on a send bus (target = the send id). A misspelled or out-of-range param is an Error and nothing changes.",
     input_schema: {
       type: "object",
       properties: {
-        target: { type: "string", description: "Target: instrument (jb01), voice (jb01.ch), or 'master'" },
+        target: { type: "string", description: "Target: instrument (jb01), voice (jb01.ch), 'master', or a send bus id (e.g. 'verb')" },
         effect: { type: "string", description: "Effect type or ID to tweak" },
         // All effect params supported
         mode: { type: "string", enum: ["analog", "pingpong"], description: "Delay mode" },
@@ -922,12 +927,12 @@ export const TOOLS = [
   },
   {
     name: "tweak",
-    description: "Set any parameter value via unified path. Use 'value' for absolute values, 'delta' for relative adjustments (e.g., 'lower by 5'). Examples: tweak({path:'jb202.level',value:50}) sets to 50, tweak({path:'jb202.level',delta:-5}) reduces by 5.",
+    description: "Set any parameter value via unified path. Use 'value' for absolute values, 'delta' for relative adjustments (e.g., 'lower by 5'). Examples: tweak({path:'jb202.level',value:50}) sets to 50, tweak({path:'jb202.level',delta:-5}) reduces by 5. An unknown instrument, voice or param returns an Error listing the valid names. '<instrument>.<voice>.mute' (or '<instrument>.mute') takes true/false — false restores the default level. Send buses: 'send.<id>.<param>'.",
     input_schema: {
       type: "object",
       properties: {
         path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb202.filterCutoff', 'jbs.s1.level')" },
-        value: { type: "number", description: "Absolute value to set" },
+        value: { type: ["number", "string", "boolean", "null"], description: "Absolute value to set (a choice name for choice params, true/false for mute, null to restore a JT10 filter-envelope param to 'follow amp')" },
         delta: { type: "number", description: "Relative adjustment (positive to increase, negative to decrease). Use this for 'increase by X' or 'reduce by X' requests." }
       },
       required: ["path"]
@@ -1156,7 +1161,7 @@ export const TOOLS = [
   // AUTOMATION (per-step parameter changes — "knob mashing")
   {
     name: "automate",
-    description: "Add per-step parameter automation to any instrument — dynamic 'knob mashing' that changes a parameter value on every step. Provide an array of 16 values (one per step). Use null to keep the static value for that step. Uses SAME UNITS as tweak: decay/attack/tone are 0-100, level is dB (-60 to +6), tune is semitones, filterCutoff is Hz, etc.",
+    description: "Add per-step parameter automation to any instrument — dynamic 'knob mashing' that changes a parameter value on every step. Provide 16 values per bar (16 for one bar; 32/64 for a sweep across 2/4 bars). Use null to keep the static value for that step. Uses SAME UNITS as tweak: decay/attack/tone are 0-100, level is dB (-60 to +6), tune is semitones, filterCutoff is Hz, etc.",
     input_schema: {
       type: "object",
       properties: {
@@ -1166,7 +1171,7 @@ export const TOOLS = [
         },
         values: {
           type: "array",
-          description: "Array of values (one per step, typically 16). Use null to keep the static value. Same units as tweak. Example for decay: [20, 80, 30, 90, null, 50, 15, 95, 25, 70, 40, 85, 10, 60, 35, 75]",
+          description: "Array of values, one per 16th step (16 per bar; 32/64 for multi-bar motion — jb202/jt30/jt10 play the whole lane, drums repeat it per bar). Use null to keep the static value. Same units as tweak. Example for decay: [20, 80, 30, 90, null, 50, 15, 95, 25, 70, 40, 85, 10, 60, 35, 75]",
           items: { type: ["number", "null"] }
         }
       },
@@ -1181,7 +1186,7 @@ export const TOOLS = [
       properties: {
         path: {
           type: "string",
-          description: "Parameter path to clear (e.g., 'jb01.ch.decay'). Omit to clear ALL automation. Use instrument prefix (e.g., 'jb01') to clear all automation for one instrument."
+          description: "Parameter path to clear (e.g., 'jb01.ch.decay'; alias spellings like 'jt30.filterCutoff' are accepted). Omit to clear ALL automation. Use instrument prefix (e.g., 'jb01') to clear all automation for one instrument. Reports 'No automation found' when nothing matched."
         }
       },
       required: []
@@ -1209,7 +1214,7 @@ export const TOOLS = [
         decay: { type: "number", description: "Reverb tail length in seconds (0.1-10)" },
         damping: { type: "number", description: "High-frequency rolloff 0-100" },
         predelay: { type: "number", description: "Gap before reverb onset in ms (0-100)" },
-        mix: { type: "number", description: "Wet/dry mix 0-100 (default 100 for sends — fully wet)" },
+        mix: { type: "number", description: "Ignored on sends — a bus always returns 100% wet; set how much of each track reaches it with route({ track, send, level })" },
         width: { type: "number", description: "Stereo spread 0-100" },
         size: { type: "number", description: "Room size 0-100" },
         // Delay params

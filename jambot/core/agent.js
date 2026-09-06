@@ -15,6 +15,10 @@
  *   - session state context covers every instrument (was jb01/jb202 only)
  *   - every stop_reason terminates cleanly with a user-visible note
  *   - AbortSignal support
+ *   - every tool_use in the history gets a tool_result, always: a response
+ *     cut off by max_tokens mid tool call, a host callback that throws, or a
+ *     saved history that already ends in an unanswered tool_use would
+ *     otherwise make every later request fail with a 400
  *
  * @param {Object} opts
  * @param {string} opts.task - The user's message
@@ -58,6 +62,10 @@ export async function runAgent(opts) {
   if (typeof executeTool !== 'function') throw new Error('runAgent: executeTool function required');
 
   callbacks.onStart?.(task);
+  // A saved history may end in an unanswered tool_use (written by the old
+  // loop, or by a crash mid-turn). Answer it before adding the new message,
+  // otherwise the API rejects every request from here on.
+  repairToolHistory(messages);
   messages.push({ role: 'user', content: task });
 
   // Genre/library context is detected once per turn from everything the
@@ -117,33 +125,23 @@ export async function runAgent(opts) {
 
     for (const block of textBlocks) callbacks.onResponse?.(block.text);
 
-    if (response.stop_reason === 'tool_use' && toolBlocks.length > 0) {
-      const toolResults = [];
-      for (const block of toolBlocks) {
-        callbacks.onTool?.(block.name, block.input);
-
-        let result;
-        let isError = false;
-        try {
-          result = await executeTool(block.name, block.input || {}, session, context);
-          if (result instanceof Promise) result = await result;
-        } catch (err) {
-          result = `Error in ${block.name}: ${err?.message || err}`;
-          isError = true;
-        }
-        if (typeof result !== 'string') result = result == null ? '' : String(result);
-        if (result === '') result = '(no output)';
-        if (!isError && /^(Error|Unknown tool)/.test(result)) isError = true;
-
-        callbacks.onToolResult?.(result, block.name, isError);
-        callbacks.onAfterTool?.(block.name, session);
-
-        const tr = { type: 'tool_result', tool_use_id: block.id, content: result };
-        if (isError) tr.is_error = true;
-        toolResults.push(tr);
-      }
-      messages.push({ role: 'user', content: toolResults });
+    if (toolBlocks.length > 0 && response.stop_reason === 'tool_use') {
+      await runToolRound(toolBlocks, { executeTool, session, context, callbacks, messages });
       continue;
+    }
+
+    if (toolBlocks.length > 0) {
+      // Cut off (max_tokens) or otherwise stopped while emitting a tool call.
+      // The API still returns the partial tool_use blocks (input `{}` or
+      // truncated), and rejects every later request until each one has a
+      // tool_result. Don't run them — answer them as errors.
+      const why = response.stop_reason || 'unknown stop reason';
+      messages.push({
+        role: 'user',
+        content: toolBlocks.map(b => toolResult(b.id,
+          `Not run: the response was cut off (${why}) before this ${b.name} call was complete. Call it again with the full input.`,
+          true)),
+      });
     }
 
     stopReason = response.stop_reason || 'end_turn';
@@ -165,4 +163,123 @@ export async function runAgent(opts) {
 
   callbacks.onEnd?.(stopReason);
   return { session, messages, iterations, stopReason };
+}
+
+/**
+ * Execute one round of tool calls and push the tool_result user message.
+ * A tool_result is recorded for every block no matter what: a tool that
+ * throws becomes an is_error result, and if a host callback (onTool,
+ * onToolResult, onAfterTool) throws, the results so far plus "not run"
+ * errors for the rest are pushed before the exception propagates.
+ */
+async function runToolRound(toolBlocks, { executeTool, session, context, callbacks, messages }) {
+  const toolResults = [];
+  try {
+    for (const block of toolBlocks) {
+      let result;
+      let isError = false;
+      try {
+        callbacks.onTool?.(block.name, block.input);
+        try {
+          result = await executeTool(block.name, block.input || {}, session, context);
+        } catch (err) {
+          result = `Error in ${block.name}: ${err?.message || err}`;
+          isError = true;
+        }
+        if (typeof result !== 'string') result = result == null ? '' : String(result);
+        if (result === '') result = '(no output)';
+        if (!isError && isToolError(result)) isError = true;
+
+        callbacks.onToolResult?.(result, block.name, isError);
+        callbacks.onAfterTool?.(block.name, session);
+      } finally {
+        if (typeof result !== 'string') {
+          result = `Error in ${block.name}: interrupted before the tool ran`;
+          isError = true;
+        }
+        toolResults.push(toolResult(block.id, result, isError));
+      }
+    }
+  } finally {
+    for (const block of toolBlocks) {
+      if (!toolResults.some(r => r.tool_use_id === block.id)) {
+        toolResults.push(toolResult(block.id, `Error in ${block.name}: not run — the turn was interrupted`, true));
+      }
+    }
+    messages.push({ role: 'user', content: toolResults });
+  }
+}
+
+function toolResult(toolUseId, content, isError) {
+  const tr = { type: 'tool_result', tool_use_id: toolUseId, content };
+  if (isError) tr.is_error = true;
+  return tr;
+}
+
+/**
+ * Tool results that read as failures. Tools return plain strings and most
+ * failures carry no "Error:" prefix — song-tools: 'No jt90 pattern "Z"
+ * found', 'Unknown instrument: x'; jt/jb01-tools: 'JT90: invalid voice…';
+ * jb01-tools: "Kit 'x' not found"; routing-tools: 'Track "x" doesn't exist';
+ * mixer-tools: 'No delay found on jb01'. Only the first line is inspected so
+ * a long success message that mentions "not found" further down is not
+ * flagged, and informational empties ('No active automation', 'No tracks',
+ * 'No JB01 kits found') are deliberately not matched.
+ */
+const TOOL_ERROR_RE = new RegExp([
+  '^Error\\b',
+  '^Unknown (?:tool|instrument)\\b',
+  '^(?:Invalid|Cannot|Could not|Missing|Unsupported)\\b',
+  '^No [\\w-]+ pattern "',                    // load_pattern / copy_pattern: no such saved pattern
+  '^No automation found for',
+  '^No [\\w-]+ (?:insert )?found on ',        // remove_effect / remove_channel_insert / tweak_effect
+  '^No (?:inserts|effect chain) on ',
+  '^No parameters (?:for|to tweak)',
+  '^.{0,60}\\b(?:not found|doesn\'t exist|already exists)\\b',
+  '^[^:]{1,40}: invalid\\b',                   // 'JT90: invalid voice. Use: …'
+].join('|'));
+
+export function isToolError(result) {
+  const firstLine = String(result ?? '').split('\n')[0];
+  return TOOL_ERROR_RE.test(firstLine);
+}
+
+/**
+ * Make every tool_use in a history answered, in place. For each assistant
+ * message with tool_use blocks, the following user message must hold a
+ * tool_result per id; missing ones are added as is_error results (into that
+ * user message, ahead of its other content, or as a new user message when
+ * the history ends there). Returns the number of results added.
+ */
+export function repairToolHistory(messages) {
+  if (!Array.isArray(messages)) return 0;
+  let added = 0;
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i];
+    if (!m || m.role !== 'assistant' || !Array.isArray(m.content)) continue;
+    const uses = m.content.filter(b => b && b.type === 'tool_use');
+    if (uses.length === 0) continue;
+
+    const next = messages[i + 1];
+    const nextIsUser = next && next.role === 'user';
+    const nextText = nextIsUser && typeof next.content === 'string' ? next.content : '';
+    const nextBlocks = nextIsUser
+      ? (Array.isArray(next.content) ? next.content : (nextText ? [{ type: 'text', text: nextText }] : []))
+      : [];
+    const answered = new Set(nextBlocks.filter(b => b && b.type === 'tool_result').map(b => b.tool_use_id));
+    const missing = uses
+      .filter(u => !answered.has(u.id))
+      .map(u => toolResult(u.id, `Error in ${u.name}: no result was recorded for this call (the turn was interrupted). Call it again if it still matters.`, true));
+    if (missing.length === 0) continue;
+
+    if (nextIsUser) {
+      const results = nextBlocks.filter(b => b && b.type === 'tool_result');
+      const rest = nextBlocks.filter(b => !(b && b.type === 'tool_result'));
+      next.content = [...results, ...missing, ...rest];
+    } else {
+      messages.splice(i + 1, 0, { role: 'user', content: missing });
+    }
+    added += missing.length;
+  }
+  return added;
 }

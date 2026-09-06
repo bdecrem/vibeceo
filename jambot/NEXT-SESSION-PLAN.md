@@ -110,3 +110,31 @@ every effect param written through the generic path is double-converted
   `web/public/jb202/dist/dsp/filters/moog-ladder.js` (damping term).
 - DK019 (daskollektiv.rip/dk019.html) uses pre-rendered audio — engine fixes
   don't affect it. The tribal tracks' scripts: hilma `scripts/tribal-sketches/`.
+
+## Bugs found building the Techno 128 song sketch (hilma `scripts/jam/songs/techno-128.mjs`, 2026-09-05)
+
+1. **JB202 `oscNOctave` unit split-brain (silent oscillator).** `params/converters.js`
+   stores `osc1Octave`/`osc2Octave` as cents (-12 st → -1200) but the JB202
+   engine's `transpose(freq, semitones)` reads the stored value as semitones,
+   so an oscillator set an octave down runs at ~0 Hz and is silent. Verified
+   by render: Bart's melodic 202 (osc1 square 70 + osc2 sine 85 at -12) renders
+   -inf with osc1 muted. Fix the unit (same class as the Cluster A finding), but
+   note every saved track with a -12 sine osc will gain a 27.5 Hz layer.
+2. **Song-mode sidechain reads the LIVE drum pattern, not the section's.**
+   `effects/sidechain.js` falls back to `session.jt90Pattern` when the render
+   context carries no `triggerSections`; `core/render.js` never builds them for
+   arrangement renders. A kick-less section still ducks to whatever is loaded
+   live, and loading a kick-less pattern live kills the pump for the whole song.
+3. **Section tails are cut 2 s after a section ends** (`renderPattern` renders
+   `steps + 2 s`, buffers are summed at section offsets). Long delay/reverb
+   tails on an instrument that stops at a boundary are truncated mid-decay.
+   Either render each instrument's arrangement as one continuous timeline or
+   extend the tail to the longest effect decay.
+4. **Per-pattern channel inserts don't round-trip through `save_pattern` when
+   effects were added via `add_effect`** (`mixer.effectChains` vs
+   `channelInserts`): saved inserts are only rebuilt by `load_pattern`; the
+   render always uses the live chains, so a "filter for this section only" is
+   impossible from tools.
+5. **JT90 open hat is choked by any later closed-hat step** (by design, but the
+   agent prompt should say so): offbeat open hats with 16th closed ghosts
+   collapse to 117 ms chirps unless the step after each open hat is left empty.

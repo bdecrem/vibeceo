@@ -470,7 +470,8 @@ export class JT30Engine {
       sampleRate = this.sampleRate,
       pattern = null,
       params = null,
-      automation = null
+      automation = null,
+      swing = 0
     } = options;
 
     const renderPattern = pattern ?? this.sequencer.getPattern();
@@ -484,6 +485,22 @@ export class JT30Engine {
 
     const output = new Float32Array(totalSamples);
 
+    // Sample-accurate step grid (see jb202 engine): bars are exactly
+    // round(16 * stepDur * sr) samples, step ends are rounded cumulatively
+    // inside the bar, and swing (0-1) lengthens odd 16ths / shortens even
+    // ones by the drum machines' factor.
+    const barSamples = Math.round(stepsPerBar * stepDur * sampleRate);
+    const swingFactor = (swing > 0 ? Math.min(1, swing) : 0) * 0.5;
+    const stepEndSample = (stepNum) => {
+      const elapsed = stepNum + 1;
+      const bar = Math.floor(elapsed / stepsPerBar);
+      const inBar = elapsed % stepsPerBar;
+      const pairs = Math.floor(inBar / 2);
+      const odd = inBar % 2;
+      const t = pairs * 2 * stepDur + odd * stepDur * (1 - swingFactor);
+      return bar * barSamples + Math.round(t * sampleRate);
+    };
+
     // Create voice - SAME CLASS as real-time
     const voice = new SynthVoice(sampleRate, renderParams);
 
@@ -495,11 +512,12 @@ export class JT30Engine {
       const nextPatternStep = (patternStep + 1) % steps;
       const nextStepData = renderPattern[nextPatternStep];
 
-      // Apply per-step automation (values already in engine units)
+      // Apply per-step automation (values already in engine units), indexed
+      // by the absolute render step so multi-bar lanes sweep across bars.
       if (automation) {
         let paramsChanged = false;
         for (const [paramId, values] of Object.entries(automation)) {
-          const val = values[patternStep % values.length];
+          const val = values[stepNum % values.length];
           if (val !== null && val !== undefined) {
             renderParams[paramId] = val;
             paramsChanged = true;
@@ -513,7 +531,7 @@ export class JT30Engine {
       // Use the SAME method as real-time
       voice.processStepEvent(stepData, nextStepData);
 
-      const stepSamples = Math.floor(stepDur * sampleRate);
+      const stepSamples = Math.max(0, stepEndSample(stepNum) - sampleIndex);
       const shouldRelease = voice.shouldReleaseAfterStep(stepData, nextStepData);
       const releaseSample = shouldRelease ? Math.floor(stepSamples * 0.9) : stepSamples;
 
@@ -525,6 +543,12 @@ export class JT30Engine {
           voice.releaseNote();
         }
       }
+    }
+
+    // Release tail into the reserved 2 s instead of a hard cut at pattern end.
+    if (voice.gateOpen) voice.releaseNote();
+    while (sampleIndex < totalSamples && voice.ampEnv.isActive()) {
+      output[sampleIndex++] = voice.processSample(this.masterVolume);
     }
 
     return {

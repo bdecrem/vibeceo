@@ -169,6 +169,82 @@ function assignParams(node, kind, prefix, v) {
   }
 }
 
+/** Unregister every effect node whose key starts with `prefix` ('fx.' or 'fx.<id>.'). */
+function unregisterEffectNodes(params, prefix) {
+  for (const key of params.listNodes()) {
+    if (key.startsWith(prefix)) params.unregister(key);
+  }
+}
+
+/**
+ * Put an instrument node back in the state a brand-new session gives it,
+ * keeping the SAME object (the session's getters, _nodes, ParamSystem and
+ * any tool holding a reference all point at it). Defaults come from a fresh
+ * instance of the same class, so this never duplicates per-node default
+ * logic (engine-unit conversion, null "follow amp" envelopes, cents, …).
+ * The JB-S kit is a sample bank, not song content — it stays loaded.
+ */
+function resetNodeToDefaults(node, sampleRate) {
+  const fresh = new node.constructor({ id: node.id, sampleRate });
+  node._params = { ...fresh._params };
+  node.setPattern(fresh.getPattern());
+  node.setLevel(0);   // createSession() starts every node at 0 dB (config.<id>Level ?? 0)
+  if (typeof node.setSwing === 'function') node.setSwing(fresh.getSwing());
+  if (typeof node.setAccentLevel === 'function') node.setAccentLevel(fresh.getAccentLevel());
+  if (fresh.rack) {                       // jp9000: empty rack, nothing triggers
+    node.rack = fresh.rack;
+    node._triggerModules = [];
+  }
+  delete node._renderAutomation;
+}
+
+/**
+ * Start over IN PLACE: every instrument back to factory pattern/params,
+ * added instances removed, saved patterns / arrangement / automation /
+ * effect chains / routing cleared, transport back to 2 bars and no swing.
+ * The session object keeps its identity — the web Studio holds a ref to it
+ * and tools mutate it in place, so create_session must not swap objects.
+ *
+ * @param {Object} session
+ * @param {Object} [opts] - { bpm = 128, swing = 0 }
+ * @returns {Object} the same session
+ */
+export function resetSession(session, opts = {}) {
+  const sampleRate = session.clock?.sampleRate || 44100;
+
+  // Added instances (id !== type) go away entirely — patterns, fx, arrangement slots.
+  for (const inst of [...session.instruments]) {
+    if (inst.id !== inst.type) session.removeInstrument(inst.id);
+  }
+
+  // Effects: every fx.* registration plus the chains that reference them.
+  unregisterEffectNodes(session.params, 'fx.');
+  session.mixer = { channelInserts: {}, masterInserts: [], masterVolume: 0.8, effectChains: {} };
+
+  // Automation lanes (all instruments).
+  session.params.clearAutomation();
+
+  // The canonical instruments, same node objects, factory state.
+  for (const { id } of session.instruments) {
+    const node = session._nodes[id];
+    if (node) resetNodeToDefaults(node, sampleRate);
+  }
+
+  // Song mode.
+  session.patterns = Object.fromEntries(session.instruments.map(i => [i.id, {}]));
+  session.currentPattern = Object.fromEntries(session.instruments.map(i => [i.id, 'A']));
+  session.arrangement = [];
+
+  // Tracks / sends / master inserts — a fresh session has no RoutingManager.
+  session.routing = undefined;
+
+  // Transport.
+  session.bpm = opts.bpm ?? 128;
+  session.swing = opts.swing ?? 0;
+  session.bars = 2;
+  return session;
+}
+
 /**
  * Accessor for one instrument instance — what every tool works through.
  * `pattern` / `params` get and set exactly like the legacy session.jb202Pattern
@@ -341,6 +417,10 @@ export function createSession(config = {}) {
       this.instruments = this.instruments.filter(i => i.id !== id);
       delete this.patterns[id];
       delete this.currentPattern[id];
+      // Effect nodes on this instance ('fx.<id>.delay1', 'fx.<id>.<voice>.eq1')
+      // were registered by add_effect; drop them with their chains, otherwise
+      // list_params/tweak keep "working" on effects that no longer render.
+      unregisterEffectNodes(params, `fx.${id}.`);
       for (const key of Object.keys(this.mixer?.effectChains || {})) {
         if (key === id || key.startsWith(id + '.')) delete this.mixer.effectChains[key];
       }
@@ -349,6 +429,11 @@ export function createSession(config = {}) {
       }
       this.routing?.tracks?.delete?.(id);
       return { ok: true };
+    },
+
+    /** Start over in place (see resetSession). */
+    reset(opts) {
+      return resetSession(this, opts);
     },
 
     // === UNIFIED PARAMETER ACCESS ===
@@ -689,6 +774,11 @@ export function deserializeSession(data) {
   if (data.routing) {
     if (!session.routing) session.routing = new RoutingManager();
     session.routing.deserialize(data.routing);
+    session.routing.attachParams?.(session.params);
+    // Register the send effect nodes as `send.<id>` right away so
+    // tweak({ path: 'send.<id>.<param>' }) works on a freshly loaded track
+    // (idempotent; the routing/mixer tools attach again on their own).
+    session.routing.attachParams(session.params);
   }
   if (data.patterns) session.patterns = data.patterns;
   if (data.currentPattern) session.currentPattern = data.currentPattern;
@@ -732,8 +822,11 @@ export function restoreSessionInPlace(existingSession, data) {
     existingSession.params.deserialize(data.params);
   }
 
-  // Update mixer (reconstruct effect nodes), patterns, etc.
+  // Update mixer (reconstruct effect nodes), patterns, etc. The previous
+  // state's effect nodes are unregistered first so they don't linger as
+  // ghosts (or trip the re-register warning) next to the reconstructed ones.
   if (data.mixer) {
+    unregisterEffectNodes(existingSession.params, 'fx.');
     existingSession.mixer = {
       ...data.mixer,
       effectChains: reconstructEffectNodes(data.mixer.effectChains, existingSession.params),
@@ -742,6 +835,8 @@ export function restoreSessionInPlace(existingSession, data) {
   if (data.routing) {
     if (!existingSession.routing) existingSession.routing = new RoutingManager();
     existingSession.routing.deserialize(data.routing);
+    existingSession.routing.attachParams?.(existingSession.params);
+    existingSession.routing.attachParams(existingSession.params);
   }
   if (data.patterns) existingSession.patterns = data.patterns;
   if (data.currentPattern) existingSession.currentPattern = data.currentPattern;
