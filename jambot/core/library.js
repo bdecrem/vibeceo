@@ -72,7 +72,15 @@ const LIBRARY_ALIASES = {
   // bass", "plug the hats into the delay", "add some breaks") and each hit
   // injected an unrelated genre brief — with a target BPM — into the system
   // prompt for the rest of the track. Multi-word genre names stay.
-  'minimal techno': 'minimal_techno',
+  // "minimal techno" resolves to the Mills-school entry (the one proven on
+  // this engine, 2026-09-07); the generic minimal_techno entry stays by key.
+  'minimal techno': 'mills_minimal',
+  'mills school': 'mills_minimal',
+  'mills-school': 'mills_minimal',
+  'stripped techno': 'mills_minimal',
+  'hypnotic techno': 'mills_minimal',
+  'minimal 130': 'mills_minimal',
+  'minimal 131': 'mills_minimal',
   'breakbeat': 'breakbeat',
   'nu skool breaks': 'breakbeat',
   'nu breaks': 'breakbeat',
@@ -246,6 +254,11 @@ Drum settings: ${JSON.stringify(entry.drums)}
     // Prose extras (from .md profiles)
     if (entry.lineage) section += `\nLineage: ${entry.lineage}`;
     if (entry.currentScene) section += `\nCurrent scene: ${entry.currentScene}`;
+
+    // Executable extras (mills_minimal and any entry that carries them)
+    if (entry.arrangement) section += `\nArrangement blueprint: ${JSON.stringify(entry.arrangement)}`;
+    if (entry.rules?.length) section += `\nRules:\n${entry.rules.map(r => `- ${r}`).join('\n')}`;
+    if (entry.exemplars?.length) section += `\nExemplars (built with these exact tool calls): ${entry.exemplars.join('; ')}`;
 
     // References (all tiers)
     if (entry.references?.length) {

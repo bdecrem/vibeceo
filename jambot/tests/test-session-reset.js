@@ -213,7 +213,7 @@ for (const txt of ['use a square wave for the bass', 'plug the hats into the del
 ok('"trap wave" → wave', () => assert.deepEqual(detectGenres('a trap wave beat at 150'), ['wave']));
 ok('"pluggnb" → pluggnb', () => assert.deepEqual(detectGenres('pluggnb vibes'), ['pluggnb']));
 ok('"breakbeat" / "big beat" → breakbeat', () => { assert.deepEqual(detectGenres('breakbeat please'), ['breakbeat']); assert.deepEqual(detectGenres('some big beat energy'), ['breakbeat']); });
-ok('"minimal techno" → minimal_techno only (not also the generic techno default)', () => assert.deepEqual(detectGenres('minimal techno at 126'), ['minimal_techno']));
+ok('"minimal techno" → mills_minimal only (the Mills-school entry, not also the generic techno default)', () => assert.deepEqual(detectGenres('minimal techno at 126'), ['mills_minimal']));
 ok('"tech house" → tech_house only', () => assert.deepEqual(detectGenres('a tech house groove'), ['tech_house']));
 ok('"detroit techno" → detroit_techno only', () => assert.deepEqual(detectGenres('detroit techno'), ['detroit_techno']));
 ok('bare "techno" still maps to the default', () => assert.deepEqual(detectGenres('techno at 128'), ['berlin_techno']));
