@@ -115,7 +115,7 @@ const LIBRARY_ALIASES = {
   'uk drill': 'drill',
   'chicago drill': 'drill',
 
-  // === PROFILE GENRES (12) ===
+  // === PROFILE GENRES (13) ===
   'breakcore': 'breakcore',
   'complextro': 'complextro',
   'drift phonk': 'drift_phonk',
@@ -134,6 +134,11 @@ const LIBRARY_ALIASES = {
   'stutter house': 'stutterhouse',
   'trap wave': 'wave',
   'wave music': 'wave',
+  'phase locked techno': 'phase_locked_techno',
+  'phase-locked techno': 'phase_locked_techno',
+  'phase lock techno': 'phase_locked_techno',
+  'phase locked': 'phase_locked_techno',
+  'phase-locked': 'phase_locked_techno',
 
   // === GENERIC TERMS → sensible defaults ===
   'techno': 'berlin_techno',
