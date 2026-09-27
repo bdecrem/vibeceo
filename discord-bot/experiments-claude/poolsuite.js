@@ -133,9 +133,8 @@ async function generateLandingPage(businessDescription) {
         const layoutChoice = LAYOUT_ARCHETYPES[Math.floor(Math.random() * LAYOUT_ARCHETYPES.length)];
 
         const response = await anthropic.messages.create({
-            model: "claude-3-5-sonnet-20241022",
-            max_tokens: 8192,
-            temperature: 0.8,
+            model: "claude-sonnet-5",
+            max_tokens: 16000,
             system: DESIGN_SYSTEM_PROMPT,
             messages: [
                 {
@@ -145,7 +144,7 @@ async function generateLandingPage(businessDescription) {
             ]
         });
 
-        const htmlContent = response.content[0].text;
+        const htmlContent = response.content.find(b => b.type === 'text')?.text ?? '';
         
         // Create output filename based on business description
         const filename = businessDescription

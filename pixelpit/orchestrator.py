@@ -62,7 +62,7 @@ TICK_INTERVAL = 30
 MAX_WORKERS = 1
 
 # Model to use for agents (Opus 4.5 for quality)
-AGENT_MODEL = "claude-opus-4-5-20251101"
+AGENT_MODEL = "claude-opus-5-5"
 
 # Default rounds for design/test feedback loops (can be overridden via CLI)
 MAX_DESIGN_ROUNDS = 2

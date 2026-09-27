@@ -49,9 +49,9 @@ import anthropic
 
 # Models
 EXPLORATION_MODEL = "openai/gpt-oss-20b"  # Fast, cheap for prototypes
-JUDGE_MODEL = "claude-sonnet-4-20250514"   # Vision for judging
-SELECTION_MODEL = "claude-sonnet-4-20250514"  # Dither picks winner
-PRODUCTION_MODEL = "claude-opus-4-5-20251101"  # Best model for production
+JUDGE_MODEL = "claude-sonnet-5"   # Vision for judging
+SELECTION_MODEL = "claude-sonnet-5"  # Dither picks winner
+PRODUCTION_MODEL = "claude-opus-5-5"  # Best model for production
 
 NUM_AGENTS = 10
 MAX_TOKENS = 3000
@@ -332,6 +332,7 @@ VERDICT: [SHIP/NEEDS_WORK/BROKEN]"""
         response = client.messages.create(
             model=JUDGE_MODEL,
             max_tokens=200,
+            thinking={"type": "disabled"},
             messages=[{
                 "role": "user",
                 "content": [
@@ -341,7 +342,7 @@ VERDICT: [SHIP/NEEDS_WORK/BROKEN]"""
             }],
         )
 
-        text = response.content[0].text
+        text = next((b.text for b in response.content if b.type == "text"), "")
         scores = {"alive": 0, "theme": 0, "polish": 0, "verdict": "BROKEN"}
 
         for line in text.split("\n"):
@@ -477,10 +478,11 @@ Verdict: {scores.get('verdict', 'UNKNOWN')}
             model=SELECTION_MODEL,
             system=DITHER_SYSTEM_PROMPT,
             max_tokens=300,
+            thinking={"type": "disabled"},
             messages=[{"role": "user", "content": content}],
         )
 
-        text = response.content[0].text
+        text = next((b.text for b in response.content if b.type == "text"), "")
         print(f"\n[Dither] Response:\n{text}\n")
 
         # Parse winner
@@ -618,6 +620,7 @@ Format each answer on its own line."""
                 response = anthropic_client.messages.create(
                     model=JUDGE_MODEL,
                     max_tokens=500,
+                    thinking={"type": "disabled"},
                     messages=[{
                         "role": "user",
                         "content": [
@@ -626,7 +629,7 @@ Format each answer on its own line."""
                         ],
                     }],
                 )
-                feedback = response.content[0].text
+                feedback = next((b.text for b in response.content if b.type == "text"), "")
                 print(f"[Production] Iteration {iter_num}: Got feedback")
             except Exception as e:
                 feedback = f"Error getting visual feedback: {str(e)[:50]}"

@@ -41,7 +41,7 @@ for version in api_versions:
     
     # Test with minimal payload
     payload = {
-        "model": "claude-3-sonnet-20240229",
+        "model": "claude-sonnet-5",
         "max_tokens": 10,
         "system": "You are helpful.",
         "messages": [{"role": "user", "content": "Hi"}]
@@ -62,10 +62,10 @@ for version in api_versions:
 # Test 3: Different models
 print("\n🧪 Test 3: Testing different models")
 models = [
-    "claude-3-sonnet-20240229",
+    "claude-sonnet-5",
     "claude-3-haiku-20240307", 
-    "claude-3-opus-20240229",
-    "claude-3-5-sonnet-20241022"
+    "claude-opus-5-5",
+    "claude-sonnet-5"
 ]
 
 for model in models:
@@ -110,7 +110,7 @@ headers = {
 }
 
 payload = {
-    "model": "claude-3-sonnet-20240229",
+    "model": "claude-sonnet-5",
     "max_tokens": 10,
     "messages": [{"role": "user", "content": "Hi"}]
 }
@@ -139,7 +139,7 @@ print(f"""curl -X POST https://api.anthropic.com/v1/messages \\
   -H "Authorization: Bearer {anthropic_api_key[:15]}..." \\
   -H "Content-Type: application/json" \\
   -H "anthropic-version: 2023-06-01" \\
-  -d '{{"model": "claude-3-sonnet-20240229", "max_tokens": 10, "messages": [{{"role": "user", "content": "Hi"}}]}}'""")
+  -d '{{"model": "claude-sonnet-5", "max_tokens": 10, "messages": [{{"role": "user", "content": "Hi"}}]}}'""")
 
 print("\n🔍 If all tests fail with 401, the issue is likely:")
 print("1. API key not activated (can take 5-10 minutes)")

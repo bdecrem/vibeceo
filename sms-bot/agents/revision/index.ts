@@ -24,15 +24,15 @@ const AGENT_SCRIPT = path.join(process.cwd(), 'agents', 'revision', 'agent.py');
 const TEMP_DIR = path.join(process.cwd(), 'data', 'revision-temp');
 
 // Models
-const OPUS_MODEL = 'claude-opus-4-5-20251101';
-const SONNET_MODEL = 'claude-sonnet-4-20250514';
+const OPUS_MODEL = 'claude-opus-5-5';
+const SONNET_MODEL = 'claude-sonnet-5';
 
 export interface RevisionInput {
     appSlug: string;
     revisionRequest: string;
     userSlug: string;
     phoneNumber: string;
-    useOpus?: boolean;  // If true, use Opus 4.5 (BUILD command)
+    useOpus?: boolean;  // If true, use Opus 5.5 (BUILD command)
 }
 
 export interface RevisionResult {
@@ -87,7 +87,7 @@ export async function processRevision(input: RevisionInput): Promise<RevisionRes
     const sessionDir = path.join(await ensureTempDir(), sessionId);
 
     console.log(`🔧 [Revision] Starting revision for ${userSlug}/${appSlug}`);
-    console.log(`🔧 [Revision] Model: ${useOpus ? 'Opus 4.5' : 'Sonnet 4.5'}`);
+    console.log(`🔧 [Revision] Model: ${useOpus ? 'Opus 5.5' : 'Sonnet 5'}`);
 
     try {
         // 1. Fetch current HTML from Supabase

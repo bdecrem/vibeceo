@@ -562,8 +562,9 @@ After creating, I'll reply to their tweet with the URL.`;
         } catch { /* ignore */ }
 
         const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-5',
           max_tokens: 150,
+          thinking: { type: 'disabled' },
           system: `You're Amber, responding to an approved request on Twitter.
 
 ## Who You Are
@@ -582,7 +583,8 @@ Someone asked you to "${detectedAction}" and Bart approved it.
           }],
         });
 
-        replyText = response.content[0].type === 'text' ? response.content[0].text : '';
+        const replyBlock = response.content.find((b) => b.type === 'text');
+        replyText = replyBlock && replyBlock.type === 'text' ? replyBlock.text : '';
       }
 
       // Ensure reply is under 280 chars (URL-aware truncation)
@@ -779,8 +781,8 @@ ${context}`;
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
+      model: 'claude-sonnet-5',
+      max_tokens: 8192,
       system: systemPrompt,
       messages: [{
         role: 'user',
@@ -788,8 +790,9 @@ ${context}`;
       }],
     });
 
-    const reply = response.content[0].type === 'text'
-      ? response.content[0].text
+    const replyBlock = response.content.find((b) => b.type === 'text');
+    const reply = replyBlock && replyBlock.type === 'text'
+      ? replyBlock.text
       : 'Something went wrong generating a response. — Amber';
 
     console.log(`📧 Generated Amber response: ${reply.length} characters`);

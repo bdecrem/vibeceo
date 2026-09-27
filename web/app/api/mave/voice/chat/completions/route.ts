@@ -158,9 +158,9 @@ export async function POST(request: NextRequest) {
 
     // Use a direct model, not openclaw:main (which triggers full agent runs with tools)
     const openclawBody = {
-      model: 'anthropic/claude-sonnet-4',
+      model: 'anthropic/claude-sonnet-5',
       messages: openclawMessages,
-      max_tokens: 300,
+      max_tokens: 8192,
       stream,
       user: 'mave-voice',
     };

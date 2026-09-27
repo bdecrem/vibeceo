@@ -145,7 +145,7 @@ Include specific names, numbers, and details within the length constraint.
 
     # Configure Claude Agent SDK with in-process MCP server
     options = ClaudeAgentOptions(
-        model="claude-sonnet-4-5-20250929",
+        model="claude-sonnet-5",
         permission_mode="acceptEdits",  # Auto-approve tool use (Railway + local)
         mcp_servers={"neo4j": neo4j_server},  # In-process SDK MCP server
         allowed_tools=[

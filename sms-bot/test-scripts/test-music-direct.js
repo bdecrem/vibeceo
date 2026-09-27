@@ -35,7 +35,7 @@ async function testMusicGeneration() {
         const builderPrompt = await fs.readFile(builderPromptPath, 'utf8');
         
         const html = await callClaude(builderPrompt, expandedPrompt, {
-            model: 'claude-3-5-sonnet-20241022',
+            model: 'claude-sonnet-5',
             maxTokens: 8000,
             temperature: 0.7
         });

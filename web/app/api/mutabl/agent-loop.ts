@@ -55,7 +55,7 @@ function validateAppCode(code: string): { valid: boolean; error?: string } {
 export async function agentLoop(
   options: AgentLoopOptions
 ): Promise<AgentLoopResult> {
-  const { systemPrompt, userMessage, maxIterations = MAX_ITERATIONS, maxTokens = 4096 } = options;
+  const { systemPrompt, userMessage, maxIterations = MAX_ITERATIONS, maxTokens = 16000 } = options;
 
   const messages: Anthropic.MessageParam[] = [
     { role: "user", content: userMessage },
@@ -63,14 +63,14 @@ export async function agentLoop(
 
   for (let i = 0; i < maxIterations; i++) {
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-5-20250929",
+      model: "claude-sonnet-5",
       max_tokens: maxTokens,
       system: systemPrompt,
       messages,
     });
 
     const responseText =
-      response.content[0].type === "text" ? response.content[0].text : "";
+      response.content.find((b): b is Anthropic.TextBlock => b.type === "text")?.text ?? "";
 
     const css = extractCssBlock(responseText);
     const code = extractCodeBlock(responseText);

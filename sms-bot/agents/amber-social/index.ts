@@ -1651,8 +1651,9 @@ ${persona.slice(0, 2000)}
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-5',
       max_tokens: 150,
+      thinking: { type: 'disabled' },
       system: systemPrompt,
       messages: [{
         role: 'user',
@@ -1660,8 +1661,9 @@ ${persona.slice(0, 2000)}
       }],
     });
 
-    const reply = response.content[0].type === 'text'
-      ? response.content[0].text
+    const replyBlock = response.content.find((b) => b.type === 'text');
+    const reply = replyBlock && replyBlock.type === 'text'
+      ? replyBlock.text
       : '';
 
     // Ensure it's under 280 chars

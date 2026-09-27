@@ -34,7 +34,7 @@ function buildFallbackChain(userPrompt: string) {
     const isZadRequest = userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:');
     
     let fallbackModels = [
-        { model: "claude-3-5-sonnet-20241022", maxTokens: 8192 },
+        { model: "claude-sonnet-5", maxTokens: 8192 },
         { model: "claude-3-5-haiku-20241022", maxTokens: 4000 },
         { model: "gpt-4o", maxTokens: 16000 }
     ];
@@ -42,7 +42,7 @@ function buildFallbackChain(userPrompt: string) {
     // For ZAD apps, skip Haiku (4000 tokens insufficient) and go straight to GPT-4o
     if (isZadRequest) {
         fallbackModels = [
-            { model: "claude-3-5-sonnet-20241022", maxTokens: 8192 },
+            { model: "claude-sonnet-5", maxTokens: 8192 },
             { model: "gpt-4o", maxTokens: 16000 }
         ];
         console.log(`🎨 ZAD detected: Using ZAD-optimized fallback chain (skipping Haiku)`);

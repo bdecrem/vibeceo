@@ -233,7 +233,7 @@ export async function agenticLoop(
     }
 
     const response = await anthropic.messages.create({
-      model: "claude-opus-4-6-20250616",
+      model: "claude-opus-5-5",
       max_tokens: 16384,
       system: systemPrompt,
       tools: TOOLS,

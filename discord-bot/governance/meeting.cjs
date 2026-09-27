@@ -28,7 +28,7 @@ const { VOTING_AGENTS, STAFF_MEETING_ORDER } = require('./agents.cjs');
 
 // Config
 const MEETINGS_DIR = path.join(__dirname, 'meetings');
-const MODEL = 'claude-sonnet-4-20250514';
+const MODEL = 'claude-sonnet-5';
 const MAX_RESPONSE_TOKENS = 800;
 const DELAY_BETWEEN_POSTS_MS = 2000;
 
@@ -114,11 +114,12 @@ IMPORTANT: Keep your response concise (under 400 words). This will be posted to 
     const response = await anthropic.messages.create({
       model: MODEL,
       max_tokens: MAX_RESPONSE_TOKENS,
+      thinking: { type: 'disabled' },
       system: fullSystemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     });
 
-    return response.content[0].text;
+    return response.content.find(b => b.type === 'text')?.text ?? '';
   } catch (err) {
     console.error(`[meeting] Claude API error for ${agent.name}:`, err.message);
     return `[Error generating response for ${agent.name}]`;

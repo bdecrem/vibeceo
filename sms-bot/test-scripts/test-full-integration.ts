@@ -57,7 +57,7 @@ async function testFullIntegration() {
             // Step 2: Builder stage
             console.log('\n🔧 Step 2: Builder stage...');
             const htmlResult = await callClaude("", expandedPrompt, {
-                model: 'claude-3-5-sonnet-20241022',
+                model: 'claude-sonnet-5',
                 maxTokens: 8192,
                 temperature: 0.7
             });

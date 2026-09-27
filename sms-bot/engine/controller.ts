@@ -197,7 +197,6 @@ async function callClaudeDirectly(systemPrompt: string, userPrompt: string, conf
     const payload = {
         model: config.model,
         max_tokens: config.maxTokens,
-        temperature: config.temperature,
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }]
     };
@@ -214,7 +213,7 @@ async function callClaudeDirectly(systemPrompt: string, userPrompt: string, conf
         }
         
         const data = await response.json();
-        const result = data.content[0].text;
+        const result = data.content.find((b: any) => b.type === 'text')?.text ?? '';
         
         logWithTimestamp(`✅ Claude response received: ${result.length} characters`);
         return result;
@@ -299,8 +298,8 @@ const REQUEST_CONFIGS = {
         classifierTopP: 1,
         classifierPresencePenalty: 0.3,
         classifierFrequencyPenalty: 0,
-        builderModel: 'claude-sonnet-4-5-20250929',
-        builderMaxTokens: 8192,
+        builderModel: 'claude-sonnet-5',
+        builderMaxTokens: 16000,
         builderTemperature: 0.7
     },
     opus: {
@@ -311,13 +310,13 @@ const REQUEST_CONFIGS = {
         classifierTopP: 1,
         classifierPresencePenalty: 0.3,
         classifierFrequencyPenalty: 0,
-        builderModel: 'claude-opus-4-5-20251101',  // Opus 4.5
-        builderMaxTokens: 8192,
+        builderModel: 'claude-opus-5-5',  // Opus 5.5
+        builderMaxTokens: 16000,
         builderTemperature: 0.7
     },
     edit: {
-        builderModel: 'claude-sonnet-4-5-20250929',
-        builderMaxTokens: 4096,  // Edits typically need less
+        builderModel: 'claude-sonnet-5',
+        builderMaxTokens: 16000,  // Full HTML back; Sonnet 5 thinking counts against max_tokens
         builderTemperature: 0.5   // More conservative for edits
     },
     game: {
@@ -328,8 +327,8 @@ const REQUEST_CONFIGS = {
         // builderTopP: 0.1                     // Narrow sampling distribution for predictable output
 
         // Claude settings:
-        builderModel: 'claude-sonnet-4-5-20250929',  // Using Claude Sonnet 4.5 for games
-        builderMaxTokens: 8192,                      // Claude supports more tokens
+        builderModel: 'claude-sonnet-5',  // Using Claude Sonnet 5 for games
+        builderMaxTokens: 16000,                     // Claude supports more tokens
         builderTemperature: 0.25                     // Lower temperature for more deterministic game generation
     },
     zad: {
@@ -339,8 +338,8 @@ const REQUEST_CONFIGS = {
         classifierTopP: 1,
         classifierPresencePenalty: 0.3,
         classifierFrequencyPenalty: 0,
-        builderModel: 'claude-sonnet-4-5-20250929',  // From test script
-        builderMaxTokens: 8000,                      // From test script (higher for complete apps)
+        builderModel: 'claude-sonnet-5',  // From test script
+        builderMaxTokens: 16000,                     // Higher for complete apps (thinking counts against it)
         builderTemperature: 0.2                      // From test script (more focused)
     }
 } as const;
@@ -1260,7 +1259,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         const config = REQUEST_CONFIGS.creation;
         
         // For ZAD remixes, try to use maximum possible tokens
-        const maxTokens = isZadApp ? 8192 : config.builderMaxTokens;
+        const maxTokens = isZadApp ? 16000 : config.builderMaxTokens;
         
         const result = await callClaudeDirectly(remixSystemPrompt, enhancedPrompt, {
             model: config.builderModel,

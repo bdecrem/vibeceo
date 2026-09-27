@@ -45,7 +45,7 @@ from together import Together
 import anthropic
 
 MODEL = "openai/gpt-oss-20b"
-JUDGE_MODEL = "claude-sonnet-4-20250514"
+JUDGE_MODEL = "claude-sonnet-5"
 NUM_AGENTS = 10
 MAX_TOKENS = 3000
 SCREENSHOT_DELAY = 6  # seconds
@@ -555,6 +555,7 @@ VERDICT: [SHIP/NEEDS_WORK/BROKEN]"""
         response = client.messages.create(
             model=JUDGE_MODEL,
             max_tokens=200,
+            thinking={"type": "disabled"},
             messages=[
                 {
                     "role": "user",
@@ -576,7 +577,7 @@ VERDICT: [SHIP/NEEDS_WORK/BROKEN]"""
             ],
         )
 
-        text = response.content[0].text
+        text = next((b.text for b in response.content if b.type == "text"), "")
 
         # Parse scores
         scores = {"alive": 0, "theme": 0, "polish": 0, "verdict": "BROKEN"}

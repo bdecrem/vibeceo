@@ -48,7 +48,7 @@ async function testZadFlow() {
         // STEP 2: Test builder routing and generation
         logWithTimestamp("🔍 STEP 2: Testing builder routing...");
         const builderConfig = {
-            model: "claude-3-5-sonnet-20241022",
+            model: "claude-sonnet-5",
             maxTokens: 8192,
             temperature: 0.3
         };

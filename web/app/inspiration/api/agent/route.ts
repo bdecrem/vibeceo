@@ -77,8 +77,9 @@ Based on this feedback, generate two new creative directions (C and D) that bett
     ];
 
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-5',
       max_tokens: 1000,
+      thinking: { type: 'disabled' },
       system: AGENT_SYSTEM_PROMPT,
       messages,
     });

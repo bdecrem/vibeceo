@@ -220,7 +220,7 @@ async function testClaudeGeneration(enhancedPrompt, testApp) {
         
         console.log(`\n🚀 Sending to Claude...`);
         const response = await anthropic.messages.create({
-            model: 'claude-3-5-sonnet-20241022',
+            model: 'claude-sonnet-5',
             max_tokens: 8192,
             temperature: 0.1,
             system: systemPrompt,

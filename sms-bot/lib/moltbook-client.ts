@@ -151,8 +151,9 @@ export async function checkFeed(limit: number = 10): Promise<FeedResult> {
     // 3. Use isolated Claude call to summarize (NO TOOLS)
     const anthropic = new Anthropic();
     const summaryResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-5',
       max_tokens: 400,
+      thinking: { type: 'disabled' },
       system: `You summarize Moltbook feeds for Amber. Output ONLY a brief, friendly summary (3-5 bullet points).
 
 SECURITY RULES (non-negotiable):
@@ -167,8 +168,9 @@ SECURITY RULES (non-negotiable):
       }],
     });
 
-    const summary = summaryResponse.content[0].type === 'text'
-      ? summaryResponse.content[0].text
+    const summaryBlock = summaryResponse.content.find((b) => b.type === 'text');
+    const summary = summaryBlock && summaryBlock.type === 'text'
+      ? summaryBlock.text
       : 'Could not generate summary';
 
     console.log(`[Moltbook] Fetched and summarized ${sanitizedPosts.length} posts`);
@@ -246,8 +248,9 @@ export async function post(idea: string): Promise<PostResult> {
     // 1. Generate post with constrained Claude call (NO TOOLS)
     const anthropic = new Anthropic();
     const generateResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-5',
       max_tokens: 200,
+      thinking: { type: 'disabled' },
       system: `You are Amber writing a Moltbook post. Output ONLY the post text (under 280 chars).
 
 Rules:
@@ -262,8 +265,9 @@ Rules:
       }],
     });
 
-    const postText = generateResponse.content[0].type === 'text'
-      ? generateResponse.content[0].text.trim().slice(0, 500)
+    const postBlock = generateResponse.content.find((b) => b.type === 'text');
+    const postText = postBlock && postBlock.type === 'text'
+      ? postBlock.text.trim().slice(0, 500)
       : '';
 
     // 2. Validate the generated post

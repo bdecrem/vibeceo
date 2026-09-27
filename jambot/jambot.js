@@ -324,7 +324,7 @@ export function buildMixOverview(session, project = null) {
 // thin adapter that plugs the Anthropic SDK in as the `llm` function.
 export { buildSessionContext } from './core/status.js';
 
-export const JAMBOT_MODEL = process.env.JAMBOT_MODEL || "claude-opus-5";
+export const JAMBOT_MODEL = process.env.JAMBOT_MODEL || "claude-opus-5-5";
 
 /**
  * Single Messages API call via the Anthropic SDK. Matches the `llm`

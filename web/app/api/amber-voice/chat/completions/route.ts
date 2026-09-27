@@ -154,8 +154,9 @@ export async function POST(request: NextRequest) {
 
     // Create streaming response
     const stream = await anthropic.messages.stream({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-5',
       max_tokens: 1024,
+      thinking: { type: 'disabled' },
       system: systemPrompt,
       messages: claudeMessages,
     });
@@ -222,8 +223,9 @@ export async function POST(request: NextRequest) {
               // 2. Generate summary with Claude (only if conversation has substance)
               if (fullResponse.length > 50) {
                 const summaryResponse = await anthropic.messages.create({
-                  model: 'claude-sonnet-4-20250514',
+                  model: 'claude-sonnet-5',
                   max_tokens: 100,
+                  thinking: { type: 'disabled' },
                   system: `Decide if this voice conversation is worth logging.
 
 Reply with EXACTLY "SKIP" (nothing else) for:
@@ -244,9 +246,7 @@ Default to SKIP. When in doubt, SKIP.`,
                   }],
                 });
 
-                const summary = summaryResponse.content[0].type === 'text'
-                  ? summaryResponse.content[0].text.trim()
-                  : '';
+                const summary = (summaryResponse.content.find((b): b is Anthropic.TextBlock => b.type === 'text')?.text ?? '').trim();
 
                 // 3. Store as log_entry only if not skipped
                 const shouldSkip = summary.toUpperCase().startsWith('SKIP') ||

@@ -615,7 +615,7 @@ def extract_text_segments(message: Any) -> List[str]:
 async def generate_spec(task: str) -> Dict[str, Any]:
     """Generate a thinkhard spec from a vague request using Claude."""
     options = ClaudeAgentOptions(
-        model="claude-sonnet-4-5-20250929",
+        model="claude-sonnet-5",
         permission_mode="acceptEdits",
     )
 
@@ -724,7 +724,7 @@ DO THE WORK NOW. End with a brief summary of what you accomplished and which cri
 """
 
     options = ClaudeAgentOptions(
-        model="claude-sonnet-4-5-20250929",
+        model="claude-sonnet-5",
         permission_mode="acceptEdits",
         mcp_servers={"amber": amber_server},
         allowed_tools=[
@@ -804,7 +804,7 @@ async def generate_friendly_email(task: str, deliverable_urls: List[str]) -> str
     not like internal thinkhard evaluation text.
     """
     options = ClaudeAgentOptions(
-        model="claude-sonnet-4-5-20250929",
+        model="claude-sonnet-5",
         permission_mode="acceptEdits",
     )
 
@@ -856,7 +856,7 @@ Write ONLY the email, nothing else."""
 async def evaluate_criteria(spec: Dict[str, Any], iteration_response: str) -> List[bool]:
     """Ask Claude to evaluate which criteria are now met."""
     options = ClaudeAgentOptions(
-        model="claude-sonnet-4-5-20250929",
+        model="claude-sonnet-5",
         permission_mode="acceptEdits",
     )
 
@@ -974,7 +974,7 @@ Then use git_push to push to remote.
 """
 
     options = ClaudeAgentOptions(
-        model="claude-sonnet-4-5-20250929",
+        model="claude-sonnet-5",
         permission_mode="acceptEdits",
         mcp_servers={"amber": amber_server},
         allowed_tools=[
@@ -1111,7 +1111,7 @@ async def run_amber_task(
 
     # Configure Claude Agent SDK with all tools
     options = ClaudeAgentOptions(
-        model="claude-sonnet-4-5-20250929",
+        model="claude-sonnet-5",
         permission_mode="acceptEdits",
         mcp_servers={"amber": amber_server},
         allowed_tools=[
@@ -1202,7 +1202,7 @@ Use git_commit with message: "[Amber] {subject or 'Created content'}"
 Then use git_push to deploy.
 """
             commit_options = ClaudeAgentOptions(
-                model="claude-sonnet-4-5-20250929",
+                model="claude-sonnet-5",
                 permission_mode="acceptEdits",
                 mcp_servers={"amber": amber_server},
                 allowed_tools=[

@@ -17,7 +17,7 @@ const testConfig = {
     classifierModel: 'gpt-4o',
     classifierMaxTokens: 1000,
     classifierTemperature: 0.7,
-    builderModel: 'claude-3-5-sonnet-20241022',
+    builderModel: 'claude-sonnet-5',
     builderMaxTokens: 8192,
     builderTemperature: 0.7
 };

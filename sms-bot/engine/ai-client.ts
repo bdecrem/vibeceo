@@ -111,10 +111,10 @@ export async function generateCompletePrompt(userInput: string): Promise<string>
  * Extracted from monitor.py Claude API call logic
  */
 export async function callClaude(systemPrompt: string, userPrompt: string, maxTokens: number = 8192): Promise<string> {
-    const model = "claude-sonnet-4-5-20250929";
+    const model = "claude-sonnet-5";
     const fallbackModel = "claude-haiku-4-5-20251001";
 
-    logWithTimestamp(`🧠 Using Claude Sonnet 4.5 with ${maxTokens} tokens...`);
+    logWithTimestamp(`🧠 Using Claude Sonnet 5 with ${maxTokens} tokens...`);
     
     try {
         if (!ANTHROPIC_API_KEY) {
@@ -130,7 +130,6 @@ export async function callClaude(systemPrompt: string, userPrompt: string, maxTo
         const payload = {
             model: model,
             max_tokens: maxTokens,
-            temperature: 0.7,
             system: systemPrompt,
             messages: [
                 {
@@ -159,7 +158,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, maxTo
         
         // Extract the result
         if (responseJson.content && responseJson.content.length > 0) {
-            const result = responseJson.content[0].text;
+            const result = responseJson.content.find((b: any) => b.type === 'text')?.text ?? '';
             logSuccess(`${model} response received, length: ${result.length} chars`);
             return result;
         } else {

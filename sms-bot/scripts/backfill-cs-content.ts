@@ -47,8 +47,9 @@ async function generateSummary(url: string, text: string): Promise<string | null
     const anthropic = new Anthropic();
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-5",
       max_tokens: 150,
+      thinking: { type: "disabled" },
       messages: [
         {
           role: "user",
@@ -64,8 +65,8 @@ Summary (2 sentences):`,
       ],
     });
 
-    const content = response.content[0];
-    if (content.type === "text") {
+    const content = response.content.find((b) => b.type === "text");
+    if (content && content.type === "text") {
       return content.text.trim();
     }
     return null;

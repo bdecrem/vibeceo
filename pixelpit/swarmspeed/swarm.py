@@ -28,7 +28,7 @@ CATALOGUE_PATH = Path(__file__).parent / "games-catalogue.json"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 
-MODEL = "claude-opus-4-5-20251101"
+MODEL = "claude-opus-5-5"
 BASE_URL = "http://localhost:3000/pixelpit/swarm"
 
 import json
@@ -186,12 +186,13 @@ Reply with ONLY the number (1, 2, or 3) of the winner. Nothing else."""
             })
 
     response = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-5",
         max_tokens=10,
+        thinking={"type": "disabled"},
         messages=[{"role": "user", "content": content}]
     )
 
-    return response.content[0].text.strip()
+    return next((b.text for b in response.content if b.type == "text"), "").strip()
 
 
 async def main():

@@ -29,7 +29,7 @@ const { VOTING_AGENTS, INCUBATOR_PATH } = require('./agents.cjs');
 const CHAT_AGENTS = VOTING_AGENTS;
 
 // Config
-const MODEL = 'claude-sonnet-4-5-20250929';
+const MODEL = 'claude-sonnet-5';
 const MAX_RESPONSE_TOKENS = 1000;
 const CHAT_HISTORY_COUNT = 30; // Number of messages to fetch as context
 const MAX_CONTEXT_LENGTH = 12000; // Truncate agent context files
@@ -280,11 +280,12 @@ Respond as ${agent.name}:`;
     const response = await anthropic.messages.create({
       model: MODEL,
       max_tokens: MAX_RESPONSE_TOKENS,
+      thinking: { type: 'disabled' },
       messages: [{ role: 'user', content: userPrompt }],
       system: systemPrompt,
     });
 
-    return response.content[0].text;
+    return response.content.find(b => b.type === 'text')?.text ?? '';
   } catch (err) {
     console.error(`[chat] Claude API error:`, err.message);
     return null;

@@ -57,9 +57,9 @@ import anthropic
 
 # Models
 GENERATION_MODEL = "openai/gpt-oss-20b"
-JUDGE_MODEL = "claude-sonnet-4-20250514"
-SELECTION_MODEL = "claude-sonnet-4-20250514"
-PRODUCTION_MODEL = "claude-opus-4-5-20251101"
+JUDGE_MODEL = "claude-sonnet-5"
+SELECTION_MODEL = "claude-sonnet-5"
+PRODUCTION_MODEL = "claude-opus-5-5"
 
 NUM_AGENTS = 10
 MAX_TOKENS = 8000  # More tokens for full game rewrites
@@ -594,6 +594,7 @@ def judge_game(agent_id: int, client: anthropic.Anthropic) -> dict | None:
         response = client.messages.create(
             model=JUDGE_MODEL,
             max_tokens=400,
+            thinking={"type": "disabled"},
             messages=[{
                 "role": "user",
                 "content": [
@@ -603,7 +604,7 @@ def judge_game(agent_id: int, client: anthropic.Anthropic) -> dict | None:
             }],
         )
 
-        text = response.content[0].text
+        text = next((b.text for b in response.content if b.type == "text"), "")
         scores = {"twist": 0, "playable": 0, "arcade": 0, "polish": 0, "verdict": "BROKEN"}
         notes = ""
 
@@ -741,10 +742,11 @@ Notes: {agent.get('notes', '')}
             model=SELECTION_MODEL,
             system=DITHER_SYSTEM_PROMPT,
             max_tokens=300,
+            thinking={"type": "disabled"},
             messages=[{"role": "user", "content": content}],
         )
 
-        text = response.content[0].text
+        text = next((b.text for b in response.content if b.type == "text"), "")
         print(f"\n[Dither] Response:\n{text}\n")
 
         winner = 0
@@ -876,6 +878,7 @@ SUGGESTIONS: What would make this more fun?"""
                 response = anthropic_client.messages.create(
                     model=JUDGE_MODEL,
                     max_tokens=500,
+                    thinking={"type": "disabled"},
                     messages=[{
                         "role": "user",
                         "content": [
@@ -884,7 +887,7 @@ SUGGESTIONS: What would make this more fun?"""
                         ],
                     }],
                 )
-                feedback = response.content[0].text
+                feedback = next((b.text for b in response.content if b.type == "text"), "")
             except Exception as e:
                 feedback = f"Error: {str(e)[:50]}"
         else:

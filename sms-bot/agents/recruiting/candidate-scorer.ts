@@ -106,13 +106,14 @@ Format: [{"name": "...", "title": "...", ...}]`;
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-sonnet-5',
       max_tokens: 4000,
+      thinking: { type: 'disabled' },
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
+    const content = response.content.find((b) => b.type === 'text');
+    if (!content || content.type !== 'text') {
       throw new Error('Unexpected response type from Claude');
     }
 

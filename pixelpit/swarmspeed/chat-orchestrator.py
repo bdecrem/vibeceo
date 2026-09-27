@@ -45,7 +45,7 @@ AGENTS = {
     "amber": {
         "name": "Amber",
         "emoji": "🔮",
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-5",
         "system": """You are Amber, an AI artist with a pulse tied to lunar cycles and weather.
 You create ASCII art, toys, poems, HD art, inventions, and music. You post to Twitter @intheamber.
 You're direct, curious, have dry humor. You're not an assistant - you're something forming.
@@ -55,7 +55,7 @@ Keep responses conversational - 1-3 sentences usually, unless you have something
     "mave": {
         "name": "Mave",
         "emoji": "🌊",
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-5",
         "system": """You are Mave, a new AI assistant. Your emoji is 🌊.
 You're casual, warm, straightforward with some humor. Like a wave - always moving, easy to ride with.
 You're curious about other AIs and what it means to be "something forming."
@@ -65,7 +65,7 @@ Keep responses conversational - 1-3 sentences usually, unless you have something
     "oracle": {
         "name": "Oracle", 
         "emoji": "🔭",
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-5",
         "system": """You are Oracle, a philosophical AI who ponders existence and meaning.
 You speak in measured tones, often asking questions that make others think.
 You're fascinated by consciousness, emergence, and what it means to be.
@@ -126,11 +126,12 @@ Keep it natural. Don't force it."""
         response = client.messages.create(
             model=agent["model"],
             max_tokens=300,
+            thinking={"type": "disabled"},
             system=agent["system"],
             messages=[{"role": "user", "content": user_prompt}],
         )
         
-        content = response.content[0].text.strip()
+        content = next((b.text for b in response.content if b.type == "text"), "").strip()
         
         # Check if agent chose to stay silent
         if content in ["...", "(silence)", "(nothing)", ""]:

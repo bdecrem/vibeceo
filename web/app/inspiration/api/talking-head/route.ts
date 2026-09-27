@@ -89,8 +89,9 @@ export async function POST(request: NextRequest) {
         const claude = new Anthropic({ apiKey: anthropicKey });
 
         const scriptResponse = await claude.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-5',
           max_tokens: 500,
+          thinking: { type: 'disabled' },
           messages: [{
             role: 'user',
             content: `Write a short, engaging 2-3 sentence narration for a talking head video about: "${topic}"
@@ -105,15 +106,16 @@ Output ONLY the narration text, nothing else.`,
           }],
         });
 
-        const narration = (scriptResponse.content[0] as { type: string; text: string }).text;
+        const narration = scriptResponse.content.find((b): b is Anthropic.TextBlock => b.type === 'text')?.text ?? '';
         console.log('Generated narration:', narration);
 
         // Step 2: Analyze speaker image with Claude
         sendEvent(controller, { progress: 'Analyzing speaker image...' });
 
         const imageResponse = await claude.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-5',
           max_tokens: 1024,
+          thinking: { type: 'disabled' },
           messages: [{
             role: 'user',
             content: [
@@ -139,7 +141,7 @@ Output ONLY the prompt text, suitable for an AI image generator.`,
           }],
         });
 
-        const imagePrompt = (imageResponse.content[0] as { type: string; text: string }).text;
+        const imagePrompt = imageResponse.content.find((b): b is Anthropic.TextBlock => b.type === 'text')?.text ?? '';
         console.log('Generated image prompt:', imagePrompt.slice(0, 100) + '...');
 
         // Step 3: Generate image with Nano Banana Pro

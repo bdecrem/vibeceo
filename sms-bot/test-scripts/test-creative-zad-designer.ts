@@ -84,7 +84,7 @@ REQUEST_TYPE: app`;
                 zadBuilder.content,
                 zadUserPrompt,
                 {
-                    model: 'claude-3-5-sonnet-20241022',
+                    model: 'claude-sonnet-5',
                     maxTokens: 8192,
                     temperature: 0.7
                 }

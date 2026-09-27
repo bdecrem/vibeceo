@@ -24,7 +24,7 @@ headers = {
 }
 
 payload = {
-    "model": "claude-3-sonnet-20240229",
+    "model": "claude-sonnet-5",
     "max_tokens": 100,
     "temperature": 0.7,
     "system": "You are a helpful assistant.",

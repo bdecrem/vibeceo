@@ -49,7 +49,7 @@ async function testEndToEndWorkflow() {
         classifierModel: 'gpt-4o',
         classifierMaxTokens: 600,
         classifierTemperature: 0.7,
-        builderModel: 'claude-3-5-sonnet-20241022',
+        builderModel: 'claude-sonnet-5',
         builderMaxTokens: 8000,  // Higher for comprehensive prompts
         builderTemperature: 0.2   // Lower for more reliable code generation
     };

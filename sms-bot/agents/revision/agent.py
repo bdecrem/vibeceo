@@ -96,7 +96,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--revision-request', required=True, help='What changes to make')
     parser.add_argument('--html-file', required=True, help='Path to file containing current HTML')
     parser.add_argument('--output-dir', required=True, help='Directory to store output')
-    parser.add_argument('--model', default='claude-sonnet-4-20250514', help='Model to use')
+    parser.add_argument('--model', default='claude-sonnet-5', help='Model to use')
     parser.add_argument('--verbose', action='store_true', help='Emit progress logs')
     return parser.parse_args()
 

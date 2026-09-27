@@ -47,7 +47,7 @@ for config in test_configs:
     }
     
     payload = {
-        "model": "claude-3-sonnet-20240229",
+        "model": "claude-sonnet-5",
         "max_tokens": 50,
         "messages": [
             {

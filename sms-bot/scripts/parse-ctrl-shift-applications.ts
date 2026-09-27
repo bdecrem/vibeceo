@@ -81,8 +81,9 @@ async function summarizeWithClaude(applications: ParsedApplication[]): Promise<P
 
     try {
       const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-5',
         max_tokens: 300,
+        thinking: { type: 'disabled' },
         messages: [{
           role: 'user',
           content: `Analyze this founder award application and respond with EXACTLY this JSON format (no other text):
@@ -93,7 +94,8 @@ ${app.pitch.substring(0, 1500)}`
         }]
       });
 
-      const text = response.content[0].type === 'text' ? response.content[0].text : '';
+      const textBlock = response.content.find((b) => b.type === 'text');
+      const text = textBlock && textBlock.type === 'text' ? textBlock.text : '';
       try {
         const parsed = JSON.parse(text);
         app.summary = parsed.summary || '';

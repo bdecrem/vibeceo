@@ -69,7 +69,7 @@ TICK_INTERVAL = 30
 MAX_WORKERS = 5
 
 # Model to use for agents (Sonnet for speed + quality)
-AGENT_MODEL = "claude-sonnet-4-20250514"
+AGENT_MODEL = "claude-sonnet-5"
 
 # Default rounds for design feedback loop (can be overridden via CLI)
 # SWARMSPEED: No test rounds - we use auto smoke test instead

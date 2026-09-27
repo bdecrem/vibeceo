@@ -136,8 +136,9 @@ Content excerpt: ${content}
     const anthropic = new Anthropic()
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-5',
       max_tokens: 500,
+      thinking: { type: 'disabled' },
       messages: [
         {
           role: 'user',
@@ -159,8 +160,8 @@ Answer:`
       ]
     })
 
-    const answerContent = response.content[0]
-    const answer = answerContent.type === 'text' ? answerContent.text : 'Could not generate answer'
+    const answerContent = response.content.find(b => b.type === 'text')
+    const answer = answerContent?.type === 'text' ? answerContent.text : 'Could not generate answer'
 
     // Extract cited source numbers and return those links
     const citedNumbers = [...answer.matchAll(/\[(\d+)\]/g)].map(m => parseInt(m[1]))

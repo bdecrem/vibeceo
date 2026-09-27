@@ -191,13 +191,14 @@ Return JSON:
 }`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-5-20250929',
+    model: 'claude-sonnet-5',
     max_tokens: 4000,
+    thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const content = response.content[0];
-  if (content.type !== 'text') {
+  const content = response.content.find((b) => b.type === 'text');
+  if (!content || content.type !== 'text') {
     throw new Error('Unexpected response type from Claude');
   }
 
@@ -505,13 +506,14 @@ WARNING: Fake/made-up example URLs are UNACCEPTABLE. Use null if unsure!
 Remember: 3-5 channels only, keep ALL text SHORT to fit 670 char limit!`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-5-20250929',
+    model: 'claude-sonnet-5',
     max_tokens: 8000,
+    thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const content = response.content[0];
-  if (content.type !== 'text') {
+  const content = response.content.find((b) => b.type === 'text');
+  if (!content || content.type !== 'text') {
     throw new Error('Unexpected response type from Claude');
   }
 
