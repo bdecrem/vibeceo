@@ -17,8 +17,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install Node.js dependencies
-RUN npm install
+# Install Node.js dependencies exactly as locked. A fresh `npm install`
+# (the lockfile used to be dockerignored) resolved a second, nested copy of
+# google-auth-library under googleapis-common, which broke lib/gmail-client.ts
+# types and failed every Railway build after 2026-05-21.
+RUN npm ci
 
 # Install Claude Code CLI globally (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
