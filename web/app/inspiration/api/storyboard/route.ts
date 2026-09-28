@@ -268,9 +268,9 @@ export async function POST(request: NextRequest) {
     const prompt = promptTemplate.replace('{subject}', topic);
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5-5',
       max_tokens: 1200,
-      thinking: { type: 'disabled' },
+      thinking: { type: 'between_tools' } as any,
       messages: [{ role: 'user', content: prompt }],
     });
 

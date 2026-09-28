@@ -63,7 +63,7 @@ export async function agentLoop(
 
   for (let i = 0; i < maxIterations; i++) {
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-5",
+      model: "claude-sonnet-5-5",
       max_tokens: maxTokens,
       system: systemPrompt,
       messages,

@@ -62,9 +62,9 @@ export async function handleGeneralKochiAgent(
   try {
     // Call Claude with context
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5-5',
       max_tokens: 1000,
-      thinking: { type: 'disabled' },
+      thinking: { type: 'between_tools' } as any,
       system: systemPrompt,
       messages: [
         {

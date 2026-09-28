@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
           console.log('[simple-evi] Sent heartbeat');
 
           const stream = await anthropic.messages.stream({
-            model: 'claude-sonnet-5',
+            model: 'claude-sonnet-5-5',
             max_tokens: 256,
-            thinking: { type: 'disabled' },
+            thinking: { type: 'between_tools' } as any,
             system: 'You are a friendly voice assistant. Keep responses SHORT (1-2 sentences). Be conversational.',
             messages: [{ role: 'user', content: userText }],
           });

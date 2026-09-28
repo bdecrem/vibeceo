@@ -191,9 +191,9 @@ Return JSON:
 }`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-5',
+    model: 'claude-sonnet-5-5',
     max_tokens: 4000,
-    thinking: { type: 'disabled' },
+    thinking: { type: 'between_tools' } as any,
     messages: [{ role: 'user', content: prompt }],
   });
 
@@ -506,9 +506,9 @@ WARNING: Fake/made-up example URLs are UNACCEPTABLE. Use null if unsure!
 Remember: 3-5 channels only, keep ALL text SHORT to fit 670 char limit!`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-5',
+    model: 'claude-sonnet-5-5',
     max_tokens: 8000,
-    thinking: { type: 'disabled' },
+    thinking: { type: 'between_tools' } as any,
     messages: [{ role: 'user', content: prompt }],
   });
 

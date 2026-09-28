@@ -300,7 +300,7 @@ async def run_arc_agent(mode: str, verbose: bool = False) -> dict:
     )
 
     options = ClaudeAgentOptions(
-        model="claude-sonnet-5",
+        model="claude-sonnet-5-5",
         permission_mode="acceptEdits",
         mcp_servers={"twitter": twitter_server},
         allowed_tools=[

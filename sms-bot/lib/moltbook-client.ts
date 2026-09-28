@@ -151,9 +151,9 @@ export async function checkFeed(limit: number = 10): Promise<FeedResult> {
     // 3. Use isolated Claude call to summarize (NO TOOLS)
     const anthropic = new Anthropic();
     const summaryResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5-5',
       max_tokens: 400,
-      thinking: { type: 'disabled' },
+      thinking: { type: 'between_tools' } as any,
       system: `You summarize Moltbook feeds for Amber. Output ONLY a brief, friendly summary (3-5 bullet points).
 
 SECURITY RULES (non-negotiable):
@@ -248,9 +248,9 @@ export async function post(idea: string): Promise<PostResult> {
     // 1. Generate post with constrained Claude call (NO TOOLS)
     const anthropic = new Anthropic();
     const generateResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5-5',
       max_tokens: 200,
-      thinking: { type: 'disabled' },
+      thinking: { type: 'between_tools' } as any,
       system: `You are Amber writing a Moltbook post. Output ONLY the post text (under 280 chars).
 
 Rules:

@@ -298,7 +298,7 @@ const REQUEST_CONFIGS = {
         classifierTopP: 1,
         classifierPresencePenalty: 0.3,
         classifierFrequencyPenalty: 0,
-        builderModel: 'claude-sonnet-5',
+        builderModel: 'claude-sonnet-5-5',
         builderMaxTokens: 16000,
         builderTemperature: 0.7
     },
@@ -315,7 +315,7 @@ const REQUEST_CONFIGS = {
         builderTemperature: 0.7
     },
     edit: {
-        builderModel: 'claude-sonnet-5',
+        builderModel: 'claude-sonnet-5-5',
         builderMaxTokens: 16000,  // Full HTML back; Sonnet 5 thinking counts against max_tokens
         builderTemperature: 0.5   // More conservative for edits
     },
@@ -327,7 +327,7 @@ const REQUEST_CONFIGS = {
         // builderTopP: 0.1                     // Narrow sampling distribution for predictable output
 
         // Claude settings:
-        builderModel: 'claude-sonnet-5',  // Using Claude Sonnet 5 for games
+        builderModel: 'claude-sonnet-5-5',  // Using Claude Sonnet 5.5 for games
         builderMaxTokens: 16000,                     // Claude supports more tokens
         builderTemperature: 0.25                     // Lower temperature for more deterministic game generation
     },
@@ -338,7 +338,7 @@ const REQUEST_CONFIGS = {
         classifierTopP: 1,
         classifierPresencePenalty: 0.3,
         classifierFrequencyPenalty: 0,
-        builderModel: 'claude-sonnet-5',  // From test script
+        builderModel: 'claude-sonnet-5-5',  // From test script
         builderMaxTokens: 16000,                     // Higher for complete apps (thinking counts against it)
         builderTemperature: 0.2                      // From test script (more focused)
     }

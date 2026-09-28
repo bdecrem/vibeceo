@@ -186,9 +186,9 @@ Reply with ONLY the number (1, 2, or 3) of the winner. Nothing else."""
             })
 
     response = client.messages.create(
-        model="claude-sonnet-5",
+        model="claude-sonnet-5-5",
         max_tokens=10,
-        thinking={"type": "disabled"},
+        thinking={"type": "between_tools"},
         messages=[{"role": "user", "content": content}]
     )
 

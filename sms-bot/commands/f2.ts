@@ -15,7 +15,7 @@ import { matchesPrefix } from "./command-utils.js";
 import type { CommandContext, CommandHandler } from "./types.js";
 
 const F2_PREFIX = "F2";
-const MODEL = "claude-sonnet-5";
+const MODEL = "claude-sonnet-5-5";
 const MAX_STORED_CONTENT = 30000;        // chars persisted on the thread row
 const MAX_CONTEXT_FOR_CHAT = 24000;       // chars sent to Claude as context
 const FETCH_TIMEOUT_MS = 15000;
@@ -188,7 +188,7 @@ Reply rules:
   const response = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 800,
-    thinking: { type: "disabled" },
+    thinking: { type: "between_tools" } as any,
     system,
     messages: [...history, { role: "user", content: userText }],
   });

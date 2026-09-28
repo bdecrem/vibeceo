@@ -57,8 +57,8 @@ import anthropic
 
 # Models
 GENERATION_MODEL = "openai/gpt-oss-20b"
-JUDGE_MODEL = "claude-sonnet-5"
-SELECTION_MODEL = "claude-sonnet-5"
+JUDGE_MODEL = "claude-sonnet-5-5"
+SELECTION_MODEL = "claude-sonnet-5-5"
 PRODUCTION_MODEL = "claude-opus-5-5"
 
 NUM_AGENTS = 10
@@ -594,7 +594,7 @@ def judge_game(agent_id: int, client: anthropic.Anthropic) -> dict | None:
         response = client.messages.create(
             model=JUDGE_MODEL,
             max_tokens=400,
-            thinking={"type": "disabled"},
+            thinking={"type": "between_tools"},
             messages=[{
                 "role": "user",
                 "content": [
@@ -742,7 +742,7 @@ Notes: {agent.get('notes', '')}
             model=SELECTION_MODEL,
             system=DITHER_SYSTEM_PROMPT,
             max_tokens=300,
-            thinking={"type": "disabled"},
+            thinking={"type": "between_tools"},
             messages=[{"role": "user", "content": content}],
         )
 
@@ -878,7 +878,7 @@ SUGGESTIONS: What would make this more fun?"""
                 response = anthropic_client.messages.create(
                     model=JUDGE_MODEL,
                     max_tokens=500,
-                    thinking={"type": "disabled"},
+                    thinking={"type": "between_tools"},
                     messages=[{
                         "role": "user",
                         "content": [

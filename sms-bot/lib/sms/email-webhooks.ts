@@ -562,9 +562,9 @@ After creating, I'll reply to their tweet with the URL.`;
         } catch { /* ignore */ }
 
         const response = await anthropic.messages.create({
-          model: 'claude-sonnet-5',
+          model: 'claude-sonnet-5-5',
           max_tokens: 150,
-          thinking: { type: 'disabled' },
+          thinking: { type: 'between_tools' } as any,
           system: `You're Amber, responding to an approved request on Twitter.
 
 ## Who You Are
@@ -781,7 +781,7 @@ ${context}`;
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5-5',
       max_tokens: 8192,
       system: systemPrompt,
       messages: [{

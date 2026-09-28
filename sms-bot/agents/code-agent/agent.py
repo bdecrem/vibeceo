@@ -225,7 +225,7 @@ Keep your response concise but complete. Reference specific files with file:line
         ])
 
     options = ClaudeAgentOptions(
-        model="claude-sonnet-5",
+        model="claude-sonnet-5-5",
         permission_mode="acceptEdits",
         mcp_servers={"code": code_server},
         allowed_tools=allowed_tools,
@@ -332,7 +332,7 @@ Return the PR URL when done.
 """
 
     options = ClaudeAgentOptions(
-        model="claude-sonnet-5",
+        model="claude-sonnet-5-5",
         permission_mode="acceptEdits",
         mcp_servers={"code": code_server},
         allowed_tools=[

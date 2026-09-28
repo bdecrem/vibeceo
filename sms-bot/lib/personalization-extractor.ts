@@ -54,9 +54,9 @@ Output: {"name": "Jay", "interests": ["research", "transformers"], "timezone": "
 Respond with ONLY valid JSON, no explanation.`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-5',
+    model: 'claude-sonnet-5-5',
     max_tokens: 500,
-    thinking: { type: 'disabled' },
+    thinking: { type: 'between_tools' } as any,
     system: systemPrompt,
     messages: [
       {
@@ -106,9 +106,9 @@ Examples:
 "how does Bitcoin work?" → NO`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-5',
+    model: 'claude-sonnet-5-5',
     max_tokens: 10,
-    thinking: { type: 'disabled' },
+    thinking: { type: 'between_tools' } as any,
     system: systemPrompt,
     messages: [{ role: 'user', content: text }],
   });
@@ -233,9 +233,9 @@ Context: "tell me about quantum physics"
 Response: SKIP`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5-5',
       max_tokens: 100,
-      thinking: { type: 'disabled' },
+      thinking: { type: 'between_tools' } as any,
       system: systemPrompt,
       messages: [
         {

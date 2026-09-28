@@ -141,7 +141,7 @@ Instructions:
   const MAX_ITERATIONS = 5;
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-5",
+      model: "claude-sonnet-5-5",
       max_tokens: 8192,
       system: systemPrompt,
       tools,

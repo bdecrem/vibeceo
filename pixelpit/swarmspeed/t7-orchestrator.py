@@ -53,7 +53,7 @@ from together import Together
 import anthropic
 
 MODEL = "openai/gpt-oss-20b"
-JUDGE_MODEL = "claude-sonnet-5"
+JUDGE_MODEL = "claude-sonnet-5-5"
 NUM_AGENTS = 10
 MAX_TOKENS = 3000
 SCREENSHOT_DELAY = 6
@@ -812,7 +812,7 @@ VERDICT: [SHIP/NEEDS_WORK/BROKEN]"""
         response = client.messages.create(
             model=JUDGE_MODEL,
             max_tokens=200,
-            thinking={"type": "disabled"},
+            thinking={"type": "between_tools"},
             messages=[{
                 "role": "user",
                 "content": [

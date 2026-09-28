@@ -125,9 +125,9 @@ async function generateShortSummary(
     : content.rawContent;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-5',
+    model: 'claude-sonnet-5-5',
     max_tokens: 100,
-    thinking: { type: 'disabled' },
+    thinking: { type: 'between_tools' } as any,
     system: 'You are a concise summarizer. Output ONLY a single sentence, no quotes, no preamble.',
     messages: [{
       role: 'user',
@@ -162,7 +162,7 @@ async function generateFullExplanation(
     : `Content`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-5',
+    model: 'claude-sonnet-5-5',
     max_tokens: 8192,
     system: levelPrompt,
     messages: [{
@@ -229,7 +229,7 @@ async function generateFollowUpAnswer(
     : `Content`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-5',
+    model: 'claude-sonnet-5-5',
     max_tokens: 8192,
     system: levelPrompt,
     messages: [{

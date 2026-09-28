@@ -63,8 +63,8 @@ from prompts import (
 
 # Models
 GENERATION_MODEL = "openai/gpt-oss-20b"  # Fast, cheap for prototypes
-JUDGE_MODEL = "claude-sonnet-5"  # Vision for judging
-SELECTION_MODEL = "claude-sonnet-5"  # Dither picks winner
+JUDGE_MODEL = "claude-sonnet-5-5"  # Vision for judging
+SELECTION_MODEL = "claude-sonnet-5-5"  # Dither picks winner
 PRODUCTION_MODEL = "claude-opus-5-5"  # Best model for production
 
 NUM_AGENTS = 10
@@ -307,7 +307,7 @@ Style: {config['style']['name']}
         response = client.messages.create(
             model=JUDGE_MODEL,
             max_tokens=300,
-            thinking={"type": "disabled"},
+            thinking={"type": "between_tools"},
             messages=[{
                 "role": "user",
                 "content": [
@@ -450,7 +450,7 @@ Verdict: {scores.get('verdict', 'UNKNOWN')}
             model=SELECTION_MODEL,
             system=DITHER_SYSTEM_PROMPT,
             max_tokens=300,
-            thinking={"type": "disabled"},
+            thinking={"type": "between_tools"},
             messages=[{"role": "user", "content": content}],
         )
 
@@ -602,7 +602,7 @@ Format each answer on its own line."""
                 response = anthropic_client.messages.create(
                     model=JUDGE_MODEL,
                     max_tokens=500,
-                    thinking={"type": "disabled"},
+                    thinking={"type": "between_tools"},
                     messages=[{
                         "role": "user",
                         "content": [

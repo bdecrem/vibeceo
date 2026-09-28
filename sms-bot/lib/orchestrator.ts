@@ -103,9 +103,9 @@ Analyze and respond with JSON:
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5-5',
       max_tokens: 500,
-      thinking: { type: 'disabled' },
+      thinking: { type: 'between_tools' } as any,
       messages: [
         {
           role: 'user',

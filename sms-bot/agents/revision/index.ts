@@ -25,7 +25,7 @@ const TEMP_DIR = path.join(process.cwd(), 'data', 'revision-temp');
 
 // Models
 const OPUS_MODEL = 'claude-opus-5-5';
-const SONNET_MODEL = 'claude-sonnet-5';
+const SONNET_MODEL = 'claude-sonnet-5-5';
 
 export interface RevisionInput {
     appSlug: string;

@@ -213,9 +213,9 @@ export async function POST(request: NextRequest) {
     async start(controller) {
       try {
         const stream = await anthropic.messages.stream({
-          model: 'claude-sonnet-5',
+          model: 'claude-sonnet-5-5',
           max_tokens: 512,  // Short for voice
-          thinking: { type: 'disabled' },
+          thinking: { type: 'between_tools' } as any,
           system: context.systemPrompt,
           messages: claudeMessages,
         });

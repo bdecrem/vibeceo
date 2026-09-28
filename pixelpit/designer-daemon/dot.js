@@ -120,7 +120,7 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
     });
 
     const response = await getClient().messages.create({
-      model: "claude-sonnet-5",
+      model: "claude-sonnet-5-5",
       max_tokens: 8192,
       system: systemPrompt,
       tools: TOOLS,

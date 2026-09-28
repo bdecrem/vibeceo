@@ -89,9 +89,9 @@ export async function POST(request: NextRequest) {
         const claude = new Anthropic({ apiKey: anthropicKey });
 
         const scriptResponse = await claude.messages.create({
-          model: 'claude-sonnet-5',
+          model: 'claude-sonnet-5-5',
           max_tokens: 500,
-          thinking: { type: 'disabled' },
+          thinking: { type: 'between_tools' } as any,
           messages: [{
             role: 'user',
             content: `Write a short, engaging 2-3 sentence narration for a talking head video about: "${topic}"
@@ -113,9 +113,9 @@ Output ONLY the narration text, nothing else.`,
         sendEvent(controller, { progress: 'Analyzing speaker image...' });
 
         const imageResponse = await claude.messages.create({
-          model: 'claude-sonnet-5',
+          model: 'claude-sonnet-5-5',
           max_tokens: 1024,
-          thinking: { type: 'disabled' },
+          thinking: { type: 'between_tools' } as any,
           messages: [{
             role: 'user',
             content: [

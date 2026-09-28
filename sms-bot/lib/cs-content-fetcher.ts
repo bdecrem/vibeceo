@@ -215,9 +215,9 @@ async function generateSummary(url: string, text: string): Promise<string | null
     const anthropic = new Anthropic();
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-5",
+      model: "claude-sonnet-5-5",
       max_tokens: 150,
-      thinking: { type: "disabled" },
+      thinking: { type: "between_tools" } as any,
       messages: [
         {
           role: "user",
