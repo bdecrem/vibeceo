@@ -75,6 +75,14 @@ function resolvePatternInstrument(session, instrument) {
 // existed carries `channelInserts: null` and leaves the live effects alone.
 // ---------------------------------------------------------------------------
 
+/** " (automation: filterCutoff 128 steps, level 64 steps)" — the lanes a save captured, so a lane
+ * left live from an earlier pattern (a fade-in, say) is visible when it rides into the next save. */
+function describeLanes(automation) {
+  const lanes = Object.entries(automation || {}).filter(([, v]) => Array.isArray(v) && v.length);
+  if (!lanes.length) return '';
+  return ` (automation: ${lanes.map(([k, v]) => `${k} ${v.length} steps`).join(', ')})`;
+}
+
 function ownsChainKey(inst, key) {
   return key === inst || key.startsWith(inst + '.');
 }
@@ -240,7 +248,7 @@ const songTools = {
     if (typeof acc.node.getAccentLevel === 'function') entry.accentLevel = acc.node.getAccentLevel() ?? 1.0;
     session.patterns[id][patternName] = entry;
     session.currentPattern[id] = patternName;
-    return `Saved ${id} pattern "${patternName}"${describeInserts(entry.channelInserts)}`;
+    return `Saved ${id} pattern "${patternName}"${describeInserts(entry.channelInserts)}${describeLanes(entry.automation)}`;
   },
 
   /**

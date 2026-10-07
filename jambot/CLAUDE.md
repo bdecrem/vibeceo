@@ -200,7 +200,7 @@ JT30 is the classic acid bass synth:
 - **Saw and square oscillators**: The iconic 303 waveforms
 - **Moog ladder filter**: 4-pole lowpass with accent-modulated resonance
 - **ADSR envelope**: With accent control for harder attacks
-- **Drive**: Soft-clip saturation for grit
+- **Drive**: Soft-clip saturation for grit — see "Gain staging and the drive law" below for what the knob does on new vs. saved sessions, and how accents drive
 
 **Key feature**: Classic acid sound with accents and slides for squelchy basslines.
 
@@ -1227,6 +1227,66 @@ add_effect({ target: 'jb01.snare', effect: 'reverb', decay: 3, mix: 35, size: 70
 add_effect({ target: 'master', effect: 'reverb', decay: 8, mix: 45, size: 80, damping: 65, predelay: 40 })
 ```
 
+## Gain staging and the drive law (agent guide, 2026-10-06)
+
+Written after a JT30 line copied from a kept track ("proven values": drive 25,
+resonance 70, accent 60) came out as "crazy overdrive" when it carried a melody
+instead of an 8th-note root pulse buried at -12 dB. Nothing told the agent that
+the knob it copied was a gain stage. The facts, measured:
+
+**The shared `Drive` (`jb202/dist/dsp/effects/drive.js`) has two laws.**
+
+| | law 1 (legacy) | law 2 (new sessions) |
+|---|---|---|
+| curve | `(π+k)·x / (π+k·|x|)`, k = drive/2 | `tanh(g·x) / √g`, g = 1 + 9·(drive/100)² |
+| small-signal gain | ×2.6 at 10, ×5 at 25, ×11 at 62, ×17 at 100 | ×1.1 at 10, ×1.25 at 25, ×1.8 at 50, ×3.2 at 100 |
+| RMS of a 0.3 saw | +6 dB at 10, +9 at 25, +11 at 62, +12 at 100 | +2 at 10, +4 at 25, +4 at 50, +3.5 at 100 |
+| RMS of the Overclock 303 line, drive 0 → 100 | +8 dB (and +10 dB on every accent at drive 0) | +5 dB |
+| what the knob does | volume first, clipper second | timbre: 0 clean, 10-25 warm, 50 driven, 100 fuzz |
+| JT30 accent drive | always +20·(accent/0.8), even at drive 0 (accents ×3.4 = +10.6 dB on top of the +3 dB velocity) | the same +20 scaled by min(1, drive/25): nothing at 0, identical to law 1 from 25 up |
+| JT10 | fixed drive 15 = ×3.4 into the clipper | fixed 15 = g 1.2, barely there |
+
+Where the law lives: `session.driveLaw`. `createSession()` → 2;
+`createSession({ driveLaw: 1 })` for a legacy render; `resetSession` → 2 (a
+fresh start is a new track); saves carry `engine: { driveLaw }` and a save
+without it loads as 1, so **every track saved before 2026-10-06 renders bit for
+bit as before** (`tests/test-drive-law.js` pins seven pre-change renders by
+hash, Bart's techno-128 base among them). `core/render.js` hands the law to
+every mono synth's `renderPattern({ driveLaw })` and the JP9000's drive modules;
+the engines keep `driveLaw: 1` in their DEFAULT_PARAMS so the standalone synth
+pages (kochi.to/jt30 …) are unchanged. `buildSessionContext` tells the agent
+"legacy drive law" on a law-1 track. The hallman-*.js scripts and their WAVs
+were made on law 1; `new JambotHeadless()` builds law-2 sessions now.
+
+**Rules of thumb that follow:**
+- Loudness is `<instrument>.level` (dB). On law 2, drive barely moves it; on
+  law 1 keep whatever drive a saved patch has and balance with level.
+- A patch is proven *in its context*. The JT30 at drive 25 / resonance 70 is
+  right for a root pulse under a kit and wrong for an exposed melody. The Stems
+  line catches a squashed part (the Overclock first pass still read crest 8 dB —
+  the overdrive there was harmonics, not crest); the law and these notes catch
+  the rest. On law 2, set drive by role: 10-15 for a 303 line, 0 for a sub.
+- **The Stems line.** Every render message ends with
+  `Stems: jt90 -3.1 dBFS crest 12 dB, jt30 -9.0 dBFS crest 8 dB`: where each
+  part peaks in the mix and its crest factor (peak over RMS, measured over the
+  bars rendered, not the release tail). Kicks and plucked lines sit at 10-15
+  dB, a held drone at 3-5; a pluck or a drum at 3-5 dB is squashed (too much
+  drive, or a resonant peak riding the ceiling). `renderSessionToBuffer` also
+  returns `stems` ({ id: { peakDb, crestDb } }) for scripts.
+- **`level` lanes are absolute dB.** `automate({ path: 'jb202.level', values })`
+  means "the instrument sits at this many dB on that step"; a lane at the
+  node's own level is unity, 6 dB under is 6 dB quieter. (Before: the dB
+  converter mapped +6 dB to unity, so a fade written in dB landed 30 dB low.)
+  Drum voice levels (`jt90.ch.level`) were already absolute.
+- **A lane stays live** until `clear_automation`, and every `save_pattern` on
+  that instrument captures it — the `automate` message says so and the
+  `save_pattern` message lists what it captured (`(automation: level 128
+  steps)`). A fade-in left live from pattern IN rides into D, E, F.
+- **A held note** is a gate on every step with `slide: true` on every step
+  after the first; the voice never retriggers (used for drones on the JB202).
+- Verify with `node tests/test-drive-law.js` (legacy hashes, the law-2
+  loudness window, accents, level lanes, the readouts, the library context).
+
 ## Automation (Per-Step Knob Mashing)
 
 Automation sets per-step values for any parameter — 16 values that cycle with each bar. Like turning a knob differently on every step. Works on any instrument that supports it (JB01, JB202, JT30, JT90, JP9000).
@@ -1318,6 +1378,10 @@ Arrangement mode uses each section's saved automation.
 | **JP9000** | `jp9000.{module}.{param}` | `jp9000.filter1.cutoff`, `jp9000.string1.decay` |
 
 Values are in **producer units** (0-100, Hz, dB) — same units as `tweak`. The system converts to engine units at render time.
+
+`<instrument>.level` lanes on the mono synths are absolute dB (see "Gain staging
+and the drive law"). A lane stays live until `clear_automation`; `save_pattern`
+captures every live lane of that instrument and says which.
 
 ## Session State
 

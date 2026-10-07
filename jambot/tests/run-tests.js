@@ -27,6 +27,7 @@ const tests = [
   'test-web-history.js',
   'test-web-writethrough.js',
   'test-effects.js',
+  'test-drive-law.js',
 ];
 
 let allPassed = true;

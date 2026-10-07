@@ -24,6 +24,12 @@ export class Drive {
     this.amount = 0;      // 0-100 scale
     this.type = DriveType.SOFT;
     this.mix = 100;       // Wet/dry mix (0-100)
+    // Which soft-clip law `amount` drives (see _saturate). 1 = the original
+    // curve, a gain stage first and a clipper second; 2 = pre-gain into tanh
+    // with makeup, so the knob changes timbre at roughly constant loudness.
+    // Jambot sessions carry the law (session.driveLaw): saved tracks keep 1,
+    // new ones get 2. The standalone synth pages stay on 1.
+    this.law = 1;
 
     // Oversampling filters (for anti-aliasing)
     this._upsampleFilter = new BiquadFilter(sampleRate * 2);
@@ -42,6 +48,11 @@ export class Drive {
   // Set drive type
   setType(type) {
     this.type = type;
+  }
+
+  // Set the soft-clip law (1 legacy, 2 gain-compensated); other values → 1
+  setLaw(law) {
+    this.law = law === 2 ? 2 : 1;
   }
 
   // Set wet/dry mix
@@ -64,9 +75,26 @@ export class Drive {
     this._downsampleFilter.reset();
   }
 
-  // Soft clip curve (arctan-like)
+  // Soft clip curve (arctan-like). LAW 1. Note the small-signal gain of
+  // (π + k) / π: with k = amount / 2 that is ×2.6 at amount 10, ×5 at 25,
+  // ×11 at 62 and ×17 at 100, into a ceiling of (π + k) / k. On a synth line
+  // sitting around 0.3 that is +6 dB RMS at 10, +9 dB at 25, +11 dB at 62 —
+  // the knob is mostly a volume control, which is why every patch "proven"
+  // under this law carries its drive value as part of its gain staging.
   _softClip(x, k) {
     return ((Math.PI + k) * x) / (Math.PI + k * Math.abs(x));
+  }
+
+  // LAW 2 (2026-10-06): pre-gain g = 1 + 9·a² into tanh, √g makeup.
+  // amount 25 → g 1.6 (warm), 50 → 3.3 (driven), 75 → 6, 100 → 10 (fuzz).
+  // Measured on a 0.3 saw: RMS stays within +4 dB of clean across the whole
+  // knob (legacy: +12 dB); on a 0.8 saw within −4 dB; on a plucked 303 line
+  // within 5 dB (legacy: 8 dB, plus 10 dB on every accent at drive 0). Peaks never rise above
+  // tanh(g·x)/√g, so a driven part cannot run away in the mix.
+  _softClipV2(x) {
+    const a = this.amount / 100;
+    const g = 1 + 9 * a * a;
+    return fastTanh(g * x) / Math.sqrt(g);
   }
 
   // Hard clip curve
@@ -100,6 +128,7 @@ export class Drive {
   // Apply saturation curve to a sample
   _saturate(x) {
     if (this.amount <= 0) return x;
+    if (this.law === 2 && this.type === DriveType.SOFT) return this._softClipV2(x);
 
     const k = this.amount * 0.5; // Scale amount for curves
 

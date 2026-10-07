@@ -242,6 +242,7 @@ export function resetSession(session, opts = {}) {
   session.bpm = opts.bpm ?? 128;
   session.swing = opts.swing ?? 0;
   session.bars = 2;
+  session.driveLaw = opts.driveLaw === 1 ? 1 : 2;   // a fresh start is a new track
   return session;
 }
 
@@ -330,6 +331,12 @@ export function createSession(config = {}) {
 
     // Bars for render length
     bars: config.bars || 2,
+
+    // Soft-clip law for every `drive` (core/render.js hands it to the engines):
+    // 2 = timbre at roughly constant loudness (new sessions since 2026-10-06),
+    // 1 = the original curve, a gain stage first — every track saved before
+    // the law existed loads on 1 and renders bit for bit as it always did.
+    driveLaw: config.driveLaw === 1 ? 1 : 2,
 
     // ParamSystem instance
     params,
@@ -708,6 +715,7 @@ export function serializeSession(session) {
 
   return {
     clock: session.clock.serialize(),
+    engine: { driveLaw: session.driveLaw ?? 1 },
     bars: session.bars,
     jb01Level: session._nodes.jb01.getLevel(),
     jb202Level: session._nodes.jb202.getLevel(),
@@ -760,6 +768,7 @@ export function deserializeSession(data) {
   });
 
   restoreInstances(session, data);
+  session.driveLaw = data.engine?.driveLaw === 2 ? 2 : 1;   // saves without the field predate it
 
   if (data.params) {
     session.params.deserialize(data.params);
@@ -816,6 +825,7 @@ export function restoreSessionInPlace(existingSession, data) {
     if (inst.id !== inst.type && !(data.instruments || []).some(i => i.id === inst.id)) existingSession.removeInstrument(inst.id);
   }
   restoreInstances(existingSession, data);
+  existingSession.driveLaw = data.engine?.driveLaw === 2 ? 2 : 1;
 
   // Deserialize params into existing nodes
   if (data.params) {

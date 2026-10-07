@@ -56,7 +56,7 @@ const automationTools = {
     const [nodeId, ...rest] = stored.split('.');
 
     const activeSteps = automationValues.filter(v => v !== null && v !== undefined).length;
-    return `${nodeId} ${rest.join('.')} automation set: ${activeSteps}/${automationValues.length} steps`;
+    return `${nodeId} ${rest.join('.')} automation set: ${activeSteps}/${automationValues.length} steps (the lane stays live until clear_automation and is captured by every save_pattern on ${nodeId})`;
   },
 
   /**

@@ -38,6 +38,6 @@
     "ampSustain": { "unit": "0-100", "min": 0, "max": 100, "default": 0, "hint": "amp envelope sustain" },
     "ampRelease": { "unit": "0-100", "min": 0, "max": 100, "default": 20, "hint": "amp envelope release" },
 
-    "drive": { "unit": "0-100", "min": 0, "max": 100, "default": 20, "hint": "output saturation/drive" }
+    "drive": { "unit": "0-100", "min": 0, "max": 100, "default": 20, "hint": "output saturation. The knob's law is per session: new sessions (law 2) change timbre at roughly constant loudness — 25 warm, 50 driven, 100 fuzz; tracks saved before 2026-10-06 (law 1) also add gain — 25 ≈ +9 dB, 62 ≈ +11 dB into a soft ceiling" }
   }
 }

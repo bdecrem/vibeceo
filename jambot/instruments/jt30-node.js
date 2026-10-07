@@ -17,6 +17,9 @@ import { toEngine, JT30_PARAMS } from '../params/converters.js';
 // Voice (monophonic)
 const VOICES = ['bass'];
 
+// The engine's DEFAULT_PARAMS.level — what a `level` lane at the node's own level must map to.
+const ENGINE_LEVEL = 0.8;
+
 /**
  * Create an empty pattern
  * @param {number} steps - Number of steps (default 16 = 1 bar)
@@ -322,6 +325,7 @@ export class JT30Node extends InstrumentNode {
       pattern = this._pattern,
       params = null,
       automation = null,
+      driveLaw = 1,          // session.driveLaw, passed by core/render.js
     } = options;
 
     // Skip if no active notes
@@ -341,6 +345,7 @@ export class JT30Node extends InstrumentNode {
     Object.entries(engineParams).forEach(([key, value]) => {
       engine.setParameter(key, value);
     });
+    engine.setParameter('driveLaw', driveLaw);
 
     // Set pattern on engine
     engine.setPattern(pattern);
@@ -355,7 +360,15 @@ export class JT30Node extends InstrumentNode {
         // alias lanes used to be accepted and then dropped here.
         const paramName = normalizePath(path).slice(5);
         const paramDef = JT30_PARAMS.bass?.[paramName];
-        if (paramDef && Array.isArray(values)) {
+        if (paramName === 'level' && Array.isArray(values)) {
+        // A `level` lane is absolute dB, like `tweak` — the value the instrument
+        // sits at on that step. The engine's own level multiplier is relative to
+        // the node level the mixer applies, so convert against it (the dB
+        // converter alone maps +6 dB to unity: a lane at the node's own level
+        // came out 6 dB down, and a fade written in dB landed 30 dB low).
+          const nodeDb = this.getLevel();
+          engineAutomation.level = values.map(v => (v === null || v === undefined) ? null : ENGINE_LEVEL * Math.pow(10, (v - nodeDb) / 20));
+        } else if (paramDef && Array.isArray(values)) {
           engineAutomation[paramName] = values.map(v =>
             v !== null && v !== undefined ? toEngine(v, paramDef) : null
           );

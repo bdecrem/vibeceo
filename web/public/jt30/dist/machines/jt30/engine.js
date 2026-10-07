@@ -33,6 +33,7 @@ const DEFAULT_PARAMS = {
   decay: 0.45,               // Envelope decay (0-1) - medium for "wow" sweep
   accent: 0.8,               // Accent intensity (0-1)
   drive: 0.2,                // Output saturation (0-1); setParameter only accepts known keys
+  driveLaw: 1,               // Soft-clip law for `drive` (1 legacy, 2 gain-compensated) — set per jambot session, not a knob
   level: 0.8,                // Output level (0-1)
   slideTime: 0.06,           // Portamento time in seconds
 };
@@ -94,6 +95,7 @@ class SynthVoice {
 
     // Drive - 303 has subtle saturation
     this.drive.setAmount((params.drive ?? 0.2) * 100);
+    this.drive.setLaw(params.driveLaw === 2 ? 2 : 1);
 
     this.slideDuration = params.slideTime;
   }
@@ -266,8 +268,13 @@ class SynthVoice {
 
     // Drive — the `drive` param (0-1 → 0-100), accent drives harder for grit.
     // Was hardcoded 20/40, which made the drive param a no-op.
+    // Law 1 adds a flat +20 on accents, so even drive 0 drove every accented
+    // note ×3.4 (+10.6 dB) — accents screamed whatever the knob said. Law 2
+    // scales the boost with the knob: nothing at 0, the full +20·factor from
+    // drive 25 up (identical to law 1 there).
     const baseDrive = (params.drive ?? 0.2) * 100;
-    this.drive.setAmount(clamp(this.accentActive ? baseDrive + 20 * this._accentFactor() : baseDrive, 0, 100));
+    const accentBoost = 20 * this._accentFactor() * (params.driveLaw === 2 ? Math.min(1, baseDrive / 25) : 1);
+    this.drive.setAmount(clamp(this.accentActive ? baseDrive + accentBoost : baseDrive, 0, 100));
     sample = this.drive.processSample(sample);
 
     // Output level

@@ -167,6 +167,7 @@ export function describeSession(session) {
 
   return {
     bpm: session.bpm,
+    driveLaw: session.driveLaw ?? 1,
     swing: session.swing || 0,
     bars: session.bars || 2,
     instruments,
@@ -188,7 +189,7 @@ export function buildSessionContext(session) {
   const d = describeSession(session);
   const parts = [];
 
-  parts.push(`BPM: ${d.bpm}${d.swing > 0 ? `, swing ${d.swing}%` : ''}, ${d.bars} bars`);
+  parts.push(`BPM: ${d.bpm}${d.swing > 0 ? `, swing ${d.swing}%` : ''}, ${d.bars} bars${d.driveLaw === 2 ? '' : ' — legacy drive law: on this track `drive` is mostly gain (25 ≈ +9 dB, 62 ≈ +11 dB into a soft ceiling); keep saved drive values, use level for loudness'}`);
 
   if (session.samplerKit) {
     const slotList = (session.samplerKit.slots || []).map(s => `${s.id}=${s.name}`).join(', ');

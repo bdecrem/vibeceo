@@ -65,6 +65,7 @@ const DEFAULT_PARAMS = {
 
   // Output
   glideTime: 0.05,           // Portamento time (0-1)
+  driveLaw: 1,               // Soft-clip law for the fixed drive (1 legacy, 2 gain-compensated) — set per jambot session
   level: 0.8,                // Output level (0-1)
 };
 
@@ -130,7 +131,10 @@ class SynthVoice {
     this.lfo.setWaveform(params.lfoWaveform);
 
     // Drive
-    this.drive.setAmount(15);  // Subtle warmth
+    // Fixed at 15: law 1 makes that ×3.4 gain into a clipper (not subtle);
+    // law 2 makes it g = 1.2, which is.
+    this.drive.setAmount(15);
+    this.drive.setLaw(params.driveLaw === 2 ? 2 : 1);
 
     this.slideDuration = params.glideTime;
   }

@@ -444,6 +444,7 @@ export async function renderSessionToBuffer(session, bars) {
   const keptBuffers = []; // { id, buffer, startBar, level } — send feeds only
   const renderedIds = []; // instruments that produced at least one buffer
   const silencedIds = []; // muted / not-soloed instruments, skipped entirely
+  const stems = {};       // id → { peak, sumsq, n } over the bars rendered (pre-level; scaled below)
   const failures = [];    // { id, error } — surfaced in the render message
 
   for (const id of instrumentIds) {
@@ -458,9 +459,19 @@ export async function renderSessionToBuffer(session, bars) {
 
     const linearLevel = node.getOutputGain();
     const keep = feedsSend(id);
-    const finish = (buffer, startBar) => {
+    const finish = (buffer, startBar, bars) => {
       if (!buffer) return;
       if (!renderedIds.includes(id)) renderedIds.push(id);
+      // Stem readout for the render message: peak and crest per instrument,
+      // measured over the bars themselves (not the 2 s release tail).
+      const st = stems[id] || (stems[id] = { peak: 0, sumsq: 0, n: 0 });
+      const span = Math.min(buffer.length, Math.round(bars * 16 * stepDuration * sampleRate));
+      for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+        const d = buffer.getChannelData(ch);
+        for (let i = 0; i < span; i++) { const v = d[i] < 0 ? -d[i] : d[i]; if (v > st.peak) st.peak = v; st.sumsq += v * v; }
+        st.n += span;
+      }
+      st.level = linearLevel;
       mixIntoMaster(id, buffer, startBar, linearLevel);
       if (keep) keptBuffers.push({ id, buffer, startBar, level: linearLevel });
     };
@@ -502,6 +513,7 @@ export async function renderSessionToBuffer(session, bars) {
               pattern: savedPattern.pattern,
               params: sanitizeSavedParams(node, savedPattern.params),
               automation: savedPattern.automation,
+              driveLaw: session.driveLaw ?? 1,
             },
             sectionChains,
             id,
@@ -509,7 +521,7 @@ export async function renderSessionToBuffer(session, bars) {
             session.bpm,
             sectionContexts[i]
           );
-          finish(buffer, section.barStart);
+          finish(buffer, section.barStart, section.barEnd - section.barStart);
         } catch (e) {
           console.warn(`Failed to render ${id} section:`, e.message);
           if (!failures.some(f => f.id === id)) failures.push({ id, error: e.message });
@@ -536,6 +548,7 @@ export async function renderSessionToBuffer(session, bars) {
             swing: session.clock.swing,
             sampleRate,
             automation: hasAutomation ? instrumentAutomation : undefined,
+            driveLaw: session.driveLaw ?? 1,
           },
           session.mixer?.effectChains,
           id,
@@ -543,7 +556,7 @@ export async function renderSessionToBuffer(session, bars) {
           session.bpm,
           renderContext
         );
-        finish(buffer, 0);
+        finish(buffer, 0, renderBars);
       } catch (e) {
         console.warn(`Failed to render ${id}:`, e.message);
         failures.push({ id, error: e.message });
@@ -665,11 +678,31 @@ export async function renderSessionToBuffer(session, bars) {
 
   if (silencedIds.length) message += ` — silent: ${silencedIds.join(', ')} (${anySolo ? 'not soloed' : 'muted'})`;
   if (trimDb < 0) message += ` — mix trimmed ${trimDb.toFixed(1)} dB to avoid clipping; lower some levels`;
+
+  // Per-instrument readout: where each part lands in the mix (dBFS peak) and
+  // its crest factor (peak over RMS). A kick or a plucked line sits at 10-15
+  // dB; a steady drone at 3-5; a pluck or drum down near 3-5 dB has been
+  // squashed — too much drive, or a resonance peak riding the ceiling.
+  const stemLines = [];
+  let squashed = false;
+  for (const [sid, st] of Object.entries(stems)) {
+    if (!st.n || st.peak <= 0) continue;
+    const rms = Math.sqrt(st.sumsq / st.n);
+    const peakDb = 20 * Math.log10(st.peak * st.level);
+    const crestDb = 20 * Math.log10(st.peak / rms);
+    if (crestDb < 5) squashed = true;
+    stemLines.push(`${sid} ${peakDb.toFixed(1)} dBFS crest ${crestDb.toFixed(0)} dB`);
+    st.peakDb = peakDb; st.crestDb = crestDb;
+  }
+  if (stemLines.length) {
+    message += `. Stems: ${stemLines.join(', ')}`;
+    if (squashed) message += ' (crest under 5 dB = a steady tone, or a squashed one: if that part is a pluck or a drum, lower its drive or resonance)';
+  }
   if (failures.length) {
     message += `. FAILED TO RENDER: ${failures.map(f => `${f.id} (${f.error})`).join('; ')} — fix the parameters and render again`;
   }
 
-  return { buffer: outputBuffer, message, bars: renderBars, synths, hasArrangement, peak, trimDb, failures };
+  return { buffer: outputBuffer, message, bars: renderBars, synths, hasArrangement, peak, trimDb, failures, stems };
 }
 
 /**

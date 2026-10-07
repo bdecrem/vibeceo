@@ -306,6 +306,7 @@ export class JP9000Node extends InstrumentNode {
       sampleRate = 44100,
       automation = null,
       swing = 0,
+      driveLaw = 1,          // session.driveLaw, passed by core/render.js
     } = options;
 
     const pattern = this._pattern;
@@ -327,6 +328,7 @@ export class JP9000Node extends InstrumentNode {
 
     // Reset all modules
     this.rack.resetAll();
+    for (const m of this.rack.modules.values()) if (m.type === 'drive' && m.drive?.setLaw) m.drive.setLaw(driveLaw);
 
     // Swing: delay off-beat (odd) 16ths by up to half a step, same formula as
     // jbs-node. onsetOf gives each step's start sample; segment lengths flex so

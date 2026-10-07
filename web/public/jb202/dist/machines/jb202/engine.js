@@ -41,6 +41,7 @@ const DEFAULT_PARAMS = {
   ampSustain: 0,
   ampRelease: 0.2,
   drive: 0.2,
+  driveLaw: 1,               // Soft-clip law for `drive` (1 legacy, 2 gain-compensated) — set per jambot session, not a knob
   level: 1.0,
 };
 
@@ -96,6 +97,7 @@ class SynthVoice {
 
     // Drive
     this.drive.setAmount(params.drive * 100);
+    this.drive.setLaw(params.driveLaw === 2 ? 2 : 1);
   }
 
   updateOscillators(params) {

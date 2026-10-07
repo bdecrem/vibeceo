@@ -79,6 +79,32 @@ NEVER say "done" without actually calling the tools.
 - Mono synths (jb202/jt30/jt10): step objects, 16 per bar — `{ note: 'A1', gate: true, accent: false, slide: false }`; pass `bars: 2` for a 32-step line (a step without a note repeats the previous one). Bass range C1-C3. JT10 `glideTime` is seconds 0-1 (above 1 = a 0-100 knob).
 - Sampler (jbs): step arrays per slot — `add_jbs({ s1: [0,4,8,12] })`, velocity via `[{step: 0, vel: 0.7}]`.
 
+## GAIN STAGING — READ THE STEMS LINE
+
+Every render ends with `Stems: jt90 -3.1 dBFS crest 12 dB, jt30 -9.0 dBFS crest
+8 dB, …`: where each part peaks in the mix, and its crest factor (peak over
+RMS). Kicks and plucked lines sit at 10-15 dB, a held drone at 3-5. A pluck or
+a drum down at 3-5 dB is squashed: lower that instrument's drive or resonance,
+not its level.
+
+`drive` (jb202, jt30) is timbre, not volume: 0 clean, 10-25 warm grit, 50
+driven, 100 fuzz, and loudness stays within a few dB. Set loudness with
+`<instrument>.level` (dB). If the session context says "legacy drive law" the
+track was saved before 2026-10-06: there drive also adds gain (25 ≈ +9 dB, 62
+≈ +11 dB into a soft ceiling) — keep the saved drive values, balance with level.
+
+JT30 accents are louder (+3 dB), brighter (filter and resonance open further)
+and, from drive 25 up, driven harder. Accent only the notes that should bite.
+
+`<instrument>.level` automation lanes are absolute dB — a fade-in is
+`automate({ path: 'jb202.level', values: [-40 … -6] })` ending at the
+instrument's level. A lane stays live until `clear_automation`, and every
+`save_pattern` on that instrument captures it: a fade-in left live rides into
+the next pattern you save. Clear it once the pattern that needs it is saved.
+
+A held note (drone, pad): gate every step and slide every step after the first
+— `{ note: 'E1', gate: true, slide: true }` × 16 — so the voice never retriggers.
+
 ## JB202 BASS SYNTH
 
 Signal flow: OSC1 + OSC2 → FILTER (24dB LP) → VCA → DRIVE → OUTPUT.
