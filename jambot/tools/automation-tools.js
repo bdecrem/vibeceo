@@ -56,7 +56,8 @@ const automationTools = {
     const [nodeId, ...rest] = stored.split('.');
 
     const activeSteps = automationValues.filter(v => v !== null && v !== undefined).length;
-    return `${nodeId} ${rest.join('.')} automation set: ${activeSteps}/${automationValues.length} steps (the lane stays live until clear_automation and is captured by every save_pattern on ${nodeId})`;
+    const levelNote = rest.length === 1 && rest[0] === 'level' ? ' — dB offsets from the instrument\'s level: 0 = the fader' : '';
+    return `${nodeId} ${rest.join('.')} automation set: ${activeSteps}/${automationValues.length} steps${levelNote} (the lane stays live until clear_automation and is captured by every save_pattern on ${nodeId})`;
   },
 
   /**

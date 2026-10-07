@@ -10,8 +10,8 @@
  * with √g makeup, so `drive` changes timbre at roughly constant loudness, and
  * the JT30's +20 accent drive scales with the knob instead of firing at drive 0.
  *
- * Also here: `level` automation lanes are absolute dB (a lane at the node's
- * own level is unity), the render message carries a per-stem readout, the
+ * Also here: `level` automation lanes are dB offsets from the instrument's
+ * level (0 = the fader, so a fade survives gain staging), the render message carries a per-stem readout, the
  * automate / save_pattern messages say what a lane does, and the library
  * context emits mills_minimal's blueprint, rules and exemplars.
  */
@@ -118,16 +118,16 @@ const accOn1 = await acidRms(1, 0, { accent: true }), accOff1 = await acidRms(1,
 ok(`law 2, drive 0: accents add under 5 dB (${(accOn - accOff).toFixed(1)}); law 1 added ${(accOn1 - accOff1).toFixed(1)}`, () => { assert.ok(accOn - accOff < 5); assert.ok(accOn - accOff > 0); assert.ok(accOn1 - accOff1 > accOn - accOff); });
 
 // ---------------------------------------------------------------------------
-console.log('\nlevel lanes are absolute dB');
+console.log('\nlevel lanes are dB offsets from the fader');
 for (const [inst, add] of [['jb202', (s) => executeTool('add_jb202', { pattern: two(line()) }, s, {})], ['jt30', (s) => executeTool('add_jt30', { pattern: two(line()), bars: 2 }, s, {})], ['jt10', (s) => executeTool('add_jt10', { pattern: two(line()) }, s, {})]]) {
-  await okAsync(`${inst}: a lane at the node's own level is unity, 6 dB lower is 6 dB quieter`, async () => {
+  await okAsync(`${inst}: a lane at 0 is unity, -6 is 6 dB quieter, whatever the fader says`, async () => {
     const render = async (lane) => {
       const s = createSession({ bpm: 128 }); await add(s); await executeTool('tweak', { path: `${inst}.level`, value: -6 }, s, {}); await solo(s, [inst]);
       if (lane != null) await executeTool('automate', { path: `${inst}.level`, values: Array(32).fill(lane) }, s, {});
       return rmsDb((await renderSessionToBuffer(s, 2)).buffer);
     };
-    const plain = await render(null), same = await render(-6), down = await render(-12);
-    assert.ok(Math.abs(same - plain) < 0.2, `lane at node level: ${same.toFixed(2)} vs ${plain.toFixed(2)}`);
+    const plain = await render(null), same = await render(0), down = await render(-6);
+    assert.ok(Math.abs(same - plain) < 0.2, `lane at 0: ${same.toFixed(2)} vs ${plain.toFixed(2)}`);
     assert.ok(Math.abs((plain - down) - 6) < 0.3, `lane 6 dB under: ${(plain - down).toFixed(2)} dB quieter`);
   });
 }
@@ -156,6 +156,7 @@ await okAsync('automate says the lane stays live; save_pattern lists captured la
   await executeTool('add_jb202', { pattern: two(line()) }, s, {});
   const au = await executeTool('automate', { path: 'jb202.level', values: Array(32).fill(-10) }, s, {});
   assert.match(au, /stays live until clear_automation/);
+  assert.match(au, /dB offsets from the instrument's level: 0 = the fader/);
   const sv = await executeTool('save_pattern', { instrument: 'jb202', name: 'IN' }, s, {});
   assert.match(sv, /automation: level 32 steps/);
   await executeTool('clear_automation', { path: 'jb202.level' }, s, {});

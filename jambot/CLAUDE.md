@@ -1273,11 +1273,14 @@ were made on law 1; `new JambotHeadless()` builds law-2 sessions now.
   dB, a held drone at 3-5; a pluck or a drum at 3-5 dB is squashed (too much
   drive, or a resonant peak riding the ceiling). `renderSessionToBuffer` also
   returns `stems` ({ id: { peakDb, crestDb } }) for scripts.
-- **`level` lanes are absolute dB.** `automate({ path: 'jb202.level', values })`
-  means "the instrument sits at this many dB on that step"; a lane at the
-  node's own level is unity, 6 dB under is 6 dB quieter. (Before: the dB
-  converter mapped +6 dB to unity, so a fade written in dB landed 30 dB low.)
-  Drum voice levels (`jt90.ch.level`) were already absolute.
+- **`level` lanes are dB offsets from the fader.** `automate({ path:
+  'jb202.level', values })` means "this many dB relative to the instrument's
+  level on that step": 0 is unity, -40 is a fade-in's start, +6 the most it
+  can boost. Relative on purpose: a fade written this way still lands on the
+  fader after gain staging or a Controls-sheet move, where an absolute lane
+  would leave a 6 dB step at the next pattern. (Before: the dB converter
+  mapped +6 dB to unity, so a fade written in dB landed 30 dB low.) Drum
+  voice levels (`jt90.ch.level`) are engine params and stay absolute dB.
 - **A lane stays live** until `clear_automation`, and every `save_pattern` on
   that instrument captures it — the `automate` message says so and the
   `save_pattern` message lists what it captured (`(automation: level 128
@@ -1379,9 +1382,10 @@ Arrangement mode uses each section's saved automation.
 
 Values are in **producer units** (0-100, Hz, dB) — same units as `tweak`. The system converts to engine units at render time.
 
-`<instrument>.level` lanes on the mono synths are absolute dB (see "Gain staging
-and the drive law"). A lane stays live until `clear_automation`; `save_pattern`
-captures every live lane of that instrument and says which.
+`<instrument>.level` lanes on the mono synths are dB offsets from the fader, 0 =
+unity (see "Gain staging and the drive law"). A lane stays live until
+`clear_automation`; `save_pattern` captures every live lane of that instrument
+and says which.
 
 ## Session State
 

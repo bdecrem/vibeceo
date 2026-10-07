@@ -17,7 +17,7 @@ import { toEngine, JT30_PARAMS } from '../params/converters.js';
 // Voice (monophonic)
 const VOICES = ['bass'];
 
-// The engine's DEFAULT_PARAMS.level — what a `level` lane at the node's own level must map to.
+// The engine's DEFAULT_PARAMS.level — what a `level` lane at 0 dB (unity) must map to.
 const ENGINE_LEVEL = 0.8;
 
 /**
@@ -361,13 +361,13 @@ export class JT30Node extends InstrumentNode {
         const paramName = normalizePath(path).slice(5);
         const paramDef = JT30_PARAMS.bass?.[paramName];
         if (paramName === 'level' && Array.isArray(values)) {
-        // A `level` lane is absolute dB, like `tweak` — the value the instrument
-        // sits at on that step. The engine's own level multiplier is relative to
-        // the node level the mixer applies, so convert against it (the dB
-        // converter alone maps +6 dB to unity: a lane at the node's own level
-        // came out 6 dB down, and a fade written in dB landed 30 dB low).
-          const nodeDb = this.getLevel();
-          engineAutomation.level = values.map(v => (v === null || v === undefined) ? null : ENGINE_LEVEL * Math.pow(10, (v - nodeDb) / 20));
+        // A `level` lane is a dB OFFSET from the instrument's level: 0 = the
+        // fader, -40 = 40 dB under it. The engine's level multiplier sits on top
+        // of the node gain the mixer applies, so a fade written this way survives
+        // gain staging and the web fader; an absolute lane would not. (The dB
+        // converter alone mapped +6 dB to unity, so a fade written in dB landed
+        // 30 dB low — the original bug.)
+          engineAutomation.level = values.map(v => (v === null || v === undefined) ? null : ENGINE_LEVEL * Math.pow(10, v / 20));
         } else if (paramDef && Array.isArray(values)) {
           engineAutomation[paramName] = values.map(v =>
             v !== null && v !== undefined ? toEngine(v, paramDef) : null

@@ -96,9 +96,10 @@ track was saved before 2026-10-06: there drive also adds gain (25 ≈ +9 dB, 62
 JT30 accents are louder (+3 dB), brighter (filter and resonance open further)
 and, from drive 25 up, driven harder. Accent only the notes that should bite.
 
-`<instrument>.level` automation lanes are absolute dB — a fade-in is
-`automate({ path: 'jb202.level', values: [-40 … -6] })` ending at the
-instrument's level. A lane stays live until `clear_automation`, and every
+`<instrument>.level` automation lanes are dB offsets from the instrument's
+level — 0 is the fader, so a fade-in is `automate({ path: 'jb202.level',
+values: [-40 … 0] })` and still lands on the fader after you change it.
+A lane stays live until `clear_automation`, and every
 `save_pattern` on that instrument captures it: a fade-in left live rides into
 the next pattern you save. Clear it once the pattern that needs it is saved.
 
