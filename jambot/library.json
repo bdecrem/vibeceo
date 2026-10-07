@@ -682,6 +682,34 @@
         "Acid Eiffel - Hardfloor"
       ]
     },
+    "minimal_acid": {
+      "tier": "profile",
+      "name": "Minimal Acid (Plastikman school)",
+      "bpm": [
+        124,
+        132
+      ],
+      "keys": [
+        "E minor",
+        "A minor",
+        "F minor"
+      ],
+      "swing": 0,
+      "description": "The dry, patient end of acid: one 303 line that never changes, a kick, one closed hat on the offbeats, a low drone, and a single filter sweep as the whole arrangement. Phuture's 'Acid Tracks' (1987) is the founding document — eleven minutes of one pattern and a hand on the cutoff — and Plastikman's Sheet One (1993) is where it became a school: mono, dry, nothing added for drama. This is the opposite of the acid_techno entry (Hardfloor, the UK free-party sound: slides everywhere, 140+, sonic assault). Here the listener's attention is held by the rate of change, not by events, and the melody is revealed by the filter rather than played.",
+      "production": "The line is a chord broken into octave leaps (E G B D = Em7 in the exemplar): with the filter closed only the low root notes pass, so the bar reads as a thump; as it opens the upper-octave notes surface one by one, and the melody arrives over a minute without a note changing. Groove comes from the accents, not from swing or slides: accent cells like 1-4-7 / 9-12-15 with 16 as a pickup put a 3-3-2 cross rhythm inside straight 16ths, and one or two rests placed symmetrically (steps 6 and 14) make each half bar hiccup. No clap, no snare, no open hat. The sweep is the only long-form motion and it is paced below perception: a minute to the middle, a breakdown that drops the drums AND pulls the filter back a notch so the second climb starts lower than the first ended, one peak at about three quarters of the length held for eight bars, then a close that is faster than the build. Dry and mono: the space comes from dynamics — the kick pumping a bus compressor (in Jambot, a sidechain on the acid and the drone) and a drone of detuned saws beating a quarter hertz apart, its lowpass breathing with the sweep. Grit is restraint: a touch of soft saturation, never fuzz. On Jambot (drive law 2): JT30 saw, resonance 70, envMod 35, decay 30, accent 60, drive 10-15, the sweep written as per-step cutoff automation on the base cutoff (100 → 900 Hz, quadratic, over the whole track, one saved pattern per 8-bar block), a jt90 kick tuned down and a quiet closed hat on the offbeat 8ths, the drone on a JB202 (two saws ten cents apart, no resonance, full sustain, one tied note), everything on 8-bar boundaries, no reverb or delay anywhere. Read the render's Stems line: the acid should keep a crest above 10 dB.",
+      "references": [
+        "Phuture — Acid Tracks (Trax, 1987): one pattern, one knob, eleven minutes",
+        "Plastikman — Plasticine / Plasticity, Sheet One (Plus 8, 1993): the dry, mono, patient school",
+        "Emmanuel Top — Acid Phase (Attack, 1994): the French dry acid, kick and 303 and nothing else",
+        "Josh Wink — Higher State of Consciousness (Strictly Rhythm, 1995): the sweep as the whole structure, at the loud end",
+        "Hardfloor — Acperience 1 (Harthouse, 1992): the maximal counterexample — what this entry is not"
+      ],
+      "lineage": "Chicago 1987 (Phuture, DJ Pierre discovering the TB-303) → Plus 8 / Plastikman 1993 (Hawtin strips it to the bone) → the dry European acid of the mid-90s (Emmanuel Top) → the 2010s revival on Acid Test (Tin Man, Donato Dozzy) that treats the 303 as a melancholic voice.",
+      "currentScene": "Tin Man's records and the Acid Test label keep the dry, melodic, single-line form alive; most 'acid' releases today are the maximal kind. A line that spells a chord and a sweep paced over minutes is still rare and still works.",
+      "exemplars": [
+        "hilma/scripts/jam/songs/overclock.mjs — \"Overclock (Act III)\", 128 bars, 128 BPM, E minor: the Em7 octave line, p-curve sweep 100 → 900 Hz base cutoff, breakdown at bar 49, peak at 97 (Bart: \"This is dope\")"
+      ]
+    },
     "electro": {
       "tier": "core",
       "name": "Electro",
