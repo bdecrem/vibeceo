@@ -707,7 +707,8 @@
       "lineage": "Chicago 1987 (Phuture, DJ Pierre discovering the TB-303) → Plus 8 / Plastikman 1993 (Hawtin strips it to the bone) → the dry European acid of the mid-90s (Emmanuel Top) → the 2010s revival on Acid Test (Tin Man, Donato Dozzy) that treats the 303 as a melancholic voice.",
       "currentScene": "Tin Man's records and the Acid Test label keep the dry, melodic, single-line form alive; most 'acid' releases today are the maximal kind. A line that spells a chord and a sweep paced over minutes is still rare and still works.",
       "exemplars": [
-        "hilma/scripts/jam/songs/overclock.mjs — \"Overclock (Act III)\", 128 bars, 128 BPM, E minor: the Em7 octave line, p-curve sweep 100 → 900 Hz base cutoff, breakdown at bar 49, peak at 97 (Bart: \"This is dope\")"
+        "hilma/scripts/jam/songs/overclock.mjs — \"Overclock (Act III)\", 128 bars, 128 BPM, E minor: the Em7 octave line, p-curve sweep 100 → 900 Hz base cutoff, breakdown at bar 49, peak at 97 (Bart: \"This is dope\")",
+        "hilma/scripts/jam/songs/overclock-ii.mjs — \"Overclock (Act II)\", 128 bars, 128 BPM, D minor: the same tools, a Dm7 line with a 3-3-3-3 accent roll, the voice alone to open and close, the floor leaving under the open line at 81 and the kick's return at 89 as the one peak"
       ]
     },
     "electro": {
