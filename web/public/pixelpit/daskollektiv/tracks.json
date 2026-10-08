@@ -1,5 +1,29 @@
 [
   {
+    "id": "dk022",
+    "title": "DK022",
+    "artists": "HALLMAN × DK",
+    "description": "Overclock (Act III) — OVERCLOCK. One 16-step Em7 line that never changes and one filter sweep as the whole arrangement: a breakdown at bar 49, the peak at 97. The projection: a machine pushed past its rating until it trips. 128 BPM, E minor. Jambot.",
+    "url": "dk022.html",
+    "date": "2026-10-07"
+  },
+  {
+    "id": "dk021",
+    "title": "DK021",
+    "artists": "HALLMAN × DK",
+    "description": "Overclock (Act II) — THE FLOOR. The 303 opens and closes it alone; the kick arrives at bar 17, drops out under the fully open line at 81 and comes back as the one peak. The projection: an empty power-station hall floods through the night until the floor gives way. 128 BPM, D minor. Jambot.",
+    "url": "dk021.html",
+    "date": "2026-10-07"
+  },
+  {
+    "id": "dk020",
+    "title": "DK020",
+    "artists": "HALLMAN × DK",
+    "description": "Overclock (Act I) — SIGNAL. Dry minimal acid: a rolling off-beat 303 bass with slides under a pumped kick and one offbeat hat; the filter opens once, all the way, at 2:45. The projection: a transmission leaves a radio mast in the fog and crosses the night city to a sleeper's eye. 128 BPM, A minor. Jambot.",
+    "url": "dk020.html",
+    "date": "2026-10-07"
+  },
+  {
     "id": "dk019",
     "title": "DK019",
     "artists": "HALLMAN × DK",
