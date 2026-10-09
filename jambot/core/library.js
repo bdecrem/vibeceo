@@ -85,6 +85,16 @@ const LIBRARY_ALIASES = {
   'hypnotic techno': 'mills_minimal',
   'minimal 130': 'mills_minimal',
   'minimal 131': 'mills_minimal',
+  // Sheffield bleep (early Warp): multi-word names plus the bare 'bleep', which
+  // is not synth vocabulary the way 'wave' or 'minimal' are.
+  'bleep techno': 'bleep_techno',
+  'bleep': 'bleep_techno',
+  'sheffield bleep': 'bleep_techno',
+  'sheffield techno': 'bleep_techno',
+  'early warp': 'bleep_techno',
+  'warp bleep': 'bleep_techno',
+  'sweet exorcist': 'bleep_techno',
+  'forgemasters': 'bleep_techno',
   'breakbeat': 'breakbeat',
   'nu skool breaks': 'breakbeat',
   'nu breaks': 'breakbeat',

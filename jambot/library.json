@@ -4480,7 +4480,7 @@
         135
       ],
       "swing": 0,
-      "description": "Berlin techno built from first principles around the kick. The root is chosen so it completes a whole number of cycles per beat (f = k x BPM/60): at 132 BPM, A1 = 55 Hz is exactly 25 cycles per beat, so a sustained sub on the root meets every kick at the same point of its cycle and the low end is identical on every beat \u2014 no drifting cancellation between kick and sub. Pitched parts are in just intonation against that root (the track never modulates, so equal temperament buys nothing and pure thirds and fifths do not beat against the drone). The rest is Berghain reduction: kick, rumble, dry clap, hypnotic metal, one dub chord, polymeters instead of melody.",
+      "description": "Berlin techno built from first principles around the kick. The root is chosen so it completes a whole number of cycles per beat (f = k x BPM/60): at 132 BPM, A1 = 55 Hz is exactly 25 cycles per beat, so a sustained sub on the root meets every kick at the same point of its cycle and the low end is identical on every beat — no drifting cancellation between kick and sub. Pitched parts are in just intonation against that root (the track never modulates, so equal temperament buys nothing and pure thirds and fifths do not beat against the drone). The rest is Berghain reduction: kick, rumble, dry clap, hypnotic metal, one dub chord, polymeters instead of melody.",
       "production": "Tempo/root pairs that lock: 128 BPM with 49.07 Hz (23 cycles, G1 +2 cents), 130 BPM with 52.0 Hz (24, G#1 -3 cents), 132 BPM with 55.0 Hz (25, A1 exact). Kick: sine whose pitch falls from the 3rd harmonic of the root to the root in ~30 ms, a short knock at 3x root, a noise click, soft saturation; use the same kick buffer for every hit, and start the sub at the phase of the kick's tail so they add. Rumble: the kick into a dark 3-4 s room, low-passed ~150 Hz, driven (drive rising through the track), low-passed again, side-chained to zero on each kick with a ~130 ms recovery; a phase-locked sine sub under it, ducked the same way. Chords in 5-limit JI: minor 7 as 1 : 6/5 : 3/2 : 9/5 (110/165/198/264/330 Hz over A), the 9th as 9/4 for the peak, the Phrygian bII (a 16/15 major triad) for breakdown tension over the root drone. Hypnosis from polymeters (toms on a 12-step loop, a 5-step metallic FM sequence, hat decay on a 3-bar cycle, a 7-bar filter drift) rather than melody. Dry hard clap on 2 and 4. The build kick returns through a high-pass that opens downward with no sub, so the drop restores the whole bottom at once (+12 dB at 40-100 Hz). Mono below 160 Hz. Verify by measurement: kick tail and sub on the root, beat-to-beat low-end correlation (1.000 locked vs ~0.8 with the sub 0.1 Hz off), stab partials closer to JI than ET. Reference implementation: hilma scripts/phase-lock (2026-09-25).",
       "references": [
         "Subzero - Ben Klock (Ostgut Ton, 2009)",
@@ -4490,6 +4490,36 @@
       ],
       "lineage": "The Berghain rumble-and-reduction school of the late 2000s, the Basic Channel dub chord, and the just-intonation drone tradition, joined by treating the kick's fundamental as the tuning reference.",
       "currentScene": "A production method rather than a scene; it sits anywhere hypnotic, kick-led techno does."
+    },
+    "bleep_techno": {
+      "tier": "profile",
+      "name": "Bleep Techno (Sheffield / early Warp)",
+      "bpm": [
+        115,
+        125
+      ],
+      "keys": [
+        "E minor",
+        "A minor",
+        "F# minor",
+        "D minor"
+      ],
+      "swing": 0,
+      "description": "The first sound of Warp Records, Sheffield 1989-91: Forgemasters' 'Track With No Name' (WAP1), Sweet Exorcist's 'Testone', LFO's 'LFO', Nightmares on Wax's 'Aftermath', Unique 3's 'The Theme' from Bradford. Yorkshire sound-system bass culture (blues parties, reggae weight) meeting the Chicago and Detroit imports sold over Warp's own shop counter. Two hooks and almost nothing else: a sub bass deep enough to be felt before it is heard (the bass that blew club rigs) and a pure-tone bleep up top, a test tone, a Casio, an SH-101 or Juno with the filter shut, playing two or three notes in wide intervals. 808/909 drums, austere, cold, northern, physical, with a dub sense of space: the bleep lives in a delay, the rest stays dry. It topped out with LFO at number 12 in the UK charts in 1990 and dissolved into hardcore and, at Warp, into Artificial Intelligence within two years.",
+      "production": "Build the bleep first. A square or sine with the filter closed far enough that only the fundamental and a weak third harmonic survive, zero resonance, no filter envelope, a blip of 80-150 ms (attack 0, short decay, sustain 0): the note is a dot, not a line. Two to four pitches in wide intervals, root, fourth or fifth, octave, placed ON THE DELAY GRID: a dotted-8th (3/16) delay with 40-55 % feedback and a high cut around 6 kHz puts every repeat three steps after the hit, so notes on steps 0, 3 and 6 of the bar reinforce the cascade and the echoes fill the gaps the hits leave (each repeat 5-7 dB quieter, four audible). A small room under it and nothing else. The sub is the other hook, a RIFF not a drone: a sine or triangle with the cutoff around 120 Hz, fundamental at 40-60 Hz, roots on the one and the 'and's, a short walk-down (b7 - 5 - b3) into the repeat, sidechained to the kick; tune it so it completes a whole number of cycles per beat and the low end repeats identically under every kick. Drums: a long kick on every beat, a snare or clap on 2 and 4 (dry, or a short room), closed hats on the offbeat 8ths kept dark and quiet, an open hat on the last 8th of alternate bars, and 808-style tom rolls (high, mid, low) on the 16ths BETWEEN the kicks as the fills, never stacked on a kick. The low end dominates on purpose: 75-85 % of the energy under 120 Hz is right. Arrangement moves are dub-mixer moves: a cold open on the bleep and the sub with no drums, the kick dropped under them, the 'throw' (one hit, then only its echoes over the floor), the tom roll, the return with the hook an octave up or stuttered on 16ths. No 303, no chords, no pads; a vocoded or sampled fragment is the one allowed decoration.",
+      "references": [
+        "Forgemasters - Track With No Name (Warp, 1989): WAP1, the first bleep record, dubby and slow",
+        "Sweet Exorcist - Testone (Warp, 1990): Richard H. Kirk and DJ Parrot; test tones over a sub, the purest form",
+        "LFO - LFO (Warp, 1990): the hook, the bass line, the tom intro; the genre's hit",
+        "Unique 3 - The Theme (Chill, 1989): the Bradford original, the sub as the whole point",
+        "Nightmares on Wax - Aftermath (Warp, 1990) and Tricky Disco - Tricky Disco (Warp, 1990): the same year, the same rig",
+        "A Guy Called Gerald - Voodoo Ray (Rham!, 1988): the Manchester precursor, a UK record built on an 808 and a sub"
+      ],
+      "lineage": "Yorkshire sound-system bass culture and the Chicago/Detroit records sold at Warp's shop (1988-89) -> Warp's first releases (Forgemasters, Sweet Exorcist, LFO, 1989-90) -> the sub and the austerity go into UK hardcore (1991) and later dubstep (2005); Warp itself turns to Artificial Intelligence and IDM (1992). The bleep comes back as a signifier of 1990 whenever UK dance looks north.",
+      "currentScene": "A reference more than a scene: bleeps and that sub show up in UK house and techno as a 1990 nod (Lone, Special Request, Bicep), and Warp's anniversary reissues keep the originals in rotation. A track built only from a sub riff, a pure-tone hook and a delay is still rare and still works.",
+      "exemplars": [
+        "hilma/scripts/jam/songs/tinsley.mjs - \"Tinsley\", 16 bars (a 30-second sketch), 124 BPM, E minor: the JT10 as the bleep (pulse only, pulseWidth 50, cutoff 1500 Hz, resonance 0, envMod 0, attack 0, decay 30, sustain 0, release 20; the Minimal 130 dotted-8th ping-pong delay, feedback 52, mix 42, high cut 6.5 kHz, and its small room), E5 E5 B4 on steps 0/3/6 with a D5-G5 lift in bar 2; Bart's sub patch on a two-bar riff at E1 +5 cents (20 cycles a beat); his kit with the engine's snare on 2 and 4 at -13 dB and the Minimal 131 toms rolling on the 16ths between kicks; a cold open, the throw at bar 9, the roll at 10, the E6 stutter at 16. A sketch, not yet reviewed by Bart (2026-10-08)"
+      ]
     }
   },
   "artists": {
